@@ -59,7 +59,8 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { employees as initialEmployees, getEmployee, addEmployee, updateEmployee, deleteEmployee, type Employee, type PassType, type EmployeeStatus } from "@/lib/store";
+import { getEmployees, addEmployee, updateEmployee, deleteEmployee } from "@/lib/store";
+import type { Employee, PassType, EmployeeStatus } from "@/lib/types";
 
 const passTypes: PassType[] = ["Work Permit", "S Pass", "Employment Pass", "Singaporean/PR"];
 const statuses: EmployeeStatus[] = ["Active", "On Leave", "Deployed", "Inactive"];
