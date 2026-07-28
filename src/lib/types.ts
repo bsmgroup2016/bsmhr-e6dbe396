@@ -34,6 +34,7 @@ export interface Employee {
   levyRate?: number;
   dormitory?: string;
   branch?: string;
+  companyId?: string;
   remarks?: string;
   createdAt: string;
   updatedAt: string;
