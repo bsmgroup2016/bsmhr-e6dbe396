@@ -393,6 +393,16 @@ export function updateDocument(id: string, updates: Partial<EmployeeDocument>): 
   return updated;
 }
 
+export function deleteDocument(id: string): boolean {
+  const state = getState();
+  const document = state.documents.find((d) => d.id === id);
+  if (!document) return false;
+  const newState = { ...state, documents: state.documents.filter((d) => d.id !== id) };
+  setState(newState);
+  addAuditLog("DELETE", "Document", id, `Deleted document ${document.name}`);
+  return true;
+}
+
 export function getAttendance(): Attendance[] {
   return getState().attendance;
 }
