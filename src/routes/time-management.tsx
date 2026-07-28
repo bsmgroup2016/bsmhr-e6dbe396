@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
+import { ExportButton, ImportDialog } from "@/components/data-io";
 import { SummaryCard } from "@/components/ui/summary-card";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -51,8 +52,21 @@ import {
 } from "@/components/ui/select";
 import { getEmployees, getSites, getAttendance, addAttendance } from "@/lib/store";
 import type { Attendance, AttendanceStatus } from "@/lib/types";
+import { pick, type ImportColumn } from "@/lib/xlsx";
 
 const statuses: AttendanceStatus[] = ["Present", "Absent", "On Leave", "MC", "Half Day", "Off", "Public Holiday", "Pending"];
+
+const ATTENDANCE_IMPORT_COLUMNS: ImportColumn[] = [
+  { key: "date", label: "Date", required: true, example: "2026-07-28" },
+  { key: "employeeCode", label: "Employee Code", required: true, example: "BSM-0001" },
+  { key: "site", label: "Site", example: "Tuas Yard" },
+  { key: "status", label: "Status", required: true, example: "Present" },
+  { key: "checkIn", label: "Check In", example: "08:00" },
+  { key: "checkOut", label: "Check Out", example: "18:00" },
+  { key: "hoursWorked", label: "Normal Hours", example: "8" },
+  { key: "overtimeHours", label: "OT Hours", example: "2" },
+  { key: "notes", label: "Notes", example: "" },
+];
 
 export const Route = createFileRoute("/time-management")({
   head: () => ({
@@ -87,6 +101,66 @@ export default function TimeManagementPage() {
 
   function refresh() {
     setAttendance(getAttendance());
+  }
+
+  function attendanceRow(record: (typeof attendance)[number]) {
+    const emp = employees.find((e) => e.id === record.employeeId);
+    const site = sites.find((s) => s.id === record.siteId);
+    return {
+      Date: record.date,
+      "Employee Code": emp?.employeeCode ?? "",
+      Name: emp?.name ?? "",
+      FIN: emp?.fin ?? "",
+      Site: site?.name ?? "",
+      Status: record.status,
+      "Check In": record.checkIn ?? "",
+      "Check Out": record.checkOut ?? "",
+      "Normal Hours": record.hoursWorked,
+      "OT Hours": record.overtimeHours,
+      "Total Hours": record.hoursWorked + record.overtimeHours,
+      Notes: record.notes ?? "",
+    };
+  }
+
+  function handleImport(rows: Record<string, string>[]) {
+    const errors: string[] = [];
+    let imported = 0;
+
+    rows.forEach((row, index) => {
+      const get = (key: string) =>
+        pick(row, ATTENDANCE_IMPORT_COLUMNS.find((c) => c.key === key)!);
+      const code = get("employeeCode").toUpperCase();
+      const emp = employees.find(
+        (e) => e.employeeCode.toUpperCase() === code || e.fin.toUpperCase() === code,
+      );
+      if (!emp) {
+        errors.push(`Row ${index + 2}: employee "${code}" not found`);
+        return;
+      }
+      const rawDate = get("date");
+      const parsedDate = new Date(rawDate);
+      const day = Number.isNaN(parsedDate.getTime()) ? rawDate : parsedDate.toISOString().slice(0, 10);
+      const siteName = get("site").toLowerCase();
+      const site = sites.find((s) => s.name.toLowerCase() === siteName);
+      const statusValue = get("status").toLowerCase();
+      const status = (statuses.find((s) => s.toLowerCase() === statusValue) ??
+        "Present") as AttendanceStatus;
+
+      addAttendance({
+        employeeId: emp.id,
+        date: day,
+        siteId: site?.id,
+        status,
+        checkIn: get("checkIn") || undefined,
+        checkOut: get("checkOut") || undefined,
+        hoursWorked: Number(get("hoursWorked").replace(/[^0-9.]/g, "")) || 0,
+        overtimeHours: Number(get("overtimeHours").replace(/[^0-9.]/g, "")) || 0,
+        notes: get("notes") || undefined,
+      });
+      imported += 1;
+    });
+
+    return { imported, errors };
   }
 
   function handleCreate(formData: FormData) {
@@ -128,6 +202,21 @@ export default function TimeManagementPage() {
               <AttendanceForm employees={employees} sites={sites} onSubmit={handleCreate} />
             </DialogContent>
           </Dialog>
+          <div className="mt-2 flex flex-wrap gap-2 sm:mt-0">
+            <ImportDialog
+              title="Import timesheet"
+              description="Upload daily attendance from Excel or CSV. Employees are matched by employee code or FIN."
+              templateName="attendance"
+              columns={ATTENDANCE_IMPORT_COLUMNS}
+              onImport={handleImport}
+              onDone={refresh}
+            />
+            <ExportButton
+              rows={filtered.map(attendanceRow)}
+              baseName="attendance"
+              sheetName="Attendance"
+            />
+          </div>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

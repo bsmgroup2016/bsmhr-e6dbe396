@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
+import { ExportButton, ImportDialog } from "@/components/data-io";
 import { SummaryCard } from "@/components/ui/summary-card";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -61,6 +62,7 @@ import {
 } from "@/components/ui/sheet";
 import { getEmployees, addEmployee, updateEmployee, deleteEmployee } from "@/lib/store";
 import type { Employee, PassType, EmployeeStatus } from "@/lib/types";
+import { pick, type ImportColumn } from "@/lib/xlsx";
 
 const passTypes: PassType[] = ["Work Permit", "S Pass", "Employment Pass", "Singaporean/PR"];
 const statuses: EmployeeStatus[] = ["Active", "On Leave", "Deployed", "Inactive"];
@@ -91,6 +93,50 @@ function expiryBadge(passExpiry: string) {
   if (days < 0) return <StatusBadge variant="destructive" label="Expired" dot />;
   if (days <= 60) return <StatusBadge variant="warning" label={`${days}d left`} dot />;
   return <StatusBadge variant="success" label={`${days}d left`} dot />;
+}
+
+const EMPLOYEE_IMPORT_COLUMNS: ImportColumn[] = [
+  { key: "name", label: "Name", required: true, example: "Rahman Md" },
+  { key: "fin", label: "FIN", required: true, example: "G1234567X" },
+  { key: "nationality", label: "Nationality", required: true, example: "Bangladesh" },
+  { key: "passType", label: "Pass Type", required: true, example: "Work Permit" },
+  { key: "passExpiry", label: "Pass Expiry", example: "2027-05-31" },
+  { key: "trade", label: "Trade", example: "Welder" },
+  { key: "status", label: "Status", example: "Active" },
+  { key: "basicSalary", label: "Basic Salary", example: "1400" },
+  { key: "joinedOn", label: "Joined On", example: "2025-01-15" },
+  { key: "site", label: "Site", example: "Tuas Yard" },
+  { key: "phone", label: "Phone", example: "+65 8123 4567" },
+  { key: "levyRate", label: "Levy Rate", example: "300" },
+  { key: "dormitory", label: "Dormitory", example: "Kranji Dorm B" },
+];
+
+function toEmployeeRow(employee: Employee) {
+  return {
+    "Employee Code": employee.employeeCode,
+    Name: employee.name,
+    FIN: employee.fin,
+    Nationality: employee.nationality,
+    "Pass Type": employee.passType,
+    "Pass Expiry": employee.passExpiry,
+    "Days To Expiry": daysUntil(employee.passExpiry) ?? "",
+    Trade: employee.trade,
+    Site: employee.site ?? "",
+    Status: employee.status,
+    "Basic Salary": employee.basicSalary,
+    "Levy Rate": employee.levyRate ?? 0,
+    "Joined On": employee.joinedOn,
+    Phone: employee.phone ?? "",
+    Email: employee.email ?? "",
+    Dormitory: employee.dormitory ?? "",
+  };
+}
+
+function normalizeDate(value: string) {
+  if (!value) return "";
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return value;
+  return parsed.toISOString().slice(0, 10);
 }
 
 export default function WorkforcePage() {
@@ -134,6 +180,56 @@ export default function WorkforcePage() {
 
   function refresh() {
     setEmployees(getEmployees());
+  }
+
+  function handleImport(rows: Record<string, string>[]) {
+    const errors: string[] = [];
+    let imported = 0;
+    const existing = getEmployees();
+
+    rows.forEach((row, index) => {
+      const get = (key: string) => {
+        const column = EMPLOYEE_IMPORT_COLUMNS.find((c) => c.key === key)!;
+        return pick(row, column);
+      };
+      const fin = get("fin").toUpperCase();
+      const passType = (passTypes.find((p) => p.toLowerCase() === get("passType").toLowerCase()) ??
+        "Work Permit") as PassType;
+      const status = (statuses.find((s) => s.toLowerCase() === get("status").toLowerCase()) ??
+        "Active") as EmployeeStatus;
+      const salary = Number(get("basicSalary").replace(/[^0-9.-]/g, ""));
+
+      if (Number.isNaN(salary)) {
+        errors.push(`Row ${index + 2}: invalid basic salary`);
+        return;
+      }
+
+      const payload = {
+        name: get("name"),
+        nationality: get("nationality"),
+        fin,
+        passType,
+        passExpiry: normalizeDate(get("passExpiry")) || "-",
+        trade: get("trade") || "General Worker",
+        site: get("site") || null,
+        status,
+        basicSalary: salary || 0,
+        joinedOn: normalizeDate(get("joinedOn")) || new Date().toISOString().slice(0, 10),
+        phone: get("phone"),
+        levyRate: Number(get("levyRate").replace(/[^0-9.-]/g, "")) || 0,
+        dormitory: get("dormitory"),
+      };
+
+      const match = existing.find((e) => e.fin.toUpperCase() === fin);
+      if (match) {
+        updateEmployee(match.id, payload);
+      } else {
+        addEmployee(payload);
+      }
+      imported += 1;
+    });
+
+    return { imported, errors };
   }
 
   function handleCreate(formData: FormData) {
@@ -219,6 +315,17 @@ export default function WorkforcePage() {
               <EmployeeForm onSubmit={handleCreate} />
             </DialogContent>
           </Dialog>
+          <div className="mt-2 flex flex-wrap gap-2 sm:mt-0">
+            <ImportDialog
+              title="Import employees"
+              description="Upload an Excel or CSV file of workers. Existing employees with the same FIN are updated."
+              templateName="employees"
+              columns={EMPLOYEE_IMPORT_COLUMNS}
+              onImport={handleImport}
+              onDone={refresh}
+            />
+            <ExportButton rows={filtered.map(toEmployeeRow)} baseName="employees" sheetName="Employees" />
+          </div>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

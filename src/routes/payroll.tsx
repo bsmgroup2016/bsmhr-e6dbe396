@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
+import { ExportButton, ImportDialog } from "@/components/data-io";
 import { SummaryCard } from "@/components/ui/summary-card";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -44,8 +45,22 @@ import {
 } from "@/components/ui/select";
 import { getEmployees, getPayroll, addPayroll } from "@/lib/store";
 import type { PayrollEntry, PayrollStatus } from "@/lib/types";
+import { pick, type ImportColumn } from "@/lib/xlsx";
 
 const statuses: PayrollStatus[] = ["Draft", "Pending Approval", "Approved", "Paid", "Rejected"];
+
+const PAYROLL_IMPORT_COLUMNS: ImportColumn[] = [
+  { key: "employeeCode", label: "Employee Code", required: true, example: "BSM-0001" },
+  { key: "month", label: "Month", required: true, example: "2026-07" },
+  { key: "basicSalary", label: "Basic Salary", required: true, example: "1400" },
+  { key: "overtimePay", label: "Overtime Pay", example: "220" },
+  { key: "allowances", label: "Allowances", example: "100" },
+  { key: "deductions", label: "Deductions", example: "50" },
+  { key: "cpfEmployee", label: "CPF Employee", example: "0" },
+  { key: "cpfEmployer", label: "CPF Employer", example: "0" },
+  { key: "levies", label: "Levies", example: "300" },
+  { key: "status", label: "Status", example: "Draft" },
+];
 
 export const Route = createFileRoute("/payroll")({
   head: () => ({
@@ -80,6 +95,67 @@ export default function PayrollPage() {
 
   function refresh() {
     setPayroll(getPayroll());
+  }
+
+  function payrollRow(entry: PayrollEntry) {
+    const emp = employees.find((e) => e.id === entry.employeeId);
+    return {
+      Month: entry.month,
+      "Employee Code": emp?.employeeCode ?? "",
+      Name: emp?.name ?? "",
+      FIN: emp?.fin ?? "",
+      "Basic Salary": entry.basicSalary,
+      "Overtime Pay": entry.overtimePay,
+      Allowances: entry.allowances,
+      Deductions: entry.deductions,
+      "CPF Employee": entry.cpfEmployee,
+      "CPF Employer": entry.cpfEmployer,
+      Levies: entry.levies,
+      "Net Pay": entry.netPay,
+      Status: entry.status,
+    };
+  }
+
+  function handleImport(rows: Record<string, string>[]) {
+    const errors: string[] = [];
+    let imported = 0;
+    const num = (value: string) => Number(value.replace(/[^0-9.-]/g, "")) || 0;
+
+    rows.forEach((row, index) => {
+      const get = (key: string) => pick(row, PAYROLL_IMPORT_COLUMNS.find((c) => c.key === key)!);
+      const code = get("employeeCode").toUpperCase();
+      const emp = employees.find(
+        (e) => e.employeeCode.toUpperCase() === code || e.fin.toUpperCase() === code,
+      );
+      if (!emp) {
+        errors.push(`Row ${index + 2}: employee "${code}" not found`);
+        return;
+      }
+      const basicSalary = num(get("basicSalary"));
+      const overtimePay = num(get("overtimePay"));
+      const allowances = num(get("allowances"));
+      const deductions = num(get("deductions"));
+      const cpfEmployee = num(get("cpfEmployee"));
+      const levies = num(get("levies"));
+      const statusValue = get("status").toLowerCase();
+
+      addPayroll({
+        employeeId: emp.id,
+        month: get("month").slice(0, 7),
+        basicSalary,
+        overtimePay,
+        allowances,
+        deductions,
+        cpfEmployee,
+        cpfEmployer: num(get("cpfEmployer")),
+        levies,
+        netPay: basicSalary + overtimePay + allowances - deductions - cpfEmployee - levies,
+        status: (statuses.find((s) => s.toLowerCase() === statusValue) ?? "Draft") as PayrollStatus,
+      });
+      imported += 1;
+    });
+
+    return { imported, errors };
   }
 
   function handleCreate(formData: FormData) {
@@ -131,10 +207,15 @@ export default function PayrollPage() {
                 <PayrollForm employees={employees} onSubmit={handleCreate} />
               </DialogContent>
             </Dialog>
-            <Button size="sm" variant="outline">
-              <Download className="mr-1 h-4 w-4" />
-              Export
-            </Button>
+            <ImportDialog
+              title="Import payroll"
+              description="Upload a monthly payroll sheet. Net pay is recalculated from the imported figures."
+              templateName="payroll"
+              columns={PAYROLL_IMPORT_COLUMNS}
+              onImport={handleImport}
+              onDone={refresh}
+            />
+            <ExportButton rows={filtered.map(payrollRow)} baseName="payroll" sheetName="Payroll" />
           </div>
         </div>
 

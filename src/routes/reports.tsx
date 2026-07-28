@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
+import { ExportButton } from "@/components/data-io";
 import { SummaryCard } from "@/components/ui/summary-card";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Button } from "@/components/ui/button";
@@ -31,6 +32,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { getEmployees, getProjects, getSites, getAssignments, getDocuments, getPayroll } from "@/lib/store";
+import { exportSheets, timestampedName } from "@/lib/xlsx";
 
 export const Route = createFileRoute("/reports")({
   head: () => ({
@@ -69,6 +71,75 @@ export default function ReportsPage() {
     return acc;
   }, {} as Record<string, number>);
 
+  const manpowerRows = siteCoverage.map((s) => ({
+    Site: s.name,
+    Project: projects.find((p) => p.id === s.projectId)?.name ?? "",
+    Required: s.requiredWorkers,
+    Assigned: s.assigned,
+    Gap: s.gap,
+    Status: s.gap === 0 ? "Fully covered" : "Shortfall",
+  }));
+
+  const passRows = Object.entries(passTypeCount).map(([type, count]) => ({
+    "Pass Type": type,
+    Workers: count,
+    Share: `${((count / (employees.length || 1)) * 100).toFixed(1)}%`,
+  }));
+
+  const documentRows = documents.map((d) => ({
+    Employee: employees.find((e) => e.id === d.employeeId)?.name ?? "",
+    Type: d.type,
+    Document: d.name,
+    "Issue Date": d.issueDate ?? "",
+    "Expiry Date": d.expiryDate ?? "",
+    Status: d.status,
+  }));
+
+  const payrollRows = payroll.map((p) => ({
+    Month: p.month,
+    Employee: employees.find((e) => e.id === p.employeeId)?.name ?? "",
+    "Basic Salary": p.basicSalary,
+    "Overtime Pay": p.overtimePay,
+    Levies: p.levies,
+    "Net Pay": p.netPay,
+    Status: p.status,
+  }));
+
+  const currentRows =
+    report === "manpower"
+      ? manpowerRows
+      : report === "passes"
+        ? passRows
+        : report === "documents"
+          ? documentRows
+          : payrollRows;
+
+  async function exportFullPack() {
+    await exportSheets(
+      [
+        { name: "Manpower by site", rows: manpowerRows },
+        { name: "Pass types", rows: passRows },
+        { name: "Document compliance", rows: documentRows },
+        { name: "Payroll summary", rows: payrollRows },
+        {
+          name: "Employees",
+          rows: employees.map((e) => ({
+            "Employee Code": e.employeeCode,
+            Name: e.name,
+            FIN: e.fin,
+            "Pass Type": e.passType,
+            "Pass Expiry": e.passExpiry,
+            Trade: e.trade,
+            Site: e.site ?? "",
+            Status: e.status,
+            "Basic Salary": e.basicSalary,
+          })),
+        },
+      ],
+      timestampedName("bsm_report_pack", "xlsx"),
+    );
+  }
+
   return (
     <AppShell>
       <div className="mx-auto max-w-7xl space-y-6">
@@ -77,10 +148,13 @@ export default function ReportsPage() {
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">Reports</h1>
             <p className="text-sm text-muted-foreground">Workforce, compliance, and financial summaries.</p>
           </div>
-          <Button size="sm" variant="outline">
-            <Download className="mr-1 h-4 w-4" />
-            Export CSV
-          </Button>
+          <div className="mt-2 flex flex-wrap gap-2 sm:mt-0">
+            <ExportButton rows={currentRows} baseName={`report_${report}`} sheetName="Report" label="Export report" />
+            <Button size="sm" onClick={exportFullPack}>
+              <Download className="mr-1 h-4 w-4" />
+              Full Excel pack
+            </Button>
+          </div>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
