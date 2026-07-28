@@ -67,7 +67,7 @@ import type { Project, Site, ProjectStatus, SiteStatus } from "@/lib/types";
 const projectStatuses: ProjectStatus[] = ["Planning", "Active", "On Hold", "Completed", "Cancelled"];
 const siteStatuses: SiteStatus[] = ["Active", "Inactive", "Completed"];
 
-export const Route = createFileRoute("/projects")({
+export const Route = createFileRoute("/_authenticated/projects")({
   head: () => ({
     meta: [
       { title: "Projects & Sites — BSM Workforce & Operations" },

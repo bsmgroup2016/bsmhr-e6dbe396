@@ -34,7 +34,7 @@ import {
 } from "@/lib/store";
 import type { Company } from "@/lib/types";
 
-export const Route = createFileRoute("/companies")({
+export const Route = createFileRoute("/_authenticated/companies")({
   head: () => ({
     meta: [
       { title: "Companies — BSM Workforce & Operations" },

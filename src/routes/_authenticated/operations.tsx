@@ -63,7 +63,7 @@ import type { Assignment, AssignmentStatus } from "@/lib/types";
 
 const statuses: AssignmentStatus[] = ["Pending", "Approved", "Active", "Ended", "Transferred", "Rejected"];
 
-export const Route = createFileRoute("/operations")({
+export const Route = createFileRoute("/_authenticated/operations")({
   head: () => ({
     meta: [
       { title: "Operations — BSM Workforce & Operations" },

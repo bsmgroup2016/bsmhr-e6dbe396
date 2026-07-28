@@ -34,7 +34,7 @@ import {
 import { getEmployees, getProjects, getSites, getAssignments, getDocuments, getPayroll } from "@/lib/store";
 import { exportSheets, timestampedName } from "@/lib/xlsx";
 
-export const Route = createFileRoute("/reports")({
+export const Route = createFileRoute("/_authenticated/reports")({
   head: () => ({
     meta: [
       { title: "Reports — BSM Workforce & Operations" },

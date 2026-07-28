@@ -48,7 +48,7 @@ import type { Approval, ApprovalStatus, ApprovalType } from "@/lib/types";
 const approvalTypes: ApprovalType[] = ["Assignment", "Leave", "Payroll", "Overtime", "Transfer", "Termination", "Document", "Other"];
 const approvalStatuses: ApprovalStatus[] = ["Pending", "Approved", "Rejected", "Escalated"];
 
-export const Route = createFileRoute("/approvals")({
+export const Route = createFileRoute("/_authenticated/approvals")({
   head: () => ({
     meta: [
       { title: "Approvals — BSM Workforce & Operations" },

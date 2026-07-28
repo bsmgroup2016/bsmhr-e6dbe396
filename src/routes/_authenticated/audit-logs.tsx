@@ -26,7 +26,7 @@ import { getAuditLogs } from "@/lib/store";
 const actions = ["CREATE", "UPDATE", "DELETE", "LOGIN", "EXPORT", "APPROVE", "REJECT"];
 const entities = ["Employee", "Client", "Project", "Site", "Assignment", "Document", "Attendance", "Payroll", "Approval", "User"];
 
-export const Route = createFileRoute("/audit-logs")({
+export const Route = createFileRoute("/_authenticated/audit-logs")({
   head: () => ({
     meta: [
       { title: "Audit Logs — BSM Workforce & Operations" },

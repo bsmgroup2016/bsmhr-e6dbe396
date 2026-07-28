@@ -67,7 +67,7 @@ const documentTypes: DocumentType[] = [
 ];
 const documentStatuses: DocumentStatus[] = ["Valid", "Expiring Soon", "Expired", "Pending"];
 
-export const Route = createFileRoute("/documents")({
+export const Route = createFileRoute("/_authenticated/documents")({
   head: () => ({
     meta: [
       { title: "Documents — BSM Workforce & Operations" },
