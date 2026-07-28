@@ -1,0 +1,58 @@
+// Self-hosted Supabase client.
+// These two values are PUBLIC browser configuration (safe to ship to the client).
+// Never place a service-role key, sb_secret key, or database password in this file.
+import { createClient } from '@supabase/supabase-js';
+import type { Database } from './types';
+
+const SELF_HOSTED_SUPABASE_URL = "https://supabase.vrlle.com";
+const SELF_HOSTED_SUPABASE_PUBLISHABLE_KEY = "PASTE_MY_SB_PUBLISHABLE_KEY_HERE";
+
+// Import the supabase client like this:
+// import { supabase } from "@/integrations/supabase/client";
+export const supabase = createClient<Database>(
+  SELF_HOSTED_SUPABASE_URL,
+  SELF_HOSTED_SUPABASE_PUBLISHABLE_KEY,
+  {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
+    },
+  },
+);
+
+/**
+ * Connection test. Logs a clear console error when the self-hosted instance
+ * is unreachable, misconfigured, or the publishable key is still a placeholder.
+ */
+export async function testSupabaseConnection(): Promise<boolean> {
+  if (SELF_HOSTED_SUPABASE_PUBLISHABLE_KEY === "PASTE_MY_SB_PUBLISHABLE_KEY_HERE") {
+    console.error(
+      `[Supabase] Publishable key placeholder not replaced in src/integrations/supabase/client.ts. ` +
+        `Paste your self-hosted anon/publishable key there.`,
+    );
+    return false;
+  }
+
+  try {
+    const { error } = await supabase.auth.getSession();
+    if (error) {
+      console.error(
+        `[Supabase] Connection to ${SELF_HOSTED_SUPABASE_URL} failed: ${error.message}`,
+      );
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error(
+      `[Supabase] Could not reach ${SELF_HOSTED_SUPABASE_URL}. ` +
+        `Check the URL, HTTPS certificate and CORS settings of your self-hosted instance.`,
+      err,
+    );
+    return false;
+  }
+}
+
+if (typeof window !== 'undefined') {
+  void testSupabaseConnection();
+}
