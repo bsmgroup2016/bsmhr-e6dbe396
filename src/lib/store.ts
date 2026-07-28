@@ -568,6 +568,56 @@ export function setCurrentBranch(branchId: string) {
   setState({ ...state, currentBranch: branchId });
 }
 
+export function getCompanies(): Company[] {
+  return getState().companies ?? defaultCompanies;
+}
+
+export function getCompany(id: string): Company | undefined {
+  return getCompanies().find((c) => c.id === id);
+}
+
+export function getCurrentCompany(): string {
+  return getState().currentCompany || "bsm";
+}
+
+export function setCurrentCompany(companyId: string) {
+  const state = getState();
+  setState({ ...state, currentCompany: companyId });
+  window.dispatchEvent(new CustomEvent("bsm:company-changed", { detail: companyId }));
+}
+
+export function addCompany(company: Omit<Company, "id" | "createdAt" | "updatedAt">): Company {
+  const state = getState();
+  const now = new Date().toISOString();
+  const newCompany: Company = { ...company, id: generateId("co"), createdAt: now, updatedAt: now };
+  setState({ ...state, companies: [...getCompanies(), newCompany] });
+  addAuditLog("CREATE", "Company", newCompany.id, `Created company ${newCompany.name}`);
+  return newCompany;
+}
+
+export function updateCompany(id: string, updates: Partial<Company>): Company | undefined {
+  const state = getState();
+  const companies = getCompanies();
+  const existing = companies.find((c) => c.id === id);
+  if (!existing) return undefined;
+  const updated: Company = { ...existing, ...updates, updatedAt: new Date().toISOString() };
+  setState({ ...state, companies: companies.map((c) => (c.id === id ? updated : c)) });
+  addAuditLog("UPDATE", "Company", id, `Updated company ${updated.name}`);
+  return updated;
+}
+
+export function deleteCompany(id: string) {
+  const state = getState();
+  const companies = getCompanies();
+  const target = companies.find((c) => c.id === id);
+  setState({
+    ...state,
+    companies: companies.filter((c) => c.id !== id),
+    currentCompany: state.currentCompany === id ? "bsm" : state.currentCompany,
+  });
+  if (target) addAuditLog("DELETE", "Company", id, `Deleted company ${target.name}`);
+}
+
 export function resetState() {
   if (typeof window === "undefined") return;
   localStorage.removeItem(STORAGE_KEY);
