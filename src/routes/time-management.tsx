@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
+import { ExportButton, ImportDialog } from "@/components/data-io";
 import { SummaryCard } from "@/components/ui/summary-card";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -51,8 +52,21 @@ import {
 } from "@/components/ui/select";
 import { getEmployees, getSites, getAttendance, addAttendance } from "@/lib/store";
 import type { Attendance, AttendanceStatus } from "@/lib/types";
+import { pick, type ImportColumn } from "@/lib/xlsx";
 
 const statuses: AttendanceStatus[] = ["Present", "Absent", "On Leave", "MC", "Half Day", "Off", "Public Holiday", "Pending"];
+
+const ATTENDANCE_IMPORT_COLUMNS: ImportColumn[] = [
+  { key: "date", label: "Date", required: true, example: "2026-07-28" },
+  { key: "employeeCode", label: "Employee Code", required: true, example: "BSM-0001" },
+  { key: "site", label: "Site", example: "Tuas Yard" },
+  { key: "status", label: "Status", required: true, example: "Present" },
+  { key: "checkIn", label: "Check In", example: "08:00" },
+  { key: "checkOut", label: "Check Out", example: "18:00" },
+  { key: "hoursWorked", label: "Normal Hours", example: "8" },
+  { key: "overtimeHours", label: "OT Hours", example: "2" },
+  { key: "notes", label: "Notes", example: "" },
+];
 
 export const Route = createFileRoute("/time-management")({
   head: () => ({
