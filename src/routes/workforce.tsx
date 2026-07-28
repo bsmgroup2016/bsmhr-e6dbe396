@@ -94,6 +94,50 @@ function expiryBadge(passExpiry: string) {
   return <StatusBadge variant="success" label={`${days}d left`} dot />;
 }
 
+const EMPLOYEE_IMPORT_COLUMNS: ImportColumn[] = [
+  { key: "name", label: "Name", required: true, example: "Rahman Md" },
+  { key: "fin", label: "FIN", required: true, example: "G1234567X" },
+  { key: "nationality", label: "Nationality", required: true, example: "Bangladesh" },
+  { key: "passType", label: "Pass Type", required: true, example: "Work Permit" },
+  { key: "passExpiry", label: "Pass Expiry", example: "2027-05-31" },
+  { key: "trade", label: "Trade", example: "Welder" },
+  { key: "status", label: "Status", example: "Active" },
+  { key: "basicSalary", label: "Basic Salary", example: "1400" },
+  { key: "joinedOn", label: "Joined On", example: "2025-01-15" },
+  { key: "site", label: "Site", example: "Tuas Yard" },
+  { key: "phone", label: "Phone", example: "+65 8123 4567" },
+  { key: "levyRate", label: "Levy Rate", example: "300" },
+  { key: "dormitory", label: "Dormitory", example: "Kranji Dorm B" },
+];
+
+function toEmployeeRow(employee: Employee) {
+  return {
+    "Employee Code": employee.employeeCode,
+    Name: employee.name,
+    FIN: employee.fin,
+    Nationality: employee.nationality,
+    "Pass Type": employee.passType,
+    "Pass Expiry": employee.passExpiry,
+    "Days To Expiry": daysUntil(employee.passExpiry) ?? "",
+    Trade: employee.trade,
+    Site: employee.site ?? "",
+    Status: employee.status,
+    "Basic Salary": employee.basicSalary,
+    "Levy Rate": employee.levyRate ?? 0,
+    "Joined On": employee.joinedOn,
+    Phone: employee.phone ?? "",
+    Email: employee.email ?? "",
+    Dormitory: employee.dormitory ?? "",
+  };
+}
+
+function normalizeDate(value: string) {
+  if (!value) return "";
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return value;
+  return parsed.toISOString().slice(0, 10);
+}
+
 export default function WorkforcePage() {
   const [employees, setEmployees] = useState<Employee[]>(getEmployees());
   const [search, setSearch] = useState("");
