@@ -210,3 +210,19 @@ export interface AppBranch {
   location: string;
   status: "Active" | "Inactive";
 }
+
+export interface Company {
+  id: string;
+  code: string;
+  name: string;
+  legalName: string;
+  uen: string;
+  industry: string;
+  address: string;
+  phone: string;
+  email: string;
+  status: "Active" | "Inactive";
+  accent: "primary" | "success" | "warning" | "info" | "destructive";
+  createdAt: string;
+  updatedAt: string;
+}
