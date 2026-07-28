@@ -11,6 +11,7 @@ import {
 import { Link } from "@tanstack/react-router";
 
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
@@ -47,6 +48,8 @@ export function AppHeader() {
   const [companies] = useState(() => getCompanies());
   const [companyId, setCompanyId] = useState(() => getCurrentCompany());
   const activeCompany = companies.find((c) => c.id === companyId) ?? companies[0];
+  const { user, signOut } = useAuth();
+  const initials = user?.email?.slice(0, 2).toUpperCase() ?? "BS";
 
   return (
     <header className="sticky top-0 z-30 flex h-14 flex-col border-b bg-gradient-surface backdrop-blur supports-[backdrop-filter]:bg-card/80">
@@ -147,9 +150,9 @@ export function AppHeader() {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="sm" className="gap-2 pl-1">
                 <div className="h-7 w-7 rounded-full bg-gradient-primary flex items-center justify-center text-xs font-semibold text-primary-foreground shadow-elegant">
-                  AD
+                  {initials}
                 </div>
-                <span className="hidden text-xs font-medium sm:inline">Admin</span>
+                <span className="hidden text-xs font-medium sm:inline">{user?.email ?? "Admin"}</span>
                 <ChevronDown className="hidden h-3.5 w-3.5 sm:inline" />
               </Button>
             </DropdownMenuTrigger>
@@ -159,7 +162,9 @@ export function AppHeader() {
               <DropdownMenuItem>Profile</DropdownMenuItem>
               <DropdownMenuItem>Preferences</DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-destructive">Sign out</DropdownMenuItem>
+              <DropdownMenuItem className="text-destructive" onClick={() => signOut()}>
+                Sign out
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -167,3 +172,4 @@ export function AppHeader() {
     </header>
   );
 }
+
