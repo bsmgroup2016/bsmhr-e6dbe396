@@ -124,6 +124,32 @@
   --chart-5: oklch(0.55 0.12 25);
 }
 
+:root {
+  /* Gradient + glow system */
+  --primary-glow: oklch(0.62 0.16 240);
+  --accent-teal: oklch(0.68 0.13 195);
+
+  --gradient-primary: linear-gradient(135deg, oklch(0.45 0.12 255), oklch(0.62 0.16 235));
+  --gradient-hero: linear-gradient(120deg, oklch(0.28 0.08 265) 0%, oklch(0.4 0.13 250) 45%, oklch(0.58 0.13 205) 100%);
+  --gradient-sidebar: linear-gradient(180deg, oklch(0.2 0.05 265) 0%, oklch(0.24 0.05 250) 60%, oklch(0.22 0.06 230) 100%);
+  --gradient-success: linear-gradient(135deg, oklch(0.6 0.14 160), oklch(0.72 0.13 145));
+  --gradient-warning: linear-gradient(135deg, oklch(0.72 0.14 70), oklch(0.82 0.13 90));
+  --gradient-info: linear-gradient(135deg, oklch(0.58 0.13 235), oklch(0.72 0.12 200));
+  --gradient-destructive: linear-gradient(135deg, oklch(0.55 0.2 25), oklch(0.68 0.17 40));
+  --gradient-surface: linear-gradient(160deg, oklch(1 0 0) 0%, oklch(0.975 0.012 250) 100%);
+
+  --shadow-elegant: 0 12px 32px -14px color-mix(in oklab, var(--primary) 42%, transparent);
+  --shadow-glow: 0 0 0 1px color-mix(in oklab, var(--primary) 12%, transparent),
+    0 18px 40px -20px color-mix(in oklab, var(--primary-glow) 55%, transparent);
+}
+
+.dark {
+  --primary-glow: oklch(0.68 0.15 235);
+  --gradient-surface: linear-gradient(160deg, oklch(0.21 0.04 258) 0%, oklch(0.18 0.04 245) 100%);
+  --gradient-hero: linear-gradient(120deg, oklch(0.2 0.06 265) 0%, oklch(0.28 0.09 250) 50%, oklch(0.36 0.1 205) 100%);
+  --gradient-sidebar: linear-gradient(180deg, oklch(0.13 0.04 265) 0%, oklch(0.15 0.04 245) 100%);
+}
+
 .dark {
   --background: oklch(0.15 0.03 255);
   --foreground: oklch(0.95 0.01 255);
@@ -187,6 +213,49 @@
 
 @utility scrollbar-thin {
   scrollbar-width: thin;
+}
+
+@utility bg-gradient-primary {
+  background-image: var(--gradient-primary);
+}
+
+@utility bg-gradient-hero {
+  background-image: var(--gradient-hero);
+}
+
+@utility bg-gradient-success {
+  background-image: var(--gradient-success);
+}
+
+@utility bg-gradient-warning {
+  background-image: var(--gradient-warning);
+}
+
+@utility bg-gradient-info {
+  background-image: var(--gradient-info);
+}
+
+@utility bg-gradient-destructive {
+  background-image: var(--gradient-destructive);
+}
+
+@utility bg-gradient-surface {
+  background-image: var(--gradient-surface);
+}
+
+@utility shadow-elegant {
+  box-shadow: var(--shadow-elegant);
+}
+
+@utility shadow-glow {
+  box-shadow: var(--shadow-glow);
+}
+
+@utility text-gradient-primary {
+  background-image: var(--gradient-primary);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
 }
 
 @utility animate-in {
