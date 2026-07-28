@@ -5,7 +5,7 @@ import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
 const SELF_HOSTED_SUPABASE_URL = "https://supabase.vrlle.com";
-const SELF_HOSTED_SUPABASE_PUBLISHABLE_KEY = "PASTE_MY_SB_PUBLISHABLE_KEY_HERE";
+const SELF_HOSTED_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_kmhmoUOhtSV7Cn-umQ3-4p_c6wURNhE";
 
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
@@ -26,13 +26,7 @@ export const supabase = createClient<Database>(
  * is unreachable, misconfigured, or the publishable key is still a placeholder.
  */
 export async function testSupabaseConnection(): Promise<boolean> {
-  if (SELF_HOSTED_SUPABASE_PUBLISHABLE_KEY === "PASTE_MY_SB_PUBLISHABLE_KEY_HERE") {
-    console.error(
-      `[Supabase] Publishable key placeholder not replaced in src/integrations/supabase/client.ts. ` +
-        `Paste your self-hosted anon/publishable key there.`,
-    );
-    return false;
-  }
+  // Key is configured; proceed to verify the live connection.
 
   try {
     const { error } = await supabase.auth.getSession();
