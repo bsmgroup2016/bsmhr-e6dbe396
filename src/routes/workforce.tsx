@@ -546,7 +546,7 @@ function EmployeeDetail({ employee, onEdit }: { employee: Employee; onEdit: () =
     <div className="mt-6 space-y-5">
       <div className="flex items-start gap-4">
         <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xl font-semibold text-primary">
-          {employee.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()}
+          {employee.name.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase()}
         </div>
         <div className="min-w-0">
           <h3 className="text-lg font-semibold text-foreground">{employee.name}</h3>
