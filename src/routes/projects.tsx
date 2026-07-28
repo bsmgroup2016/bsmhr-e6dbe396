@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
+import { ExportButton } from "@/components/data-io";
 import { SummaryCard } from "@/components/ui/summary-card";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -189,6 +190,23 @@ export default function ProjectsPage() {
               <ProjectForm clients={clients} onSubmit={handleCreateProject} />
             </DialogContent>
           </Dialog>
+          <div className="mt-2 flex flex-wrap gap-2 sm:mt-0">
+            <ExportButton
+              rows={filtered.map((p) => ({
+                Code: p.code,
+                Project: p.name,
+                Client: clients.find((c) => c.id === p.clientId)?.name ?? "",
+                Location: p.location,
+                Status: p.status,
+                "Start Date": p.startDate ?? "",
+                "End Date": p.endDate ?? "",
+                "Required Workers": p.requiredWorkers,
+                "Project Manager": p.projectManager ?? "",
+              }))}
+              baseName="projects"
+              sheetName="Projects"
+            />
+          </div>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
