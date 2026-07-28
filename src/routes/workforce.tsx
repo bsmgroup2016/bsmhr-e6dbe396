@@ -133,7 +133,7 @@ export default function WorkforcePage() {
   }).length;
 
   function refresh() {
-    setEmployees(initialEmployees);
+    setEmployees(getEmployees());
   }
 
   function handleCreate(formData: FormData) {
