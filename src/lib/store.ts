@@ -11,6 +11,7 @@ import type {
   AuditLog,
   User,
   AppBranch,
+  Company,
 } from "@/lib/types";
 
 const STORAGE_KEY = "bsm-app-state-v1";
@@ -29,8 +30,58 @@ export interface AppState {
   users: User[];
   branches: AppBranch[];
   currentBranch: string;
+  companies: Company[];
+  currentCompany: string;
   currentUser: User | null;
 }
+
+const defaultCompanies: Company[] = [
+  {
+    id: "bsm",
+    code: "BSM",
+    name: "BSM Engineering",
+    legalName: "BSM Engineering Pte Ltd",
+    uen: "201812345K",
+    industry: "Marine & Engineering",
+    address: "12 Tuas Ave 8, Singapore 639234",
+    phone: "+65 6123 4567",
+    email: "info@bsm.com.sg",
+    status: "Active",
+    accent: "primary",
+    createdAt: "2018-01-01",
+    updatedAt: "2018-01-01",
+  },
+  {
+    id: "vrl",
+    code: "VRL",
+    name: "VRL Manpower",
+    legalName: "VRL Manpower Services Pte Ltd",
+    uen: "202054321H",
+    industry: "Manpower Supply",
+    address: "88 Jurong East St 21, Singapore 609607",
+    phone: "+65 6234 5678",
+    email: "info@vrl.com.sg",
+    status: "Active",
+    accent: "info",
+    createdAt: "2020-03-01",
+    updatedAt: "2020-03-01",
+  },
+  {
+    id: "pluto",
+    code: "PLT",
+    name: "Pluto Construction",
+    legalName: "Pluto Construction Pte Ltd",
+    uen: "202198765M",
+    industry: "Construction",
+    address: "5 Changi Business Park, Singapore 486040",
+    phone: "+65 6345 6789",
+    email: "info@pluto.com.sg",
+    status: "Active",
+    accent: "success",
+    createdAt: "2021-06-01",
+    updatedAt: "2021-06-01",
+  },
+];
 
 const defaultBranches: AppBranch[] = [
   { id: "hq", name: "Headquarters", location: "Singapore", status: "Active" },
@@ -46,18 +97,18 @@ const defaultUsers: User[] = [
 ];
 
 const defaultEmployees: Employee[] = [
-  { id: "e1", employeeCode: "BSM-0001", name: "Mohammed Rahman", nationality: "Bangladesh", fin: "G1234567X", passType: "Work Permit", passExpiry: "2026-09-14", trade: "Welder", site: "Tuas Mega Port", status: "Deployed", basicSalary: 1450, joinedOn: "2023-03-11", phone: "+65 8123 4567", branch: "west", levyRate: 450, createdAt: "2023-03-11", updatedAt: "2023-03-11" },
-  { id: "e2", employeeCode: "BSM-0002", name: "Arun Kumar", nationality: "India", fin: "G7654321Y", passType: "S Pass", passExpiry: "2027-02-28", trade: "Site Supervisor", site: "Jurong Island Ph.2", status: "Deployed", basicSalary: 3200, joinedOn: "2022-07-01", phone: "+65 8234 5678", branch: "west", levyRate: 0, createdAt: "2022-07-01", updatedAt: "2022-07-01" },
-  { id: "e3", employeeCode: "BSM-0003", name: "Zaw Min Htet", nationality: "Myanmar", fin: "G2233445Z", passType: "Work Permit", passExpiry: "2026-08-05", trade: "Pipe Fitter", site: "Tuas Mega Port", status: "Active", basicSalary: 1380, joinedOn: "2024-01-22", phone: "+65 8345 6789", branch: "west", levyRate: 450, createdAt: "2024-01-22", updatedAt: "2024-01-22" },
-  { id: "e4", employeeCode: "BSM-0004", name: "Lim Wei Sheng", nationality: "Singapore", fin: "S8812345A", passType: "Singaporean/PR", passExpiry: "-", trade: "Project Engineer", site: "Changi T5 Works", status: "Active", basicSalary: 5200, joinedOn: "2021-05-17", phone: "+65 8456 7890", branch: "east", levyRate: 0, createdAt: "2021-05-17", updatedAt: "2021-05-17" },
-  { id: "e5", employeeCode: "BSM-0005", name: "Suresh Nair", nationality: "India", fin: "G3344556B", passType: "Work Permit", passExpiry: "2026-08-19", trade: "Scaffolder", site: null, status: "On Leave", basicSalary: 1300, joinedOn: "2023-11-02", phone: "+65 8567 8901", branch: "west", levyRate: 450, createdAt: "2023-11-02", updatedAt: "2023-11-02" },
-  { id: "e6", employeeCode: "BSM-0006", name: "Chen Guo Qiang", nationality: "China", fin: "G4455667C", passType: "Work Permit", passExpiry: "2027-05-30", trade: "Rigger", site: "Jurong Island Ph.2", status: "Deployed", basicSalary: 1500, joinedOn: "2022-09-14", phone: "+65 8678 9012", branch: "west", levyRate: 450, createdAt: "2022-09-14", updatedAt: "2022-09-14" },
-  { id: "e7", employeeCode: "BSM-0007", name: "Abdul Karim", nationality: "Bangladesh", fin: "G5566778D", passType: "Work Permit", passExpiry: "2026-12-01", trade: "General Worker", site: null, status: "Active", basicSalary: 1150, joinedOn: "2025-02-03", phone: "+65 8789 0123", branch: "east", levyRate: 450, createdAt: "2025-02-03", updatedAt: "2025-02-03" },
-  { id: "e8", employeeCode: "BSM-0008", name: "Rajesh Pillai", nationality: "India", fin: "G6677889E", passType: "Employment Pass", passExpiry: "2028-01-15", trade: "QA/QC Manager", site: "Changi T5 Works", status: "Deployed", basicSalary: 6800, joinedOn: "2020-10-09", phone: "+65 8890 1234", branch: "east", levyRate: 0, createdAt: "2020-10-09", updatedAt: "2020-10-09" },
-  { id: "e9", employeeCode: "BSM-0009", name: "Htun Naing", nationality: "Myanmar", fin: "G7788990F", passType: "Work Permit", passExpiry: "2026-07-31", trade: "Welder", site: "Tuas Mega Port", status: "Deployed", basicSalary: 1420, joinedOn: "2024-06-18", phone: "+65 8901 2345", branch: "west", levyRate: 450, createdAt: "2024-06-18", updatedAt: "2024-06-18" },
-  { id: "e10", employeeCode: "BSM-0010", name: "Tan Boon Hock", nationality: "Singapore", fin: "S7723456B", passType: "Singaporean/PR", passExpiry: "-", trade: "Safety Officer", site: "Jurong Island Ph.2", status: "Active", basicSalary: 4400, joinedOn: "2019-04-25", phone: "+65 9012 3456", branch: "west", levyRate: 0, createdAt: "2019-04-25", updatedAt: "2019-04-25" },
-  { id: "e11", employeeCode: "BSM-0011", name: "Mizanur Islam", nationality: "Bangladesh", fin: "G8899001G", passType: "Work Permit", passExpiry: "2027-03-22", trade: "Painter", site: null, status: "Inactive", basicSalary: 1200, joinedOn: "2023-08-30", phone: "+65 9123 4567", branch: "east", levyRate: 450, createdAt: "2023-08-30", updatedAt: "2023-08-30" },
-  { id: "e12", employeeCode: "BSM-0012", name: "Vignesh Raja", nationality: "India", fin: "G9900112H", passType: "S Pass", passExpiry: "2026-10-11", trade: "Foreman", site: "Changi T5 Works", status: "Deployed", basicSalary: 3050, joinedOn: "2022-02-12", phone: "+65 9234 5678", branch: "east", levyRate: 0, createdAt: "2022-02-12", updatedAt: "2022-02-12" },
+  { id: "e1", employeeCode: "BSM-0001", name: "Mohammed Rahman", nationality: "Bangladesh", fin: "G1234567X", passType: "Work Permit", passExpiry: "2026-09-14", trade: "Welder", site: "Tuas Mega Port", status: "Deployed", basicSalary: 1450, joinedOn: "2023-03-11", phone: "+65 8123 4567", branch: "west", companyId: "bsm", levyRate: 450, createdAt: "2023-03-11", updatedAt: "2023-03-11" },
+  { id: "e2", employeeCode: "BSM-0002", name: "Arun Kumar", nationality: "India", fin: "G7654321Y", passType: "S Pass", passExpiry: "2027-02-28", trade: "Site Supervisor", site: "Jurong Island Ph.2", status: "Deployed", basicSalary: 3200, joinedOn: "2022-07-01", phone: "+65 8234 5678", branch: "west", companyId: "vrl", levyRate: 0, createdAt: "2022-07-01", updatedAt: "2022-07-01" },
+  { id: "e3", employeeCode: "BSM-0003", name: "Zaw Min Htet", nationality: "Myanmar", fin: "G2233445Z", passType: "Work Permit", passExpiry: "2026-08-05", trade: "Pipe Fitter", site: "Tuas Mega Port", status: "Active", basicSalary: 1380, joinedOn: "2024-01-22", phone: "+65 8345 6789", branch: "west", companyId: "pluto", levyRate: 450, createdAt: "2024-01-22", updatedAt: "2024-01-22" },
+  { id: "e4", employeeCode: "BSM-0004", name: "Lim Wei Sheng", nationality: "Singapore", fin: "S8812345A", passType: "Singaporean/PR", passExpiry: "-", trade: "Project Engineer", site: "Changi T5 Works", status: "Active", basicSalary: 5200, joinedOn: "2021-05-17", phone: "+65 8456 7890", branch: "east", companyId: "bsm", levyRate: 0, createdAt: "2021-05-17", updatedAt: "2021-05-17" },
+  { id: "e5", employeeCode: "BSM-0005", name: "Suresh Nair", nationality: "India", fin: "G3344556B", passType: "Work Permit", passExpiry: "2026-08-19", trade: "Scaffolder", site: null, status: "On Leave", basicSalary: 1300, joinedOn: "2023-11-02", phone: "+65 8567 8901", branch: "west", companyId: "vrl", levyRate: 450, createdAt: "2023-11-02", updatedAt: "2023-11-02" },
+  { id: "e6", employeeCode: "BSM-0006", name: "Chen Guo Qiang", nationality: "China", fin: "G4455667C", passType: "Work Permit", passExpiry: "2027-05-30", trade: "Rigger", site: "Jurong Island Ph.2", status: "Deployed", basicSalary: 1500, joinedOn: "2022-09-14", phone: "+65 8678 9012", branch: "west", companyId: "pluto", levyRate: 450, createdAt: "2022-09-14", updatedAt: "2022-09-14" },
+  { id: "e7", employeeCode: "BSM-0007", name: "Abdul Karim", nationality: "Bangladesh", fin: "G5566778D", passType: "Work Permit", passExpiry: "2026-12-01", trade: "General Worker", site: null, status: "Active", basicSalary: 1150, joinedOn: "2025-02-03", phone: "+65 8789 0123", branch: "east", companyId: "bsm", levyRate: 450, createdAt: "2025-02-03", updatedAt: "2025-02-03" },
+  { id: "e8", employeeCode: "BSM-0008", name: "Rajesh Pillai", nationality: "India", fin: "G6677889E", passType: "Employment Pass", passExpiry: "2028-01-15", trade: "QA/QC Manager", site: "Changi T5 Works", status: "Deployed", basicSalary: 6800, joinedOn: "2020-10-09", phone: "+65 8890 1234", branch: "east", companyId: "vrl", levyRate: 0, createdAt: "2020-10-09", updatedAt: "2020-10-09" },
+  { id: "e9", employeeCode: "BSM-0009", name: "Htun Naing", nationality: "Myanmar", fin: "G7788990F", passType: "Work Permit", passExpiry: "2026-07-31", trade: "Welder", site: "Tuas Mega Port", status: "Deployed", basicSalary: 1420, joinedOn: "2024-06-18", phone: "+65 8901 2345", branch: "west", companyId: "pluto", levyRate: 450, createdAt: "2024-06-18", updatedAt: "2024-06-18" },
+  { id: "e10", employeeCode: "BSM-0010", name: "Tan Boon Hock", nationality: "Singapore", fin: "S7723456B", passType: "Singaporean/PR", passExpiry: "-", trade: "Safety Officer", site: "Jurong Island Ph.2", status: "Active", basicSalary: 4400, joinedOn: "2019-04-25", phone: "+65 9012 3456", branch: "west", companyId: "bsm", levyRate: 0, createdAt: "2019-04-25", updatedAt: "2019-04-25" },
+  { id: "e11", employeeCode: "BSM-0011", name: "Mizanur Islam", nationality: "Bangladesh", fin: "G8899001G", passType: "Work Permit", passExpiry: "2027-03-22", trade: "Painter", site: null, status: "Inactive", basicSalary: 1200, joinedOn: "2023-08-30", phone: "+65 9123 4567", branch: "east", companyId: "vrl", levyRate: 450, createdAt: "2023-08-30", updatedAt: "2023-08-30" },
+  { id: "e12", employeeCode: "BSM-0012", name: "Vignesh Raja", nationality: "India", fin: "G9900112H", passType: "S Pass", passExpiry: "2026-10-11", trade: "Foreman", site: "Changi T5 Works", status: "Deployed", basicSalary: 3050, joinedOn: "2022-02-12", phone: "+65 9234 5678", branch: "east", companyId: "pluto", levyRate: 0, createdAt: "2022-02-12", updatedAt: "2022-02-12" },
 ];
 
 const defaultClients: Client[] = [
@@ -131,6 +182,8 @@ const initialState: AppState = {
   users: defaultUsers,
   branches: defaultBranches,
   currentBranch: "hq",
+  companies: defaultCompanies,
+  currentCompany: "bsm",
   currentUser: defaultUsers[0],
 };
 
@@ -513,6 +566,56 @@ export function getCurrentBranch(): string {
 export function setCurrentBranch(branchId: string) {
   const state = getState();
   setState({ ...state, currentBranch: branchId });
+}
+
+export function getCompanies(): Company[] {
+  return getState().companies ?? defaultCompanies;
+}
+
+export function getCompany(id: string): Company | undefined {
+  return getCompanies().find((c) => c.id === id);
+}
+
+export function getCurrentCompany(): string {
+  return getState().currentCompany || "bsm";
+}
+
+export function setCurrentCompany(companyId: string) {
+  const state = getState();
+  setState({ ...state, currentCompany: companyId });
+  window.dispatchEvent(new CustomEvent("bsm:company-changed", { detail: companyId }));
+}
+
+export function addCompany(company: Omit<Company, "id" | "createdAt" | "updatedAt">): Company {
+  const state = getState();
+  const now = new Date().toISOString();
+  const newCompany: Company = { ...company, id: generateId("co"), createdAt: now, updatedAt: now };
+  setState({ ...state, companies: [...getCompanies(), newCompany] });
+  addAuditLog("CREATE", "Company", newCompany.id, `Created company ${newCompany.name}`);
+  return newCompany;
+}
+
+export function updateCompany(id: string, updates: Partial<Company>): Company | undefined {
+  const state = getState();
+  const companies = getCompanies();
+  const existing = companies.find((c) => c.id === id);
+  if (!existing) return undefined;
+  const updated: Company = { ...existing, ...updates, updatedAt: new Date().toISOString() };
+  setState({ ...state, companies: companies.map((c) => (c.id === id ? updated : c)) });
+  addAuditLog("UPDATE", "Company", id, `Updated company ${updated.name}`);
+  return updated;
+}
+
+export function deleteCompany(id: string) {
+  const state = getState();
+  const companies = getCompanies();
+  const target = companies.find((c) => c.id === id);
+  setState({
+    ...state,
+    companies: companies.filter((c) => c.id !== id),
+    currentCompany: state.currentCompany === id ? "bsm" : state.currentCompany,
+  });
+  if (target) addAuditLog("DELETE", "Company", id, `Deleted company ${target.name}`);
 }
 
 export function resetState() {

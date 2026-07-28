@@ -18,6 +18,7 @@ import { Route as ProjectsRouteImport } from './routes/projects'
 import { Route as PayrollRouteImport } from './routes/payroll'
 import { Route as OperationsRouteImport } from './routes/operations'
 import { Route as DocumentsRouteImport } from './routes/documents'
+import { Route as CompaniesRouteImport } from './routes/companies'
 import { Route as ClientsRouteImport } from './routes/clients'
 import { Route as AuditLogsRouteImport } from './routes/audit-logs'
 import { Route as ApprovalsRouteImport } from './routes/approvals'
@@ -68,6 +69,11 @@ const DocumentsRoute = DocumentsRouteImport.update({
   path: '/documents',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CompaniesRoute = CompaniesRouteImport.update({
+  id: '/companies',
+  path: '/companies',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ClientsRoute = ClientsRouteImport.update({
   id: '/clients',
   path: '/clients',
@@ -94,6 +100,7 @@ export interface FileRoutesByFullPath {
   '/approvals': typeof ApprovalsRoute
   '/audit-logs': typeof AuditLogsRoute
   '/clients': typeof ClientsRoute
+  '/companies': typeof CompaniesRoute
   '/documents': typeof DocumentsRoute
   '/operations': typeof OperationsRoute
   '/payroll': typeof PayrollRoute
@@ -109,6 +116,7 @@ export interface FileRoutesByTo {
   '/approvals': typeof ApprovalsRoute
   '/audit-logs': typeof AuditLogsRoute
   '/clients': typeof ClientsRoute
+  '/companies': typeof CompaniesRoute
   '/documents': typeof DocumentsRoute
   '/operations': typeof OperationsRoute
   '/payroll': typeof PayrollRoute
@@ -125,6 +133,7 @@ export interface FileRoutesById {
   '/approvals': typeof ApprovalsRoute
   '/audit-logs': typeof AuditLogsRoute
   '/clients': typeof ClientsRoute
+  '/companies': typeof CompaniesRoute
   '/documents': typeof DocumentsRoute
   '/operations': typeof OperationsRoute
   '/payroll': typeof PayrollRoute
@@ -142,6 +151,7 @@ export interface FileRouteTypes {
     | '/approvals'
     | '/audit-logs'
     | '/clients'
+    | '/companies'
     | '/documents'
     | '/operations'
     | '/payroll'
@@ -157,6 +167,7 @@ export interface FileRouteTypes {
     | '/approvals'
     | '/audit-logs'
     | '/clients'
+    | '/companies'
     | '/documents'
     | '/operations'
     | '/payroll'
@@ -172,6 +183,7 @@ export interface FileRouteTypes {
     | '/approvals'
     | '/audit-logs'
     | '/clients'
+    | '/companies'
     | '/documents'
     | '/operations'
     | '/payroll'
@@ -188,6 +200,7 @@ export interface RootRouteChildren {
   ApprovalsRoute: typeof ApprovalsRoute
   AuditLogsRoute: typeof AuditLogsRoute
   ClientsRoute: typeof ClientsRoute
+  CompaniesRoute: typeof CompaniesRoute
   DocumentsRoute: typeof DocumentsRoute
   OperationsRoute: typeof OperationsRoute
   PayrollRoute: typeof PayrollRoute
@@ -264,6 +277,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DocumentsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/companies': {
+      id: '/companies'
+      path: '/companies'
+      fullPath: '/companies'
+      preLoaderRoute: typeof CompaniesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/clients': {
       id: '/clients'
       path: '/clients'
@@ -300,6 +320,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApprovalsRoute: ApprovalsRoute,
   AuditLogsRoute: AuditLogsRoute,
   ClientsRoute: ClientsRoute,
+  CompaniesRoute: CompaniesRoute,
   DocumentsRoute: DocumentsRoute,
   OperationsRoute: OperationsRoute,
   PayrollRoute: PayrollRoute,

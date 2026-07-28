@@ -1,5 +1,8 @@
+import { useState } from "react";
 import {
   Bell,
+  Building2,
+  Check,
   ChevronDown,
   Plus,
   Search,
@@ -21,6 +24,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
 import { AppBreadcrumbs } from "@/components/nav/breadcrumbs";
+import { getCompanies, getCurrentCompany, setCurrentCompany } from "@/lib/store";
 
 const quickCreateItems = [
   { label: "Employee", href: "#" },
@@ -40,6 +44,9 @@ const branches = [
 export function AppHeader() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
+  const [companies] = useState(() => getCompanies());
+  const [companyId, setCompanyId] = useState(() => getCurrentCompany());
+  const activeCompany = companies.find((c) => c.id === companyId) ?? companies[0];
 
   return (
     <header className="sticky top-0 z-30 flex h-14 flex-col border-b bg-gradient-surface backdrop-blur supports-[backdrop-filter]:bg-card/80">
@@ -66,6 +73,37 @@ export function AppHeader() {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="hidden gap-1 sm:flex">
+                <Building2 className="h-3.5 w-3.5" />
+                <span className="text-xs font-medium">{activeCompany?.name ?? "Company"}</span>
+                <ChevronDown className="h-3.5 w-3.5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Switch company</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {companies.map((company) => (
+                <DropdownMenuItem
+                  key={company.id}
+                  onSelect={() => {
+                    setCurrentCompany(company.id);
+                    setCompanyId(company.id);
+                  }}
+                  className="gap-2"
+                >
+                  <span className="flex-1">{company.name}</span>
+                  {company.id === companyId && <Check className="h-3.5 w-3.5 text-primary" />}
+                </DropdownMenuItem>
+              ))}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link to="/companies">Manage companies</Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="hidden gap-1 lg:flex">
                 <span className="text-xs">Headquarters</span>
                 <ChevronDown className="h-3.5 w-3.5" />
               </Button>
