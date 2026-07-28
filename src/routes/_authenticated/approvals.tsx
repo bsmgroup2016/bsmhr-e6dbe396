@@ -85,8 +85,8 @@ export default function ApprovalsPage() {
     if (!selected) return;
     updateApproval(selected.id, {
       status,
-      approverId: currentUser.id,
-      approverName: currentUser.name,
+      approverId: currentUser?.id,
+      approverName: currentUser?.name,
       approverNotes: notes,
       decidedAt: new Date().toISOString(),
     });
