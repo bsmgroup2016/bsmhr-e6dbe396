@@ -11,6 +11,7 @@ import type {
   AuditLog,
   User,
   AppBranch,
+  Company,
 } from "@/lib/types";
 
 const STORAGE_KEY = "bsm-app-state-v1";
@@ -29,8 +30,58 @@ export interface AppState {
   users: User[];
   branches: AppBranch[];
   currentBranch: string;
+  companies: Company[];
+  currentCompany: string;
   currentUser: User | null;
 }
+
+const defaultCompanies: Company[] = [
+  {
+    id: "bsm",
+    code: "BSM",
+    name: "BSM Engineering",
+    legalName: "BSM Engineering Pte Ltd",
+    uen: "201812345K",
+    industry: "Marine & Engineering",
+    address: "12 Tuas Ave 8, Singapore 639234",
+    phone: "+65 6123 4567",
+    email: "info@bsm.com.sg",
+    status: "Active",
+    accent: "primary",
+    createdAt: "2018-01-01",
+    updatedAt: "2018-01-01",
+  },
+  {
+    id: "vrl",
+    code: "VRL",
+    name: "VRL Manpower",
+    legalName: "VRL Manpower Services Pte Ltd",
+    uen: "202054321H",
+    industry: "Manpower Supply",
+    address: "88 Jurong East St 21, Singapore 609607",
+    phone: "+65 6234 5678",
+    email: "info@vrl.com.sg",
+    status: "Active",
+    accent: "info",
+    createdAt: "2020-03-01",
+    updatedAt: "2020-03-01",
+  },
+  {
+    id: "pluto",
+    code: "PLT",
+    name: "Pluto Construction",
+    legalName: "Pluto Construction Pte Ltd",
+    uen: "202198765M",
+    industry: "Construction",
+    address: "5 Changi Business Park, Singapore 486040",
+    phone: "+65 6345 6789",
+    email: "info@pluto.com.sg",
+    status: "Active",
+    accent: "success",
+    createdAt: "2021-06-01",
+    updatedAt: "2021-06-01",
+  },
+];
 
 const defaultBranches: AppBranch[] = [
   { id: "hq", name: "Headquarters", location: "Singapore", status: "Active" },
