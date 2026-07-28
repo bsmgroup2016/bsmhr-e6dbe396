@@ -104,14 +104,14 @@ function CompaniesPage() {
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <SummaryCard title="Total companies" value={String(companies.length)} icon={Building2} variant="primary" />
+          <SummaryCard title="Total companies" value={String(companies.length)} icon={<Building2 className="h-5 w-5" />} variant="primary" />
           <SummaryCard
             title="Active entities"
             value={String(companies.filter((c) => c.status === "Active").length)}
-            icon={CheckCircle2}
+            icon={<CheckCircle2 className="h-5 w-5" />}
             variant="success"
           />
-          <SummaryCard title="Total workforce" value={String(employees.length)} icon={Users} variant="info" />
+          <SummaryCard title="Total workforce" value={String(employees.length)} icon={<Users className="h-5 w-5" />} variant="info" />
         </div>
 
         <div className="grid gap-4 lg:grid-cols-3">
@@ -135,7 +135,7 @@ function CompaniesPage() {
                     <p className="truncate text-xs text-muted-foreground">{c.legalName}</p>
                   </div>
                 </div>
-                <StatusBadge variant={c.status === "Active" ? "success" : "warning"}>{c.status}</StatusBadge>
+                <StatusBadge variant={c.status === "Active" ? "success" : "warning"} label={c.status} />
               </div>
 
               <dl className="mt-4 space-y-1.5 text-xs text-muted-foreground">
@@ -299,13 +299,4 @@ function CompanyFields({ company }: { company?: Company }) {
       </div>
     </div>
   );
-}
-import { createFileRoute } from '@tanstack/react-router'
-
-export const Route = createFileRoute('/companies')({
-  component: RouteComponent,
-})
-
-function RouteComponent() {
-  return <div>Hello "/companies"!</div>
 }
