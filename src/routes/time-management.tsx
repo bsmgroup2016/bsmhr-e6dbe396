@@ -89,6 +89,66 @@ export default function TimeManagementPage() {
     setAttendance(getAttendance());
   }
 
+  function attendanceRow(record: (typeof attendance)[number]) {
+    const emp = employees.find((e) => e.id === record.employeeId);
+    const site = sites.find((s) => s.id === record.siteId);
+    return {
+      Date: record.date,
+      "Employee Code": emp?.employeeCode ?? "",
+      Name: emp?.name ?? "",
+      FIN: emp?.fin ?? "",
+      Site: site?.name ?? "",
+      Status: record.status,
+      "Check In": record.checkIn ?? "",
+      "Check Out": record.checkOut ?? "",
+      "Normal Hours": record.hoursWorked,
+      "OT Hours": record.overtimeHours,
+      "Total Hours": record.hoursWorked + record.overtimeHours,
+      Notes: record.notes ?? "",
+    };
+  }
+
+  function handleImport(rows: Record<string, string>[]) {
+    const errors: string[] = [];
+    let imported = 0;
+
+    rows.forEach((row, index) => {
+      const get = (key: string) =>
+        pick(row, ATTENDANCE_IMPORT_COLUMNS.find((c) => c.key === key)!);
+      const code = get("employeeCode").toUpperCase();
+      const emp = employees.find(
+        (e) => e.employeeCode.toUpperCase() === code || e.fin.toUpperCase() === code,
+      );
+      if (!emp) {
+        errors.push(`Row ${index + 2}: employee "${code}" not found`);
+        return;
+      }
+      const rawDate = get("date");
+      const parsedDate = new Date(rawDate);
+      const day = Number.isNaN(parsedDate.getTime()) ? rawDate : parsedDate.toISOString().slice(0, 10);
+      const siteName = get("site").toLowerCase();
+      const site = sites.find((s) => s.name.toLowerCase() === siteName);
+      const statusValue = get("status").toLowerCase();
+      const status = (attendanceStatuses.find((s) => s.toLowerCase() === statusValue) ??
+        "Present") as AttendanceStatus;
+
+      addAttendance({
+        employeeId: emp.id,
+        date: day,
+        siteId: site?.id,
+        status,
+        checkIn: get("checkIn") || undefined,
+        checkOut: get("checkOut") || undefined,
+        hoursWorked: Number(get("hoursWorked").replace(/[^0-9.]/g, "")) || 0,
+        overtimeHours: Number(get("overtimeHours").replace(/[^0-9.]/g, "")) || 0,
+        notes: get("notes") || undefined,
+      });
+      imported += 1;
+    });
+
+    return { imported, errors };
+  }
+
   function handleCreate(formData: FormData) {
     addAttendance({
       employeeId: formData.get("employeeId") as string,
@@ -128,6 +188,21 @@ export default function TimeManagementPage() {
               <AttendanceForm employees={employees} sites={sites} onSubmit={handleCreate} />
             </DialogContent>
           </Dialog>
+          <div className="mt-2 flex flex-wrap gap-2 sm:mt-0">
+            <ImportDialog
+              title="Import timesheet"
+              description="Upload daily attendance from Excel or CSV. Employees are matched by employee code or FIN."
+              templateName="attendance"
+              columns={ATTENDANCE_IMPORT_COLUMNS}
+              onImport={handleImport}
+              onDone={refresh}
+            />
+            <ExportButton
+              rows={filtered.map(attendanceRow)}
+              baseName="attendance"
+              sheetName="Attendance"
+            />
+          </div>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
