@@ -182,6 +182,8 @@ const initialState: AppState = {
   users: defaultUsers,
   branches: defaultBranches,
   currentBranch: "hq",
+  companies: defaultCompanies,
+  currentCompany: "bsm",
   currentUser: defaultUsers[0],
 };
 
