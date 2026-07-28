@@ -3,16 +3,16 @@ import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const summaryCardVariants = cva(
-  "relative flex flex-col overflow-hidden rounded-xl border bg-card p-5 shadow-sm transition-shadow hover:shadow-md",
+  "group relative flex flex-col overflow-hidden rounded-xl border bg-gradient-surface p-5 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-elegant before:absolute before:inset-x-0 before:top-0 before:h-1 before:content-['']",
   {
     variants: {
       variant: {
-        default: "border-border",
-        primary: "border-primary/20 bg-primary/[0.03]",
-        success: "border-success/20 bg-success/[0.03]",
-        warning: "border-warning/20 bg-warning/[0.03]",
-        destructive: "border-destructive/20 bg-destructive/[0.03]",
-        info: "border-info/20 bg-info/[0.03]",
+        default: "border-border before:bg-border",
+        primary: "border-primary/20 before:bg-gradient-primary",
+        success: "border-success/20 before:bg-gradient-success",
+        warning: "border-warning/20 before:bg-gradient-warning",
+        destructive: "border-destructive/20 before:bg-gradient-destructive",
+        info: "border-info/20 before:bg-gradient-info",
       },
     },
     defaultVariants: {
@@ -22,16 +22,16 @@ const summaryCardVariants = cva(
 );
 
 const iconVariants = cva(
-  "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg",
+  "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-transform duration-300 group-hover:scale-105",
   {
     variants: {
       variant: {
         default: "bg-muted text-muted-foreground",
-        primary: "bg-primary/10 text-primary",
-        success: "bg-success/10 text-success",
-        warning: "bg-warning/10 text-warning",
-        destructive: "bg-destructive/10 text-destructive",
-        info: "bg-info/10 text-info",
+        primary: "bg-gradient-primary text-primary-foreground shadow-elegant",
+        success: "bg-gradient-success text-success-foreground",
+        warning: "bg-gradient-warning text-warning-foreground",
+        destructive: "bg-gradient-destructive text-destructive-foreground",
+        info: "bg-gradient-info text-info-foreground",
       },
     },
     defaultVariants: {

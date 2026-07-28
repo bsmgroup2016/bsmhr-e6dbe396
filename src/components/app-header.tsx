@@ -42,7 +42,7 @@ export function AppHeader() {
   const collapsed = state === "collapsed";
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 flex-col border-b bg-card">
+    <header className="sticky top-0 z-30 flex h-14 flex-col border-b bg-gradient-surface backdrop-blur supports-[backdrop-filter]:bg-card/80">
       <div className="flex flex-1 items-center gap-2 px-4">
         <SidebarTrigger className="h-8 w-8 shrink-0">
           <SidebarIcon className="h-4 w-4" />
@@ -108,7 +108,7 @@ export function AppHeader() {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="sm" className="gap-2 pl-1">
-                <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center text-xs font-semibold text-primary">
+                <div className="h-7 w-7 rounded-full bg-gradient-primary flex items-center justify-center text-xs font-semibold text-primary-foreground shadow-elegant">
                   AD
                 </div>
                 <span className="hidden text-xs font-medium sm:inline">Admin</span>
