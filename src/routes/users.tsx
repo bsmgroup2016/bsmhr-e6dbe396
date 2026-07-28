@@ -3,13 +3,11 @@ import { createFileRoute } from "@tanstack/react-router";
 import {
   Plus,
   Search,
-  User,
+  User as UserIcon,
   Shield,
   MoreHorizontal,
   Pencil,
-  Trash2,
   CheckCircle2,
-  XCircle,
 } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
@@ -143,7 +141,7 @@ export default function UsersPage() {
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <SummaryCard title="Total users" value={users.length.toString()} icon={<User className="h-5 w-5" />} variant="primary" caption="System accounts" />
+          <SummaryCard title="Total users" value={users.length.toString()} icon={<UserIcon className="h-5 w-5" />} variant="primary" caption="System accounts" />
           <SummaryCard title="Active" value={activeCount.toString()} icon={<CheckCircle2 className="h-5 w-5" />} variant="success" caption="Can log in" />
           <SummaryCard title="Admins" value={adminCount.toString()} icon={<Shield className="h-5 w-5" />} variant="warning" caption="Full access" />
           <SummaryCard title="Roles" value={roles.length.toString()} icon={<Shield className="h-5 w-5" />} variant="info" caption="Role types" />
@@ -186,7 +184,7 @@ export default function UsersPage() {
                 {filtered.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={6} className="h-32 text-center">
-                      <EmptyState className="bg-transparent border-0" icon={<User className="h-5 w-5" />} title="No users found" description="Add a user to get started." />
+                      <EmptyState className="bg-transparent border-0" icon={<UserIcon className="h-5 w-5" />} title="No users found" description="Add a user to get started." />
                     </TableCell>
                   </TableRow>
                 ) : (
