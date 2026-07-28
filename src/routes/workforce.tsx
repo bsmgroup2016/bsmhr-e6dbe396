@@ -62,6 +62,7 @@ import {
 } from "@/components/ui/sheet";
 import { getEmployees, addEmployee, updateEmployee, deleteEmployee } from "@/lib/store";
 import type { Employee, PassType, EmployeeStatus } from "@/lib/types";
+import { pick, type ImportColumn } from "@/lib/xlsx";
 
 const passTypes: PassType[] = ["Work Permit", "S Pass", "Employment Pass", "Singaporean/PR"];
 const statuses: EmployeeStatus[] = ["Active", "On Leave", "Deployed", "Inactive"];
@@ -179,6 +180,56 @@ export default function WorkforcePage() {
 
   function refresh() {
     setEmployees(getEmployees());
+  }
+
+  function handleImport(rows: Record<string, string>[]) {
+    const errors: string[] = [];
+    let imported = 0;
+    const existing = getEmployees();
+
+    rows.forEach((row, index) => {
+      const get = (key: string) => {
+        const column = EMPLOYEE_IMPORT_COLUMNS.find((c) => c.key === key)!;
+        return pick(row, column);
+      };
+      const fin = get("fin").toUpperCase();
+      const passType = (passTypes.find((p) => p.toLowerCase() === get("passType").toLowerCase()) ??
+        "Work Permit") as PassType;
+      const status = (statuses.find((s) => s.toLowerCase() === get("status").toLowerCase()) ??
+        "Active") as EmployeeStatus;
+      const salary = Number(get("basicSalary").replace(/[^0-9.-]/g, ""));
+
+      if (Number.isNaN(salary)) {
+        errors.push(`Row ${index + 2}: invalid basic salary`);
+        return;
+      }
+
+      const payload = {
+        name: get("name"),
+        nationality: get("nationality"),
+        fin,
+        passType,
+        passExpiry: normalizeDate(get("passExpiry")) || "-",
+        trade: get("trade") || "General Worker",
+        site: get("site") || null,
+        status,
+        basicSalary: salary || 0,
+        joinedOn: normalizeDate(get("joinedOn")) || new Date().toISOString().slice(0, 10),
+        phone: get("phone"),
+        levyRate: Number(get("levyRate").replace(/[^0-9.-]/g, "")) || 0,
+        dormitory: get("dormitory"),
+      };
+
+      const match = existing.find((e) => e.fin.toUpperCase() === fin);
+      if (match) {
+        updateEmployee(match.id, payload);
+      } else {
+        addEmployee(payload);
+      }
+      imported += 1;
+    });
+
+    return { imported, errors };
   }
 
   function handleCreate(formData: FormData) {
