@@ -5,7 +5,7 @@ import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
 const SELF_HOSTED_SUPABASE_URL = "https://supabase.vrlle.com";
-const SELF_HOSTED_SUPABASE_PUBLISHABLE_KEY = "PASTE_MY_SB_PUBLISHABLE_KEY_HERE";
+const SELF_HOSTED_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_kmhmoUOhtSV7Cn-umQ3-4p_c6wURNhE";
 
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
