@@ -1,32 +1,253 @@
+import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
+import {
+  Settings,
+  Building,
+  Bell,
+  Shield,
+  Database,
+  Download,
+  Upload,
+  Trash2,
+  Save,
+} from "lucide-react";
+
 import { AppShell } from "@/components/app-shell";
-import { EmptyState } from "@/components/ui/empty-state";
-import { Settings } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
+import { getBranches, getCurrentBranch, setCurrentBranch, exportState, importState, resetState } from "@/lib/store";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({
     meta: [
       { title: "Settings — BSM Workforce & Operations" },
-      { name: "description", content: "System settings for BSM Engineering." },
+      { name: "description", content: "System settings and configuration." },
       { property: "og:title", content: "Settings — BSM Workforce & Operations" },
-      { property: "og:description", content: "System settings for BSM Engineering." },
+      { property: "og:description", content: "System settings and configuration." },
     ],
   }),
   component: SettingsPage,
 });
 
-function SettingsPage() {
+export default function SettingsPage() {
+  const branches = getBranches();
+  const [currentBranch, setBranch] = useState(getCurrentBranch());
+  const [exportData, setExportData] = useState("");
+  const [importData, setImportData] = useState("");
+  const [saved, setSaved] = useState(false);
+
+  function handleSave() {
+    setCurrentBranch(currentBranch);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  }
+
+  function handleExport() {
+    setExportData(exportState());
+  }
+
+  function handleImport() {
+    try {
+      importState(importData);
+      setImportData("");
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch {
+      alert("Invalid JSON data");
+    }
+  }
+
+  function handleReset() {
+    if (confirm("This will clear all local data and restore defaults. Continue?")) {
+      resetState();
+      window.location.reload();
+    }
+  }
+
   return (
     <AppShell>
-      <div className="mx-auto max-w-7xl">
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">Settings</h1>
-        <p className="text-sm text-muted-foreground">Organization, branches, and system configuration.</p>
-        <EmptyState
-          className="mt-6"
-          icon={<Settings className="h-5 w-5" />}
-          title="Settings module"
-          description="System settings will be implemented in Phase 8."
-        />
+      <div className="mx-auto max-w-4xl space-y-6">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">Settings</h1>
+          <p className="text-sm text-muted-foreground">Configure system preferences and manage data.</p>
+        </div>
+
+        <Tabs defaultValue="general" className="w-full">
+          <TabsList className="grid w-full grid-cols-4 sm:w-auto">
+            <TabsTrigger value="general">General</TabsTrigger>
+            <TabsTrigger value="notifications">Notifications</TabsTrigger>
+            <TabsTrigger value="security">Security</TabsTrigger>
+            <TabsTrigger value="data">Data</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="general" className="mt-4 space-y-4">
+            <div className="rounded-xl border bg-card p-5 shadow-sm">
+              <div className="flex items-center gap-2 mb-4">
+                <Building className="h-5 w-5 text-muted-foreground" />
+                <h2 className="text-lg font-semibold">Branch</h2>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="branch">Current branch</Label>
+                  <Select value={currentBranch} onValueChange={setBranch}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {branches.map((b) => (
+                        <SelectItem key={b.id} value={b.id}>
+                          {b.name} ({b.location})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="mt-4">
+                <Button onClick={handleSave}>
+                  <Save className="mr-2 h-4 w-4" />
+                  {saved ? "Saved!" : "Save changes"}
+                </Button>
+              </div>
+            </div>
+
+            <div className="rounded-xl border bg-card p-5 shadow-sm">
+              <div className="flex items-center gap-2 mb-4">
+                <Settings className="h-5 w-5 text-muted-foreground" />
+                <h2 className="text-lg font-semibold">Company</h2>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="companyName">Company name</Label>
+                  <Input id="companyName" defaultValue="BSM Engineering Pte Ltd" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="uen">UEN</Label>
+                  <Input id="uen" defaultValue="201234567A" />
+                </div>
+                <div className="space-y-2 sm:col-span-2">
+                  <Label htmlFor="address">Address</Label>
+                  <Input id="address" defaultValue="Singapore" />
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="notifications" className="mt-4 space-y-4">
+            <div className="rounded-xl border bg-card p-5 shadow-sm">
+              <div className="flex items-center gap-2 mb-4">
+                <Bell className="h-5 w-5 text-muted-foreground" />
+                <h2 className="text-lg font-semibold">Alerts</h2>
+              </div>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">Pass expiry alerts</p>
+                    <p className="text-sm text-muted-foreground">Notify before work passes expire.</p>
+                  </div>
+                  <Switch defaultChecked />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">Approval notifications</p>
+                    <p className="text-sm text-muted-foreground">Email when a request needs approval.</p>
+                  </div>
+                  <Switch defaultChecked />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">Payroll reminders</p>
+                    <p className="text-sm text-muted-foreground">Remind before payroll deadline.</p>
+                  </div>
+                  <Switch defaultChecked />
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="security" className="mt-4 space-y-4">
+            <div className="rounded-xl border bg-card p-5 shadow-sm">
+              <div className="flex items-center gap-2 mb-4">
+                <Shield className="h-5 w-5 text-muted-foreground" />
+                <h2 className="text-lg font-semibold">Access</h2>
+              </div>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">Require approval for assignments</p>
+                    <p className="text-sm text-muted-foreground">All assignments go through approval workflow.</p>
+                  </div>
+                  <Switch defaultChecked />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">Audit logging</p>
+                    <p className="text-sm text-muted-foreground">Record all data changes.</p>
+                  </div>
+                  <Switch defaultChecked />
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="data" className="mt-4 space-y-4">
+            <div className="rounded-xl border bg-card p-5 shadow-sm">
+              <div className="flex items-center gap-2 mb-4">
+                <Database className="h-5 w-5 text-muted-foreground" />
+                <h2 className="text-lg font-semibold">Data management</h2>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <Button variant="outline" onClick={handleExport}>
+                    <Download className="mr-2 h-4 w-4" />
+                    Export all data
+                  </Button>
+                  {exportData && (
+                    <Textarea
+                      value={exportData}
+                      readOnly
+                      className="mt-2 h-32 font-mono text-xs"
+                    />
+                  )}
+                </div>
+                <div>
+                  <Textarea
+                    placeholder="Paste exported JSON to import..."
+                    value={importData}
+                    onChange={(e) => setImportData(e.target.value)}
+                    className="h-32 font-mono text-xs"
+                  />
+                  <Button className="mt-2" variant="outline" onClick={handleImport}>
+                    <Upload className="mr-2 h-4 w-4" />
+                    Import data
+                  </Button>
+                </div>
+                <div className="border-t pt-4">
+                  <Button variant="destructive" onClick={handleReset}>
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Reset to defaults
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </AppShell>
   );
