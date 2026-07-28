@@ -94,7 +94,7 @@ function expiryBadge(passExpiry: string) {
 }
 
 export default function WorkforcePage() {
-  const [employees, setEmployees] = useState<Employee[]>(initialEmployees);
+  const [employees, setEmployees] = useState<Employee[]>(getEmployees());
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<EmployeeStatus | "all">("all");
   const [passFilter, setPassFilter] = useState<PassType | "all">("all");
