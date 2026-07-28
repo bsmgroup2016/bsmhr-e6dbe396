@@ -143,7 +143,7 @@ export default function TimeManagementPage() {
       const siteName = get("site").toLowerCase();
       const site = sites.find((s) => s.name.toLowerCase() === siteName);
       const statusValue = get("status").toLowerCase();
-      const status = (attendanceStatuses.find((s) => s.toLowerCase() === statusValue) ??
+      const status = (statuses.find((s) => s.toLowerCase() === statusValue) ??
         "Present") as AttendanceStatus;
 
       addAttendance({
