@@ -64,7 +64,7 @@ import type { Client, ClientStatus } from "@/lib/types";
 const statuses: ClientStatus[] = ["Active", "Inactive", "Prospect"];
 const industries = ["Construction", "Petrochemical", "Aviation", "Utilities", "Manufacturing", "Marine", "Other"];
 
-export const Route = createFileRoute("/clients")({
+export const Route = createFileRoute("/_authenticated/clients")({
   head: () => ({
     meta: [
       { title: "Clients — BSM Workforce & Operations" },

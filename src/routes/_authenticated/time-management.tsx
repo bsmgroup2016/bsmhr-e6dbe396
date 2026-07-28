@@ -68,7 +68,7 @@ const ATTENDANCE_IMPORT_COLUMNS: ImportColumn[] = [
   { key: "notes", label: "Notes", example: "" },
 ];
 
-export const Route = createFileRoute("/time-management")({
+export const Route = createFileRoute("/_authenticated/time-management")({
   head: () => ({
     meta: [
       { title: "Time Management — BSM Workforce & Operations" },

@@ -33,7 +33,7 @@ import {
 } from "@/components/ui/tabs";
 import { getBranches, getCurrentBranch, setCurrentBranch, exportState, importState, resetState } from "@/lib/store";
 
-export const Route = createFileRoute("/settings")({
+export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({
     meta: [
       { title: "Settings — BSM Workforce & Operations" },

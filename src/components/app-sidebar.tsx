@@ -9,6 +9,7 @@ import {
   Gauge,
   HardHat,
   Layers,
+  Loader2,
   LogOut,
   Settings,
   ShieldCheck,
@@ -16,6 +17,7 @@ import {
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/lib/auth";
 import {
   Sidebar,
   SidebarContent,
@@ -50,15 +52,19 @@ const adminNav = [
   { title: "Settings", url: "/settings", icon: Settings },
 ];
 
+
 export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const currentPath = useRouterState({ select: (router) => router.location.pathname });
+  const { user, isLoading, signOut } = useAuth();
 
   const isActive = (path: string) => {
     if (path === "/") return currentPath === "/";
     return currentPath === path || currentPath.startsWith(`${path}/`);
   };
+
+  const initials = user?.email?.slice(0, 2).toUpperCase() ?? "BS";
 
   return (
     <Sidebar
@@ -117,9 +123,14 @@ export function AppSidebar() {
       <SidebarFooter className="border-t border-sidebar-border">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild tooltip="Sign out" className="text-sidebar-foreground/80">
+            <SidebarMenuButton
+              asChild
+              tooltip="Sign out"
+              className="text-sidebar-foreground/80"
+              onClick={() => signOut()}
+            >
               <button className="flex w-full items-center gap-3">
-                <LogOut className="h-4 w-4 shrink-0" />
+                {isLoading ? <Loader2 className="h-4 w-4 shrink-0 animate-spin" /> : <LogOut className="h-4 w-4 shrink-0" />}
                 <span className="truncate">Sign out</span>
               </button>
             </SidebarMenuButton>
@@ -130,17 +141,17 @@ export function AppSidebar() {
           {!collapsed ? (
             <div className="flex items-center gap-3">
               <div className="h-8 w-8 shrink-0 rounded-full bg-sidebar-primary/20 flex items-center justify-center text-xs font-semibold text-sidebar-primary-foreground">
-                AD
+                {initials}
               </div>
               <div className="min-w-0">
-                <p className="truncate text-sm font-medium text-sidebar-foreground">Admin User</p>
-                <p className="truncate text-xs text-sidebar-foreground/70">Company Admin</p>
+                <p className="truncate text-sm font-medium text-sidebar-foreground">{user?.email ?? "Loading..."}</p>
+                <p className="truncate text-xs text-sidebar-foreground/70">Authenticated user</p>
               </div>
             </div>
           ) : (
             <div className="flex justify-center">
               <div className="h-8 w-8 rounded-full bg-sidebar-primary/20 flex items-center justify-center text-xs font-semibold text-sidebar-primary-foreground">
-                AD
+                {initials}
               </div>
             </div>
           )}
@@ -149,3 +160,4 @@ export function AppSidebar() {
     </Sidebar>
   );
 }
+

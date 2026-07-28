@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { getEmployees, getSites, getProjects, getApprovals, getDocuments, getAuditLogs } from "@/lib/store";
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
     meta: [
       { title: "Dashboard — BSM Workforce & Operations" },

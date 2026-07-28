@@ -68,7 +68,7 @@ const passTypes: PassType[] = ["Work Permit", "S Pass", "Employment Pass", "Sing
 const statuses: EmployeeStatus[] = ["Active", "On Leave", "Deployed", "Inactive"];
 const trades = ["Welder", "Pipe Fitter", "Scaffolder", "Rigger", "General Worker", "Painter", "Foreman", "Site Supervisor", "QA/QC Manager", "Project Engineer", "Safety Officer"];
 
-export const Route = createFileRoute("/workforce")({
+export const Route = createFileRoute("/_authenticated/workforce")({
   head: () => ({
     meta: [
       { title: "Workforce — BSM Workforce & Operations" },

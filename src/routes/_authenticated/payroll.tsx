@@ -62,7 +62,7 @@ const PAYROLL_IMPORT_COLUMNS: ImportColumn[] = [
   { key: "status", label: "Status", example: "Draft" },
 ];
 
-export const Route = createFileRoute("/payroll")({
+export const Route = createFileRoute("/_authenticated/payroll")({
   head: () => ({
     meta: [
       { title: "Payroll — BSM Workforce & Operations" },

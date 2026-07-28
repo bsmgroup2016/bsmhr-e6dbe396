@@ -52,7 +52,7 @@ import type { User, AppRole } from "@/lib/types";
 
 const roles: AppRole[] = ["admin", "manager", "supervisor", "client", "hr", "payroll"];
 
-export const Route = createFileRoute("/users")({
+export const Route = createFileRoute("/_authenticated/users")({
   head: () => ({
     meta: [
       { title: "Users — BSM Workforce & Operations" },
