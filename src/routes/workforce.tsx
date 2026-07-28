@@ -220,6 +220,17 @@ export default function WorkforcePage() {
               <EmployeeForm onSubmit={handleCreate} />
             </DialogContent>
           </Dialog>
+          <div className="mt-2 flex flex-wrap gap-2 sm:mt-0">
+            <ImportDialog
+              title="Import employees"
+              description="Upload an Excel or CSV file of workers. Existing employees with the same FIN are updated."
+              templateName="employees"
+              columns={EMPLOYEE_IMPORT_COLUMNS}
+              onImport={handleImport}
+              onDone={refresh}
+            />
+            <ExportButton rows={filtered.map(toEmployeeRow)} baseName="employees" sheetName="Employees" />
+          </div>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
