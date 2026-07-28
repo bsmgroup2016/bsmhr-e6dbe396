@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as WorkforceRouteImport } from './routes/workforce'
 import { Route as UsersRouteImport } from './routes/users'
 import { Route as TimeManagementRouteImport } from './routes/time-management'
+import { Route as SupabaseCheckRouteImport } from './routes/supabase-check'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as ProjectsRouteImport } from './routes/projects'
@@ -37,6 +38,11 @@ const UsersRoute = UsersRouteImport.update({
 const TimeManagementRoute = TimeManagementRouteImport.update({
   id: '/time-management',
   path: '/time-management',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SupabaseCheckRoute = SupabaseCheckRouteImport.update({
+  id: '/supabase-check',
+  path: '/supabase-check',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SettingsRoute = SettingsRouteImport.update({
@@ -107,6 +113,7 @@ export interface FileRoutesByFullPath {
   '/projects': typeof ProjectsRoute
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
+  '/supabase-check': typeof SupabaseCheckRoute
   '/time-management': typeof TimeManagementRoute
   '/users': typeof UsersRoute
   '/workforce': typeof WorkforceRoute
@@ -123,6 +130,7 @@ export interface FileRoutesByTo {
   '/projects': typeof ProjectsRoute
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
+  '/supabase-check': typeof SupabaseCheckRoute
   '/time-management': typeof TimeManagementRoute
   '/users': typeof UsersRoute
   '/workforce': typeof WorkforceRoute
@@ -140,6 +148,7 @@ export interface FileRoutesById {
   '/projects': typeof ProjectsRoute
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
+  '/supabase-check': typeof SupabaseCheckRoute
   '/time-management': typeof TimeManagementRoute
   '/users': typeof UsersRoute
   '/workforce': typeof WorkforceRoute
@@ -158,6 +167,7 @@ export interface FileRouteTypes {
     | '/projects'
     | '/reports'
     | '/settings'
+    | '/supabase-check'
     | '/time-management'
     | '/users'
     | '/workforce'
@@ -174,6 +184,7 @@ export interface FileRouteTypes {
     | '/projects'
     | '/reports'
     | '/settings'
+    | '/supabase-check'
     | '/time-management'
     | '/users'
     | '/workforce'
@@ -190,6 +201,7 @@ export interface FileRouteTypes {
     | '/projects'
     | '/reports'
     | '/settings'
+    | '/supabase-check'
     | '/time-management'
     | '/users'
     | '/workforce'
@@ -207,6 +219,7 @@ export interface RootRouteChildren {
   ProjectsRoute: typeof ProjectsRoute
   ReportsRoute: typeof ReportsRoute
   SettingsRoute: typeof SettingsRoute
+  SupabaseCheckRoute: typeof SupabaseCheckRoute
   TimeManagementRoute: typeof TimeManagementRoute
   UsersRoute: typeof UsersRoute
   WorkforceRoute: typeof WorkforceRoute
@@ -233,6 +246,13 @@ declare module '@tanstack/react-router' {
       path: '/time-management'
       fullPath: '/time-management'
       preLoaderRoute: typeof TimeManagementRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/supabase-check': {
+      id: '/supabase-check'
+      path: '/supabase-check'
+      fullPath: '/supabase-check'
+      preLoaderRoute: typeof SupabaseCheckRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/settings': {
@@ -327,6 +347,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProjectsRoute: ProjectsRoute,
   ReportsRoute: ReportsRoute,
   SettingsRoute: SettingsRoute,
+  SupabaseCheckRoute: SupabaseCheckRoute,
   TimeManagementRoute: TimeManagementRoute,
   UsersRoute: UsersRoute,
   WorkforceRoute: WorkforceRoute,
@@ -334,3 +355,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
