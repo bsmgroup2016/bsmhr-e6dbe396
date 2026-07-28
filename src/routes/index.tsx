@@ -52,11 +52,18 @@ function DashboardPage() {
   return (
     <AppShell>
       <div className="mx-auto max-w-7xl space-y-6">
-        <div className="flex flex-col gap-1">
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">Dashboard</h1>
-          <p className="text-sm text-muted-foreground">
-            Overview of workforce, sites, and operations for BSM Engineering.
-          </p>
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-hero p-6 shadow-elegant sm:p-8">
+          <div className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-white/10 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-24 left-1/3 h-48 w-48 rounded-full bg-white/5 blur-3xl" />
+          <div className="relative flex flex-col gap-2">
+            <span className="w-fit rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-white/90 backdrop-blur">
+              BSM Engineering · Singapore
+            </span>
+            <h1 className="text-3xl font-semibold tracking-tight text-white">Dashboard</h1>
+            <p className="max-w-xl text-sm text-white/75">
+              Overview of workforce, sites, and operations across all active projects.
+            </p>
+          </div>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -91,25 +98,25 @@ function DashboardPage() {
         </div>
 
         <div className="grid gap-4 lg:grid-cols-3">
-          <div className="rounded-xl border bg-card p-5 shadow-sm lg:col-span-2">
+          <div className="rounded-xl border bg-gradient-surface p-5 shadow-sm lg:col-span-2">
             <div className="flex items-center justify-between">
               <h2 className="text-base font-semibold text-foreground">Quick actions</h2>
             </div>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               {quickActions.map((action) => {
                 const colorClass = {
-                  primary: "bg-primary/10 text-primary",
-                  success: "bg-success/10 text-success",
-                  info: "bg-info/10 text-info",
-                  warning: "bg-warning/10 text-warning",
+                  primary: "bg-gradient-primary text-primary-foreground",
+                  success: "bg-gradient-success text-success-foreground",
+                  info: "bg-gradient-info text-info-foreground",
+                  warning: "bg-gradient-warning text-warning-foreground",
                 }[action.color];
                 return (
                   <Link
                     key={action.to}
                     to={action.to}
-                    className="flex items-center gap-3 rounded-lg border p-3 text-left transition-colors hover:bg-muted/50"
+                    className="flex items-center gap-3 rounded-lg border bg-card/60 p-3 text-left transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-elegant"
                   >
-                    <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-md ${colorClass}`}>
+                    <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg shadow-sm ${colorClass}`}>
                       <action.icon className="h-4 w-4" />
                     </div>
                     <div className="min-w-0">
@@ -122,7 +129,7 @@ function DashboardPage() {
             </div>
           </div>
 
-          <div className="rounded-xl border bg-card p-5 shadow-sm">
+          <div className="rounded-xl border bg-gradient-surface p-5 shadow-sm">
             <h2 className="text-base font-semibold text-foreground">Status</h2>
             <div className="mt-4 space-y-3">
               <div className="flex items-center justify-between">
@@ -145,7 +152,7 @@ function DashboardPage() {
           </div>
         </div>
 
-        <div className="rounded-xl border bg-card p-5 shadow-sm">
+        <div className="rounded-xl border bg-gradient-surface p-5 shadow-sm">
           <h2 className="text-base font-semibold text-foreground">Recent activity</h2>
           {logs.length === 0 ? (
             <EmptyState
