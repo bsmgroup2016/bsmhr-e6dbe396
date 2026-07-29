@@ -10,6 +10,7 @@ import type {
 } from "@/lib/types";
 import type { TrainingCourse, TrainingRecord, SafetyIncident } from "@/lib/types";
 import type { JobRequisition, Candidate } from "@/lib/types";
+import type { Lead, CrmActivity } from "@/lib/types";
 import { supabase } from "@/integrations/supabase/client";
 import {
   loadAll, toEmployee, toClient, toProject, toSite, toAssignment,
@@ -20,6 +21,7 @@ import {
 } from "@/lib/db";
 import { toCourse, toTraining, toIncident } from "@/lib/db";
 import { toRequisition, toCandidate } from "@/lib/db";
+import { toLead, toActivity } from "@/lib/db";
 
 export interface AppState {
   employees: Employee[];
@@ -46,6 +48,8 @@ export interface AppState {
   incidents: SafetyIncident[];
   requisitions: JobRequisition[];
   candidates: Candidate[];
+  leads: Lead[];
+  activities: CrmActivity[];
   users: User[];
   branches: AppBranch[];
   currentBranch: string;
@@ -68,6 +72,7 @@ const emptyState: AppState = {
   assets: [], issuances: [],
   courses: [], trainings: [], incidents: [],
   requisitions: [], candidates: [],
+  leads: [], activities: [],
   branches: defaultBranches, currentBranch: "hq",
   companies: [], currentCompany: "", currentUser: null,
 };
@@ -1406,4 +1411,124 @@ export function convertCandidateToEmployee(id: string): Employee | undefined {
 export function recruitmentFunnel(companyId?: string) {
   const list = getState().candidates.filter((c) => !companyId || !c.companyId || c.companyId === companyId);
   return candidateStages.map((stage) => ({ stage, count: list.filter((c) => c.stage === stage).length }));
+}
+
+/* ---------------- Phase 11: client CRM ---------------- */
+export function getLeads(): Lead[] { return getState().leads; }
+export function getActivities(): CrmActivity[] { return getState().activities; }
+
+export const leadStages: Lead["stage"][] = [
+  "New", "Contacted", "Qualified", "Quotation Sent", "Negotiation", "Won", "Lost",
+];
+
+const defaultProbability: Record<Lead["stage"], number> = {
+  New: 10, Contacted: 20, Qualified: 40, "Quotation Sent": 60,
+  Negotiation: 75, Won: 100, Lost: 0,
+};
+
+export function addLead(x: Omit<Lead, "id" | "createdAt" | "updatedAt">): Lead {
+  const s = getState();
+  const now = new Date().toISOString();
+  const row: Lead = { ...x, id: newId(), createdAt: now, updatedAt: now };
+  setState({ ...s, leads: [row, ...s.leads] });
+  void supabase.from("leads").insert({ id: row.id, ...toLead(row) }).then(({ error }) => fail("leads", error));
+  addAuditLog("CREATE", "Lead", row.id, `Created lead ${row.companyName}`);
+  return row;
+}
+
+export function updateLead(id: string, updates: Partial<Lead>): Lead | undefined {
+  const s = getState();
+  const existing = s.leads.find((l) => l.id === id);
+  if (!existing) return undefined;
+  const updated: Lead = { ...existing, ...updates, updatedAt: new Date().toISOString() };
+  setState({ ...s, leads: s.leads.map((l) => (l.id === id ? updated : l)) });
+  void supabase.from("leads").update(toLead(updated)).eq("id", id).then(({ error }) => fail("leads", error));
+  addAuditLog("UPDATE", "Lead", id, `Updated lead ${updated.companyName}`);
+  return updated;
+}
+
+export function deleteLead(id: string): boolean {
+  const s = getState();
+  if (!s.leads.some((l) => l.id === id)) return false;
+  setState({ ...s, leads: s.leads.filter((l) => l.id !== id) });
+  void supabase.from("leads").delete().eq("id", id).then(({ error }) => fail("leads", error));
+  addAuditLog("DELETE", "Lead", id, "Deleted lead");
+  return true;
+}
+
+/** Move a lead to a stage and auto-set its win probability. */
+export function setLeadStage(id: string, stage: Lead["stage"], lostReason?: string): Lead | undefined {
+  return updateLead(id, { stage, probability: defaultProbability[stage], lostReason });
+}
+
+/** Convert a won lead into a client record. */
+export function convertLeadToClient(id: string): Client | undefined {
+  const s = getState();
+  const lead = s.leads.find((l) => l.id === id);
+  if (!lead || lead.clientId) return undefined;
+  const client = addClient({
+    name: lead.companyName,
+    contactPerson: lead.contactPerson ?? "",
+    email: lead.email ?? "",
+    phone: lead.phone ?? "",
+    address: "",
+    status: "Active",
+    industry: lead.industry,
+  });
+  updateLead(id, { clientId: client.id, stage: "Won", probability: 100 });
+  return client;
+}
+
+export function addActivity(x: Omit<CrmActivity, "id" | "createdAt" | "updatedAt">): CrmActivity {
+  const s = getState();
+  const now = new Date().toISOString();
+  const row: CrmActivity = { ...x, id: newId(), createdAt: now, updatedAt: now };
+  setState({ ...s, activities: [row, ...s.activities] });
+  void supabase.from("crm_activities").insert({ id: row.id, ...toActivity(row) })
+    .then(({ error }) => fail("crm_activities", error));
+  addAuditLog("CREATE", "CrmActivity", row.id, `Logged ${row.activityType}: ${row.subject}`);
+  return row;
+}
+
+export function updateActivity(id: string, updates: Partial<CrmActivity>): CrmActivity | undefined {
+  const s = getState();
+  const existing = s.activities.find((a) => a.id === id);
+  if (!existing) return undefined;
+  const updated: CrmActivity = { ...existing, ...updates, updatedAt: new Date().toISOString() };
+  setState({ ...s, activities: s.activities.map((a) => (a.id === id ? updated : a)) });
+  void supabase.from("crm_activities").update(toActivity(updated)).eq("id", id)
+    .then(({ error }) => fail("crm_activities", error));
+  return updated;
+}
+
+export function deleteActivity(id: string): boolean {
+  const s = getState();
+  if (!s.activities.some((a) => a.id === id)) return false;
+  setState({ ...s, activities: s.activities.filter((a) => a.id !== id) });
+  void supabase.from("crm_activities").delete().eq("id", id)
+    .then(({ error }) => fail("crm_activities", error));
+  return true;
+}
+
+/** Pipeline value grouped by stage (weighted by probability). */
+export function crmPipeline(companyId?: string) {
+  const list = getState().leads.filter((l) => !companyId || !l.companyId || l.companyId === companyId);
+  return leadStages.map((stage) => {
+    const rows = list.filter((l) => l.stage === stage);
+    return {
+      stage,
+      count: rows.length,
+      value: rows.reduce((sum, l) => sum + (l.monthlyValue || 0), 0),
+      weighted: rows.reduce((sum, l) => sum + (l.monthlyValue || 0) * (l.probability || 0) / 100, 0),
+    };
+  });
+}
+
+/** Follow-ups that are due today or overdue. */
+export function dueFollowUps(companyId?: string): CrmActivity[] {
+  const today = new Date().toISOString().slice(0, 10);
+  return getState().activities.filter(
+    (a) => !a.done && a.followUpDate && a.followUpDate <= today &&
+      (!companyId || !a.companyId || a.companyId === companyId),
+  );
 }

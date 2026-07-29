@@ -9,6 +9,7 @@ import type {
 } from "@/lib/types";
 import type { TrainingCourse, TrainingRecord, SafetyIncident } from "@/lib/types";
 import type { JobRequisition, Candidate } from "@/lib/types";
+import type { Lead, CrmActivity } from "@/lib/types";
 
 type Row = Record<string, any>;
 
@@ -268,6 +269,49 @@ export const toInvoice = (i: Partial<Invoice>): Row => ({
   total: i.total ?? 0, amount_paid: i.amountPaid ?? 0, status: i.status, notes: i.notes ?? null,
 });
 
+
+/* ---------- Phase 11: client CRM ---------- */
+export const fromLead = (r: Row): Lead => ({
+  id: r.id, companyId: r.company_id ?? undefined, clientId: r.client_id ?? undefined,
+  companyName: r.company_name ?? "", contactPerson: r.contact_person ?? undefined,
+  phone: r.phone ?? undefined, email: r.email ?? undefined, industry: r.industry ?? undefined,
+  trade: r.trade ?? undefined,
+  headcountNeeded: r.headcount_needed == null ? undefined : Number(r.headcount_needed),
+  monthlyValue: Number(r.monthly_value ?? 0),
+  source: (r.source ?? "Other") as Lead["source"],
+  stage: (r.stage ?? "New") as Lead["stage"],
+  probability: Number(r.probability ?? 0),
+  expectedCloseDate: d(r.expected_close_date), ownerName: r.owner_name ?? undefined,
+  lostReason: r.lost_reason ?? undefined, remarks: r.remarks ?? undefined,
+  createdAt: r.created_at, updatedAt: r.updated_at,
+});
+
+export const toLead = (x: Partial<Lead>): Row => ({
+  company_id: x.companyId || null, client_id: x.clientId || null,
+  company_name: x.companyName ?? "", contact_person: x.contactPerson ?? null,
+  phone: x.phone ?? null, email: x.email ?? null, industry: x.industry ?? null,
+  trade: x.trade ?? null, headcount_needed: x.headcountNeeded ?? null,
+  monthly_value: x.monthlyValue ?? 0, source: x.source, stage: x.stage,
+  probability: x.probability ?? 0, expected_close_date: nullDate(x.expectedCloseDate),
+  owner_name: x.ownerName ?? null, lost_reason: x.lostReason ?? null, remarks: x.remarks ?? null,
+});
+
+export const fromActivity = (r: Row): CrmActivity => ({
+  id: r.id, leadId: r.lead_id ?? undefined, clientId: r.client_id ?? undefined,
+  companyId: r.company_id ?? undefined, activityDate: d(r.activity_date) ?? "",
+  activityType: (r.activity_type ?? "Note") as CrmActivity["activityType"],
+  subject: r.subject ?? "", notes: r.notes ?? undefined,
+  followUpDate: d(r.follow_up_date), done: !!r.done,
+  createdAt: r.created_at, updatedAt: r.updated_at,
+});
+
+export const toActivity = (x: Partial<CrmActivity>): Row => ({
+  lead_id: x.leadId || null, client_id: x.clientId || null, company_id: x.companyId || null,
+  activity_date: nullDate(x.activityDate), activity_type: x.activityType,
+  subject: x.subject ?? "", notes: x.notes ?? null,
+  follow_up_date: nullDate(x.followUpDate), done: !!x.done,
+});
+
 /* ---------- bulk load ---------- */
 export const fromRequisition = (r: Row): JobRequisition => ({
   id: r.id, companyId: r.company_id ?? undefined, code: r.code ?? "", title: r.title,
@@ -477,6 +521,7 @@ export interface LoadedData {
   assets: Asset[]; issuances: AssetIssuance[];
   courses: TrainingCourse[]; trainings: TrainingRecord[]; incidents: SafetyIncident[];
   requisitions: JobRequisition[]; candidates: Candidate[];
+  leads: Lead[]; activities: CrmActivity[];
 }
 
 async function all(table: string, order = "created_at") {
@@ -491,7 +536,7 @@ export async function loadAll(): Promise<LoadedData> {
     documents, attendance, payroll, approvals, auditLogs, profiles, roles, leaveRequests,
     rateAgreements, invoices, dormitories, allocations, vehicles, trips,
     assets, issuances, courses, trainings, incidents,
-    requisitions, candidates,
+    requisitions, candidates, leads, activities,
   ] = await Promise.all([
     all("companies"), all("employees"), all("clients"), all("projects"), all("sites"),
     all("assignments"), all("employee_documents"), all("attendance"), all("payroll_entries"),
@@ -500,7 +545,7 @@ export async function loadAll(): Promise<LoadedData> {
     all("vehicles"), all("trips"),
     all("assets"), all("asset_issuances"),
     all("training_courses"), all("training_records"), all("safety_incidents"),
-    all("job_requisitions"), all("candidates"),
+    all("job_requisitions"), all("candidates"), all("leads"), all("crm_activities"),
   ]);
 
   const roleByUser = new Map<string, string>();
@@ -548,5 +593,7 @@ export async function loadAll(): Promise<LoadedData> {
     incidents: incidents.map(fromIncident),
     requisitions: requisitions.map(fromRequisition),
     candidates: candidates.map(fromCandidate),
+    leads: leads.map(fromLead),
+    activities: activities.map(fromActivity),
   };
 }

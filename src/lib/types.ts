@@ -606,3 +606,47 @@ export interface Candidate {
   createdAt: string;
   updatedAt: string;
 }
+
+/* ---------- Phase 11: client CRM ---------- */
+export type LeadStage =
+  | "New" | "Contacted" | "Qualified" | "Quotation Sent" | "Negotiation" | "Won" | "Lost";
+export type LeadSource = "Referral" | "Cold Call" | "Website" | "Existing Client" | "Tender" | "Other";
+export type ActivityType = "Call" | "Email" | "Meeting" | "Site Visit" | "Quotation" | "Note";
+
+export interface Lead {
+  id: string;
+  companyId?: string;
+  clientId?: string;
+  companyName: string;
+  contactPerson?: string;
+  phone?: string;
+  email?: string;
+  industry?: string;
+  trade?: string;
+  headcountNeeded?: number;
+  monthlyValue: number;
+  source: LeadSource;
+  stage: LeadStage;
+  probability: number;
+  expectedCloseDate?: string;
+  ownerName?: string;
+  lostReason?: string;
+  remarks?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CrmActivity {
+  id: string;
+  leadId?: string;
+  clientId?: string;
+  companyId?: string;
+  activityDate: string;
+  activityType: ActivityType;
+  subject: string;
+  notes?: string;
+  followUpDate?: string;
+  done: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
