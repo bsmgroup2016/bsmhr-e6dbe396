@@ -1537,3 +1537,145 @@ export function dueFollowUps(companyId?: string): CrmActivity[] {
       (!companyId || !a.companyId || a.companyId === companyId),
   );
 }
+
+/* ---------------- Phase 12: finance ---------------- */
+export function getExpenses(): Expense[] { return getState().expenses; }
+export function getReceipts(): PaymentReceipt[] { return getState().receipts; }
+
+export const expenseCategories: Expense["category"][] = [
+  "Levy", "Salary", "Dormitory", "Transport", "Insurance", "Medical",
+  "PPE & Assets", "Training", "Agent Fee", "Office", "Government Fee", "Other",
+];
+export const paymentModes: PaymentReceipt["paymentMode"][] = [
+  "Bank Transfer", "GIRO", "Cheque", "Cash", "PayNow", "Other",
+];
+
+export function addExpense(x: Omit<Expense, "id" | "createdAt" | "updatedAt">): Expense {
+  const s = getState();
+  const now = new Date().toISOString();
+  const row: Expense = { ...x, id: newId(), createdAt: now, updatedAt: now };
+  setState({ ...s, expenses: [row, ...s.expenses] });
+  void supabase.from("expenses").insert({ id: row.id, ...toExpense(row) })
+    .then(({ error }) => fail("expenses", error));
+  addAuditLog("CREATE", "Expense", row.id, `Recorded ${row.category} expense S$${row.amount}`);
+  return row;
+}
+
+export function updateExpense(id: string, updates: Partial<Expense>): Expense | undefined {
+  const s = getState();
+  const existing = s.expenses.find((e) => e.id === id);
+  if (!existing) return undefined;
+  const updated: Expense = { ...existing, ...updates, updatedAt: new Date().toISOString() };
+  setState({ ...s, expenses: s.expenses.map((e) => (e.id === id ? updated : e)) });
+  void supabase.from("expenses").update(toExpense(updated)).eq("id", id)
+    .then(({ error }) => fail("expenses", error));
+  addAuditLog("UPDATE", "Expense", id, `Updated expense ${updated.description}`);
+  return updated;
+}
+
+export function deleteExpense(id: string): boolean {
+  const s = getState();
+  if (!s.expenses.some((e) => e.id === id)) return false;
+  setState({ ...s, expenses: s.expenses.filter((e) => e.id !== id) });
+  void supabase.from("expenses").delete().eq("id", id).then(({ error }) => fail("expenses", error));
+  addAuditLog("DELETE", "Expense", id, "Deleted expense");
+  return true;
+}
+
+export function markExpensePaid(id: string, paidOn?: string): Expense | undefined {
+  return updateExpense(id, { status: "Paid", paidOn: paidOn ?? new Date().toISOString().slice(0, 10) });
+}
+
+/** Record a client payment; keeps the linked invoice's amountPaid/status in sync. */
+export function addReceipt(x: Omit<PaymentReceipt, "id" | "receiptNo" | "createdAt" | "updatedAt"> & { receiptNo?: string }): PaymentReceipt {
+  const s = getState();
+  const now = new Date().toISOString();
+  const receiptNo = x.receiptNo?.trim() || `RCP-${String(s.receipts.length + 1).padStart(4, "0")}`;
+  const row: PaymentReceipt = { ...x, receiptNo, id: newId(), createdAt: now, updatedAt: now };
+  setState({ ...s, receipts: [row, ...s.receipts] });
+  void supabase.from("payment_receipts").insert({ id: row.id, ...toPaymentReceipt(row) })
+    .then(({ error }) => fail("payment_receipts", error));
+  addAuditLog("CREATE", "PaymentReceipt", row.id, `Received S$${row.amount} (${receiptNo})`);
+
+  if (row.invoiceId) {
+    const inv = getState().invoices.find((i) => i.id === row.invoiceId);
+    if (inv) {
+      const paid = (inv.amountPaid || 0) + row.amount;
+      updateInvoice(inv.id, {
+        amountPaid: paid,
+        status: paid >= inv.total ? "Paid" : "Partially Paid",
+      });
+    }
+  }
+  return row;
+}
+
+export function deleteReceipt(id: string): boolean {
+  const s = getState();
+  const row = s.receipts.find((r) => r.id === id);
+  if (!row) return false;
+  setState({ ...s, receipts: s.receipts.filter((r) => r.id !== id) });
+  void supabase.from("payment_receipts").delete().eq("id", id)
+    .then(({ error }) => fail("payment_receipts", error));
+  if (row.invoiceId) {
+    const inv = getState().invoices.find((i) => i.id === row.invoiceId);
+    if (inv) {
+      const paid = Math.max(0, (inv.amountPaid || 0) - row.amount);
+      updateInvoice(inv.id, { amountPaid: paid, status: paid <= 0 ? "Sent" : "Partially Paid" });
+    }
+  }
+  addAuditLog("DELETE", "PaymentReceipt", id, "Deleted receipt");
+  return true;
+}
+
+const inMonth = (date: string | undefined, month: string) => !!date && date.slice(0, 7) === month;
+
+/** Revenue / expense / profit summary for a YYYY-MM month (company scoped). */
+export function financeSummary(month: string, companyId?: string) {
+  const s = getState();
+  const scope = <T extends { companyId?: string }>(rows: T[]) =>
+    rows.filter((r) => !companyId || !r.companyId || r.companyId === companyId);
+
+  const invoices = scope(s.invoices).filter((i) => inMonth(i.issueDate, month) && i.status !== "Cancelled");
+  const expenses = scope(s.expenses).filter((e) => inMonth(e.expenseDate, month) && e.status !== "Rejected");
+  const receipts = scope(s.receipts).filter((r) => inMonth(r.receivedOn, month));
+
+  const revenue = invoices.reduce((sum, i) => sum + (i.subtotal || 0), 0);
+  const cost = expenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+  const collected = receipts.reduce((sum, r) => sum + (r.amount || 0), 0);
+  const outstanding = scope(s.invoices)
+    .filter((i) => i.status !== "Paid" && i.status !== "Cancelled")
+    .reduce((sum, i) => sum + Math.max(0, (i.total || 0) - (i.amountPaid || 0)), 0);
+  const unpaidExpenses = scope(s.expenses)
+    .filter((e) => e.status === "Pending" || e.status === "Approved")
+    .reduce((sum, e) => sum + (e.amount || 0), 0);
+
+  const byCategory = expenseCategories
+    .map((category) => ({
+      category,
+      amount: expenses.filter((e) => e.category === category).reduce((sum, e) => sum + (e.amount || 0), 0),
+    }))
+    .filter((r) => r.amount > 0)
+    .sort((a, b) => b.amount - a.amount);
+
+  const profit = revenue - cost;
+  return {
+    revenue, cost, profit, collected, outstanding, unpaidExpenses, byCategory,
+    margin: revenue > 0 ? Math.round((profit / revenue) * 100) : 0,
+    invoiceCount: invoices.length,
+    expenseCount: expenses.length,
+  };
+}
+
+/** Last N months of revenue vs cost, oldest first. */
+export function financeTrend(months = 6, companyId?: string) {
+  const now = new Date();
+  const out: { month: string; revenue: number; cost: number; profit: number }[] = [];
+  for (let i = months - 1; i >= 0; i--) {
+    const d2 = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const key = `${d2.getFullYear()}-${String(d2.getMonth() + 1).padStart(2, "0")}`;
+    const sum = financeSummary(key, companyId);
+    out.push({ month: key, revenue: sum.revenue, cost: sum.cost, profit: sum.profit });
+  }
+  return out;
+}
