@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import {
   Bell,
   Building2,
@@ -14,7 +14,6 @@ import { cn } from "@/lib/utils";
 import { alertCounts, buildAlerts } from "@/lib/alerts";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import {
   DropdownMenu,
@@ -26,6 +25,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
 import { AppBreadcrumbs } from "@/components/nav/breadcrumbs";
+import { GlobalSearchDialog, useGlobalSearchHotkey } from "@/components/search/global-search";
 import { getCompanies, getCurrentCompany, setCurrentCompany } from "@/lib/store";
 
 const quickCreateItems = [
@@ -53,6 +53,8 @@ export function AppHeader() {
   const initials = user?.email?.slice(0, 2).toUpperCase() ?? "BS";
   const alerts = buildAlerts(companyId);
   const counts = alertCounts(alerts);
+  const [searchOpen, setSearchOpen] = useState(false);
+  useGlobalSearchHotkey(useCallback(() => setSearchOpen(true), []));
 
   return (
     <header className="sticky top-0 z-30 flex h-14 flex-col border-b bg-gradient-surface backdrop-blur supports-[backdrop-filter]:bg-card/80">
@@ -67,14 +69,27 @@ export function AppHeader() {
         </div>
 
         <div className="flex flex-1 items-center justify-end gap-2">
-          <div className="relative hidden w-64 sm:block">
-            <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Search employees, sites, clients..."
-              className="h-8 pl-9 text-sm"
-            />
-          </div>
+          <button
+            type="button"
+            onClick={() => setSearchOpen(true)}
+            className="relative hidden h-8 w-64 items-center rounded-md border bg-background/60 pl-9 pr-2 text-left text-sm text-muted-foreground transition-colors hover:bg-accent/50 sm:flex"
+          >
+            <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2" />
+            <span className="flex-1 truncate">Search anything…</span>
+            <kbd className="rounded border bg-muted px-1.5 py-0.5 text-[10px] font-medium">
+              ⌘K
+            </kbd>
+          </button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 shrink-0 sm:hidden"
+            onClick={() => setSearchOpen(true)}
+          >
+            <Search className="h-4 w-4" />
+            <span className="sr-only">Search</span>
+          </Button>
+          <GlobalSearchDialog open={searchOpen} onOpenChange={setSearchOpen} />
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
