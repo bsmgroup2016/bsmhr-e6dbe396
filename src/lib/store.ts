@@ -4,11 +4,12 @@
 import type {
   Employee, Client, Project, Site, Assignment, EmployeeDocument,
   Attendance, PayrollEntry, Approval, AuditLog, User, AppBranch, Company,
+  LeaveRequest,
 } from "@/lib/types";
 import { supabase } from "@/integrations/supabase/client";
 import {
   loadAll, toEmployee, toClient, toProject, toSite, toAssignment,
-  toDocument, toAttendance, toPayroll, toApproval, toCompany,
+  toDocument, toAttendance, toPayroll, toApproval, toCompany, toLeave,
 } from "@/lib/db";
 
 export interface AppState {
@@ -22,6 +23,7 @@ export interface AppState {
   payroll: PayrollEntry[];
   approvals: Approval[];
   auditLogs: AuditLog[];
+  leaveRequests: LeaveRequest[];
   users: User[];
   branches: AppBranch[];
   currentBranch: string;
@@ -38,7 +40,7 @@ const defaultBranches: AppBranch[] = [
 
 const emptyState: AppState = {
   employees: [], clients: [], projects: [], sites: [], assignments: [], documents: [],
-  attendance: [], payroll: [], approvals: [], auditLogs: [], users: [],
+  attendance: [], payroll: [], approvals: [], auditLogs: [], leaveRequests: [], users: [],
   branches: defaultBranches, currentBranch: "hq",
   companies: [], currentCompany: "", currentUser: null,
 };
@@ -428,6 +430,98 @@ export function generatePayrollForMonth(month: string, companyId?: string): { cr
     created += 1;
   }
   return { created, skipped };
+}
+
+/* ---------------- approvals ---------------- */
+export function getLeaveRequests(): LeaveRequest[] { return getState().leaveRequests; }
+export function getLeaveByEmployee(employeeId: string): LeaveRequest[] {
+  return getState().leaveRequests.filter((l) => l.employeeId === employeeId);
+}
+
+/** Inclusive day count between two ISO dates. */
+export function countLeaveDays(startDate: string, endDate: string): number {
+  const a = new Date(startDate).getTime();
+  const b = new Date(endDate).getTime();
+  if (Number.isNaN(a) || Number.isNaN(b) || b < a) return 0;
+  return Math.round((b - a) / 86400000) + 1;
+}
+
+export function addLeaveRequest(
+  leave: Omit<LeaveRequest, "id" | "createdAt" | "updatedAt" | "days"> & { days?: number },
+): LeaveRequest {
+  const s = getState();
+  const now = new Date().toISOString();
+  const row: LeaveRequest = {
+    ...leave,
+    days: leave.days ?? countLeaveDays(leave.startDate, leave.endDate),
+    id: newId(),
+    createdAt: now,
+    updatedAt: now,
+  };
+  setState({ ...s, leaveRequests: [row, ...s.leaveRequests] });
+  void supabase.from("leave_requests").insert({ id: row.id, ...toLeave(row) })
+    .then(({ error }) => fail("leave_requests", error));
+  const emp = s.employees.find((e) => e.id === row.employeeId);
+  addApproval({
+    type: "Leave",
+    title: `${row.type} — ${emp?.name ?? "Employee"} (${row.days} day${row.days === 1 ? "" : "s"})`,
+    requestedBy: s.currentUser?.id ?? "",
+    requestedByName: s.currentUser?.name ?? "System",
+    requestedAt: now,
+    status: "Pending",
+    payload: `Employee: ${emp?.employeeCode ?? row.employeeId}\nType: ${row.type}\nFrom: ${row.startDate}\nTo: ${row.endDate}\nReason: ${row.reason ?? "-"}`,
+  });
+  addAuditLog("CREATE", "Leave", row.id, `Leave request ${row.type} for ${emp?.name ?? "employee"}`);
+  return row;
+}
+
+export function updateLeaveRequest(id: string, updates: Partial<LeaveRequest>): LeaveRequest | undefined {
+  const s = getState();
+  const existing = s.leaveRequests.find((l) => l.id === id);
+  if (!existing) return undefined;
+  const updated = { ...existing, ...updates, updatedAt: new Date().toISOString() };
+  setState({ ...s, leaveRequests: s.leaveRequests.map((l) => (l.id === id ? updated : l)) });
+  void supabase.from("leave_requests").update(toLeave(updated)).eq("id", id)
+    .then(({ error }) => fail("leave_requests", error));
+  addAuditLog("UPDATE", "Leave", id, `Leave request set to ${updated.status}`);
+  return updated;
+}
+
+export function deleteLeaveRequest(id: string): boolean {
+  const s = getState();
+  if (!s.leaveRequests.some((l) => l.id === id)) return false;
+  setState({ ...s, leaveRequests: s.leaveRequests.filter((l) => l.id !== id) });
+  void supabase.from("leave_requests").delete().eq("id", id).then(({ error }) => fail("leave_requests", error));
+  addAuditLog("DELETE", "Leave", id, "Deleted leave request");
+  return true;
+}
+
+/** Approve leave and push the days into attendance as On Leave / MC. */
+export function approveLeaveRequest(id: string): LeaveRequest | undefined {
+  const s = getState();
+  const leave = s.leaveRequests.find((l) => l.id === id);
+  if (!leave) return undefined;
+  const user = s.currentUser;
+  const updated = updateLeaveRequest(id, {
+    status: "Approved",
+    approvedBy: user?.id,
+    approvedAt: new Date().toISOString(),
+  });
+  const attendanceStatus =
+    leave.type === "Medical Leave" || leave.type === "Hospitalisation Leave" ? "MC" : "On Leave";
+  const start = new Date(leave.startDate);
+  const end = new Date(leave.endDate);
+  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+    upsertAttendance({
+      employeeId: leave.employeeId,
+      date: d.toISOString().slice(0, 10),
+      status: attendanceStatus,
+      hoursWorked: 0,
+      overtimeHours: 0,
+      notes: `${leave.type}${leave.reason ? ` — ${leave.reason}` : ""}`,
+    });
+  }
+  return updated;
 }
 
 /* ---------------- approvals ---------------- */

@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type {
   Employee, Client, Project, Site, Assignment, EmployeeDocument,
   Attendance, PayrollEntry, Approval, AuditLog, Company, User,
+  LeaveRequest,
 } from "@/lib/types";
 
 type Row = Record<string, any>;
@@ -210,12 +211,27 @@ export const toCompany = (c: Partial<Company>): Row => ({
   address: c.address, phone: c.phone, email: c.email, status: c.status, accent: c.accent,
 });
 
+export const fromLeave = (r: Row): LeaveRequest => ({
+  id: r.id, employeeId: r.employee_id, type: (r.leave_type ?? "Annual Leave") as LeaveRequest["type"],
+  startDate: d(r.start_date) ?? "", endDate: d(r.end_date) ?? "", days: Number(r.days ?? 0),
+  reason: r.reason ?? undefined, status: (r.status ?? "Pending") as LeaveRequest["status"],
+  approvedBy: r.approved_by ?? undefined, approvedAt: r.approved_at ?? undefined,
+  remarks: r.remarks ?? undefined, createdAt: r.created_at, updatedAt: r.updated_at,
+});
+
+export const toLeave = (l: Partial<LeaveRequest>): Row => ({
+  employee_id: l.employeeId, leave_type: l.type, start_date: nullDate(l.startDate),
+  end_date: nullDate(l.endDate), days: l.days ?? 0, reason: l.reason ?? null,
+  status: l.status, approved_by: l.approvedBy || null, approved_at: l.approvedAt || null,
+  remarks: l.remarks ?? null,
+});
+
 /* ---------- bulk load ---------- */
 export interface LoadedData {
   companies: Company[]; employees: Employee[]; clients: Client[]; projects: Project[];
   sites: Site[]; assignments: Assignment[]; documents: EmployeeDocument[];
   attendance: Attendance[]; payroll: PayrollEntry[]; approvals: Approval[];
-  auditLogs: AuditLog[]; users: User[];
+  auditLogs: AuditLog[]; users: User[]; leaveRequests: LeaveRequest[];
 }
 
 async function all(table: string, order = "created_at") {
@@ -227,11 +243,11 @@ async function all(table: string, order = "created_at") {
 export async function loadAll(): Promise<LoadedData> {
   const [
     companies, employees, clients, projects, sites, assignments,
-    documents, attendance, payroll, approvals, auditLogs, profiles, roles,
+    documents, attendance, payroll, approvals, auditLogs, profiles, roles, leaveRequests,
   ] = await Promise.all([
     all("companies"), all("employees"), all("clients"), all("projects"), all("sites"),
     all("assignments"), all("employee_documents"), all("attendance"), all("payroll_entries"),
-    all("approvals"), all("audit_logs"), all("profiles"), all("user_roles"),
+    all("approvals"), all("audit_logs"), all("profiles"), all("user_roles"), all("leave_requests"),
   ]);
 
   const roleByUser = new Map<string, string>();
@@ -265,5 +281,6 @@ export async function loadAll(): Promise<LoadedData> {
     approvals: approvals.map(fromApproval),
     auditLogs: auditLogs.map(fromAuditLog),
     users,
+    leaveRequests: leaveRequests.map(fromLeave),
   };
 }

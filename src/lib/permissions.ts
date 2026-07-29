@@ -12,6 +12,7 @@ export const ROUTE_ROLES: Record<string, AppAuthRole[]> = {
   "/documents": ["admin", "manager", "supervisor"],
   "/compliance": ["admin", "manager", "supervisor"],
   "/time-management": ["admin", "manager", "supervisor"],
+  "/leave": ["admin", "manager", "supervisor"],
   "/payroll": ["admin", "manager"],
   "/clients": ["admin", "manager"],
   "/projects": ["admin", "manager", "supervisor"],
