@@ -454,6 +454,7 @@ function BillingPage() {
           </TabsContent>
 
           <TabsContent value="rates" className="mt-4">
+            {null}
             <div className="rounded-xl border bg-card p-4 shadow-sm">
               <div className="flex items-center justify-between">
                 <div>
