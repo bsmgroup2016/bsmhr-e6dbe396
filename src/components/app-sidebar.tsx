@@ -56,6 +56,7 @@ const navGroups: { label: string; items: NavItem[] }[] = [
     items: [
       { title: "Employees", url: "/workforce", icon: Users },
       { title: "Documents", url: "/documents", icon: FileText },
+      { title: "Compliance", url: "/compliance", icon: ShieldCheck },
       { title: "Time Management", url: "/time-management", icon: CalendarClock },
       { title: "Payroll", url: "/payroll", icon: Briefcase },
     ],
