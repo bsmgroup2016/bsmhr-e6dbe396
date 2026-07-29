@@ -106,6 +106,11 @@ export interface Employee {
   religion?: "Muslim" | "Non-Muslim";
   /** PR year determines graduated CPF rates. */
   prStatus?: "Citizen" | "PR Year 1" | "PR Year 2" | "PR Year 3+";
+  // --- MOM levy & insurance ---
+  /** Overrides the tier derived from worker category. */
+  levyTier?: "Higher Skilled" | "Basic Skilled";
+  medicalInsuranceExpiry?: string;
+  medicalCheckupDue?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -416,6 +421,8 @@ export interface Company {
   email: string;
   status: "Active" | "Inactive";
   accent: "primary" | "success" | "warning" | "info" | "destructive";
+  /** MOM sector — drives levy rates and Dependency Ratio Ceiling. */
+  sector?: string;
   createdAt: string;
   updatedAt: string;
 }
