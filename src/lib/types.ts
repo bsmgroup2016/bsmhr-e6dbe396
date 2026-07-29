@@ -173,9 +173,14 @@ export type DocumentType =
   | "P-File"
   | "Medical Report"
   | "Insurance"
+  | "IPA Letter"
+  | "In-Principle Approval"
+  | "Training Certificate"
+  | "Contract"
+  | "Bank Letter"
   | "Other";
 
-export type DocumentStatus = "Valid" | "Expiring Soon" | "Expired" | "Pending";
+export type DocumentStatus = "Valid" | "Expiring Soon" | "Expired" | "Pending" | "Superseded";
 
 export interface EmployeeDocument {
   id: string;
@@ -186,6 +191,16 @@ export interface EmployeeDocument {
   issueDate?: string;
   expiryDate?: string;
   status: DocumentStatus;
+  // --- Phase 3: compliance metadata ---
+  docNumber?: string;
+  issuingAuthority?: string;
+  reminderDays?: number;
+  verified?: boolean;
+  verifiedBy?: string;
+  verifiedAt?: string;
+  remarks?: string;
+  version?: number;
+  replacesId?: string;
   uploadedAt: string;
   updatedAt: string;
 }
