@@ -430,13 +430,27 @@ export function EmployeeForm({
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <span>
-                      <Button type="button" size="sm" variant="outline" disabled={!isOcrConfigured()}>
-                        {isOcrConfigured() ? <Sparkles className="mr-1 h-4 w-4" /> : <Wand2 className="mr-1 h-4 w-4" />}
-                        Auto-fill from IPA
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        disabled={!isOcrConfigured() || !ipaUrl || scanning}
+                        onClick={() => void autoFillFromIpa()}
+                      >
+                        {scanning ? (
+                          <Wand2 className="mr-1 h-4 w-4 animate-pulse" />
+                        ) : (
+                          <Sparkles className="mr-1 h-4 w-4" />
+                        )}
+                        {scanning ? "Reading IPA…" : "Auto-fill from IPA"}
                       </Button>
                     </span>
                   </TooltipTrigger>
-                  <TooltipContent>{OCR_NOT_CONFIGURED}</TooltipContent>
+                  <TooltipContent>
+                    {ipaUrl
+                      ? "Reads the uploaded IPA and fills empty fields only — always verify."
+                      : "Upload the IPA copy first"}
+                  </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
             </div>
