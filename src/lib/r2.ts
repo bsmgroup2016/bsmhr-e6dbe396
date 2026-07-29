@@ -29,7 +29,13 @@ export async function checkR2Status(): Promise<{
   message?: string;
   status?: number;
 }> {
-  const res = await fetch(R2_STATUS_URL);
+  const token = await accessToken();
+  const res = await fetch(R2_STATUS_URL, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  if (!res.ok) {
+    return { configured: true, reachable: false, message: "Admin access required" };
+  }
   return res.json();
 }
 
@@ -62,6 +68,7 @@ export async function uploadToR2(
   file: File,
   folder = "documents",
   onProgress?: (percent: number) => void,
+  employeeId?: string,
 ): Promise<UploadResult> {
   const invalid = validateFile(file);
   if (invalid) throw new Error(invalid);
@@ -70,6 +77,7 @@ export async function uploadToR2(
   const form = new FormData();
   form.append("file", file);
   form.append("folder", folder);
+  if (employeeId) form.append("employeeId", employeeId);
 
   return new Promise<UploadResult>((resolve, reject) => {
     const xhr = new XMLHttpRequest();
