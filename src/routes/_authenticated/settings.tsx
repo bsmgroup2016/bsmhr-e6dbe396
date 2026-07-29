@@ -295,3 +295,94 @@ export default function SettingsPage() {
     </AppShell>
   );
 }
+
+function BranchPrefixManager() {
+  const [rows, setRows] = useState(getAllBranchPrefixes());
+  const [code, setCode] = useState("");
+  const [name, setName] = useState("");
+
+  function refresh() {
+    setRows(getAllBranchPrefixes());
+  }
+
+  function handleAdd() {
+    const c = code.trim().toUpperCase();
+    if (!c || !name.trim()) return;
+    if (rows.some((r) => r.code.toUpperCase() === c)) return;
+    addBranchPrefix({ code: c, name: name.trim(), active: true });
+    setCode("");
+    setName("");
+    refresh();
+  }
+
+  return (
+    <div className="rounded-xl border bg-card p-5 shadow-sm">
+      <div className="mb-1 flex items-center gap-2">
+        <Building className="h-5 w-5 text-muted-foreground" />
+        <h2 className="text-lg font-semibold">Branch prefixes (Employee ID)</h2>
+      </div>
+      <p className="mb-4 text-sm text-muted-foreground">
+        Each branch keeps its own sequence, e.g. BS1, BS2 … / V1, V2 … / P1, P2 …
+      </p>
+
+      <div className="space-y-2">
+        {rows.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No prefixes configured yet.</p>
+        ) : (
+          rows.map((r) => (
+            <div key={r.id} className="flex flex-wrap items-center gap-2 rounded-lg border p-2">
+              <Input
+                className="w-24"
+                value={r.code}
+                onChange={(e) => {
+                  updateBranchPrefix(r.id, { code: e.target.value.toUpperCase() });
+                  refresh();
+                }}
+              />
+              <Input
+                className="min-w-40 flex-1"
+                value={r.name}
+                onChange={(e) => {
+                  updateBranchPrefix(r.id, { name: e.target.value });
+                  refresh();
+                }}
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  updateBranchPrefix(r.id, { active: !r.active });
+                  refresh();
+                }}
+              >
+                {r.active ? "Active" : "Inactive"}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  deleteBranchPrefix(r.id);
+                  refresh();
+                }}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+          ))
+        )}
+      </div>
+
+      <div className="mt-4 flex flex-wrap items-end gap-2">
+        <div className="space-y-2">
+          <Label htmlFor="newPrefixCode">Prefix</Label>
+          <Input id="newPrefixCode" className="w-24" value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} placeholder="BS" />
+        </div>
+        <div className="space-y-2 flex-1 min-w-40">
+          <Label htmlFor="newPrefixName">Branch / company</Label>
+          <Input id="newPrefixName" value={name} onChange={(e) => setName(e.target.value)} placeholder="BSM Engineering" />
+        </div>
+        <Button onClick={handleAdd}>Add prefix</Button>
+      </div>
+    </div>
+  );
+}
