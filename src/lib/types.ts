@@ -15,6 +15,8 @@ export type PassType = "Work Permit" | "S Pass" | "Employment Pass" | "Singapore
 export type EmployeeStatus =
   | "Draft"
   | "Pending Approval"
+  | "Pending Profile Completion"
+  | "Pending Verification"
   | "Active"
   | "Inactive"
   | "On Leave"

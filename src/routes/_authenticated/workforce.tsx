@@ -68,7 +68,8 @@ import { pick, type ImportColumn } from "@/lib/xlsx";
 
 const passTypes: PassType[] = ["Work Permit", "S Pass", "Employment Pass", "Singaporean/PR"];
 const statuses: EmployeeStatus[] = [
-  "Draft", "Pending Approval", "Active", "Inactive", "On Leave", "Deployed",
+  "Draft", "Pending Approval", "Pending Profile Completion", "Pending Verification",
+  "Active", "Inactive", "On Leave", "Deployed",
   "Suspended", "Resigned", "Terminated", "Repatriated", "Archived",
 ];
 
