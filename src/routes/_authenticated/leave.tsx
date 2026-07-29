@@ -4,6 +4,7 @@ import { Plus, Search, CalendarDays, CheckCircle2, Clock, XCircle, Trash2 } from
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/app-shell";
+import { notifyLeaveDecision } from "@/lib/notify";
 import { ExportButton } from "@/components/data-io";
 import { SummaryCard } from "@/components/ui/summary-card";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -129,12 +130,14 @@ export default function LeavePage() {
 
   function approve(row: LeaveRequest) {
     approveLeaveRequest(row.id);
+    void notifyLeaveDecision(row.id, "Approved");
     refresh();
     toast.success(`Approved — ${row.days} day(s) pushed to attendance`);
   }
 
   function reject(row: LeaveRequest) {
     updateLeaveRequest(row.id, { status: "Rejected" });
+    void notifyLeaveDecision(row.id, "Rejected");
     refresh();
     toast.success("Leave request rejected");
   }

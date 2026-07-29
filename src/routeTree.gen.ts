@@ -39,12 +39,14 @@ import { Route as AuthenticatedAssetsRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedApprovalsRouteImport } from './routes/_authenticated/approvals'
 import { Route as AuthenticatedAlertsRouteImport } from './routes/_authenticated/alerts'
 import { Route as AuthenticatedAccommodationRouteImport } from './routes/_authenticated/accommodation'
+import { Route as ApiPublicSendAlertsRouteImport } from './routes/api/public/send-alerts'
 import { Route as ApiPublicR2UploadRouteImport } from './routes/api/public/r2-upload'
 import { Route as ApiPublicR2StatusRouteImport } from './routes/api/public/r2-status'
 import { Route as ApiPublicR2SignedRouteImport } from './routes/api/public/r2-signed'
 import { Route as ApiPublicR2FileRouteImport } from './routes/api/public/r2-file'
 import { Route as ApiPublicR2DeleteRouteImport } from './routes/api/public/r2-delete'
 import { Route as ApiPublicProvisionEmployeeRouteImport } from './routes/api/public/provision-employee'
+import { Route as ApiPublicNotifyLeaveRouteImport } from './routes/api/public/notify-leave'
 import { Route as AuthenticatedWorkforceIdRouteImport } from './routes/_authenticated/workforce.$id'
 
 const AuthRoute = AuthRouteImport.update({
@@ -199,6 +201,11 @@ const AuthenticatedAccommodationRoute =
     path: '/accommodation',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const ApiPublicSendAlertsRoute = ApiPublicSendAlertsRouteImport.update({
+  id: '/api/public/send-alerts',
+  path: '/api/public/send-alerts',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicR2UploadRoute = ApiPublicR2UploadRouteImport.update({
   id: '/api/public/r2-upload',
   path: '/api/public/r2-upload',
@@ -230,6 +237,11 @@ const ApiPublicProvisionEmployeeRoute =
     path: '/api/public/provision-employee',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicNotifyLeaveRoute = ApiPublicNotifyLeaveRouteImport.update({
+  id: '/api/public/notify-leave',
+  path: '/api/public/notify-leave',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedWorkforceIdRoute =
   AuthenticatedWorkforceIdRouteImport.update({
     id: '/$id',
@@ -268,12 +280,14 @@ export interface FileRoutesByFullPath {
   '/users': typeof AuthenticatedUsersRoute
   '/workforce': typeof AuthenticatedWorkforceRouteWithChildren
   '/workforce/$id': typeof AuthenticatedWorkforceIdRoute
+  '/api/public/notify-leave': typeof ApiPublicNotifyLeaveRoute
   '/api/public/provision-employee': typeof ApiPublicProvisionEmployeeRoute
   '/api/public/r2-delete': typeof ApiPublicR2DeleteRoute
   '/api/public/r2-file': typeof ApiPublicR2FileRoute
   '/api/public/r2-signed': typeof ApiPublicR2SignedRoute
   '/api/public/r2-status': typeof ApiPublicR2StatusRoute
   '/api/public/r2-upload': typeof ApiPublicR2UploadRoute
+  '/api/public/send-alerts': typeof ApiPublicSendAlertsRoute
 }
 export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
@@ -306,12 +320,14 @@ export interface FileRoutesByTo {
   '/workforce': typeof AuthenticatedWorkforceRouteWithChildren
   '/': typeof AuthenticatedIndexRoute
   '/workforce/$id': typeof AuthenticatedWorkforceIdRoute
+  '/api/public/notify-leave': typeof ApiPublicNotifyLeaveRoute
   '/api/public/provision-employee': typeof ApiPublicProvisionEmployeeRoute
   '/api/public/r2-delete': typeof ApiPublicR2DeleteRoute
   '/api/public/r2-file': typeof ApiPublicR2FileRoute
   '/api/public/r2-signed': typeof ApiPublicR2SignedRoute
   '/api/public/r2-status': typeof ApiPublicR2StatusRoute
   '/api/public/r2-upload': typeof ApiPublicR2UploadRoute
+  '/api/public/send-alerts': typeof ApiPublicSendAlertsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -346,12 +362,14 @@ export interface FileRoutesById {
   '/_authenticated/workforce': typeof AuthenticatedWorkforceRouteWithChildren
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/workforce/$id': typeof AuthenticatedWorkforceIdRoute
+  '/api/public/notify-leave': typeof ApiPublicNotifyLeaveRoute
   '/api/public/provision-employee': typeof ApiPublicProvisionEmployeeRoute
   '/api/public/r2-delete': typeof ApiPublicR2DeleteRoute
   '/api/public/r2-file': typeof ApiPublicR2FileRoute
   '/api/public/r2-signed': typeof ApiPublicR2SignedRoute
   '/api/public/r2-status': typeof ApiPublicR2StatusRoute
   '/api/public/r2-upload': typeof ApiPublicR2UploadRoute
+  '/api/public/send-alerts': typeof ApiPublicSendAlertsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -386,12 +404,14 @@ export interface FileRouteTypes {
     | '/users'
     | '/workforce'
     | '/workforce/$id'
+    | '/api/public/notify-leave'
     | '/api/public/provision-employee'
     | '/api/public/r2-delete'
     | '/api/public/r2-file'
     | '/api/public/r2-signed'
     | '/api/public/r2-status'
     | '/api/public/r2-upload'
+    | '/api/public/send-alerts'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/auth'
@@ -424,12 +444,14 @@ export interface FileRouteTypes {
     | '/workforce'
     | '/'
     | '/workforce/$id'
+    | '/api/public/notify-leave'
     | '/api/public/provision-employee'
     | '/api/public/r2-delete'
     | '/api/public/r2-file'
     | '/api/public/r2-signed'
     | '/api/public/r2-status'
     | '/api/public/r2-upload'
+    | '/api/public/send-alerts'
   id:
     | '__root__'
     | '/_authenticated'
@@ -463,23 +485,27 @@ export interface FileRouteTypes {
     | '/_authenticated/workforce'
     | '/_authenticated/'
     | '/_authenticated/workforce/$id'
+    | '/api/public/notify-leave'
     | '/api/public/provision-employee'
     | '/api/public/r2-delete'
     | '/api/public/r2-file'
     | '/api/public/r2-signed'
     | '/api/public/r2-status'
     | '/api/public/r2-upload'
+    | '/api/public/send-alerts'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ApiPublicNotifyLeaveRoute: typeof ApiPublicNotifyLeaveRoute
   ApiPublicProvisionEmployeeRoute: typeof ApiPublicProvisionEmployeeRoute
   ApiPublicR2DeleteRoute: typeof ApiPublicR2DeleteRoute
   ApiPublicR2FileRoute: typeof ApiPublicR2FileRoute
   ApiPublicR2SignedRoute: typeof ApiPublicR2SignedRoute
   ApiPublicR2StatusRoute: typeof ApiPublicR2StatusRoute
   ApiPublicR2UploadRoute: typeof ApiPublicR2UploadRoute
+  ApiPublicSendAlertsRoute: typeof ApiPublicSendAlertsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -694,6 +720,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAccommodationRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/send-alerts': {
+      id: '/api/public/send-alerts'
+      path: '/api/public/send-alerts'
+      fullPath: '/api/public/send-alerts'
+      preLoaderRoute: typeof ApiPublicSendAlertsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/r2-upload': {
       id: '/api/public/r2-upload'
       path: '/api/public/r2-upload'
@@ -734,6 +767,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/provision-employee'
       fullPath: '/api/public/provision-employee'
       preLoaderRoute: typeof ApiPublicProvisionEmployeeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/notify-leave': {
+      id: '/api/public/notify-leave'
+      path: '/api/public/notify-leave'
+      fullPath: '/api/public/notify-leave'
+      preLoaderRoute: typeof ApiPublicNotifyLeaveRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/workforce/$id': {
@@ -828,12 +868,14 @@ const AuthenticatedRouteRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  ApiPublicNotifyLeaveRoute: ApiPublicNotifyLeaveRoute,
   ApiPublicProvisionEmployeeRoute: ApiPublicProvisionEmployeeRoute,
   ApiPublicR2DeleteRoute: ApiPublicR2DeleteRoute,
   ApiPublicR2FileRoute: ApiPublicR2FileRoute,
   ApiPublicR2SignedRoute: ApiPublicR2SignedRoute,
   ApiPublicR2StatusRoute: ApiPublicR2StatusRoute,
   ApiPublicR2UploadRoute: ApiPublicR2UploadRoute,
+  ApiPublicSendAlertsRoute: ApiPublicSendAlertsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
