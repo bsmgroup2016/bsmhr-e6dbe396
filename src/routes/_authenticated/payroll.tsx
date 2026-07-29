@@ -14,6 +14,7 @@ import {
   Landmark,
   Send,
   BadgeCheck,
+  Calculator,
 } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
