@@ -1,37 +1,35 @@
 /**
- * Cloudflare R2 upload client.
+ * Cloudflare R2 storage client.
  *
- * Files are NOT stored in Supabase. They are uploaded to a Cloudflare Worker
- * (deployed from the `worker/` folder) which writes them into an R2 bucket and
- * returns a public URL. Only that URL is saved in Supabase.
+ * Files are NOT stored in Supabase. The browser posts them to this app's own
+ * backend endpoints (`/api/public/r2-*`), which sign the request with the R2
+ * keys saved in project secrets and write into the R2 bucket. Only the file
+ * link is saved in Supabase.
  */
+import { supabase } from "@/integrations/supabase/client";
 
-const URL_KEY = "bsm.r2.workerUrl";
-const TOKEN_KEY = "bsm.r2.uploadToken";
+export const R2_UPLOAD_URL = "/api/public/r2-upload";
+export const R2_DELETE_URL = "/api/public/r2-delete";
+export const R2_STATUS_URL = "/api/public/r2-status";
 
-export interface R2Config {
-  workerUrl: string;
-  uploadToken: string;
+async function accessToken(): Promise<string> {
+  const { data } = await supabase.auth.getSession();
+  return data.session?.access_token ?? "";
 }
 
-export function getR2Config(): R2Config {
-  if (typeof window === "undefined") return { workerUrl: "", uploadToken: "" };
-  return {
-    workerUrl:
-      localStorage.getItem(URL_KEY) ||
-      (import.meta.env.VITE_R2_WORKER_URL as string | undefined) ||
-      "",
-    uploadToken: localStorage.getItem(TOKEN_KEY) || "",
-  };
-}
-
-export function setR2Config(config: R2Config) {
-  localStorage.setItem(URL_KEY, config.workerUrl.replace(/\/+$/, ""));
-  localStorage.setItem(TOKEN_KEY, config.uploadToken);
-}
-
+/** R2 credentials live in project secrets, so the app is always configured. */
 export function isR2Configured(): boolean {
-  return Boolean(getR2Config().workerUrl);
+  return true;
+}
+
+export async function checkR2Status(): Promise<{
+  configured: boolean;
+  reachable: boolean;
+  message?: string;
+  status?: number;
+}> {
+  const res = await fetch(R2_STATUS_URL);
+  return res.json();
 }
 
 export interface UploadResult {
@@ -59,19 +57,14 @@ export function validateFile(file: File): string | null {
 }
 
 /** Upload a file to R2 through the Worker. `folder` groups files, e.g. "documents". */
-export function uploadToR2(
+export async function uploadToR2(
   file: File,
   folder = "documents",
   onProgress?: (percent: number) => void,
 ): Promise<UploadResult> {
-  const { workerUrl, uploadToken } = getR2Config();
-  if (!workerUrl) {
-    return Promise.reject(
-      new Error("R2 storage is not configured. Set the Worker URL in Settings → Storage."),
-    );
-  }
   const invalid = validateFile(file);
-  if (invalid) return Promise.reject(new Error(invalid));
+  if (invalid) throw new Error(invalid);
+  const token = await accessToken();
 
   const form = new FormData();
   form.append("file", file);
@@ -79,8 +72,8 @@ export function uploadToR2(
 
   return new Promise<UploadResult>((resolve, reject) => {
     const xhr = new XMLHttpRequest();
-    xhr.open("POST", `${workerUrl}/upload`);
-    if (uploadToken) xhr.setRequestHeader("x-upload-token", uploadToken);
+    xhr.open("POST", R2_UPLOAD_URL);
+    if (token) xhr.setRequestHeader("Authorization", `Bearer ${token}`);
     xhr.upload.onprogress = (e) => {
       if (e.lengthComputable && onProgress) {
         onProgress(Math.round((e.loaded / e.total) * 100));
@@ -94,25 +87,24 @@ export function uploadToR2(
           reject(new Error("Upload succeeded but response was invalid"));
         }
       } else if (xhr.status === 401) {
-        reject(new Error("Upload rejected: invalid upload token"));
+        reject(new Error("Upload rejected: please sign in again"));
       } else {
-        reject(new Error(`Upload failed (${xhr.status})`));
+        reject(new Error(xhr.responseText || `Upload failed (${xhr.status})`));
       }
     };
-    xhr.onerror = () => reject(new Error("Upload failed - could not reach the storage Worker"));
+    xhr.onerror = () => reject(new Error("Upload failed - could not reach the server"));
     xhr.send(form);
   });
 }
 
 /** Delete a previously uploaded object by its key. */
 export async function deleteFromR2(key: string): Promise<void> {
-  const { workerUrl, uploadToken } = getR2Config();
-  if (!workerUrl) throw new Error("R2 storage is not configured.");
-  const res = await fetch(`${workerUrl}/delete`, {
+  const token = await accessToken();
+  const res = await fetch(R2_DELETE_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      ...(uploadToken ? { "x-upload-token": uploadToken } : {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     body: JSON.stringify({ key }),
   });
