@@ -178,6 +178,10 @@ export const toAssignment = (a: Partial<Assignment>): Row => ({
 export const toDocument = (x: Partial<EmployeeDocument>): Row => ({
   employee_id: x.employeeId, doc_type: x.type, name: x.name, file_url: x.fileUrl,
   issue_date: nullDate(x.issueDate), expiry_date: nullDate(x.expiryDate), status: x.status,
+  doc_number: x.docNumber || null, issuing_authority: x.issuingAuthority || null,
+  reminder_days: x.reminderDays ?? null, verified: x.verified ?? false,
+  verified_by: x.verifiedBy || null, verified_at: x.verifiedAt || null,
+  remarks: x.remarks || null, version: x.version ?? 1, replaces_id: x.replacesId || null,
 });
 
 export const toAttendance = (a: Partial<Attendance>): Row => ({
