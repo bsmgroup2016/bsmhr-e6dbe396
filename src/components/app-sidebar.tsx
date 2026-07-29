@@ -24,6 +24,7 @@ import {
   Receipt,
   Settings,
   ShieldCheck,
+  Landmark,
   Truck,
   UserPlus,
   UserRound,
