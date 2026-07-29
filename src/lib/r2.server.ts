@@ -73,6 +73,27 @@ export async function isAdmin(userId: string) {
   return (await userRoles(userId)).includes("admin");
 }
 
+/**
+ * Upload allowance. Users without any role (fresh sign-ups) get a small
+ * per-file size cap and a daily upload count limit to prevent storage abuse.
+ */
+export async function uploadAllowance(userId: string) {
+  const roles = await userRoles(userId);
+  const privileged = roles.some((r) => STAFF_ROLES.includes(r) || r === "hr");
+  if (privileged) return { maxBytes: 25 * 1024 * 1024, dailyLimit: 500 };
+  if (roles.length > 0) return { maxBytes: 10 * 1024 * 1024, dailyLimit: 50 };
+  return { maxBytes: 5 * 1024 * 1024, dailyLimit: 10 };
+}
+
+/** Number of objects the user uploaded in the last 24 hours. */
+export async function uploadsToday(userId: string): Promise<number> {
+  const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const rows = await restGet(
+    `storage_objects?select=key&uploaded_by=eq.${encodeURIComponent(userId)}&created_at=gte.${since}`,
+  );
+  return rows.length;
+}
+
 /** A caller may read an object if they uploaded it or hold a staff role. */
 export async function canAccessKey(userId: string, key: string) {
   const rows = await restGet(
