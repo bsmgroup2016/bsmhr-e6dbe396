@@ -4,11 +4,12 @@ import {
   Plus,
   Search,
   DollarSign,
-  FileText,
   CheckCircle2,
   Clock,
-  AlertCircle,
-  Download,
+  Wand2,
+  Printer,
+  Trash2,
+  Building2,
 } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
@@ -43,8 +44,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { getEmployees, getPayroll, addPayroll } from "@/lib/store";
-import type { PayrollEntry, PayrollStatus } from "@/lib/types";
+import {
+  getEmployees,
+  getPayroll,
+  addPayroll,
+  updatePayroll,
+  deletePayroll,
+  generatePayrollForMonth,
+  getCompanies,
+  getCurrentCompany,
+  getCurrentUser,
+} from "@/lib/store";
+import { toast } from "sonner";
+import type { Employee, PayrollEntry, PayrollStatus } from "@/lib/types";
 import { pick, type ImportColumn } from "@/lib/xlsx";
 
 const statuses: PayrollStatus[] = ["Draft", "Pending Approval", "Approved", "Paid", "Rejected"];
