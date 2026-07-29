@@ -1,0 +1,524 @@
+import { useMemo, useState } from "react";
+import { createFileRoute } from "@tanstack/react-router";
+import { CheckCircle2, FileSpreadsheet, ScanLine, Trash2, Upload } from "lucide-react";
+import { toast } from "sonner";
+
+import { AppShell } from "@/components/app-shell";
+import { SummaryCard } from "@/components/ui/summary-card";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { ExportButton } from "@/components/data-io";
+import { exportRows, timestampedName } from "@/lib/xlsx";
+import { uploadToR2 } from "@/lib/r2";
+import { extractTimeCardData, OCR_NOT_CONFIGURED, isOcrConfigured } from "@/lib/ocr";
+import {
+  addClaimSheet,
+  addTimeCard,
+  buildClaimSheetRows,
+  compareTimeCard,
+  deleteClaimSheet,
+  deleteTimeCard,
+  getClaimSheets,
+  getCurrentCompany,
+  getEmployees,
+  getTimeCards,
+  updateTimeCard,
+} from "@/lib/store";
+import type { TimeCard, TimeCardEntry } from "@/lib/types";
+
+export const Route = createFileRoute("/_authenticated/time-cards")({
+  head: () => ({
+    meta: [
+      { title: "Time Cards & Claim Sheets — BSM Workforce" },
+      {
+        name: "description",
+        content:
+          "Upload physical time cards, verify them against system attendance and generate claim sheets.",
+      },
+      { property: "og:title", content: "Time Cards & Claim Sheets — BSM Workforce" },
+      {
+        property: "og:description",
+        content: "Time card verification and claim sheet generation for site workers.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
+  component: TimeCardsPage,
+});
+
+function monthRange(month: string) {
+  const start = `${month}-01`;
+  const d = new Date(`${month}-01T00:00:00`);
+  d.setMonth(d.getMonth() + 1);
+  d.setDate(0);
+  return { start, end: d.toISOString().slice(0, 10) };
+}
+
+function TimeCardsPage() {
+  const employees = getEmployees();
+  const companyId = getCurrentCompany();
+  const scoped = employees.filter((e) => !companyId || e.companyId === companyId);
+
+  const [cards, setCards] = useState(getTimeCards());
+  const [sheets, setSheets] = useState(getClaimSheets());
+  const [employeeId, setEmployeeId] = useState(scoped[0]?.id ?? "");
+  const [month, setMonth] = useState(() => new Date().toISOString().slice(0, 7));
+  const [uploading, setUploading] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  const selected = cards.find((c) => c.id === selectedId) ?? null;
+  const comparison = useMemo(() => (selected ? compareTimeCard(selected) : []), [selected]);
+  const mismatches = comparison.filter((r) => r.state !== "Verified").length;
+
+  const empName = (id?: string) => employees.find((e) => e.id === id)?.name ?? "—";
+
+  function refresh() {
+    setCards(getTimeCards());
+    setSheets(getClaimSheets());
+  }
+
+  async function handleUpload(file: File | undefined) {
+    if (!file) return;
+    if (!employeeId) {
+      toast.error("Select an employee first");
+      return;
+    }
+    setUploading(true);
+    try {
+      const { start, end } = monthRange(month);
+      const uploaded = await uploadToR2(file, "time-cards", undefined, employeeId);
+      let entries: TimeCardEntry[] = [];
+      const ocr = await extractTimeCardData(uploaded.url);
+      if (ocr.ok) {
+        entries = ocr.data.map((r) => ({ date: r.date, checkIn: r.checkIn, checkOut: r.checkOut }));
+        toast.success(`Scanned ${entries.length} rows from the card`);
+      } else {
+        toast.message(ocr.reason || OCR_NOT_CONFIGURED);
+      }
+      const card = addTimeCard({
+        employeeId,
+        periodStart: start,
+        periodEnd: end,
+        fileUrl: uploaded.url,
+        fileName: file.name,
+        status: "Draft",
+        entries,
+      });
+      refresh();
+      setSelectedId(card.id);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Upload failed");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  function setEntry(date: string, patch: Partial<TimeCardEntry>) {
+    if (!selected) return;
+    const exists = selected.entries.some((e) => e.date === date);
+    const entries = exists
+      ? selected.entries.map((e) => (e.date === date ? { ...e, ...patch } : e))
+      : [...selected.entries, { date, ...patch }];
+    updateTimeCard(selected.id, { entries });
+    refresh();
+  }
+
+  function finalize(card: TimeCard) {
+    const rows = compareTimeCard(card);
+    const unresolved = rows.filter((r) => r.state !== "Verified" && !r.resolution).length;
+    updateTimeCard(card.id, { status: unresolved ? "Has Mismatches" : "Verified" });
+    refresh();
+    toast[unresolved ? "warning" : "success"](
+      unresolved ? `${unresolved} row(s) still need a decision` : "Time card verified",
+    );
+  }
+
+  function generateClaimSheet() {
+    if (!employeeId) {
+      toast.error("Select an employee first");
+      return;
+    }
+    const { start, end } = monthRange(month);
+    const snapshot = buildClaimSheetRows(employeeId, start, end);
+    if (!snapshot.length) {
+      toast.error("No attendance in this period");
+      return;
+    }
+    const sheet = addClaimSheet({
+      employeeId,
+      companyId: employees.find((e) => e.id === employeeId)?.companyId,
+      periodStart: start,
+      periodEnd: end,
+      totalDays: snapshot.length,
+      totalNormalHours: snapshot.reduce((s, r) => s + r.normalHours, 0),
+      totalOtHours: snapshot.reduce((s, r) => s + r.otHours, 0),
+      snapshot,
+    });
+    refresh();
+    toast.success(`Claim sheet ${sheet.reference} generated`);
+  }
+
+  async function exportSheet(id: string) {
+    const sheet = sheets.find((s) => s.id === id);
+    if (!sheet) return;
+    await exportRows(
+      sheet.snapshot.map((r) => ({
+        Date: r.date,
+        Site: r.site ?? "",
+        Status: r.status,
+        "Check In": r.checkIn ?? "",
+        "Check Out": r.checkOut ?? "",
+        "Normal Hours": r.normalHours,
+        "OT Hours": r.otHours,
+      })),
+      timestampedName(`claim_sheet_${sheet.reference}`, "xlsx"),
+      "Claim Sheet",
+    );
+  }
+
+  return (
+    <AppShell>
+      <div className="mx-auto max-w-7xl space-y-6">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+            Time Cards & Claim Sheets
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Upload the physical 30-day card, verify it against system attendance, then issue the
+            claim sheet.
+          </p>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <SummaryCard title="Time cards" value={cards.length.toString()} icon={<ScanLine className="h-5 w-5" />} variant="info" />
+          <SummaryCard title="Verified" value={cards.filter((c) => c.status === "Verified").length.toString()} icon={<CheckCircle2 className="h-5 w-5" />} variant="success" />
+          <SummaryCard title="With mismatches" value={cards.filter((c) => c.status === "Has Mismatches").length.toString()} icon={<ScanLine className="h-5 w-5" />} variant="destructive" />
+          <SummaryCard title="Claim sheets" value={sheets.length.toString()} icon={<FileSpreadsheet className="h-5 w-5" />} variant="warning" />
+        </div>
+
+        <div className="grid gap-4 rounded-xl border bg-card p-4 shadow-sm sm:grid-cols-2 lg:grid-cols-4">
+          <div className="space-y-2">
+            <Label>Employee</Label>
+            <Select value={employeeId} onValueChange={setEmployeeId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select employee" />
+              </SelectTrigger>
+              <SelectContent>
+                {scoped.map((e) => (
+                  <SelectItem key={e.id} value={e.id}>
+                    {e.name} ({e.employeeCode})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="tc-month">Period (month)</Label>
+            <Input id="tc-month" type="month" value={month} onChange={(e) => setMonth(e.target.value)} />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="tc-file">Scanned time card</Label>
+            <Input
+              id="tc-file"
+              type="file"
+              accept="image/*,application/pdf"
+              disabled={uploading}
+              onChange={(e) => void handleUpload(e.target.files?.[0])}
+            />
+          </div>
+          <div className="flex items-end gap-2">
+            <Button type="button" variant="outline" onClick={generateClaimSheet} className="w-full">
+              <FileSpreadsheet className="mr-1 h-4 w-4" />
+              Generate claim sheet
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground sm:col-span-2 lg:col-span-4">
+            {uploading ? (
+              <span className="inline-flex items-center gap-1">
+                <Upload className="h-3 w-3 animate-pulse" /> Uploading…
+              </span>
+            ) : isOcrConfigured() ? (
+              "Uploaded cards are scanned automatically; check every row before verifying."
+            ) : (
+              `${OCR_NOT_CONFIGURED}. Type the card times into the grid below — verification works the same way.`
+            )}
+          </p>
+        </div>
+
+        <Tabs defaultValue="cards">
+          <TabsList>
+            <TabsTrigger value="cards">Time cards</TabsTrigger>
+            <TabsTrigger value="sheets">Claim sheets</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="cards" className="mt-4 space-y-4">
+            <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Employee</TableHead>
+                    <TableHead>Period</TableHead>
+                    <TableHead>File</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {cards.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="h-32 text-center">
+                        <EmptyState
+                          className="border-0 bg-transparent"
+                          icon={<ScanLine className="h-5 w-5" />}
+                          title="No time cards"
+                          description="Upload a scanned card to start verification."
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    cards.map((c) => (
+                      <TableRow
+                        key={c.id}
+                        className={selectedId === c.id ? "bg-muted/50" : undefined}
+                      >
+                        <TableCell className="font-medium">{empName(c.employeeId)}</TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {c.periodStart} → {c.periodEnd}
+                        </TableCell>
+                        <TableCell className="max-w-[14rem] truncate text-sm">
+                          {c.fileUrl ? (
+                            <a className="underline" href={c.fileUrl} target="_blank" rel="noreferrer">
+                              {c.fileName ?? "View"}
+                            </a>
+                          ) : (
+                            "—"
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <StatusBadge
+                            dot
+                            label={c.status}
+                            variant={
+                              c.status === "Verified"
+                                ? "success"
+                                : c.status === "Has Mismatches"
+                                  ? "destructive"
+                                  : "info"
+                            }
+                          />
+                        </TableCell>
+                        <TableCell className="space-x-1 text-right">
+                          <Button size="sm" variant="ghost" onClick={() => setSelectedId(c.id)}>
+                            Verify
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              deleteTimeCard(c.id);
+                              if (selectedId === c.id) setSelectedId(null);
+                              refresh();
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+
+            {selected ? (
+              <div className="rounded-xl border bg-card p-4 shadow-sm">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <h2 className="font-medium">
+                      Verification — {empName(selected.employeeId)}
+                    </h2>
+                    <p className="text-xs text-muted-foreground">
+                      {mismatches} of {comparison.length} rows need attention.
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <ExportButton
+                      rows={comparison.map((r) => ({
+                        Date: r.date,
+                        "Card In": r.cardIn ?? "",
+                        "Card Out": r.cardOut ?? "",
+                        "System In": r.systemIn ?? "",
+                        "System Out": r.systemOut ?? "",
+                        Result: r.state,
+                        Resolution: r.resolution ?? "",
+                      }))}
+                      baseName="time_card_verification"
+                      sheetName="Verification"
+                    />
+                    <Button size="sm" onClick={() => finalize(selected)}>
+                      <CheckCircle2 className="mr-1 h-4 w-4" />
+                      Finalize
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="mt-4 overflow-hidden rounded-lg border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Card in</TableHead>
+                        <TableHead>Card out</TableHead>
+                        <TableHead>System in</TableHead>
+                        <TableHead>System out</TableHead>
+                        <TableHead>Result</TableHead>
+                        <TableHead>Decision</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {comparison.map((r) => (
+                        <TableRow key={r.date}>
+                          <TableCell className="whitespace-nowrap text-sm">{r.date}</TableCell>
+                          <TableCell>
+                            <Input
+                              type="time"
+                              className="h-8 w-28"
+                              value={r.cardIn ?? ""}
+                              onChange={(e) => setEntry(r.date, { checkIn: e.target.value })}
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              type="time"
+                              className="h-8 w-28"
+                              value={r.cardOut ?? ""}
+                              onChange={(e) => setEntry(r.date, { checkOut: e.target.value })}
+                            />
+                          </TableCell>
+                          <TableCell className="text-sm">{r.systemIn || "—"}</TableCell>
+                          <TableCell className="text-sm">{r.systemOut || "—"}</TableCell>
+                          <TableCell>
+                            <StatusBadge
+                              dot
+                              label={r.state}
+                              variant={
+                                r.state === "Verified"
+                                  ? "success"
+                                  : r.state === "Mismatch"
+                                    ? "destructive"
+                                    : "warning"
+                              }
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Select
+                              value={r.resolution ?? ""}
+                              onValueChange={(v) =>
+                                setEntry(r.date, {
+                                  resolution: v as TimeCardEntry["resolution"],
+                                })
+                              }
+                            >
+                              <SelectTrigger className="h-8 w-36">
+                                <SelectValue placeholder="—" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Accepted">Accepted</SelectItem>
+                                <SelectItem value="Corrected">Corrected</SelectItem>
+                                <SelectItem value="Ignored">Ignored</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            ) : null}
+          </TabsContent>
+
+          <TabsContent value="sheets" className="mt-4">
+            <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Reference</TableHead>
+                    <TableHead>Employee</TableHead>
+                    <TableHead>Period</TableHead>
+                    <TableHead>Days</TableHead>
+                    <TableHead>Normal hrs</TableHead>
+                    <TableHead>OT hrs</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {sheets.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={7} className="h-32 text-center">
+                        <EmptyState
+                          className="border-0 bg-transparent"
+                          icon={<FileSpreadsheet className="h-5 w-5" />}
+                          title="No claim sheets"
+                          description="Generate one from verified attendance."
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    sheets.map((s) => (
+                      <TableRow key={s.id}>
+                        <TableCell className="font-medium">{s.reference}</TableCell>
+                        <TableCell>{empName(s.employeeId)}</TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {s.periodStart} → {s.periodEnd}
+                        </TableCell>
+                        <TableCell>{s.totalDays}</TableCell>
+                        <TableCell>{s.totalNormalHours.toFixed(1)}</TableCell>
+                        <TableCell>{s.totalOtHours.toFixed(1)}</TableCell>
+                        <TableCell className="space-x-1 text-right">
+                          <Button size="sm" variant="ghost" onClick={() => void exportSheet(s.id)}>
+                            Export
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              deleteClaimSheet(s.id);
+                              refresh();
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </TabsContent>
+        </Tabs>
+      </div>
+    </AppShell>
+  );
+}
