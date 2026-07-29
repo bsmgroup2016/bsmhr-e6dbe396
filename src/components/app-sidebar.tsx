@@ -6,6 +6,7 @@ import {
   Building2,
   Boxes,
   CalendarClock,
+  ScanLine,
   BellRing,
   ClipboardList,
   FileText,
