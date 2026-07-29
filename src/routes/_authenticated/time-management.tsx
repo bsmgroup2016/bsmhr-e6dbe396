@@ -12,6 +12,7 @@ import {
   AlertCircle,
   ClipboardList,
   FileSpreadsheet,
+  MapPin,
 } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
