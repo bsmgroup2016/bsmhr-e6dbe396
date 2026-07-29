@@ -333,12 +333,13 @@ export default function PayrollPage() {
                   <TableHead>Levy</TableHead>
                   <TableHead>Net pay</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filtered.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="h-32 text-center">
+                    <TableCell colSpan={10} className="h-32 text-center">
                       <EmptyState className="bg-transparent border-0" icon={<DollarSign className="h-5 w-5" />} title="No payroll entries" description={`No records for ${month}.`} />
                     </TableCell>
                   </TableRow>
@@ -365,6 +366,28 @@ export default function PayrollPage() {
                             dot
                           />
                         </TableCell>
+                        <TableCell>
+                          <div className="flex items-center justify-end gap-1">
+                            <Select value="" onValueChange={(v) => setStatus(p, v as PayrollStatus)}>
+                              <SelectTrigger className="h-8 w-32 text-xs">
+                                <SelectValue placeholder="Set status" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {statuses.map((s) => (
+                                  <SelectItem key={s} value={s}>
+                                    {s}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <Button size="icon" variant="ghost" title="Payslip" onClick={() => setPayslipOf(p)}>
+                              <Printer className="h-4 w-4" />
+                            </Button>
+                            <Button size="icon" variant="ghost" title="Delete" onClick={() => handleDelete(p)}>
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </div>
+                        </TableCell>
                       </TableRow>
                     );
                   })
@@ -373,8 +396,84 @@ export default function PayrollPage() {
             </Table>
           </div>
         </div>
+
+        <PayslipDialog
+          entry={payslipOf}
+          employee={payslipOf ? employees.find((e) => e.id === payslipOf.employeeId) : undefined}
+          companyName={
+            companies.find((c) => c.id === employees.find((e) => e.id === payslipOf?.employeeId)?.companyId)?.name ??
+            "BSM Engineering"
+          }
+          onClose={() => setPayslipOf(null)}
+        />
       </div>
     </AppShell>
+  );
+}
+
+function PayslipDialog({
+  entry,
+  employee,
+  companyName,
+  onClose,
+}: {
+  entry: PayrollEntry | null;
+  employee?: Employee;
+  companyName: string;
+  onClose: () => void;
+}) {
+  if (!entry) return null;
+  const money = (n: number) => `S$ ${n.toLocaleString()}`;
+  const rows: [string, number][] = [
+    ["Basic salary", entry.basicSalary],
+    ["Overtime", entry.overtimePay],
+    ["Allowances", entry.allowances],
+    ["Deductions", -entry.deductions],
+    ["CPF (employee)", -entry.cpfEmployee],
+  ];
+
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Payslip — {entry.month}</DialogTitle>
+          <DialogDescription>{companyName}</DialogDescription>
+        </DialogHeader>
+        <div id="payslip-print" className="space-y-4 rounded-lg border p-4 text-sm">
+          <div>
+            <div className="text-base font-semibold">{employee?.name}</div>
+            <div className="text-xs text-muted-foreground">
+              {employee?.employeeCode} · {employee?.trade} · {employee?.passType}
+            </div>
+          </div>
+          <div className="space-y-1">
+            {rows.map(([label, value]) => (
+              <div key={label} className="flex justify-between">
+                <span className="text-muted-foreground">{label}</span>
+                <span>{money(value)}</span>
+              </div>
+            ))}
+          </div>
+          <div className="flex justify-between border-t pt-2 text-base font-semibold">
+            <span>Net pay</span>
+            <span>{money(entry.netPay)}</span>
+          </div>
+          <div className="flex justify-between text-xs text-muted-foreground">
+            <span>Employer CPF {money(entry.cpfEmployer)}</span>
+            <span>Levy {money(entry.levies)}</span>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>
+            Close
+          </Button>
+          <Button onClick={() => window.print()}>
+            <Printer className="mr-1 h-4 w-4" />
+            Print
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
