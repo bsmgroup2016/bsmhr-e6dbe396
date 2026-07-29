@@ -370,6 +370,39 @@ export default function WorkforcePage() {
                   ))}
                 </SelectContent>
               </Select>
+              <Select value={categoryFilter} onValueChange={(v) => setCategoryFilter(v as WorkerCategory | "all")}>
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="Category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All categories</SelectItem>
+                  {WORKER_CATEGORIES.map((c) => (
+                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={deployFilter} onValueChange={(v) => setDeployFilter(v as DeploymentStatus | "all")}>
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="Deployment" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All deployment</SelectItem>
+                  {DEPLOYMENT_STATUSES.map((d) => (
+                    <SelectItem key={d} value={d}>{d}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={nationalityFilter} onValueChange={setNationalityFilter}>
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="Nationality" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All nationalities</SelectItem>
+                  {nationalities.map((n) => (
+                    <SelectItem key={n} value={n}>{n}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
