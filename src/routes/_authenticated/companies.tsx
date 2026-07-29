@@ -82,6 +82,7 @@ function CompaniesPage() {
       legalName: fd.get("legalName") as string,
       uen: fd.get("uen") as string,
       industry: fd.get("industry") as string,
+      sector: fd.get("sector") as string,
       address: fd.get("address") as string,
       phone: fd.get("phone") as string,
       email: fd.get("email") as string,
