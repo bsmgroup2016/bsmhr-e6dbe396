@@ -585,6 +585,7 @@ function PayslipDialog({
     ["Deductions", -entry.deductions],
     ["CPF (employee)", -entry.cpfEmployee],
   ];
+  if (entry.shgAmount) rows.push([`${entry.shgFund} fund`, -entry.shgAmount]);
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
@@ -615,6 +616,10 @@ function PayslipDialog({
           <div className="flex justify-between text-xs text-muted-foreground">
             <span>Employer CPF {money(entry.cpfEmployer)}</span>
             <span>Levy {money(entry.levies)}</span>
+          </div>
+          <div className="flex justify-between text-xs text-muted-foreground">
+            <span>SDL {money(entry.sdl ?? 0)}</span>
+            <span>Employer cost {money(entry.employerCost ?? 0)}</span>
           </div>
         </div>
         <DialogFooter>
