@@ -6,6 +6,7 @@ import type {
   Attendance, PayrollEntry, Approval, AuditLog, User, AppBranch, Company,
   LeaveRequest, RateAgreement, Invoice, InvoiceLine,
   Dormitory, BedAllocation, Vehicle, Trip,
+  Asset, AssetIssuance,
 } from "@/lib/types";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -13,6 +14,7 @@ import {
   toDocument, toAttendance, toPayroll, toApproval, toCompany, toLeave,
   toRate, toInvoice,
   toDormitory, toAllocation, toVehicle, toTrip,
+  toAsset, toIssuance,
 } from "@/lib/db";
 
 export interface AppState {
@@ -33,6 +35,8 @@ export interface AppState {
   allocations: BedAllocation[];
   vehicles: Vehicle[];
   trips: Trip[];
+  assets: Asset[];
+  issuances: AssetIssuance[];
   users: User[];
   branches: AppBranch[];
   currentBranch: string;
@@ -52,6 +56,7 @@ const emptyState: AppState = {
   attendance: [], payroll: [], approvals: [], auditLogs: [], leaveRequests: [],
   rateAgreements: [], invoices: [], users: [],
   dormitories: [], allocations: [], vehicles: [], trips: [],
+  assets: [], issuances: [],
   branches: defaultBranches, currentBranch: "hq",
   companies: [], currentCompany: "", currentUser: null,
 };
