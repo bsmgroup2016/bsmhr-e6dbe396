@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { GraduationCap, ShieldAlert, AlertTriangle, Plus, Search, Trash2, Download, CheckCircle2 } from "lucide-react";
+import { GraduationCap, ShieldAlert, AlertTriangle, Plus, Search, Trash2, Download, CheckCircle2, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/app-shell";
