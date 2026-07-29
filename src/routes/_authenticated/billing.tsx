@@ -193,6 +193,45 @@ function BillingPage() {
     toast.success("Rate agreement added");
   }
 
+  function handleAddContract(form: FormData) {
+    const startDate = (form.get("startDate") as string) || new Date().toISOString().slice(0, 10);
+    const billingCycle = form.get("billingCycle") as BillingCycle;
+    const billingDay = Number(form.get("billingDay") ?? 1);
+    addContract({
+      companyId: companyId || undefined,
+      clientId: form.get("clientId") as string,
+      projectId: ((form.get("projectId") as string) || "all") === "all" ? undefined : (form.get("projectId") as string),
+      contractNo: (form.get("contractNo") as string) || `CT-${Date.now().toString().slice(-6)}`,
+      title: (form.get("title") as string) || "",
+      startDate,
+      endDate: (form.get("endDate") as string) || undefined,
+      billingCycle,
+      billingDay,
+      billingSource: form.get("billingSource") as BillingSource,
+      fixedAmount: Number(form.get("fixedAmount") ?? 0),
+      gstRate: Number(form.get("gstRate") ?? GST_DEFAULT),
+      paymentTermsDays: Number(form.get("paymentTermsDays") ?? 30),
+      autoInvoice: true,
+      nextInvoiceOn: firstRunDate({ billingCycle, billingDay }, startDate),
+      status: "Active",
+      remarks: (form.get("remarks") as string) || undefined,
+    });
+    setIsContractOpen(false);
+    refresh();
+    toast.success("Contract added — auto-invoicing scheduled");
+  }
+
+  function handleRunBilling() {
+    const { created, skipped } = runContractBilling();
+    refresh();
+    if (created.length === 0 && skipped.length === 0) {
+      toast.info("No contracts are due for invoicing today");
+      return;
+    }
+    if (created.length > 0) toast.success(`${created.length} invoice(s) generated from contracts`);
+    for (const s of skipped) toast.warning(`${s.contract.contractNo}: ${s.reason}`);
+  }
+
   function setStatus(inv: Invoice, status: InvoiceStatus) {
     updateInvoice(inv.id, { status });
     refresh();
