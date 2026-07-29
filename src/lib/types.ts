@@ -224,6 +224,32 @@ export interface Attendance {
 
 export type PayrollStatus = "Draft" | "Pending Approval" | "Approved" | "Paid" | "Rejected";
 
+export type LeaveType =
+  | "Annual Leave"
+  | "Medical Leave"
+  | "Hospitalisation Leave"
+  | "Unpaid Leave"
+  | "Home Leave"
+  | "Compassionate Leave";
+
+export type LeaveStatus = "Pending" | "Approved" | "Rejected" | "Cancelled";
+
+export interface LeaveRequest {
+  id: string;
+  employeeId: string;
+  type: LeaveType;
+  startDate: string;
+  endDate: string;
+  days: number;
+  reason?: string;
+  status: LeaveStatus;
+  approvedBy?: string;
+  approvedAt?: string;
+  remarks?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface PayrollEntry {
   id: string;
   employeeId: string;
