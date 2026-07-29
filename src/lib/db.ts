@@ -572,6 +572,7 @@ export interface LoadedData {
   inventory: InventoryItem[]; movements: StockMovement[]; purchaseOrders: PurchaseOrder[];
   branchPrefixes: BranchPrefix[]; certifications: EmployeeCertification[];
   timeCards: TimeCard[]; claimSheets: ClaimSheet[];
+  contracts: ClientContract[];
 }
 
 /* ---------- client contracts (recurring auto-invoicing) ---------- */
