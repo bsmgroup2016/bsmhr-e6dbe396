@@ -258,7 +258,7 @@ export default function TransportPage() {
                           <TableCell>{t.passengers}</TableCell>
                           <TableCell>
                             <StatusBadge
-                              variant={t.status === "Completed" ? "success" : t.status === "Cancelled" ? "muted" : "warning"}
+                              variant={t.status === "Completed" ? "success" : t.status === "Cancelled" ? "ghost" : "warning"}
                               label={t.status}
                               dot
                             />
@@ -364,7 +364,7 @@ export default function TransportPage() {
                           <TableCell>{v.capacity}</TableCell>
                           <TableCell>{v.roadTaxExpiry || "—"}</TableCell>
                           <TableCell>{v.insuranceExpiry || "—"}</TableCell>
-                          <TableCell><StatusBadge variant={v.status === "Active" ? "success" : v.status === "In Workshop" ? "warning" : "muted"} label={v.status} dot /></TableCell>
+                          <TableCell><StatusBadge variant={v.status === "Active" ? "success" : v.status === "In Workshop" ? "warning" : "ghost"} label={v.status} dot /></TableCell>
                           <TableCell>
                             <Button size="icon" variant="ghost" title="Delete" onClick={() => { deleteVehicle(v.id); refresh(); }}>
                               <Trash2 className="h-4 w-4 text-destructive" />

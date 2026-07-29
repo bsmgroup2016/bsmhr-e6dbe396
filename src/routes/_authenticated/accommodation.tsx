@@ -256,7 +256,7 @@ export default function AccommodationPage() {
                           <TableCell>S${a.monthlyRent.toLocaleString()}</TableCell>
                           <TableCell>
                             <StatusBadge
-                              variant={a.status === "Occupied" ? "success" : a.status === "Reserved" ? "warning" : "muted"}
+                              variant={a.status === "Occupied" ? "success" : a.status === "Reserved" ? "warning" : "ghost"}
                               label={a.status}
                               dot
                             />
@@ -346,7 +346,7 @@ export default function AccommodationPage() {
                           <TableCell>{dormOccupancy(d.id)} / {d.capacity}</TableCell>
                           <TableCell>S${d.monthlyRent.toLocaleString()}</TableCell>
                           <TableCell>{d.licenseExpiry || "—"}</TableCell>
-                          <TableCell><StatusBadge variant={d.status === "Active" ? "success" : "muted"} label={d.status} dot /></TableCell>
+                          <TableCell><StatusBadge variant={d.status === "Active" ? "success" : "ghost"} label={d.status} dot /></TableCell>
                           <TableCell>
                             <Button size="icon" variant="ghost" title="Delete" onClick={() => { deleteDormitory(d.id); refresh(); }}>
                               <Trash2 className="h-4 w-4 text-destructive" />
