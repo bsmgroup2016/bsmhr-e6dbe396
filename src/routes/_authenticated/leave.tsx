@@ -129,12 +129,14 @@ export default function LeavePage() {
 
   function approve(row: LeaveRequest) {
     approveLeaveRequest(row.id);
+    void notifyLeaveDecision(row.id, "Approved");
     refresh();
     toast.success(`Approved — ${row.days} day(s) pushed to attendance`);
   }
 
   function reject(row: LeaveRequest) {
     updateLeaveRequest(row.id, { status: "Rejected" });
+    void notifyLeaveDecision(row.id, "Rejected");
     refresh();
     toast.success("Leave request rejected");
   }
