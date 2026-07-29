@@ -97,6 +97,7 @@ export interface Employee {
   workPermitExpiryDate?: string;
   dormitoryAddress?: string;
   accountHolderName?: string;
+  ipaDocumentUrl?: string;
   createdAt: string;
   updatedAt: string;
 }
