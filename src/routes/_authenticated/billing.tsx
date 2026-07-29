@@ -6,6 +6,7 @@ import {
   FileText,
   Wand2,
   Printer,
+  FileDown,
   Trash2,
   DollarSign,
   Clock,
@@ -17,6 +18,7 @@ import { toast } from "sonner";
 
 import { AppShell } from "@/components/app-shell";
 import { ExportButton } from "@/components/data-io";
+import { downloadInvoicePdf } from "@/lib/pdf";
 import { SummaryCard } from "@/components/ui/summary-card";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -336,6 +338,19 @@ function BillingPage() {
                                 <Button size="sm" variant="ghost" onClick={() => setPreview(i)} title="View / print">
                                   <Printer className="h-4 w-4" />
                                 </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  title="Download PDF"
+                                  onClick={() =>
+                                    void downloadInvoicePdf(i, {
+                                      company,
+                                      clientName: client?.name,
+                                    }).then(() => toast.success("Invoice PDF downloaded"))
+                                  }
+                                >
+                                  <FileDown className="h-4 w-4" />
+                                </Button>
                                 {i.status === "Draft" && (
                                   <Button size="sm" variant="secondary" onClick={() => setStatus(i, "Sent")}>
                                     Send
@@ -522,6 +537,17 @@ function BillingPage() {
                 <Button variant="outline" onClick={() => window.print()}>
                   <Printer className="mr-1 h-4 w-4" />
                   Print
+                </Button>
+                <Button
+                  onClick={() =>
+                    void downloadInvoicePdf(preview, {
+                      company,
+                      clientName: clients.find((c) => c.id === preview.clientId)?.name,
+                    }).then(() => toast.success("Invoice PDF downloaded"))
+                  }
+                >
+                  <FileDown className="mr-1 h-4 w-4" />
+                  Download PDF
                 </Button>
               </DialogFooter>
             </div>
