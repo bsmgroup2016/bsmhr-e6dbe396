@@ -500,3 +500,59 @@ export interface AssetIssuance {
   createdAt: string;
   updatedAt: string;
 }
+
+/* ---------- Phase 9: training & safety ---------- */
+export type CourseCategory = "Safety" | "Statutory" | "Skill" | "Induction" | "Other";
+export type TrainingStatus = "Scheduled" | "Completed" | "Failed" | "Expired";
+export type IncidentType =
+  | "Near Miss" | "First Aid" | "Injury" | "Property Damage" | "Dangerous Occurrence" | "Fatality" | "Other";
+export type IncidentSeverity = "Low" | "Medium" | "High" | "Critical";
+export type IncidentStatus = "Open" | "Under Investigation" | "Closed";
+
+export interface TrainingCourse {
+  id: string;
+  companyId?: string;
+  code: string;
+  name: string;
+  category: CourseCategory;
+  provider?: string;
+  validityMonths?: number;
+  mandatory: boolean;
+  cost: number;
+  remarks?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TrainingRecord {
+  id: string;
+  courseId: string;
+  employeeId: string;
+  completionDate?: string;
+  expiryDate?: string;
+  certificateNo?: string;
+  score?: number;
+  cost?: number;
+  status: TrainingStatus;
+  documentUrl?: string;
+  remarks?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SafetyIncident {
+  id: string;
+  companyId?: string;
+  siteId?: string;
+  employeeId?: string;
+  incidentDate: string;
+  incidentType: IncidentType;
+  severity: IncidentSeverity;
+  description: string;
+  actionTaken?: string;
+  momReported: boolean;
+  lostDays: number;
+  status: IncidentStatus;
+  createdAt: string;
+  updatedAt: string;
+}
