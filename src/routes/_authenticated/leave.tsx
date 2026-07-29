@@ -4,6 +4,7 @@ import { Plus, Search, CalendarDays, CheckCircle2, Clock, XCircle, Trash2 } from
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/app-shell";
+import { notifyLeaveDecision } from "@/lib/notify";
 import { ExportButton } from "@/components/data-io";
 import { SummaryCard } from "@/components/ui/summary-card";
 import { StatusBadge } from "@/components/ui/status-badge";
