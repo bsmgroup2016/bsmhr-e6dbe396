@@ -529,6 +529,9 @@ export interface Dormitory {
   capacity: number;
   monthlyRent: number;
   licenseNo?: string;
+  /** Total sleeping-area floor space, used for the MOM 4.5 m²/resident rule. */
+  floorAreaSqm?: number;
+  rooms?: number;
   licenseExpiry?: string;
   lastInspection?: string;
   status: DormStatus;
@@ -736,6 +739,10 @@ export interface Candidate {
   joinDate?: string;
   resumeUrl?: string;
   employeeId?: string;
+  /** Agent placement commission agreed for this candidate (S$). */
+  agentCommission?: number;
+  commissionStatus?: "Unbilled" | "Payable" | "Paid";
+  commissionPaidOn?: string;
   remarks?: string;
   createdAt: string;
   updatedAt: string;

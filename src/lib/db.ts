@@ -386,6 +386,9 @@ export const fromCandidate = (r: Row): Candidate => ({
   stage: (r.stage ?? "Applied") as Candidate["stage"], interviewDate: d(r.interview_date),
   offerDate: d(r.offer_date), joinDate: d(r.join_date), resumeUrl: r.resume_url ?? undefined,
   employeeId: r.employee_id ?? undefined, remarks: r.remarks ?? undefined,
+  agentCommission: r.agent_commission == null ? undefined : Number(r.agent_commission),
+  commissionStatus: (r.commission_status ?? "Unbilled") as Candidate["commissionStatus"],
+  commissionPaidOn: d(r.commission_paid_on),
   createdAt: r.created_at, updatedAt: r.updated_at,
 });
 
@@ -398,6 +401,9 @@ export const toCandidate = (x: Partial<Candidate>): Row => ({
   interview_date: nullDate(x.interviewDate), offer_date: nullDate(x.offerDate),
   join_date: nullDate(x.joinDate), resume_url: x.resumeUrl ?? null,
   employee_id: x.employeeId || null, remarks: x.remarks ?? null,
+  agent_commission: x.agentCommission ?? 0,
+  commission_status: x.commissionStatus ?? "Unbilled",
+  commission_paid_on: nullDate(x.commissionPaidOn),
 });
 
 /* ---------- bulk load ---------- */
@@ -407,6 +413,7 @@ export const fromDormitory = (r: Row): Dormitory => ({
   operator: r.operator ?? undefined, contactPerson: r.contact_person ?? undefined,
   contactPhone: r.contact_phone ?? undefined, capacity: Number(r.capacity ?? 0),
   monthlyRent: Number(r.monthly_rent ?? 0), licenseNo: r.license_no ?? undefined,
+  floorAreaSqm: Number(r.floor_area_sqm ?? 0), rooms: Number(r.rooms ?? 0),
   licenseExpiry: d(r.license_expiry), lastInspection: d(r.last_inspection),
   status: (r.status ?? "Active") as Dormitory["status"], remarks: r.remarks ?? undefined,
   createdAt: r.created_at, updatedAt: r.updated_at,
@@ -417,6 +424,7 @@ export const toDormitory = (x: Partial<Dormitory>): Row => ({
   operator: x.operator ?? null, contact_person: x.contactPerson ?? null,
   contact_phone: x.contactPhone ?? null, capacity: x.capacity ?? 0,
   monthly_rent: x.monthlyRent ?? 0, license_no: x.licenseNo ?? null,
+  floor_area_sqm: x.floorAreaSqm ?? 0, rooms: x.rooms ?? 0,
   license_expiry: nullDate(x.licenseExpiry), last_inspection: nullDate(x.lastInspection),
   status: x.status, remarks: x.remarks ?? null,
 });

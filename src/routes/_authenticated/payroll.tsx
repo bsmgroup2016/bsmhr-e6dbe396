@@ -65,6 +65,7 @@ import { toast } from "sonner";
 import type { Employee, PayrollEntry, PayrollStatus } from "@/lib/types";
 import { pick, type ImportColumn } from "@/lib/xlsx";
 import { exportCsv, timestampedName } from "@/lib/xlsx";
+import { cpfWebRows, ir8aRows } from "@/lib/gov-files";
 import { bankFileRows } from "@/lib/ops";
 import { computeStatutory, round2 } from "@/lib/sg-payroll";
 
@@ -215,6 +216,29 @@ export default function PayrollPage() {
     });
     await exportCsv(rows, timestampedName(`cpf_statutory_${month}`, "csv"));
     toast.success(`CPF submission sheet exported (${rows.length} workers)`);
+  }
+
+  /** CPF e-Submission (CPF WEB) upload file for the selected month. */
+  async function exportCpfWebFile() {
+    const rows = cpfWebRows(filtered, employees);
+    if (!rows.length) {
+      toast.error("No CPF-contributing (Citizen/PR) workers this month");
+      return;
+    }
+    await exportCsv(rows, timestampedName(`cpf_web_${month}`, "csv"));
+    toast.success(`CPF e-Submission file created (${rows.length} workers)`);
+  }
+
+  /** IRAS AIS / IR8A annual return for the year of the selected month. */
+  async function exportIrasAis() {
+    const year = month.slice(0, 4);
+    const rows = ir8aRows(payroll, employees, year);
+    if (!rows.length) {
+      toast.error(`No payroll records for ${year}`);
+      return;
+    }
+    await exportCsv(rows, timestampedName(`iras_ais_ir8a_${year}`, "csv"));
+    toast.success(`IRAS AIS (IR8A) file created for ${rows.length} employees`);
   }
 
   /** Recalculate CPF/SDL/SHG for every entry of the month from current profiles. */
@@ -398,6 +422,14 @@ export default function PayrollPage() {
             <Button size="sm" variant="outline" onClick={recalcStatutory}>
               <Calculator className="mr-1 h-4 w-4" />
               Recalc CPF
+            </Button>
+            <Button size="sm" variant="outline" onClick={exportCpfWebFile}>
+              <FileDown className="mr-1 h-4 w-4" />
+              CPF WEB file
+            </Button>
+            <Button size="sm" variant="outline" onClick={exportIrasAis}>
+              <FileDown className="mr-1 h-4 w-4" />
+              IRAS AIS (IR8A)
             </Button>
             <Button size="sm" variant="outline" onClick={exportCpfReport}>
               <FileDown className="mr-1 h-4 w-4" />
