@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 
 import { AppShell } from "@/components/app-shell";
@@ -37,6 +38,24 @@ export const Route = createFileRoute("/_authenticated/")({
   }),
   component: DashboardPage,
 });
+
+function SectionHeading({
+  title,
+  caption,
+  icon,
+}: {
+  title: string;
+  caption?: string;
+  icon?: ReactNode;
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      {icon}
+      <h2 className="text-base font-semibold tracking-tight text-foreground">{title}</h2>
+      {caption ? <span className="ml-auto text-xs text-muted-foreground">{caption}</span> : null}
+    </div>
+  );
+}
 
 function DashboardPage() {
   const companyId = getCurrentCompany();
@@ -82,7 +101,7 @@ function DashboardPage() {
 
   return (
     <AppShell>
-      <div className="mx-auto max-w-7xl space-y-6">
+      <div className="mx-auto max-w-7xl space-y-8">
         <div className="relative overflow-hidden rounded-2xl bg-gradient-hero p-6 shadow-elegant sm:p-8">
           <div className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-white/10 blur-3xl" />
           <div className="pointer-events-none absolute -bottom-24 left-1/3 h-48 w-48 rounded-full bg-white/5 blur-3xl" />
@@ -99,63 +118,97 @@ function DashboardPage() {
           </div>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <SummaryCard
-            title="Total Employees"
-            value={employees.length.toString()}
-            icon={<Users className="h-5 w-5" />}
-            variant="primary"
-            caption={`${activeEmployees} active · ${deployedEmployees} deployed`}
-          />
-          <SummaryCard
-            title="Active Sites"
-            value={activeSites.toString()}
-            icon={<Building2 className="h-5 w-5" />}
-            variant="info"
-            caption={`Across ${projects.length} projects`}
-          />
-          <SummaryCard
-            title="Active Projects"
-            value={activeProjects.toString()}
-            icon={<FolderKanban className="h-5 w-5" />}
-            variant="success"
-            caption={`${projects.filter((p) => p.status === "Planning").length} planning`}
-          />
-          <SummaryCard
-            title="Pending Approval"
-            value={pendingApprovals.toString()}
-            icon={<Clock className="h-5 w-5" />}
-            variant="warning"
-            caption={`${expiringDocs} docs · ${presentToday} present today`}
-          />
-        </div>
-
-        <div className="rounded-xl border bg-gradient-surface p-5 shadow-sm">
-          <div className="flex items-center gap-2">
-            <ShieldAlert className="h-4 w-4 text-warning" />
-            <h2 className="text-base font-semibold text-foreground">Pass expiry alerts</h2>
-            <span className="ml-auto text-xs text-muted-foreground">Next 60 days</span>
+        {/* 1. Key numbers */}
+        <section className="space-y-3">
+          <SectionHeading title="Overview" caption="Live figures for the selected company" />
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <SummaryCard
+              title="Total Employees"
+              value={employees.length.toString()}
+              icon={<Users className="h-5 w-5" />}
+              variant="primary"
+              caption={`${activeEmployees} active · ${deployedEmployees} deployed`}
+            />
+            <SummaryCard
+              title="Active Sites"
+              value={activeSites.toString()}
+              icon={<Building2 className="h-5 w-5" />}
+              variant="info"
+              caption={`Across ${projects.length} projects`}
+            />
+            <SummaryCard
+              title="Active Projects"
+              value={activeProjects.toString()}
+              icon={<FolderKanban className="h-5 w-5" />}
+              variant="success"
+              caption={`${projects.filter((p) => p.status === "Planning").length} planning`}
+            />
+            <SummaryCard
+              title="Pending Approval"
+              value={pendingApprovals.toString()}
+              icon={<Clock className="h-5 w-5" />}
+              variant="warning"
+              caption={`${expiringDocs} docs · ${presentToday} present today`}
+            />
           </div>
+        </section>
+
+        {/* 2. Act now — quick actions */}
+        <section className="space-y-3">
+          <SectionHeading title="Quick actions" caption="Most used day-to-day tasks" />
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {quickActions.map((action) => {
+              const colorClass = {
+                primary: "bg-gradient-primary text-primary-foreground",
+                success: "bg-gradient-success text-success-foreground",
+                info: "bg-gradient-info text-info-foreground",
+                warning: "bg-gradient-warning text-warning-foreground",
+              }[action.color];
+              return (
+                <Link
+                  key={action.to}
+                  to={action.to}
+                  className="flex items-center gap-3 rounded-xl border bg-gradient-surface p-4 text-left shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-elegant"
+                >
+                  <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg shadow-sm ${colorClass}`}>
+                    <action.icon className="h-4 w-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-foreground">{action.label}</p>
+                    <p className="truncate text-xs text-muted-foreground">{action.desc}</p>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* 3. Attention needed — pass expiry */}
+        <section className="space-y-3">
+          <SectionHeading
+            title="Pass expiry alerts"
+            caption="Next 60 days"
+            icon={<ShieldAlert className="h-4 w-4 text-warning" />}
+          />
           {expiringPasses.length === 0 ? (
             <EmptyState
-              className="mt-4 border-0 bg-transparent"
               icon={<AlertCircle className="h-5 w-5" />}
               title="No passes expiring soon"
               description="All work permits and passes are valid for more than 60 days."
             />
           ) : (
-            <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {expiringPasses.map((e) => (
                 <Link
                   key={e.id}
                   to="/workforce"
-                  className="rounded-lg border bg-card/60 p-3 transition-all duration-300 hover:-translate-y-0.5 hover:border-warning/40 hover:shadow-elegant"
+                  className="rounded-xl border bg-gradient-surface p-4 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-warning/40 hover:shadow-elegant"
                 >
                   <p className="truncate text-sm font-medium text-foreground">{e.name}</p>
                   <p className="truncate text-xs text-muted-foreground">
                     {e.passType} · {e.employeeCode}
                   </p>
-                  <div className="mt-2">
+                  <div className="mt-3">
                     <StatusBadge
                       variant={e.days < 0 ? "destructive" : e.days <= 30 ? "warning" : "info"}
                       label={
@@ -170,43 +223,47 @@ function DashboardPage() {
               ))}
             </div>
           )}
-        </div>
+        </section>
 
-        <div className="grid gap-4 lg:grid-cols-3">
-          <div className="rounded-xl border bg-gradient-surface p-5 shadow-sm lg:col-span-2">
-            <div className="flex items-center justify-between">
-              <h2 className="text-base font-semibold text-foreground">Quick actions</h2>
-            </div>
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              {quickActions.map((action) => {
-                const colorClass = {
-                  primary: "bg-gradient-primary text-primary-foreground",
-                  success: "bg-gradient-success text-success-foreground",
-                  info: "bg-gradient-info text-info-foreground",
-                  warning: "bg-gradient-warning text-warning-foreground",
-                }[action.color];
-                return (
-                  <Link
-                    key={action.to}
-                    to={action.to}
-                    className="flex items-center gap-3 rounded-lg border bg-card/60 p-3 text-left transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-elegant"
-                  >
-                    <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg shadow-sm ${colorClass}`}>
-                      <action.icon className="h-4 w-4" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-foreground">{action.label}</p>
-                      <p className="text-xs text-muted-foreground">{action.desc}</p>
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
+        {/* 4. History + system status */}
+        <section className="grid gap-4 lg:grid-cols-3">
+          <div className="space-y-3 lg:col-span-2">
+            <SectionHeading title="Recent activity" caption="Latest 10 actions" />
+            {logs.length === 0 ? (
+              <EmptyState
+                icon={<CalendarClock className="h-5 w-5" />}
+                title="No recent activity"
+                description="Once you start managing assignments and attendance, recent actions will appear here."
+              />
+            ) : (
+              <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/50">
+                    <tr>
+                      <th className="px-4 py-2 text-left font-medium">Time</th>
+                      <th className="px-4 py-2 text-left font-medium">User</th>
+                      <th className="px-4 py-2 text-left font-medium">Action</th>
+                      <th className="px-4 py-2 text-left font-medium">Details</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {logs.map((l) => (
+                      <tr key={l.id} className="border-t">
+                        <td className="px-4 py-2 text-muted-foreground">{new Date(l.timestamp).toLocaleString()}</td>
+                        <td className="px-4 py-2 font-medium">{l.userName}</td>
+                        <td className="px-4 py-2">{l.action} {l.entityType}</td>
+                        <td className="max-w-xs truncate px-4 py-2 text-muted-foreground">{l.details}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
 
-          <div className="rounded-xl border bg-gradient-surface p-5 shadow-sm">
-            <h2 className="text-base font-semibold text-foreground">Status</h2>
-            <div className="mt-4 space-y-3">
+          <div className="space-y-3">
+            <SectionHeading title="Status" />
+            <div className="space-y-3 rounded-xl border bg-gradient-surface p-5 shadow-sm">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">System</span>
                 <StatusBadge variant="success" label="Operational" dot />
@@ -221,46 +278,15 @@ function DashboardPage() {
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Expiring docs</span>
-                <StatusBadge variant={expiringDocs > 0 ? "warning" : "success"} label={expiringDocs > 0 ? `${expiringDocs} alert` : "OK"} />
+                <StatusBadge
+                  variant={expiringDocs > 0 ? "warning" : "success"}
+                  label={expiringDocs > 0 ? `${expiringDocs} alert` : "OK"}
+                />
               </div>
             </div>
           </div>
-        </div>
+        </section>
 
-        <div className="rounded-xl border bg-gradient-surface p-5 shadow-sm">
-          <h2 className="text-base font-semibold text-foreground">Recent activity</h2>
-          {logs.length === 0 ? (
-            <EmptyState
-              className="mt-4 bg-transparent border-0"
-              icon={<CalendarClock className="h-5 w-5" />}
-              title="No recent activity"
-              description="Once you start managing assignments and attendance, recent actions will appear here."
-            />
-          ) : (
-            <div className="mt-4 overflow-hidden rounded-lg border">
-              <table className="w-full text-sm">
-                <thead className="bg-muted/50">
-                  <tr>
-                    <th className="px-4 py-2 text-left font-medium">Time</th>
-                    <th className="px-4 py-2 text-left font-medium">User</th>
-                    <th className="px-4 py-2 text-left font-medium">Action</th>
-                    <th className="px-4 py-2 text-left font-medium">Details</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {logs.map((l) => (
-                    <tr key={l.id} className="border-t">
-                      <td className="px-4 py-2 text-muted-foreground">{new Date(l.timestamp).toLocaleString()}</td>
-                      <td className="px-4 py-2 font-medium">{l.userName}</td>
-                      <td className="px-4 py-2">{l.action} {l.entityType}</td>
-                      <td className="px-4 py-2 text-muted-foreground truncate max-w-xs">{l.details}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
       </div>
     </AppShell>
   );
