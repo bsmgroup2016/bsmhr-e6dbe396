@@ -4,11 +4,12 @@
 import type {
   Employee, Client, Project, Site, Assignment, EmployeeDocument,
   Attendance, PayrollEntry, Approval, AuditLog, User, AppBranch, Company,
+  LeaveRequest,
 } from "@/lib/types";
 import { supabase } from "@/integrations/supabase/client";
 import {
   loadAll, toEmployee, toClient, toProject, toSite, toAssignment,
-  toDocument, toAttendance, toPayroll, toApproval, toCompany,
+  toDocument, toAttendance, toPayroll, toApproval, toCompany, toLeave,
 } from "@/lib/db";
 
 export interface AppState {
@@ -22,6 +23,7 @@ export interface AppState {
   payroll: PayrollEntry[];
   approvals: Approval[];
   auditLogs: AuditLog[];
+  leaveRequests: LeaveRequest[];
   users: User[];
   branches: AppBranch[];
   currentBranch: string;
@@ -38,7 +40,7 @@ const defaultBranches: AppBranch[] = [
 
 const emptyState: AppState = {
   employees: [], clients: [], projects: [], sites: [], assignments: [], documents: [],
-  attendance: [], payroll: [], approvals: [], auditLogs: [], users: [],
+  attendance: [], payroll: [], approvals: [], auditLogs: [], leaveRequests: [], users: [],
   branches: defaultBranches, currentBranch: "hq",
   companies: [], currentCompany: "", currentUser: null,
 };
