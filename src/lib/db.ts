@@ -11,6 +11,7 @@ import type { TrainingCourse, TrainingRecord, SafetyIncident } from "@/lib/types
 import type { JobRequisition, Candidate } from "@/lib/types";
 import type { Lead, CrmActivity } from "@/lib/types";
 import type { Expense, PaymentReceipt } from "@/lib/types";
+import type { InventoryItem, StockMovement, PurchaseOrder } from "@/lib/types";
 
 type Row = Record<string, any>;
 
@@ -524,6 +525,7 @@ export interface LoadedData {
   requisitions: JobRequisition[]; candidates: Candidate[];
   leads: Lead[]; activities: CrmActivity[];
   expenses: Expense[]; receipts: PaymentReceipt[];
+  inventory: InventoryItem[]; movements: StockMovement[]; purchaseOrders: PurchaseOrder[];
 }
 
 async function all(table: string, order = "created_at") {
@@ -539,6 +541,7 @@ export async function loadAll(): Promise<LoadedData> {
     rateAgreements, invoices, dormitories, allocations, vehicles, trips,
     assets, issuances, courses, trainings, incidents,
     requisitions, candidates, leads, activities, expenses, receipts,
+    inventory, movements, purchaseOrders,
   ] = await Promise.all([
     all("companies"), all("employees"), all("clients"), all("projects"), all("sites"),
     all("assignments"), all("employee_documents"), all("attendance"), all("payroll_entries"),
@@ -549,6 +552,7 @@ export async function loadAll(): Promise<LoadedData> {
     all("training_courses"), all("training_records"), all("safety_incidents"),
     all("job_requisitions"), all("candidates"), all("leads"), all("crm_activities"),
     all("expenses"), all("payment_receipts"),
+    all("inventory_items"), all("stock_movements"), all("purchase_orders"),
   ]);
 
   const roleByUser = new Map<string, string>();
@@ -600,6 +604,9 @@ export async function loadAll(): Promise<LoadedData> {
     activities: activities.map(fromActivity),
     expenses: expenses.map(fromExpense),
     receipts: receipts.map(fromPaymentReceipt),
+    inventory: inventory.map(fromItem),
+    movements: movements.map(fromMovement),
+    purchaseOrders: purchaseOrders.map(fromPurchaseOrder),
   };
 }
 
