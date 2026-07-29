@@ -379,3 +379,81 @@ export interface Invoice {
   createdAt: string;
   updatedAt: string;
 }
+
+/* ---------------- Phase 7: Accommodation & Transport ---------------- */
+
+export type DormStatus = "Active" | "Inactive" | "Full";
+
+export interface Dormitory {
+  id: string;
+  companyId?: string;
+  name: string;
+  address: string;
+  operator?: string;
+  contactPerson?: string;
+  contactPhone?: string;
+  capacity: number;
+  monthlyRent: number;
+  licenseNo?: string;
+  licenseExpiry?: string;
+  lastInspection?: string;
+  status: DormStatus;
+  remarks?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type BedStatus = "Occupied" | "Reserved" | "Vacated";
+
+export interface BedAllocation {
+  id: string;
+  dormitoryId: string;
+  employeeId: string;
+  roomNo: string;
+  bedNo?: string;
+  checkInDate: string;
+  checkOutDate?: string;
+  monthlyRent: number;
+  status: BedStatus;
+  remarks?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type VehicleStatus = "Active" | "In Workshop" | "Inactive";
+export type VehicleType = "Lorry" | "Van" | "Bus" | "Car" | "Pickup";
+
+export interface Vehicle {
+  id: string;
+  companyId?: string;
+  plateNo: string;
+  type: VehicleType;
+  makeModel?: string;
+  capacity: number;
+  driverEmployeeId?: string;
+  roadTaxExpiry?: string;
+  insuranceExpiry?: string;
+  inspectionDue?: string;
+  status: VehicleStatus;
+  remarks?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type TripStatus = "Scheduled" | "Completed" | "Cancelled";
+
+export interface Trip {
+  id: string;
+  vehicleId: string;
+  driverEmployeeId?: string;
+  siteId?: string;
+  date: string;
+  departureTime?: string;
+  returnTime?: string;
+  route?: string;
+  passengers: number;
+  status: TripStatus;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
