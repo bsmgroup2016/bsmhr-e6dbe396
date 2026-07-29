@@ -611,6 +611,14 @@ function AttendanceForm({ employees, sites, onSubmit }: { employees: ReturnType<
         <Label htmlFor="notes">Notes</Label>
         <Input id="notes" name="notes" placeholder="Optional notes" />
       </div>
+      <div className="grid gap-3 rounded-lg border p-3 sm:grid-cols-2">
+        <GeoCapture label="Capture clock-in location" prefix="checkIn" />
+        <GeoCapture label="Capture clock-out location" prefix="checkOut" />
+        <p className="text-xs text-muted-foreground sm:col-span-2">
+          Location is optional — if GPS is denied the record is saved and flagged as
+          "Location not captured".
+        </p>
+      </div>
       <DialogFooter>
         <Button type="submit">Save attendance</Button>
       </DialogFooter>
