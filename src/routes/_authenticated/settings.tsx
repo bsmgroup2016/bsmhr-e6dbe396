@@ -10,6 +10,7 @@ import {
   Upload,
   Trash2,
   Save,
+  HardDrive,
 } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
@@ -32,6 +33,7 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs";
 import { getBranches, getCurrentBranch, setCurrentBranch, exportState, importState, resetState } from "@/lib/store";
+import { getR2Config, setR2Config } from "@/lib/r2";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({
@@ -51,6 +53,25 @@ export default function SettingsPage() {
   const [exportData, setExportData] = useState("");
   const [importData, setImportData] = useState("");
   const [saved, setSaved] = useState(false);
+  const [r2, setR2] = useState(() => getR2Config());
+  const [r2Saved, setR2Saved] = useState(false);
+  const [r2Test, setR2Test] = useState<string | null>(null);
+
+  function handleSaveR2() {
+    setR2Config(r2);
+    setR2Saved(true);
+    setTimeout(() => setR2Saved(false), 2000);
+  }
+
+  async function handleTestR2() {
+    setR2Test("Checking...");
+    try {
+      const res = await fetch(`${r2.workerUrl.replace(/\/+$/, "")}/upload`, { method: "OPTIONS" });
+      setR2Test(res.ok || res.status === 204 ? "Worker reachable ✓" : `Worker responded ${res.status}`);
+    } catch {
+      setR2Test("Could not reach the Worker URL");
+    }
+  }
 
   function handleSave() {
     setCurrentBranch(currentBranch);
@@ -89,10 +110,11 @@ export default function SettingsPage() {
         </div>
 
         <Tabs defaultValue="general" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 sm:w-auto">
+          <TabsList className="grid w-full grid-cols-5 sm:w-auto">
             <TabsTrigger value="general">General</TabsTrigger>
             <TabsTrigger value="notifications">Notifications</TabsTrigger>
             <TabsTrigger value="security">Security</TabsTrigger>
+            <TabsTrigger value="storage">Storage</TabsTrigger>
             <TabsTrigger value="data">Data</TabsTrigger>
           </TabsList>
 
