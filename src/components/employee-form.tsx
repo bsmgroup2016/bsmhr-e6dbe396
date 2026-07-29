@@ -418,6 +418,27 @@ export function EmployeeForm({
             <Field label="Pass type">
               <Pick name="passType" options={PASS_TYPES} defaultValue={employee?.passType || "Work Permit"} />
             </Field>
+            <Field label="Citizenship / PR status (CPF)">
+              <Pick
+                name="prStatus"
+                options={["Citizen", "PR Year 1", "PR Year 2", "PR Year 3+"]}
+                defaultValue={employee?.prStatus || "Citizen"}
+              />
+            </Field>
+            <Field label="Ethnic group (SHG fund)">
+              <Pick
+                name="ethnicGroup"
+                options={["Chinese", "Malay", "Indian", "Eurasian", "Others"]}
+                defaultValue={employee?.ethnicGroup || "Others"}
+              />
+            </Field>
+            <Field label="Religion (MBMF)">
+              <Pick
+                name="religion"
+                options={["Non-Muslim", "Muslim"]}
+                defaultValue={employee?.religion || "Non-Muslim"}
+              />
+            </Field>
             <Field label="Work Permit number">
               <Input name="workPermitNumber" defaultValue={employee?.workPermitNumber ?? ""} />
             </Field>
