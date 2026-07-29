@@ -693,3 +693,58 @@ export interface PaymentReceipt {
   createdAt: string;
   updatedAt: string;
 }
+
+/* ---------- Phase 13: inventory & procurement ---------- */
+export type InventoryCategory =
+  | "PPE" | "Consumable" | "Tool" | "Spare Part" | "Stationery" | "Dormitory" | "Other";
+export type StockMovementType = "In" | "Out" | "Adjustment" | "Damaged" | "Return";
+export type PurchaseOrderStatus = "Draft" | "Sent" | "Partially Received" | "Received" | "Cancelled";
+
+export interface InventoryItem {
+  id: string;
+  companyId?: string;
+  sku: string;
+  name: string;
+  category: InventoryCategory;
+  unit: string;
+  openingQty: number;
+  reorderLevel: number;
+  unitCost: number;
+  location?: string;
+  supplier?: string;
+  remarks?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface StockMovement {
+  id: string;
+  itemId: string;
+  movementType: StockMovementType;
+  quantity: number;
+  movementDate: string;
+  siteId?: string;
+  employeeId?: string;
+  poId?: string;
+  referenceNo?: string;
+  remarks?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PurchaseOrder {
+  id: string;
+  companyId?: string;
+  poNo: string;
+  supplier: string;
+  itemId?: string;
+  quantity: number;
+  unitCost: number;
+  orderDate: string;
+  expectedDate?: string;
+  receivedDate?: string;
+  status: PurchaseOrderStatus;
+  remarks?: string;
+  createdAt: string;
+  updatedAt: string;
+}
