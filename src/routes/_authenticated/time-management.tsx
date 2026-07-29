@@ -368,6 +368,168 @@ export default function TimeManagementPage() {
   );
 }
 
+type SheetRow = { status: AttendanceStatus; hours: number; ot: number };
+
+function DailySheet({
+  employees,
+  sites,
+  existing,
+  defaultDate,
+  onSaved,
+}: {
+  employees: ReturnType<typeof getEmployees>;
+  sites: ReturnType<typeof getSites>;
+  existing: Attendance[];
+  defaultDate: string;
+  onSaved: (date: string) => void;
+}) {
+  const [sheetDate, setSheetDate] = useState(defaultDate);
+  const [siteId, setSiteId] = useState<string>(sites[0]?.id ?? "");
+  const [rows, setRows] = useState<Record<string, SheetRow>>({});
+
+  const current = (id: string): SheetRow => {
+    if (rows[id]) return rows[id];
+    const prev = existing.find((a) => a.employeeId === id && a.date === sheetDate);
+    return prev
+      ? { status: prev.status, hours: prev.hoursWorked, ot: prev.overtimeHours }
+      : { status: "Present", hours: 8, ot: 0 };
+  };
+
+  const setRow = (id: string, patch: Partial<SheetRow>) =>
+    setRows((r) => ({ ...r, [id]: { ...current(id), ...patch } }));
+
+  function markAll(status: AttendanceStatus) {
+    const next: Record<string, SheetRow> = {};
+    employees.forEach((e) => {
+      next[e.id] = { ...current(e.id), status, hours: status === "Present" ? 8 : 0 };
+    });
+    setRows(next);
+  }
+
+  function save() {
+    const payload = employees.map((e) => {
+      const row = current(e.id);
+      return {
+        employeeId: e.id,
+        date: sheetDate,
+        siteId: siteId || undefined,
+        status: row.status,
+        hoursWorked: Number(row.hours) || 0,
+        overtimeHours: Number(row.ot) || 0,
+      };
+    });
+    const { saved } = saveDailySheet(payload);
+    toast.success(`${saved} attendance records saved for ${sheetDate}`);
+    onSaved(sheetDate);
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-end gap-3">
+        <div className="space-y-1">
+          <Label>Date</Label>
+          <Input type="date" value={sheetDate} onChange={(e) => setSheetDate(e.target.value)} className="w-40" />
+        </div>
+        <div className="space-y-1">
+          <Label>Site</Label>
+          <Select value={siteId} onValueChange={setSiteId}>
+            <SelectTrigger className="w-52">
+              <SelectValue placeholder="Select site" />
+            </SelectTrigger>
+            <SelectContent>
+              {sites.map((s) => (
+                <SelectItem key={s.id} value={s.id}>
+                  {s.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex gap-2">
+          <Button type="button" size="sm" variant="secondary" onClick={() => markAll("Present")}>
+            All present
+          </Button>
+          <Button type="button" size="sm" variant="outline" onClick={() => markAll("Off")}>
+            All off
+          </Button>
+        </div>
+      </div>
+
+      <div className="max-h-[50vh] overflow-y-auto rounded-lg border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Employee</TableHead>
+              <TableHead className="w-40">Status</TableHead>
+              <TableHead className="w-24">Hours</TableHead>
+              <TableHead className="w-24">OT</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {employees.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={4} className="h-24 text-center text-sm text-muted-foreground">
+                  No active employees in this company.
+                </TableCell>
+              </TableRow>
+            ) : (
+              employees.map((e) => {
+                const row = current(e.id);
+                return (
+                  <TableRow key={e.id}>
+                    <TableCell>
+                      <div className="font-medium">{e.name}</div>
+                      <div className="text-xs text-muted-foreground">{e.employeeCode}</div>
+                    </TableCell>
+                    <TableCell>
+                      <Select value={row.status} onValueChange={(v) => setRow(e.id, { status: v as AttendanceStatus })}>
+                        <SelectTrigger className="h-8">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {statuses.map((s) => (
+                            <SelectItem key={s} value={s}>
+                              {s}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
+                    <TableCell>
+                      <Input
+                        type="number"
+                        step="0.5"
+                        className="h-8"
+                        value={row.hours}
+                        onChange={(ev) => setRow(e.id, { hours: Number(ev.target.value) })}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Input
+                        type="number"
+                        step="0.5"
+                        className="h-8"
+                        value={row.ot}
+                        onChange={(ev) => setRow(e.id, { ot: Number(ev.target.value) })}
+                      />
+                    </TableCell>
+                  </TableRow>
+                );
+              })
+            )}
+          </TableBody>
+        </Table>
+      </div>
+
+      <DialogFooter>
+        <Button type="button" onClick={save} disabled={!employees.length}>
+          Save sheet
+        </Button>
+      </DialogFooter>
+    </div>
+  );
+}
+
 function AttendanceForm({ employees, sites, onSubmit }: { employees: ReturnType<typeof getEmployees>; sites: ReturnType<typeof getSites>; onSubmit: (data: FormData) => void }) {
   return (
     <form
