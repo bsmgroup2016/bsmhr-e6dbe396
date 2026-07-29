@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
+import { createFileRoute, Outlet, redirect, useRouterState } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { hydrateStore, subscribe } from "@/lib/store";
+import { RequireRole } from "@/components/require-role";
 import { Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated")({
@@ -20,6 +21,7 @@ function AuthenticatedLayout() {
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [, force] = useState(0);
+  const pathname = useRouterState({ select: (r) => r.location.pathname });
 
   useEffect(() => {
     let alive = true;
@@ -52,5 +54,9 @@ function AuthenticatedLayout() {
     );
   }
 
-  return <Outlet />;
+  return (
+    <RequireRole path={pathname}>
+      <Outlet />
+    </RequireRole>
+  );
 }

@@ -26,6 +26,7 @@ import {
 
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
+import { canAccess } from "@/lib/permissions";
 import {
   Sidebar,
   SidebarContent,
@@ -100,7 +101,14 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const currentPath = useRouterState({ select: (router) => router.location.pathname });
-  const { user, isLoading, signOut } = useAuth();
+  const { user, roles, isLoading, signOut } = useAuth();
+
+  const visibleGroups = navGroups
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((item) => canAccess(item.url, roles)),
+    }))
+    .filter((group) => group.items.length > 0);
 
   const isActive = (path: string) => {
     if (path === "/") return currentPath === "/";
@@ -108,6 +116,7 @@ export function AppSidebar() {
   };
 
   const initials = user?.email?.slice(0, 2).toUpperCase() ?? "BS";
+  const roleLabel = roles.length ? roles.join(", ").replace(/_/g, " ") : "No role assigned";
 
   return (
     <Sidebar
@@ -130,7 +139,7 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent>
-        {navGroups.map((group) => (
+        {visibleGroups.map((group) => (
           <SidebarGroup key={group.label}>
             <SidebarGroupLabel className="text-sidebar-foreground/50">{group.label}</SidebarGroupLabel>
             <SidebarMenu>
@@ -179,7 +188,7 @@ export function AppSidebar() {
               </div>
               <div className="min-w-0">
                 <p className="truncate text-sm font-medium text-sidebar-foreground">{user?.email ?? "Loading..."}</p>
-                <p className="truncate text-xs text-sidebar-foreground/70">Authenticated user</p>
+                <p className="truncate text-xs capitalize text-sidebar-foreground/70">{roleLabel}</p>
               </div>
             </div>
           ) : (
