@@ -1289,3 +1289,121 @@ export function mandatoryTrainingGaps(companyId?: string) {
   }
   return gaps;
 }
+
+/* ---------------- Phase 10: recruitment ---------------- */
+export function getRequisitions(): JobRequisition[] { return getState().requisitions; }
+export function getCandidates(): Candidate[] { return getState().candidates; }
+
+export function addRequisition(x: Omit<JobRequisition, "id" | "createdAt" | "updatedAt">): JobRequisition {
+  const s = getState();
+  const now = new Date().toISOString();
+  const row: JobRequisition = { ...x, id: newId(), createdAt: now, updatedAt: now };
+  setState({ ...s, requisitions: [row, ...s.requisitions] });
+  void supabase.from("job_requisitions").insert({ id: row.id, ...toRequisition(row) })
+    .then(({ error }) => fail("job_requisitions", error));
+  addAuditLog("CREATE", "JobRequisition", row.id, `Created requisition ${row.title}`);
+  return row;
+}
+
+export function updateRequisition(id: string, updates: Partial<JobRequisition>): JobRequisition | undefined {
+  const s = getState();
+  const existing = s.requisitions.find((r) => r.id === id);
+  if (!existing) return undefined;
+  const updated: JobRequisition = { ...existing, ...updates, updatedAt: new Date().toISOString() };
+  setState({ ...s, requisitions: s.requisitions.map((r) => (r.id === id ? updated : r)) });
+  void supabase.from("job_requisitions").update(toRequisition(updated)).eq("id", id)
+    .then(({ error }) => fail("job_requisitions", error));
+  addAuditLog("UPDATE", "JobRequisition", id, "Updated requisition");
+  return updated;
+}
+
+export function deleteRequisition(id: string): boolean {
+  const s = getState();
+  if (!s.requisitions.some((r) => r.id === id)) return false;
+  setState({ ...s, requisitions: s.requisitions.filter((r) => r.id !== id) });
+  void supabase.from("job_requisitions").delete().eq("id", id)
+    .then(({ error }) => fail("job_requisitions", error));
+  addAuditLog("DELETE", "JobRequisition", id, "Deleted requisition");
+  return true;
+}
+
+export function addCandidate(x: Omit<Candidate, "id" | "createdAt" | "updatedAt">): Candidate {
+  const s = getState();
+  const now = new Date().toISOString();
+  const row: Candidate = { ...x, id: newId(), createdAt: now, updatedAt: now };
+  setState({ ...s, candidates: [row, ...s.candidates] });
+  void supabase.from("candidates").insert({ id: row.id, ...toCandidate(row) })
+    .then(({ error }) => fail("candidates", error));
+  addAuditLog("CREATE", "Candidate", row.id, `Added candidate ${row.name}`);
+  return row;
+}
+
+export function updateCandidate(id: string, updates: Partial<Candidate>): Candidate | undefined {
+  const s = getState();
+  const existing = s.candidates.find((c) => c.id === id);
+  if (!existing) return undefined;
+  const updated: Candidate = { ...existing, ...updates, updatedAt: new Date().toISOString() };
+  setState({ ...s, candidates: s.candidates.map((c) => (c.id === id ? updated : c)) });
+  void supabase.from("candidates").update(toCandidate(updated)).eq("id", id)
+    .then(({ error }) => fail("candidates", error));
+  addAuditLog("UPDATE", "Candidate", id, `Updated candidate ${updated.name}`);
+  return updated;
+}
+
+export function deleteCandidate(id: string): boolean {
+  const s = getState();
+  if (!s.candidates.some((c) => c.id === id)) return false;
+  setState({ ...s, candidates: s.candidates.filter((c) => c.id !== id) });
+  void supabase.from("candidates").delete().eq("id", id)
+    .then(({ error }) => fail("candidates", error));
+  addAuditLog("DELETE", "Candidate", id, "Deleted candidate");
+  return true;
+}
+
+/** Move a candidate to the next stage of the hiring pipeline. */
+export const candidateStages: Candidate["stage"][] = [
+  "Applied", "Screening", "Interview", "Selected", "Offer Sent",
+  "Offer Accepted", "Onboarding", "Hired",
+];
+
+export function advanceCandidate(id: string): Candidate | undefined {
+  const c = getState().candidates.find((x) => x.id === id);
+  if (!c) return undefined;
+  const idx = candidateStages.indexOf(c.stage);
+  if (idx < 0 || idx >= candidateStages.length - 1) return c;
+  return updateCandidate(id, { stage: candidateStages[idx + 1] });
+}
+
+/** Convert a candidate into an employee record (onboarding hand-off). */
+export function convertCandidateToEmployee(id: string): Employee | undefined {
+  const s = getState();
+  const c = s.candidates.find((x) => x.id === id);
+  if (!c || c.employeeId) return undefined;
+  const req = c.requisitionId ? s.requisitions.find((r) => r.id === c.requisitionId) : undefined;
+  const emp = addEmployee({
+    name: c.name,
+    nationality: c.nationality ?? "",
+    fin: "",
+    passType: req?.passType ?? "Work Permit",
+    passExpiry: "-",
+    trade: c.trade ?? req?.trade ?? "",
+    site: null,
+    status: "Draft",
+    basicSalary: c.expectedSalary ?? req?.budgetSalary ?? 0,
+    joinedOn: c.joinDate ?? new Date().toISOString().slice(0, 10),
+    phone: c.phone,
+    email: c.email,
+    passportNumber: c.passportNumber,
+    companyId: c.companyId || s.currentCompany || undefined,
+    applicationDate: c.createdAt.slice(0, 10),
+    remarks: `Hired via recruitment (source: ${c.source}${c.agentName ? ` / ${c.agentName}` : ""})`,
+  });
+  updateCandidate(id, { stage: "Hired", employeeId: emp.id });
+  return emp;
+}
+
+/** Hiring funnel counts for the recruitment dashboard. */
+export function recruitmentFunnel(companyId?: string) {
+  const list = getState().candidates.filter((c) => !companyId || !c.companyId || c.companyId === companyId);
+  return candidateStages.map((stage) => ({ stage, count: list.filter((c) => c.stage === stage).length }));
+}
