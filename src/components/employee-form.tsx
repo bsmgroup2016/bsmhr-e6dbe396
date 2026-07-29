@@ -11,7 +11,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 import { AlertTriangle, Sparkles, Wand2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -21,7 +22,7 @@ import {
   nextEmployeeCode,
   prefixForBranch,
 } from "@/lib/store";
-import { OCR_NOT_CONFIGURED, isOcrConfigured } from "@/lib/ocr";
+import { OCR_NOT_CONFIGURED, extractIpaData, isOcrConfigured } from "@/lib/ocr";
 import type {
   DeploymentStatus,
   Employee,
@@ -189,6 +190,8 @@ export function EmployeeForm({
     employee?.employeeCode ?? nextEmployeeCode(employee?.branch ?? prefixes[0]?.name),
   );
   const [ipaUrl, setIpaUrl] = useState(employee?.ipaDocumentUrl ?? "");
+  const [scanning, setScanning] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
 
   const taken = code.trim() ? isEmployeeCodeTaken(code, employee?.id) : false;
   const expectedPrefix = prefixForBranch(branch);
@@ -201,8 +204,47 @@ export function EmployeeForm({
     if (!employee) setCode(nextEmployeeCode(nextBranch));
   }
 
+  /** Write a value into an uncontrolled input without clobbering user edits. */
+  function fill(field: string, value?: string) {
+    if (!value) return 0;
+    const el = formRef.current?.elements.namedItem(field) as HTMLInputElement | null;
+    if (!el || el.value) return 0;
+    const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+    setter?.call(el, value);
+    el.dispatchEvent(new Event("input", { bubbles: true }));
+    return 1;
+  }
+
+  async function autoFillFromIpa() {
+    if (!ipaUrl) {
+      toast.error("Upload the IPA copy first");
+      return;
+    }
+    setScanning(true);
+    const result = await extractIpaData(ipaUrl);
+    setScanning(false);
+    if (!result.ok) {
+      toast.error(result.reason || OCR_NOT_CONFIGURED);
+      return;
+    }
+    const d = result.data;
+    let filled = 0;
+    filled += fill("name", d.name);
+    filled += fill("fin", d.fin);
+    filled += fill("passportNumber", d.passportNumber);
+    filled += fill("workPermitNumber", d.workPermitNumber);
+    filled += fill("nationality", d.nationality);
+    filled += fill("dateOfBirth", d.dateOfBirth);
+    filled += fill("workPermitIssueDate", d.issueDate);
+    filled += fill("workPermitExpiryDate", d.expiryDate);
+    filled += fill("passExpiry", d.expiryDate);
+    if (filled === 0) toast.info("Nothing new to fill — check the values against the document");
+    else toast.success(`${filled} field(s) filled from the IPA — verify before saving`);
+  }
+
   return (
     <form
+      ref={formRef}
       onSubmit={(e) => {
         e.preventDefault();
         onSubmit(new FormData(e.currentTarget));
@@ -388,13 +430,27 @@ export function EmployeeForm({
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <span>
-                      <Button type="button" size="sm" variant="outline" disabled={!isOcrConfigured()}>
-                        {isOcrConfigured() ? <Sparkles className="mr-1 h-4 w-4" /> : <Wand2 className="mr-1 h-4 w-4" />}
-                        Auto-fill from IPA
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        disabled={!isOcrConfigured() || !ipaUrl || scanning}
+                        onClick={() => void autoFillFromIpa()}
+                      >
+                        {scanning ? (
+                          <Wand2 className="mr-1 h-4 w-4 animate-pulse" />
+                        ) : (
+                          <Sparkles className="mr-1 h-4 w-4" />
+                        )}
+                        {scanning ? "Reading IPA…" : "Auto-fill from IPA"}
                       </Button>
                     </span>
                   </TooltipTrigger>
-                  <TooltipContent>{OCR_NOT_CONFIGURED}</TooltipContent>
+                  <TooltipContent>
+                    {ipaUrl
+                      ? "Reads the uploaded IPA and fills empty fields only — always verify."
+                      : "Upload the IPA copy first"}
+                  </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
             </div>
@@ -409,7 +465,7 @@ export function EmployeeForm({
               <div className="mt-3 overflow-hidden rounded-md border">
                 <iframe src={ipaUrl} title="IPA preview" className="h-[420px] w-full bg-muted" />
                 <p className="border-t px-3 py-1.5 text-xs text-muted-foreground">
-                  Read the document above and type the values into the fields below.
+                  Use “Auto-fill from IPA” to read this document, then check every value below.
                 </p>
               </div>
             ) : null}

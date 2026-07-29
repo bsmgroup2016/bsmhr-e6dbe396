@@ -1,22 +1,21 @@
 /**
  * OCR extraction service — SINGLE integration point.
  *
- * Both functions below are the ONLY place OCR is wired in. Today they return
- * `{ ok: false, reason: "OCR not configured" }` because
- * GOOGLE_CLOUD_VISION_API_KEY is not available yet. Every upload, form,
- * grid and verification flow around them is fully functional with manual
- * entry, so adding the key later means editing only this file.
+ * Documents live in R2, so the reading happens server-side: the server fns in
+ * `ocr.functions.ts` presign the object and send it to the AI gateway's vision
+ * model. Manual entry still works everywhere, OCR only pre-fills.
  */
+import { ocrIpa, ocrTimeCard } from "@/lib/ocr.functions";
 
 export type OcrResult<T> =
   | { ok: true; data: T }
   | { ok: false; reason: string };
 
-export const OCR_NOT_CONFIGURED = "OCR not yet configured — fill manually for now";
+export const OCR_NOT_CONFIGURED = "OCR could not read this file — fill manually";
 
-/** Flip to true only when the Vision API key is wired into the functions below. */
+/** OCR runs through the AI gateway on the server. */
 export function isOcrConfigured(): boolean {
-  return false;
+  return true;
 }
 
 export type IpaExtract = {
@@ -37,24 +36,32 @@ export type TimeCardExtractRow = {
   checkOut?: string;
 };
 
-/**
- * Reads a Singapore IPA / work-pass PDF and returns the fields to auto-fill.
- * TODO(OCR): call the Vision API with GOOGLE_CLOUD_VISION_API_KEY here and
- * return `{ ok: true, data }`. Nothing outside this function changes.
- */
-export async function extractIpaData(_fileUrl: string): Promise<OcrResult<IpaExtract>> {
-  if (!isOcrConfigured()) return { ok: false, reason: OCR_NOT_CONFIGURED };
-  return { ok: false, reason: OCR_NOT_CONFIGURED };
+/** Reads a Singapore IPA / work-pass file and returns the fields to auto-fill. */
+export async function extractIpaData(fileUrl: string): Promise<OcrResult<IpaExtract>> {
+  if (!fileUrl) return { ok: false, reason: "Upload the IPA copy first" };
+  try {
+    const data = (await ocrIpa({ data: { ref: fileUrl } })) as IpaExtract;
+    if (!data || Object.keys(data).length === 0) return { ok: false, reason: OCR_NOT_CONFIGURED };
+    return { ok: true, data };
+  } catch (e) {
+    return { ok: false, reason: e instanceof Error ? e.message : OCR_NOT_CONFIGURED };
+  }
 }
 
 /**
  * Reads a scanned 30-day physical time card and returns day-by-day rows that
  * populate the same editable grid the admin fills manually today.
- * TODO(OCR): call the Vision API with GOOGLE_CLOUD_VISION_API_KEY here.
  */
 export async function extractTimeCardData(
-  _fileUrl: string,
+  fileUrl: string,
 ): Promise<OcrResult<TimeCardExtractRow[]>> {
-  if (!isOcrConfigured()) return { ok: false, reason: OCR_NOT_CONFIGURED };
-  return { ok: false, reason: OCR_NOT_CONFIGURED };
+  if (!fileUrl) return { ok: false, reason: "Upload the time card first" };
+  try {
+    const rows = (await ocrTimeCard({ data: { ref: fileUrl } })) as TimeCardExtractRow[];
+    const clean = (rows ?? []).filter((r) => r && typeof r.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(r.date));
+    if (clean.length === 0) return { ok: false, reason: OCR_NOT_CONFIGURED };
+    return { ok: true, data: clean };
+  } catch (e) {
+    return { ok: false, reason: e instanceof Error ? e.message : OCR_NOT_CONFIGURED };
+  }
 }
