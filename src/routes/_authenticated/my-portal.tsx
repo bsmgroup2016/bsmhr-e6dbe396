@@ -5,6 +5,7 @@ import { toast } from "sonner";
 
 import { AppShell } from "@/components/app-shell";
 import { useAuth } from "@/lib/auth";
+import { SelfProfileForm } from "@/components/self-profile-form";
 import { SummaryCard } from "@/components/ui/summary-card";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -78,12 +79,15 @@ function daysUntil(date?: string) {
 function MyPortalPage() {
   const { user } = useAuth();
   const email = user?.email?.toLowerCase() ?? "";
+  const [refresh, setRefresh] = useState(0);
   const employee = useMemo(
-    () => getEmployees().find((e) => (e.email ?? "").toLowerCase() === email),
-    [email],
+    () =>
+      getEmployees().find(
+        (e) => (user?.id && e.userId === user.id) || (!!email && (e.email ?? "").toLowerCase() === email),
+      ),
+    [email, user?.id, refresh],
   );
 
-  const [refresh, setRefresh] = useState(0);
   const [open, setOpen] = useState(false);
   const [type, setType] = useState<LeaveType>("Annual Leave");
   const [startDate, setStartDate] = useState("");
@@ -256,6 +260,7 @@ function MyPortalPage() {
         <Tabs defaultValue="profile">
           <TabsList>
             <TabsTrigger value="profile">Profile</TabsTrigger>
+            <TabsTrigger value="edit">Edit my profile</TabsTrigger>
             <TabsTrigger value="leave">My leave</TabsTrigger>
             <TabsTrigger value="payslips">Payslips</TabsTrigger>
             <TabsTrigger value="documents">Documents</TabsTrigger>
@@ -286,6 +291,19 @@ function MyPortalPage() {
                 </div>
               ))}
             </div>
+          </TabsContent>
+
+          <TabsContent value="edit" className="mt-4 space-y-3">
+            {employee.status === "Pending Profile Completion" ? (
+              <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-sm">
+                Your profile is incomplete. Fill in the details below and submit for HR verification.
+              </div>
+            ) : employee.status === "Pending Verification" ? (
+              <div className="rounded-lg border border-primary/40 bg-primary/10 p-3 text-sm">
+                Submitted — waiting for HR verification. You can still update your details.
+              </div>
+            ) : null}
+            <SelfProfileForm employee={employee} onSaved={() => setRefresh((n) => n + 1)} />
           </TabsContent>
 
           <TabsContent value="leave" className="mt-4">

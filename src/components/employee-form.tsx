@@ -36,7 +36,8 @@ import type {
 export const PASS_TYPES: PassType[] = ["Work Permit", "S Pass", "Employment Pass", "Singaporean/PR"];
 
 export const EMPLOYEE_STATUSES: EmployeeStatus[] = [
-  "Draft", "Pending Approval", "Active", "Inactive", "On Leave", "Deployed",
+  "Draft", "Pending Approval", "Pending Profile Completion", "Pending Verification",
+  "Active", "Inactive", "On Leave", "Deployed",
   "Suspended", "Resigned", "Terminated", "Repatriated", "Archived",
 ];
 
