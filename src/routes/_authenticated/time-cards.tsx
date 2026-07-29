@@ -297,9 +297,13 @@ function TimeCardsPage() {
             <Input
               id="tc-file"
               type="file"
+              multiple
               accept="image/*,application/pdf"
               disabled={uploading}
-              onChange={(e) => void handleUpload(e.target.files?.[0])}
+              onChange={(e) => {
+                void handleUpload(e.target.files);
+                e.target.value = "";
+              }}
             />
           </div>
           <div className="flex items-end gap-2">
@@ -311,10 +315,13 @@ function TimeCardsPage() {
           <p className="text-xs text-muted-foreground sm:col-span-2 lg:col-span-4">
             {uploading ? (
               <span className="inline-flex items-center gap-1">
-                <Upload className="h-3 w-3 animate-pulse" /> Uploading…
+                <Upload className="h-3 w-3 animate-pulse" />
+                {progress
+                  ? `Scanning ${progress.done}/${progress.total} card(s)…`
+                  : "Uploading…"}
               </span>
             ) : isOcrConfigured() ? (
-              "Uploaded cards are scanned automatically; check every row before verifying."
+              "Select one or more scanned cards — each is uploaded and auto-filled by OCR. Check every row before verifying."
             ) : (
               `${OCR_NOT_CONFIGURED}. Type the card times into the grid below — verification works the same way.`
             )}
