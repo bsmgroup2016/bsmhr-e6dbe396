@@ -37,6 +37,7 @@ import { Route as ApiPublicR2StatusRouteImport } from './routes/api/public/r2-st
 import { Route as ApiPublicR2SignedRouteImport } from './routes/api/public/r2-signed'
 import { Route as ApiPublicR2FileRouteImport } from './routes/api/public/r2-file'
 import { Route as ApiPublicR2DeleteRouteImport } from './routes/api/public/r2-delete'
+import { Route as AuthenticatedWorkforceIdRouteImport } from './routes/_authenticated/workforce.$id'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -180,6 +181,12 @@ const ApiPublicR2DeleteRoute = ApiPublicR2DeleteRouteImport.update({
   path: '/api/public/r2-delete',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedWorkforceIdRoute =
+  AuthenticatedWorkforceIdRouteImport.update({
+    id: '/$id',
+    path: '/$id',
+    getParentRoute: () => AuthenticatedWorkforceRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
@@ -203,7 +210,8 @@ export interface FileRoutesByFullPath {
   '/time-management': typeof AuthenticatedTimeManagementRoute
   '/transport': typeof AuthenticatedTransportRoute
   '/users': typeof AuthenticatedUsersRoute
-  '/workforce': typeof AuthenticatedWorkforceRoute
+  '/workforce': typeof AuthenticatedWorkforceRouteWithChildren
+  '/workforce/$id': typeof AuthenticatedWorkforceIdRoute
   '/api/public/r2-delete': typeof ApiPublicR2DeleteRoute
   '/api/public/r2-file': typeof ApiPublicR2FileRoute
   '/api/public/r2-signed': typeof ApiPublicR2SignedRoute
@@ -231,8 +239,9 @@ export interface FileRoutesByTo {
   '/time-management': typeof AuthenticatedTimeManagementRoute
   '/transport': typeof AuthenticatedTransportRoute
   '/users': typeof AuthenticatedUsersRoute
-  '/workforce': typeof AuthenticatedWorkforceRoute
+  '/workforce': typeof AuthenticatedWorkforceRouteWithChildren
   '/': typeof AuthenticatedIndexRoute
+  '/workforce/$id': typeof AuthenticatedWorkforceIdRoute
   '/api/public/r2-delete': typeof ApiPublicR2DeleteRoute
   '/api/public/r2-file': typeof ApiPublicR2FileRoute
   '/api/public/r2-signed': typeof ApiPublicR2SignedRoute
@@ -262,8 +271,9 @@ export interface FileRoutesById {
   '/_authenticated/time-management': typeof AuthenticatedTimeManagementRoute
   '/_authenticated/transport': typeof AuthenticatedTransportRoute
   '/_authenticated/users': typeof AuthenticatedUsersRoute
-  '/_authenticated/workforce': typeof AuthenticatedWorkforceRoute
+  '/_authenticated/workforce': typeof AuthenticatedWorkforceRouteWithChildren
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/workforce/$id': typeof AuthenticatedWorkforceIdRoute
   '/api/public/r2-delete': typeof ApiPublicR2DeleteRoute
   '/api/public/r2-file': typeof ApiPublicR2FileRoute
   '/api/public/r2-signed': typeof ApiPublicR2SignedRoute
@@ -295,6 +305,7 @@ export interface FileRouteTypes {
     | '/transport'
     | '/users'
     | '/workforce'
+    | '/workforce/$id'
     | '/api/public/r2-delete'
     | '/api/public/r2-file'
     | '/api/public/r2-signed'
@@ -324,6 +335,7 @@ export interface FileRouteTypes {
     | '/users'
     | '/workforce'
     | '/'
+    | '/workforce/$id'
     | '/api/public/r2-delete'
     | '/api/public/r2-file'
     | '/api/public/r2-signed'
@@ -354,6 +366,7 @@ export interface FileRouteTypes {
     | '/_authenticated/users'
     | '/_authenticated/workforce'
     | '/_authenticated/'
+    | '/_authenticated/workforce/$id'
     | '/api/public/r2-delete'
     | '/api/public/r2-file'
     | '/api/public/r2-signed'
@@ -569,8 +582,29 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicR2DeleteRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/workforce/$id': {
+      id: '/_authenticated/workforce/$id'
+      path: '/$id'
+      fullPath: '/workforce/$id'
+      preLoaderRoute: typeof AuthenticatedWorkforceIdRouteImport
+      parentRoute: typeof AuthenticatedWorkforceRoute
+    }
   }
 }
+
+interface AuthenticatedWorkforceRouteChildren {
+  AuthenticatedWorkforceIdRoute: typeof AuthenticatedWorkforceIdRoute
+}
+
+const AuthenticatedWorkforceRouteChildren: AuthenticatedWorkforceRouteChildren =
+  {
+    AuthenticatedWorkforceIdRoute: AuthenticatedWorkforceIdRoute,
+  }
+
+const AuthenticatedWorkforceRouteWithChildren =
+  AuthenticatedWorkforceRoute._addFileChildren(
+    AuthenticatedWorkforceRouteChildren,
+  )
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAccommodationRoute: typeof AuthenticatedAccommodationRoute
@@ -592,7 +626,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedTimeManagementRoute: typeof AuthenticatedTimeManagementRoute
   AuthenticatedTransportRoute: typeof AuthenticatedTransportRoute
   AuthenticatedUsersRoute: typeof AuthenticatedUsersRoute
-  AuthenticatedWorkforceRoute: typeof AuthenticatedWorkforceRoute
+  AuthenticatedWorkforceRoute: typeof AuthenticatedWorkforceRouteWithChildren
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
 }
 
@@ -616,7 +650,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedTimeManagementRoute: AuthenticatedTimeManagementRoute,
   AuthenticatedTransportRoute: AuthenticatedTransportRoute,
   AuthenticatedUsersRoute: AuthenticatedUsersRoute,
-  AuthenticatedWorkforceRoute: AuthenticatedWorkforceRoute,
+  AuthenticatedWorkforceRoute: AuthenticatedWorkforceRouteWithChildren,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
 }
 
