@@ -175,6 +175,24 @@ export function EmployeeForm({
   onSubmit: (data: FormData) => void;
   submitLabel?: string;
 }) {
+  const prefixes = useMemo(() => getBranchPrefixes(), []);
+  const [branch, setBranch] = useState(employee?.branch ?? prefixes[0]?.name ?? "Unassigned");
+  const [code, setCode] = useState(
+    employee?.employeeCode ?? nextEmployeeCode(employee?.branch ?? prefixes[0]?.name),
+  );
+  const [ipaUrl, setIpaUrl] = useState(employee?.ipaDocumentUrl ?? "");
+
+  const taken = code.trim() ? isEmployeeCodeTaken(code, employee?.id) : false;
+  const expectedPrefix = prefixForBranch(branch);
+  const prefixMismatch =
+    code.trim().length > 0 &&
+    !new RegExp(`^${expectedPrefix}\\d+$`, "i").test(code.trim());
+
+  function suggest(nextBranch: string) {
+    setBranch(nextBranch);
+    if (!employee) setCode(nextEmployeeCode(nextBranch));
+  }
+
   return (
     <form
       onSubmit={(e) => {
@@ -183,6 +201,45 @@ export function EmployeeForm({
       }}
       className="space-y-4"
     >
+      <div className="grid grid-cols-1 gap-4 rounded-lg border bg-muted/30 p-3 sm:grid-cols-2">
+        <Field label="Employee ID (primary identifier)">
+          <Input
+            name="employeeCode"
+            value={code}
+            onChange={(e) => setCode(e.target.value.toUpperCase())}
+            required
+          />
+        </Field>
+        <Field label="Branch / company">
+          <Select name="branch" value={branch} onValueChange={suggest}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select branch" />
+            </SelectTrigger>
+            <SelectContent>
+              {prefixes.map((p) => (
+                <SelectItem key={p.id} value={p.name}>
+                  {p.name} ({p.code})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </Field>
+        {taken ? (
+          <Alert variant="destructive" className="sm:col-span-2">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>Employee ID {code} is already in use. Choose another.</AlertDescription>
+          </Alert>
+        ) : prefixMismatch ? (
+          <Alert className="sm:col-span-2">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>
+              This ID does not match the {branch} prefix ({expectedPrefix}). Allowed, but please confirm
+              it is intentional. Suggested: {nextEmployeeCode(branch)}
+            </AlertDescription>
+          </Alert>
+        ) : null}
+      </div>
+
       <Tabs defaultValue="personal">
         <TabsList className="flex w-full flex-wrap">
           <TabsTrigger value="personal">Personal</TabsTrigger>
@@ -258,9 +315,6 @@ export function EmployeeForm({
 
         <TabsContent value="employment" className="mt-4 space-y-4">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Field label="Branch">
-              <Input name="branch" defaultValue={employee?.branch ?? "hq"} />
-            </Field>
             <Field label="Department">
               <Input name="department" defaultValue={employee?.department ?? ""} />
             </Field>
@@ -319,6 +373,39 @@ export function EmployeeForm({
         </TabsContent>
 
         <TabsContent value="pass" className="mt-4 space-y-4">
+          <div className="rounded-lg border p-3">
+            <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+              <p className="text-sm font-medium">IPA copy (In-Principle Approval)</p>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span>
+                      <Button type="button" size="sm" variant="outline" disabled={!isOcrConfigured()}>
+                        {isOcrConfigured() ? <Sparkles className="mr-1 h-4 w-4" /> : <Wand2 className="mr-1 h-4 w-4" />}
+                        Auto-fill from IPA
+                      </Button>
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent>{OCR_NOT_CONFIGURED}</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+            <FileUpload
+              name="ipaDocumentUrl"
+              label="Upload IPA copy (PDF)"
+              folder="ipa"
+              defaultValue={ipaUrl}
+              onUploaded={(url) => setIpaUrl(url)}
+            />
+            {ipaUrl ? (
+              <div className="mt-3 overflow-hidden rounded-md border">
+                <iframe src={ipaUrl} title="IPA preview" className="h-[420px] w-full bg-muted" />
+                <p className="border-t px-3 py-1.5 text-xs text-muted-foreground">
+                  Read the document above and type the values into the fields below.
+                </p>
+              </div>
+            ) : null}
+          </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label="FIN / NRIC">
               <Input name="fin" defaultValue={employee?.fin} required />
@@ -328,6 +415,12 @@ export function EmployeeForm({
             </Field>
             <Field label="Work Permit number">
               <Input name="workPermitNumber" defaultValue={employee?.workPermitNumber ?? ""} />
+            </Field>
+            <Field label="Work Permit issue date">
+              <Input name="workPermitIssueDate" type="date" defaultValue={dateValue(employee?.workPermitIssueDate)} />
+            </Field>
+            <Field label="Work Permit expiry date">
+              <Input name="workPermitExpiryDate" type="date" defaultValue={dateValue(employee?.workPermitExpiryDate)} />
             </Field>
             <Field label="Pass expiry">
               <Input name="passExpiry" type="date" defaultValue={dateValue(employee?.passExpiry)} />
@@ -340,6 +433,9 @@ export function EmployeeForm({
             </Field>
             <Field label="Dormitory / accommodation">
               <Input name="dormitory" defaultValue={employee?.dormitory ?? ""} />
+            </Field>
+            <Field label="Dormitory address">
+              <Input name="dormitoryAddress" defaultValue={employee?.dormitoryAddress ?? ""} />
             </Field>
           </div>
         </TabsContent>
@@ -369,6 +465,9 @@ export function EmployeeForm({
             </Field>
             <Field label="Bank account reference">
               <Input name="bankAccount" defaultValue={employee?.bankAccount ?? ""} />
+            </Field>
+            <Field label="Account holder name">
+              <Input name="accountHolderName" defaultValue={employee?.accountHolderName ?? ""} />
             </Field>
             <Field label="Payment method">
               <Pick name="paymentMethod" options={PAYMENT_METHODS} defaultValue={employee?.paymentMethod ?? "Bank Transfer"} />
