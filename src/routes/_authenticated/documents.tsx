@@ -438,7 +438,7 @@ export default function DocumentsPage() {
   );
 }
 
-function DocumentForm({ employees, document, onSubmit }: { employees: ReturnType<typeof getEmployees>; document?: EmployeeDocument; onSubmit: (data: FormData) => void }) {
+function DocumentForm({ employees, document, onSubmit, submitLabel }: { employees: ReturnType<typeof getEmployees>; document?: EmployeeDocument; onSubmit: (data: FormData) => void; submitLabel?: string }) {
   return (
     <form
       onSubmit={(e) => {
@@ -505,6 +505,22 @@ function DocumentForm({ employees, document, onSubmit }: { employees: ReturnType
           <Label htmlFor="expiryDate">Expiry date</Label>
           <Input id="expiryDate" name="expiryDate" type="date" defaultValue={document?.expiryDate} />
         </div>
+        <div className="space-y-2">
+          <Label htmlFor="docNumber">Document / reference number</Label>
+          <Input id="docNumber" name="docNumber" defaultValue={document?.docNumber} placeholder="e.g. WP No." />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="issuingAuthority">Issuing authority</Label>
+          <Input id="issuingAuthority" name="issuingAuthority" defaultValue={document?.issuingAuthority} placeholder="e.g. MOM" />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="reminderDays">Reminder before expiry (days)</Label>
+          <Input id="reminderDays" name="reminderDays" type="number" min={1} max={365} defaultValue={document?.reminderDays ?? DEFAULT_REMINDER_DAYS} />
+        </div>
+        <div className="space-y-2 sm:col-span-2">
+          <Label htmlFor="remarks">Remarks</Label>
+          <Input id="remarks" name="remarks" defaultValue={document?.remarks} />
+        </div>
       </div>
       <FileUpload
         name="fileUrl"
@@ -513,7 +529,7 @@ function DocumentForm({ employees, document, onSubmit }: { employees: ReturnType
         defaultValue={document?.fileUrl}
       />
       <DialogFooter>
-        <Button type="submit">{document ? "Save changes" : "Add document"}</Button>
+        <Button type="submit">{submitLabel ?? (document ? "Save changes" : "Add document")}</Button>
       </DialogFooter>
     </form>
   );
