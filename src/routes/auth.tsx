@@ -55,6 +55,8 @@ function AuthCard() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -78,13 +80,23 @@ function AuthCard() {
     e.preventDefault();
     setError(null);
     setMessage(null);
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+    if (!/^[\d+\-\s()]{6,}$/.test(phone.trim())) {
+      setError("Enter a valid phone number.");
+      return;
+    }
     setLoading(true);
-    const { error: err } = await signUp(email, password, fullName);
+    const { error: err } = await signUp(email, password, fullName || email.split("@")[0], phone.trim());
     setLoading(false);
     if (err) {
       setError(err.message);
     } else {
-      setMessage("Account created. Please check your email to confirm your account.");
+      setMessage(
+        "Account created. Check your email to confirm, then sign in. HR will complete your profile details.",
+      );
     }
   };
 
@@ -144,16 +156,6 @@ function AuthCard() {
           <TabsContent value="signup">
             <form onSubmit={handleSignUp} className="space-y-4 pt-2">
               <div className="space-y-2">
-                <Label htmlFor="signup-name">Full name</Label>
-                <Input
-                  id="signup-name"
-                  placeholder="John Doe"
-                  required
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
                 <Label htmlFor="signup-email">Email</Label>
                 <Input
                   id="signup-email"
@@ -165,6 +167,18 @@ function AuthCard() {
                 />
               </div>
               <div className="space-y-2">
+                <Label htmlFor="signup-phone">Phone number</Label>
+                <Input
+                  id="signup-phone"
+                  type="tel"
+                  inputMode="tel"
+                  placeholder="+65 8123 4567"
+                  required
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
                 <Label htmlFor="signup-password">Password</Label>
                 <Input
                   id="signup-password"
@@ -173,6 +187,17 @@ function AuthCard() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="signup-confirm">Confirm password</Label>
+                <Input
+                  id="signup-confirm"
+                  type="password"
+                  minLength={6}
+                  required
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
                 />
               </div>
               {error && (
