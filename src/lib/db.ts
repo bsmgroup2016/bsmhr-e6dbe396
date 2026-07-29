@@ -16,6 +16,7 @@ import type {
   BranchPrefix, EmployeeCertification, TimeCard, ClaimSheet,
   TimeCardEntry, ClaimSheetRow,
 } from "@/lib/types";
+import type { ClientContract } from "@/lib/types";
 
 type Row = Record<string, any>;
 
@@ -571,7 +572,36 @@ export interface LoadedData {
   inventory: InventoryItem[]; movements: StockMovement[]; purchaseOrders: PurchaseOrder[];
   branchPrefixes: BranchPrefix[]; certifications: EmployeeCertification[];
   timeCards: TimeCard[]; claimSheets: ClaimSheet[];
+  contracts: ClientContract[];
 }
+
+/* ---------- client contracts (recurring auto-invoicing) ---------- */
+export const fromContract = (r: Row): ClientContract => ({
+  id: r.id, companyId: r.company_id ?? undefined, clientId: r.client_id,
+  projectId: r.project_id ?? undefined, contractNo: r.contract_no ?? "",
+  title: r.title ?? "", startDate: d(r.start_date), endDate: d(r.end_date),
+  billingCycle: (r.billing_cycle ?? "Monthly") as ClientContract["billingCycle"],
+  billingDay: Number(r.billing_day ?? 1),
+  billingSource: (r.billing_source ?? "Timesheet") as ClientContract["billingSource"],
+  fixedAmount: Number(r.fixed_amount ?? 0), gstRate: Number(r.gst_rate ?? 9),
+  paymentTermsDays: Number(r.payment_terms_days ?? 30),
+  autoInvoice: r.auto_invoice ?? true,
+  lastInvoicedOn: d(r.last_invoiced_on), nextInvoiceOn: d(r.next_invoice_on),
+  status: (r.status ?? "Active") as ClientContract["status"],
+  remarks: r.remarks ?? undefined,
+  createdAt: r.created_at, updatedAt: r.updated_at,
+});
+
+export const toContract = (c: Partial<ClientContract>): Row => ({
+  company_id: c.companyId || null, client_id: c.clientId, project_id: c.projectId || null,
+  contract_no: c.contractNo, title: c.title ?? "", start_date: nullDate(c.startDate),
+  end_date: nullDate(c.endDate), billing_cycle: c.billingCycle ?? "Monthly",
+  billing_day: c.billingDay ?? 1, billing_source: c.billingSource ?? "Timesheet",
+  fixed_amount: c.fixedAmount ?? 0, gst_rate: c.gstRate ?? 9,
+  payment_terms_days: c.paymentTermsDays ?? 30, auto_invoice: c.autoInvoice ?? true,
+  last_invoiced_on: nullDate(c.lastInvoicedOn), next_invoice_on: nullDate(c.nextInvoiceOn),
+  status: c.status ?? "Active", remarks: c.remarks ?? null,
+});
 
 /* ---------- branch prefixes / certifications / time cards / claim sheets ---------- */
 export const fromBranchPrefix = (r: Row): BranchPrefix => ({
@@ -637,7 +667,7 @@ export async function loadAll(): Promise<LoadedData> {
     assets, issuances, courses, trainings, incidents,
     requisitions, candidates, leads, activities, expenses, receipts,
     inventory, movements, purchaseOrders,
-    branchPrefixes, certifications, timeCards, claimSheets,
+    branchPrefixes, certifications, timeCards, claimSheets, contracts,
   ] = await Promise.all([
     all("companies"), all("employees"), all("clients"), all("projects"), all("sites"),
     all("assignments"), all("employee_documents"), all("attendance"), all("payroll_entries"),
@@ -650,6 +680,7 @@ export async function loadAll(): Promise<LoadedData> {
     all("expenses"), all("payment_receipts"),
     all("inventory_items"), all("stock_movements"), all("purchase_orders"),
     all("branch_prefixes"), all("employee_certifications"), all("time_cards"), all("claim_sheets"),
+    all("client_contracts"),
   ]);
 
   const roleByUser = new Map<string, string>();
@@ -708,6 +739,7 @@ export async function loadAll(): Promise<LoadedData> {
     certifications: certifications.map(fromCertification),
     timeCards: timeCards.map(fromTimeCard),
     claimSheets: claimSheets.map(fromClaimSheet),
+    contracts: contracts.map(fromContract),
   };
 }
 

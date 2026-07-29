@@ -13,6 +13,8 @@ import {
   CheckCircle2,
   Percent,
   Banknote,
+  Repeat,
+  PlayCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -64,14 +66,25 @@ import {
   getRateAgreements,
   addRateAgreement,
   deleteRateAgreement,
+  getContracts,
+  addContract,
+  updateContract,
+  deleteContract,
+  contractsDue,
+  runContractBilling,
+  firstRunDate,
   getCurrentCompany,
   getCompanies,
 } from "@/lib/store";
-import type { Invoice, InvoiceLine, InvoiceStatus, RateUnit } from "@/lib/types";
+import type {
+  BillingCycle, BillingSource, ClientContract,
+  Invoice, InvoiceLine, InvoiceStatus, RateUnit,
+} from "@/lib/types";
 
 const GST_DEFAULT = 9;
 const statuses: InvoiceStatus[] = ["Draft", "Sent", "Partially Paid", "Paid", "Overdue", "Cancelled"];
 const units: RateUnit[] = ["Hourly", "Daily", "Monthly"];
+const cycles: BillingCycle[] = ["Weekly", "Fortnightly", "Monthly"];
 
 const money = (n: number) =>
   `S$${n.toLocaleString("en-SG", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -93,12 +106,14 @@ export const Route = createFileRoute("/_authenticated/billing")({
 function BillingPage() {
   const [invoices, setInvoices] = useState(getInvoices());
   const [rates, setRates] = useState(getRateAgreements());
+  const [contracts, setContracts] = useState(getContracts());
   const [clients] = useState(getClients());
   const [projects] = useState(getProjects());
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<InvoiceStatus | "all">("all");
   const [isGenOpen, setIsGenOpen] = useState(false);
   const [isRateOpen, setIsRateOpen] = useState(false);
+  const [isContractOpen, setIsContractOpen] = useState(false);
   const [preview, setPreview] = useState<Invoice | null>(null);
 
   const companyId = getCurrentCompany();
@@ -107,6 +122,7 @@ function BillingPage() {
   function refresh() {
     setInvoices(getInvoices());
     setRates(getRateAgreements());
+    setContracts(getContracts());
   }
 
   const filtered = invoices.filter((i) => {
@@ -125,6 +141,9 @@ function BillingPage() {
   const overdueCount = filtered.filter(
     (i) => i.status !== "Paid" && i.status !== "Cancelled" && i.dueDate && i.dueDate < new Date().toISOString().slice(0, 10),
   ).length;
+
+  const visibleContracts = contracts.filter((c) => !companyId || !c.companyId || c.companyId === companyId);
+  const dueContracts = contractsDue();
 
   function handleGenerate(form: FormData) {
     const clientId = form.get("clientId") as string;
@@ -177,6 +196,45 @@ function BillingPage() {
     toast.success("Rate agreement added");
   }
 
+  function handleAddContract(form: FormData) {
+    const startDate = (form.get("startDate") as string) || new Date().toISOString().slice(0, 10);
+    const billingCycle = form.get("billingCycle") as BillingCycle;
+    const billingDay = Number(form.get("billingDay") ?? 1);
+    addContract({
+      companyId: companyId || undefined,
+      clientId: form.get("clientId") as string,
+      projectId: ((form.get("projectId") as string) || "all") === "all" ? undefined : (form.get("projectId") as string),
+      contractNo: (form.get("contractNo") as string) || `CT-${Date.now().toString().slice(-6)}`,
+      title: (form.get("title") as string) || "",
+      startDate,
+      endDate: (form.get("endDate") as string) || undefined,
+      billingCycle,
+      billingDay,
+      billingSource: form.get("billingSource") as BillingSource,
+      fixedAmount: Number(form.get("fixedAmount") ?? 0),
+      gstRate: Number(form.get("gstRate") ?? GST_DEFAULT),
+      paymentTermsDays: Number(form.get("paymentTermsDays") ?? 30),
+      autoInvoice: true,
+      nextInvoiceOn: firstRunDate({ billingCycle, billingDay }, startDate),
+      status: "Active",
+      remarks: (form.get("remarks") as string) || undefined,
+    });
+    setIsContractOpen(false);
+    refresh();
+    toast.success("Contract added — auto-invoicing scheduled");
+  }
+
+  function handleRunBilling() {
+    const { created, skipped } = runContractBilling();
+    refresh();
+    if (created.length === 0 && skipped.length === 0) {
+      toast.info("No contracts are due for invoicing today");
+      return;
+    }
+    if (created.length > 0) toast.success(`${created.length} invoice(s) generated from contracts`);
+    for (const s of skipped) toast.warning(`${s.contract.contractNo}: ${s.reason}`);
+  }
+
   function setStatus(inv: Invoice, status: InvoiceStatus) {
     updateInvoice(inv.id, { status });
     refresh();
@@ -215,6 +273,15 @@ function BillingPage() {
             </p>
           </div>
           <div className="mt-2 flex flex-wrap gap-2 sm:mt-0">
+            <Button size="sm" variant="secondary" onClick={handleRunBilling}>
+              <PlayCircle className="mr-1 h-4 w-4" />
+              Run contract billing
+              {dueContracts.length > 0 && (
+                <span className="ml-1 rounded-full bg-primary px-1.5 text-[11px] text-primary-foreground">
+                  {dueContracts.length}
+                </span>
+              )}
+            </Button>
             <Dialog open={isGenOpen} onOpenChange={setIsGenOpen}>
               <DialogTrigger asChild>
                 <Button size="sm">
@@ -246,6 +313,7 @@ function BillingPage() {
         <Tabs defaultValue="invoices">
           <TabsList>
             <TabsTrigger value="invoices">Invoices</TabsTrigger>
+            <TabsTrigger value="contracts">Contracts</TabsTrigger>
             <TabsTrigger value="rates">Rate agreements</TabsTrigger>
           </TabsList>
 
@@ -369,6 +437,131 @@ function BillingPage() {
                                     deleteInvoice(i.id);
                                     refresh();
                                     toast.success("Invoice deleted");
+                                  }}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="contracts" className="mt-4">
+            <div className="rounded-xl border bg-card p-4 shadow-sm">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h2 className="font-medium">Client contracts</h2>
+                  <p className="text-sm text-muted-foreground">
+                    Recurring service agreements. Due contracts are invoiced automatically when you run billing.
+                  </p>
+                </div>
+                <Dialog open={isContractOpen} onOpenChange={setIsContractOpen}>
+                  <DialogTrigger asChild>
+                    <Button size="sm">
+                      <Plus className="mr-1 h-4 w-4" />
+                      Add contract
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+                    <DialogHeader>
+                      <DialogTitle>Add client contract</DialogTitle>
+                      <DialogDescription>
+                        Sets the billing cycle, GST and payment terms used for auto-generated invoices.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <ContractForm clients={clients} projects={projects} onSubmit={handleAddContract} />
+                  </DialogContent>
+                </Dialog>
+              </div>
+
+              <div className="mt-4 overflow-hidden rounded-lg border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Contract</TableHead>
+                      <TableHead>Client</TableHead>
+                      <TableHead>Cycle</TableHead>
+                      <TableHead>Source</TableHead>
+                      <TableHead>Next invoice</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="w-40 text-right">Action</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {visibleContracts.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={7} className="h-28 text-center">
+                          <EmptyState
+                            className="border-0 bg-transparent"
+                            icon={<Repeat className="h-5 w-5" />}
+                            title="No contracts yet"
+                            description="Add a client contract to schedule recurring invoices."
+                          />
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      visibleContracts.map((c) => {
+                        const due = !!c.nextInvoiceOn && c.nextInvoiceOn <= new Date().toISOString().slice(0, 10);
+                        return (
+                          <TableRow key={c.id}>
+                            <TableCell>
+                              <div className="font-medium">{c.contractNo}</div>
+                              <div className="text-xs text-muted-foreground">{c.title || "—"}</div>
+                            </TableCell>
+                            <TableCell>{clients.find((cl) => cl.id === c.clientId)?.name ?? "—"}</TableCell>
+                            <TableCell>
+                              <div>{c.billingCycle}</div>
+                              <div className="text-xs text-muted-foreground">
+                                {c.startDate || "—"} → {c.endDate || "open"}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              {c.billingSource === "Fixed" ? `Fixed ${money(c.fixedAmount)}` : "Timesheet"}
+                            </TableCell>
+                            <TableCell>
+                              <div className={due ? "font-medium text-destructive" : ""}>
+                                {c.nextInvoiceOn || "—"}
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                {c.lastInvoicedOn ? `Last ${c.lastInvoicedOn}` : "Not invoiced yet"}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <StatusBadge
+                                variant={
+                                  c.status === "Active" ? "success" : c.status === "Draft" ? "info" : "destructive"
+                                }
+                                label={c.autoInvoice ? c.status : `${c.status} (manual)`}
+                                dot
+                              />
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex justify-end gap-1">
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => {
+                                    updateContract(c.id, { autoInvoice: !c.autoInvoice });
+                                    refresh();
+                                    toast.success(c.autoInvoice ? "Auto-invoicing paused" : "Auto-invoicing resumed");
+                                  }}
+                                >
+                                  {c.autoInvoice ? "Pause" : "Resume"}
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => {
+                                    deleteContract(c.id);
+                                    refresh();
+                                    toast.success("Contract deleted");
                                   }}
                                 >
                                   <Trash2 className="h-4 w-4" />
@@ -674,6 +867,158 @@ function GenerateForm({
         <Button type="submit" disabled={previewLines.length === 0}>
           Generate invoice
         </Button>
+      </DialogFooter>
+    </form>
+  );
+}
+
+function ContractForm({
+  clients,
+  projects,
+  onSubmit,
+}: {
+  clients: ReturnType<typeof getClients>;
+  projects: ReturnType<typeof getProjects>;
+  onSubmit: (data: FormData) => void;
+}) {
+  const [clientId, setClientId] = useState(clients[0]?.id ?? "");
+  const [projectId, setProjectId] = useState("all");
+  const [billingCycle, setBillingCycle] = useState<BillingCycle>("Monthly");
+  const [billingSource, setBillingSource] = useState<BillingSource>("Timesheet");
+
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        onSubmit(new FormData(e.currentTarget));
+      }}
+      className="space-y-4"
+    >
+      <input type="hidden" name="clientId" value={clientId} />
+      <input type="hidden" name="projectId" value={projectId} />
+      <input type="hidden" name="billingCycle" value={billingCycle} />
+      <input type="hidden" name="billingSource" value={billingSource} />
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="space-y-1">
+          <Label htmlFor="contractNo">Contract no</Label>
+          <Input id="contractNo" name="contractNo" placeholder="CT-2026-001" required />
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor="title">Title</Label>
+          <Input id="title" name="title" placeholder="Manpower supply — Tuas site" />
+        </div>
+      </div>
+
+      <div className="space-y-1">
+        <Label>Client</Label>
+        <Select value={clientId} onValueChange={setClientId}>
+          <SelectTrigger>
+            <SelectValue placeholder="Select client" />
+          </SelectTrigger>
+          <SelectContent>
+            {clients.map((c) => (
+              <SelectItem key={c.id} value={c.id}>
+                {c.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="space-y-1">
+        <Label>Project</Label>
+        <Select value={projectId} onValueChange={setProjectId}>
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All projects</SelectItem>
+            {projects
+              .filter((p) => p.clientId === clientId)
+              .map((p) => (
+                <SelectItem key={p.id} value={p.id}>
+                  {p.name}
+                </SelectItem>
+              ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="space-y-1">
+          <Label htmlFor="startDate">Start date</Label>
+          <Input
+            id="startDate"
+            name="startDate"
+            type="date"
+            defaultValue={new Date().toISOString().slice(0, 10)}
+            required
+          />
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor="endDate">End date</Label>
+          <Input id="endDate" name="endDate" type="date" />
+        </div>
+        <div className="space-y-1">
+          <Label>Billing cycle</Label>
+          <Select value={billingCycle} onValueChange={(v) => setBillingCycle(v as BillingCycle)}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {cycles.map((c) => (
+                <SelectItem key={c} value={c}>
+                  {c}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor="billingDay">Invoice day of month</Label>
+          <Input id="billingDay" name="billingDay" type="number" min={1} max={28} defaultValue={1} />
+        </div>
+        <div className="space-y-1">
+          <Label>Billing source</Label>
+          <Select value={billingSource} onValueChange={(v) => setBillingSource(v as BillingSource)}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Timesheet">Timesheet + rate agreements</SelectItem>
+              <SelectItem value="Fixed">Fixed amount per cycle</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor="fixedAmount">Fixed amount (S$)</Label>
+          <Input
+            id="fixedAmount"
+            name="fixedAmount"
+            type="number"
+            step="0.01"
+            defaultValue={0}
+            disabled={billingSource !== "Fixed"}
+          />
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor="gstRate">GST %</Label>
+          <Input id="gstRate" name="gstRate" type="number" step="0.1" defaultValue={GST_DEFAULT} />
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor="paymentTermsDays">Payment terms (days)</Label>
+          <Input id="paymentTermsDays" name="paymentTermsDays" type="number" defaultValue={30} />
+        </div>
+      </div>
+
+      <div className="space-y-1">
+        <Label htmlFor="remarks">Remarks</Label>
+        <Textarea id="remarks" name="remarks" rows={2} placeholder="Optional" />
+      </div>
+
+      <DialogFooter>
+        <Button type="submit">Save contract</Button>
       </DialogFooter>
     </form>
   );
