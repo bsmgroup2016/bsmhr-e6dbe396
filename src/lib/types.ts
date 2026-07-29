@@ -10,6 +10,7 @@ export interface User {
   createdAt: string;
 }
 
+
 export type PassType = "Work Permit" | "S Pass" | "Employment Pass" | "Singaporean/PR";
 export type EmployeeStatus =
   | "Draft"

@@ -1825,3 +1825,176 @@ export function inventoryValue(companyId?: string): number {
     .filter((i) => !companyId || !i.companyId || i.companyId === companyId)
     .reduce((sum, i) => sum + stockOnHand(i.id) * (i.unitCost || 0), 0);
 }
+
+/* ---------------- Phase 14: analytics & reports ---------------- */
+
+export type WorkforceByStatus = { status: Employee["status"]; count: number };
+
+export function workforceByStatus(): WorkforceByStatus[] {
+  const map = getState().employees.reduce((acc, e) => {
+    acc[e.status] = (acc[e.status] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+  return Object.entries(map).map(([status, count]) => ({ status: status as Employee["status"], count }));
+}
+
+export function workforceByPassType(): { passType: string; count: number }[] {
+  const map = getState().employees.reduce((acc, e) => {
+    acc[e.passType] = (acc[e.passType] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+  return Object.entries(map).map(([passType, count]) => ({ passType, count }));
+}
+
+export function deploymentCoverage(): { site: string; required: number; assigned: number; gap: number }[] {
+  return getState().sites.map((s) => {
+    const assigned = getState().assignments.filter((a) => a.siteId === s.id && a.status === "Active").length;
+    return { site: s.name, required: s.requiredWorkers, assigned, gap: Math.max(0, s.requiredWorkers - assigned) };
+  });
+}
+
+export function passExpirySummary(days = 60): {
+  total: number;
+  expired: number;
+  expiringSoon: number;
+  valid: number;
+  expiringList: Employee[];
+} {
+  const today = new Date();
+  const threshold = new Date();
+  threshold.setDate(today.getDate() + days);
+  const employees = getState().employees;
+  let expired = 0;
+  let expiringSoon = 0;
+  let valid = 0;
+  const expiringList: Employee[] = [];
+  for (const e of employees) {
+    if (!e.passExpiry || e.passExpiry === "-") { valid++; continue; }
+    const expiry = new Date(e.passExpiry);
+    if (expiry < today) { expired++; expiringList.push(e); }
+    else if (expiry <= threshold) { expiringSoon++; expiringList.push(e); }
+    else valid++;
+  }
+  return { total: employees.length, expired, expiringSoon, valid, expiringList };
+}
+
+export function attendanceSummary(month?: string): {
+  present: number;
+  absent: number;
+  onLeave: number;
+  mc: number;
+  halfDay: number;
+  total: number;
+} {
+  const rows = month ? getState().attendance.filter((a) => a.date.startsWith(month)) : getState().attendance;
+  const counts = { present: 0, absent: 0, onLeave: 0, mc: 0, halfDay: 0, total: rows.length };
+  for (const a of rows) {
+    if (a.status === "Present") counts.present++;
+    else if (a.status === "Absent") counts.absent++;
+    else if (a.status === "On Leave") counts.onLeave++;
+    else if (a.status === "MC") counts.mc++;
+    else if (a.status === "Half Day") counts.halfDay++;
+  }
+  return counts;
+}
+
+export function leaveSummary(): {
+  type: LeaveRequest["type"];
+  requested: number;
+  approved: number;
+  rejected: number;
+  days: number;
+}[] {
+  const map = new Map<LeaveRequest["type"], { requested: number; approved: number; rejected: number; days: number }>();
+  for (const l of getState().leaveRequests) {
+    const entry = map.get(l.type) || { requested: 0, approved: 0, rejected: 0, days: 0 };
+    entry.requested++;
+    entry.days += l.days;
+    if (l.status === "Approved") entry.approved++;
+    if (l.status === "Rejected") entry.rejected++;
+    map.set(l.type, entry);
+  }
+  return Array.from(map.entries()).map(([type, stats]) => ({ type, ...stats }));
+}
+
+export function payrollTrendSummary(): { month: string; basic: number; overtime: number; levies: number; cpf: number; net: number }[] {
+  const map = new Map<string, { basic: number; overtime: number; levies: number; cpf: number; net: number }>();
+  for (const p of getState().payroll) {
+    const entry = map.get(p.month) || { basic: 0, overtime: 0, levies: 0, cpf: 0, net: 0 };
+    entry.basic += p.basicSalary;
+    entry.overtime += p.overtimePay;
+    entry.levies += p.levies;
+    entry.cpf += p.cpfEmployee;
+    entry.net += p.netPay;
+    map.set(p.month, entry);
+  }
+  return Array.from(map.entries())
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([month, values]) => ({ month, ...values }));
+}
+
+export function expenseByCategory(): { category: Expense["category"]; amount: number; count: number }[] {
+  const map = new Map<Expense["category"], { amount: number; count: number }>();
+  for (const e of getState().expenses) {
+    if (e.status === "Paid") {
+      const entry = map.get(e.category) || { amount: 0, count: 0 };
+      entry.amount += e.amount;
+      entry.count++;
+      map.set(e.category, entry);
+    }
+  }
+  return Array.from(map.entries()).map(([category, values]) => ({ category, ...values })).sort((a, b) => b.amount - a.amount);
+}
+
+export function safetySummary(): { total: number; momReported: number; bySeverity: Record<string, number> } {
+  const incidents = getState().incidents;
+  const bySeverity: Record<string, number> = {};
+  let momReported = 0;
+  for (const i of incidents) {
+    bySeverity[i.severity] = (bySeverity[i.severity] || 0) + 1;
+    if (i.momReported) momReported++;
+  }
+  return { total: incidents.length, momReported, bySeverity };
+}
+
+export function trainingCompliance(): { total: number; valid: number; expiringSoon: number; expired: number } {
+  const today = new Date();
+  const threshold = new Date();
+  threshold.setDate(today.getDate() + 60);
+  let valid = 0, expiringSoon = 0, expired = 0;
+  for (const t of getState().trainings) {
+    if (!t.expiryDate) { valid++; continue; }
+    const expiry = new Date(t.expiryDate);
+    if (expiry < today) expired++;
+    else if (expiry <= threshold) expiringSoon++;
+    else valid++;
+  }
+  return { total: getState().trainings.length, valid, expiringSoon, expired };
+}
+
+export function fleetAvailability(): { total: number; available: number; inWorkshop: number; inactive: number } {
+  const vehicles = getState().vehicles;
+  let available = 0, inWorkshop = 0, inactive = 0;
+  for (const v of vehicles) {
+    if (v.status === "Active") available++;
+    else if (v.status === "In Workshop") inWorkshop++;
+    else inactive++;
+  }
+  return { total: vehicles.length, available, inWorkshop, inactive };
+}
+
+export function dormitoryOccupancy(): { totalBeds: number; occupied: number; vacant: number; occupancyRate: number }[] {
+  return getState().dormitories.map((d) => {
+    const occupied = getState().allocations.filter((a) => a.dormitoryId === d.id && a.status === "Occupied").length;
+    const totalBeds = d.capacity;
+    return { totalBeds, occupied, vacant: totalBeds - occupied, occupancyRate: totalBeds ? Math.round((occupied / totalBeds) * 100) : 0 };
+  });
+}
+
+export function assetSummary(): { total: number; issued: number; available: number; value: number } {
+  const assets = getState().assets;
+  const issued = getState().issuances.filter((i) => i.status === "Issued").reduce((sum, i) => sum + i.quantity, 0);
+  return { total: assets.length, issued, available: assets.length - issued, value: assets.reduce((s, a) => s + a.unitCost * a.quantity, 0) };
+}
+
+
