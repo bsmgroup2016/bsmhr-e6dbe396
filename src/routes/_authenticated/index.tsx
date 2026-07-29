@@ -274,12 +274,48 @@ function DashboardPage() {
               />
               <SummaryCard
                 title="Follow-ups Due"
-                value={followUps.toString()}
+                value={followUpsDue.toString()}
                 icon={<PhoneCall className="h-5 w-5" />}
                 variant="warning"
-                caption="Today or overdue"
+                caption={`${overdueCount} overdue · today or earlier`}
               />
             </div>
+
+            {followUpCards.length > 0 ? (
+              <div className="space-y-3">
+                <SectionHeading
+                  title="Follow-up reminders"
+                  caption="Soonest first"
+                  icon={<PhoneCall className="h-4 w-4 text-warning" />}
+                />
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                  {followUpCards.map((f) => {
+                    const badge = followUpBadge(f.days);
+                    return (
+                      <Link
+                        key={f.id}
+                        to="/clients"
+                        className="rounded-xl border bg-gradient-surface p-4 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-warning/40 hover:shadow-elegant"
+                      >
+                        <p className="truncate text-sm font-medium text-foreground">{f.subject}</p>
+                        <p className="truncate text-xs text-muted-foreground">
+                          {f.activityType} ·{" "}
+                          {(f.clientId && clientNames.get(f.clientId)) ||
+                            (f.leadId && leadNames.get(f.leadId)) ||
+                            "—"}
+                        </p>
+                        <div className="mt-3 flex items-center justify-between gap-2">
+                          <StatusBadge variant={badge.variant} label={badge.label} dot />
+                          <span className="shrink-0 text-xs text-muted-foreground">
+                            {f.followUpDate}
+                          </span>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : null}
 
             <div className="grid gap-4 lg:grid-cols-3">
               <div className="rounded-xl border bg-gradient-surface p-5 shadow-sm lg:col-span-2">
