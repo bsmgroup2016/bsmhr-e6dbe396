@@ -106,7 +106,34 @@ function DashboardPage() {
   const pipelineValue = openLeads.reduce((s, l) => s + (l.monthlyValue || 0), 0);
   const weightedValue = pipeline.reduce((s, p) => s + p.weighted, 0);
   const maxStageCount = Math.max(1, ...pipeline.map((p) => p.count));
-  const followUps = dueFollowUps(companyId ?? undefined).length;
+  const followUpsDue = dueFollowUps(companyId ?? undefined).length;
+  // Open follow-up reminders (due, overdue and upcoming), soonest first
+  const followUpCards = getActivities()
+    .filter(
+      (a) =>
+        !a.done &&
+        a.followUpDate &&
+        (!companyId || !a.companyId || a.companyId === companyId),
+    )
+    .map((a) => ({
+      ...a,
+      days: Math.ceil(
+        (new Date(`${a.followUpDate}T00:00:00`).getTime() -
+          new Date(`${todayKey}T00:00:00`).getTime()) /
+          86_400_000,
+      ),
+    }))
+    .sort((a, b) => a.days - b.days || a.subject.localeCompare(b.subject))
+    .slice(0, 8);
+  const overdueCount = followUpCards.filter((f) => f.days < 0).length;
+  const followUpBadge = (days: number) =>
+    days < 0
+      ? { variant: "destructive" as const, label: `Overdue ${Math.abs(days)}d` }
+      : days === 0
+        ? { variant: "warning" as const, label: "Due today" }
+        : days <= 3
+          ? { variant: "info" as const, label: `In ${days}d` }
+          : { variant: "outline" as const, label: `In ${days}d` };
   const activeClients = getClients().filter((c) => c.status === "Active").length;
   const clientNames = new Map(getClients().map((c) => [c.id, c.name]));
   const leadNames = new Map(leads.map((l) => [l.id, l.companyName]));
@@ -247,12 +274,48 @@ function DashboardPage() {
               />
               <SummaryCard
                 title="Follow-ups Due"
-                value={followUps.toString()}
+                value={followUpsDue.toString()}
                 icon={<PhoneCall className="h-5 w-5" />}
                 variant="warning"
-                caption="Today or overdue"
+                caption={`${overdueCount} overdue · today or earlier`}
               />
             </div>
+
+            {followUpCards.length > 0 ? (
+              <div className="space-y-3">
+                <SectionHeading
+                  title="Follow-up reminders"
+                  caption="Soonest first"
+                  icon={<PhoneCall className="h-4 w-4 text-warning" />}
+                />
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                  {followUpCards.map((f) => {
+                    const badge = followUpBadge(f.days);
+                    return (
+                      <Link
+                        key={f.id}
+                        to="/clients"
+                        className="rounded-xl border bg-gradient-surface p-4 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-warning/40 hover:shadow-elegant"
+                      >
+                        <p className="truncate text-sm font-medium text-foreground">{f.subject}</p>
+                        <p className="truncate text-xs text-muted-foreground">
+                          {f.activityType} ·{" "}
+                          {(f.clientId && clientNames.get(f.clientId)) ||
+                            (f.leadId && leadNames.get(f.leadId)) ||
+                            "—"}
+                        </p>
+                        <div className="mt-3 flex items-center justify-between gap-2">
+                          <StatusBadge variant={badge.variant} label={badge.label} dot />
+                          <span className="shrink-0 text-xs text-muted-foreground">
+                            {f.followUpDate}
+                          </span>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : null}
 
             <div className="grid gap-4 lg:grid-cols-3">
               <div className="rounded-xl border bg-gradient-surface p-5 shadow-sm lg:col-span-2">
