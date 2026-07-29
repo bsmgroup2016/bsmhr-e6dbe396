@@ -216,6 +216,113 @@ function DashboardPage() {
         </section>
 
         {/* 3. Attention needed — pass expiry */}
+        {showCrm ? (
+          <section className="space-y-3">
+            <SectionHeading
+              title="CRM overview"
+              caption="Lead pipeline & recent client activity"
+              icon={<Target className="h-4 w-4 text-primary" />}
+            />
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <SummaryCard
+                title="Open Leads"
+                value={openLeads.length.toString()}
+                icon={<Target className="h-5 w-5" />}
+                variant="primary"
+                caption={`${wonLeads.length} won · ${leads.length} total`}
+              />
+              <SummaryCard
+                title="Pipeline Value"
+                value={money(pipelineValue)}
+                icon={<TrendingUp className="h-5 w-5" />}
+                variant="info"
+                caption={`${money(weightedValue)} weighted / month`}
+              />
+              <SummaryCard
+                title="Active Clients"
+                value={activeClients.toString()}
+                icon={<Building2 className="h-5 w-5" />}
+                variant="success"
+                caption="Currently engaged accounts"
+              />
+              <SummaryCard
+                title="Follow-ups Due"
+                value={followUps.toString()}
+                icon={<PhoneCall className="h-5 w-5" />}
+                variant="warning"
+                caption="Today or overdue"
+              />
+            </div>
+
+            <div className="grid gap-4 lg:grid-cols-3">
+              <div className="rounded-xl border bg-gradient-surface p-5 shadow-sm lg:col-span-2">
+                <div className="mb-4 flex items-center justify-between">
+                  <p className="text-sm font-medium text-foreground">Lead pipeline</p>
+                  <Link to="/clients" className="text-xs text-primary hover:underline">
+                    Open CRM
+                  </Link>
+                </div>
+                {openLeads.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    No open leads yet. Add a lead to start tracking your pipeline.
+                  </p>
+                ) : (
+                  <div className="space-y-3">
+                    {pipeline.map((p) => (
+                      <div key={p.stage} className="flex items-center gap-3">
+                        <span className="w-28 shrink-0 truncate text-xs text-muted-foreground">
+                          {p.stage}
+                        </span>
+                        <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-muted">
+                          <div
+                            className="h-full rounded-full bg-gradient-primary transition-all duration-500"
+                            style={{ width: `${(p.count / maxStageCount) * 100}%` }}
+                          />
+                        </div>
+                        <span className="w-8 shrink-0 text-right text-xs font-medium text-foreground">
+                          {p.count}
+                        </span>
+                        <span className="w-20 shrink-0 text-right text-xs text-muted-foreground">
+                          {money(p.value)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="rounded-xl border bg-gradient-surface p-5 shadow-sm">
+                <p className="mb-4 text-sm font-medium text-foreground">Recent activity</p>
+                {recentActivities.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    No calls, meetings or emails logged yet.
+                  </p>
+                ) : (
+                  <ul className="space-y-3">
+                    {recentActivities.map((a) => (
+                      <li key={a.id} className="flex items-start gap-3">
+                        <span className="mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                          <PhoneCall className="h-3.5 w-3.5" />
+                        </span>
+                        <div className="min-w-0">
+                          <p className="truncate text-sm text-foreground">{a.subject}</p>
+                          <p className="truncate text-xs text-muted-foreground">
+                            {a.activityType} ·{" "}
+                            {(a.clientId && clientNames.get(a.clientId)) ||
+                              (a.leadId && leadNames.get(a.leadId)) ||
+                              "—"}{" "}
+                            · {a.activityDate}
+                          </p>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+          </section>
+        ) : null}
+
         <section className="space-y-3">
           <SectionHeading
             title="Pass expiry alerts"
