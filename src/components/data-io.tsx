@@ -98,6 +98,7 @@ export function ImportDialog({
   onImport,
   onDone,
   label = "Import",
+  mappable = false,
 }: {
   title: string;
   description: string;
@@ -106,17 +107,38 @@ export function ImportDialog({
   onImport: (rows: Record<string, string>[]) => ImportResult;
   onDone?: () => void;
   label?: string;
+  /** Show a column-mapping step so any spreadsheet layout can be imported. */
+  mappable?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [rows, setRows] = useState<Record<string, string>[]>([]);
   const [fileName, setFileName] = useState("");
   const [issues, setIssues] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
+  const [headers, setHeaders] = useState<string[]>([]);
+  const [mapping, setMapping] = useState<Record<string, string>>({});
 
   function reset() {
     setRows([]);
     setFileName("");
     setIssues([]);
+    setHeaders([]);
+    setMapping({});
+  }
+
+  const norm = (s: string) => s.trim().toLowerCase().replace(/[^a-z0-9]/g, "");
+
+  /** Rows re-keyed to the system column labels using the current mapping. */
+  function mapRows(source: Record<string, string>[]) {
+    if (!mappable) return source;
+    return source.map((row) => {
+      const out: Record<string, string> = {};
+      for (const column of columns) {
+        const header = mapping[column.key];
+        out[column.label.trim().toLowerCase()] = header ? (row[header] ?? "") : "";
+      }
+      return out;
+    });
   }
 
   async function handleFile(file: File | undefined) {
@@ -126,6 +148,22 @@ export function ImportDialog({
       const parsed = await readSpreadsheet(file);
       const problems: string[] = [];
       if (!parsed.length) problems.push("The file has no data rows.");
+      const detected = Object.keys(parsed[0] ?? {});
+      setHeaders(detected);
+      if (mappable) {
+        const guess: Record<string, string> = {};
+        for (const column of columns) {
+          const hit = detected.find((h) => norm(h) === norm(column.label))
+            ?? detected.find((h) => norm(h) === norm(column.key))
+            ?? detected.find((h) => norm(h).includes(norm(column.label)) && norm(column.label).length > 3);
+          if (hit) guess[column.key] = hit;
+        }
+        setMapping(guess);
+        setRows(parsed);
+        setFileName(file.name);
+        setIssues(parsed.length ? [] : problems);
+        return;
+      }
       const missing = columns
         .filter((column) => column.required)
         .filter((column) => parsed.length > 0 && !(column.label.trim().toLowerCase() in parsed[0]));
@@ -149,11 +187,14 @@ export function ImportDialog({
   }
 
   function confirmImport() {
-    const valid = rows.filter((row) =>
+    const source = mapRows(rows);
+    const valid = source.filter((row) =>
       columns.filter((c) => c.required).every((c) => pick(row, c)),
     );
     if (!valid.length) {
-      toast.error("No valid rows to import");
+      toast.error("No valid rows to import", {
+        description: mappable ? "Check the column mapping for required fields." : undefined,
+      });
       return;
     }
     const result = onImport(valid);
@@ -169,7 +210,7 @@ export function ImportDialog({
     onDone?.();
   }
 
-  const preview = rows.slice(0, 5);
+  const preview = mapRows(rows).slice(0, 5);
 
   return (
     <Dialog
@@ -216,6 +257,38 @@ export function ImportDialog({
             <p className="text-sm text-muted-foreground">
               <span className="font-medium text-foreground">{fileName}</span> — {rows.length} row(s) detected
             </p>
+          ) : null}
+
+          {mappable && headers.length ? (
+            <div className="rounded-lg border p-3">
+              <p className="mb-2 text-xs font-medium text-muted-foreground">
+                Map spreadsheet columns → system fields
+              </p>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {columns.map((column) => (
+                  <label key={column.key} className="flex items-center gap-2 text-xs">
+                    <span className="w-36 shrink-0 truncate">
+                      {column.label}
+                      {column.required ? <span className="text-destructive"> *</span> : null}
+                    </span>
+                    <select
+                      className="h-8 flex-1 rounded-md border bg-background px-2 text-xs"
+                      value={mapping[column.key] ?? ""}
+                      onChange={(event) =>
+                        setMapping((prev) => ({ ...prev, [column.key]: event.target.value }))
+                      }
+                    >
+                      <option value="">— not mapped —</option>
+                      {headers.map((header) => (
+                        <option key={header} value={header}>
+                          {header}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                ))}
+              </div>
+            </div>
           ) : null}
 
           {issues.length ? (
