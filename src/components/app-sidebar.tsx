@@ -14,6 +14,7 @@ import {
   HardHat,
   Handshake,
   Layers,
+  Package,
   Loader2,
   LogOut,
   Receipt,
@@ -87,6 +88,7 @@ const navGroups: { label: string; items: NavItem[] }[] = [
       { title: "Accommodation", url: "/accommodation", icon: BedDouble },
       { title: "Transport & Drivers", url: "/transport", icon: Truck },
       { title: "Assets & PPE", url: "/assets", icon: Boxes },
+      { title: "Inventory", url: "/inventory", icon: Package },
     ],
   },
   {

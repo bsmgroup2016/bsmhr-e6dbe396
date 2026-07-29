@@ -11,6 +11,7 @@ import type { TrainingCourse, TrainingRecord, SafetyIncident } from "@/lib/types
 import type { JobRequisition, Candidate } from "@/lib/types";
 import type { Lead, CrmActivity } from "@/lib/types";
 import type { Expense, PaymentReceipt } from "@/lib/types";
+import type { InventoryItem, StockMovement, PurchaseOrder } from "@/lib/types";
 
 type Row = Record<string, any>;
 
@@ -524,6 +525,7 @@ export interface LoadedData {
   requisitions: JobRequisition[]; candidates: Candidate[];
   leads: Lead[]; activities: CrmActivity[];
   expenses: Expense[]; receipts: PaymentReceipt[];
+  inventory: InventoryItem[]; movements: StockMovement[]; purchaseOrders: PurchaseOrder[];
 }
 
 async function all(table: string, order = "created_at") {
@@ -539,6 +541,7 @@ export async function loadAll(): Promise<LoadedData> {
     rateAgreements, invoices, dormitories, allocations, vehicles, trips,
     assets, issuances, courses, trainings, incidents,
     requisitions, candidates, leads, activities, expenses, receipts,
+    inventory, movements, purchaseOrders,
   ] = await Promise.all([
     all("companies"), all("employees"), all("clients"), all("projects"), all("sites"),
     all("assignments"), all("employee_documents"), all("attendance"), all("payroll_entries"),
@@ -549,6 +552,7 @@ export async function loadAll(): Promise<LoadedData> {
     all("training_courses"), all("training_records"), all("safety_incidents"),
     all("job_requisitions"), all("candidates"), all("leads"), all("crm_activities"),
     all("expenses"), all("payment_receipts"),
+    all("inventory_items"), all("stock_movements"), all("purchase_orders"),
   ]);
 
   const roleByUser = new Map<string, string>();
@@ -600,6 +604,9 @@ export async function loadAll(): Promise<LoadedData> {
     activities: activities.map(fromActivity),
     expenses: expenses.map(fromExpense),
     receipts: receipts.map(fromPaymentReceipt),
+    inventory: inventory.map(fromItem),
+    movements: movements.map(fromMovement),
+    purchaseOrders: purchaseOrders.map(fromPurchaseOrder),
   };
 }
 
@@ -640,4 +647,51 @@ export const toPaymentReceipt = (x: Partial<PaymentReceipt>): Row => ({
   company_id: x.companyId || null, invoice_id: x.invoiceId || null, client_id: x.clientId || null,
   receipt_no: x.receiptNo ?? "", received_on: nullDate(x.receivedOn), amount: x.amount ?? 0,
   payment_mode: x.paymentMode, reference_no: x.referenceNo ?? null, remarks: x.remarks ?? null,
+});
+
+/* ---------- Phase 13: inventory & procurement ---------- */
+export const fromItem = (r: Row): InventoryItem => ({
+  id: r.id, companyId: r.company_id ?? undefined, sku: r.sku ?? "", name: r.name ?? "",
+  category: (r.category ?? "Other") as InventoryItem["category"], unit: r.unit ?? "pcs",
+  openingQty: Number(r.opening_qty ?? 0), reorderLevel: Number(r.reorder_level ?? 0),
+  unitCost: Number(r.unit_cost ?? 0), location: r.location ?? undefined,
+  supplier: r.supplier ?? undefined, remarks: r.remarks ?? undefined,
+  createdAt: r.created_at, updatedAt: r.updated_at,
+});
+
+export const toItem = (x: Partial<InventoryItem>): Row => ({
+  company_id: x.companyId || null, sku: x.sku ?? "", name: x.name ?? "", category: x.category,
+  unit: x.unit ?? "pcs", opening_qty: x.openingQty ?? 0, reorder_level: x.reorderLevel ?? 0,
+  unit_cost: x.unitCost ?? 0, location: x.location ?? null, supplier: x.supplier ?? null,
+  remarks: x.remarks ?? null,
+});
+
+export const fromMovement = (r: Row): StockMovement => ({
+  id: r.id, itemId: r.item_id, movementType: (r.movement_type ?? "In") as StockMovement["movementType"],
+  quantity: Number(r.quantity ?? 0), movementDate: d(r.movement_date) ?? "",
+  siteId: r.site_id ?? undefined, employeeId: r.employee_id ?? undefined, poId: r.po_id ?? undefined,
+  referenceNo: r.reference_no ?? undefined, remarks: r.remarks ?? undefined,
+  createdAt: r.created_at, updatedAt: r.updated_at,
+});
+
+export const toMovement = (x: Partial<StockMovement>): Row => ({
+  item_id: x.itemId, movement_type: x.movementType, quantity: x.quantity ?? 0,
+  movement_date: nullDate(x.movementDate), site_id: x.siteId || null,
+  employee_id: x.employeeId || null, po_id: x.poId || null,
+  reference_no: x.referenceNo ?? null, remarks: x.remarks ?? null,
+});
+
+export const fromPurchaseOrder = (r: Row): PurchaseOrder => ({
+  id: r.id, companyId: r.company_id ?? undefined, poNo: r.po_no ?? "", supplier: r.supplier ?? "",
+  itemId: r.item_id ?? undefined, quantity: Number(r.quantity ?? 0), unitCost: Number(r.unit_cost ?? 0),
+  orderDate: d(r.order_date) ?? "", expectedDate: d(r.expected_date), receivedDate: d(r.received_date),
+  status: (r.status ?? "Draft") as PurchaseOrder["status"], remarks: r.remarks ?? undefined,
+  createdAt: r.created_at, updatedAt: r.updated_at,
+});
+
+export const toPurchaseOrder = (x: Partial<PurchaseOrder>): Row => ({
+  company_id: x.companyId || null, po_no: x.poNo ?? "", supplier: x.supplier ?? "",
+  item_id: x.itemId || null, quantity: x.quantity ?? 0, unit_cost: x.unitCost ?? 0,
+  order_date: nullDate(x.orderDate), expected_date: nullDate(x.expectedDate),
+  received_date: nullDate(x.receivedDate), status: x.status, remarks: x.remarks ?? null,
 });

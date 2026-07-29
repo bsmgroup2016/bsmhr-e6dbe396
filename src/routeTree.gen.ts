@@ -24,6 +24,7 @@ import { Route as AuthenticatedProjectsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedPayrollRouteImport } from './routes/_authenticated/payroll'
 import { Route as AuthenticatedOperationsRouteImport } from './routes/_authenticated/operations'
 import { Route as AuthenticatedLeaveRouteImport } from './routes/_authenticated/leave'
+import { Route as AuthenticatedInventoryRouteImport } from './routes/_authenticated/inventory'
 import { Route as AuthenticatedFinanceRouteImport } from './routes/_authenticated/finance'
 import { Route as AuthenticatedDocumentsRouteImport } from './routes/_authenticated/documents'
 import { Route as AuthenticatedCrmRouteImport } from './routes/_authenticated/crm'
@@ -116,6 +117,11 @@ const AuthenticatedOperationsRoute = AuthenticatedOperationsRouteImport.update({
 const AuthenticatedLeaveRoute = AuthenticatedLeaveRouteImport.update({
   id: '/leave',
   path: '/leave',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedInventoryRoute = AuthenticatedInventoryRouteImport.update({
+  id: '/inventory',
+  path: '/inventory',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedFinanceRoute = AuthenticatedFinanceRouteImport.update({
@@ -220,6 +226,7 @@ export interface FileRoutesByFullPath {
   '/crm': typeof AuthenticatedCrmRoute
   '/documents': typeof AuthenticatedDocumentsRoute
   '/finance': typeof AuthenticatedFinanceRoute
+  '/inventory': typeof AuthenticatedInventoryRoute
   '/leave': typeof AuthenticatedLeaveRoute
   '/operations': typeof AuthenticatedOperationsRoute
   '/payroll': typeof AuthenticatedPayrollRoute
@@ -252,6 +259,7 @@ export interface FileRoutesByTo {
   '/crm': typeof AuthenticatedCrmRoute
   '/documents': typeof AuthenticatedDocumentsRoute
   '/finance': typeof AuthenticatedFinanceRoute
+  '/inventory': typeof AuthenticatedInventoryRoute
   '/leave': typeof AuthenticatedLeaveRoute
   '/operations': typeof AuthenticatedOperationsRoute
   '/payroll': typeof AuthenticatedPayrollRoute
@@ -287,6 +295,7 @@ export interface FileRoutesById {
   '/_authenticated/crm': typeof AuthenticatedCrmRoute
   '/_authenticated/documents': typeof AuthenticatedDocumentsRoute
   '/_authenticated/finance': typeof AuthenticatedFinanceRoute
+  '/_authenticated/inventory': typeof AuthenticatedInventoryRoute
   '/_authenticated/leave': typeof AuthenticatedLeaveRoute
   '/_authenticated/operations': typeof AuthenticatedOperationsRoute
   '/_authenticated/payroll': typeof AuthenticatedPayrollRoute
@@ -323,6 +332,7 @@ export interface FileRouteTypes {
     | '/crm'
     | '/documents'
     | '/finance'
+    | '/inventory'
     | '/leave'
     | '/operations'
     | '/payroll'
@@ -355,6 +365,7 @@ export interface FileRouteTypes {
     | '/crm'
     | '/documents'
     | '/finance'
+    | '/inventory'
     | '/leave'
     | '/operations'
     | '/payroll'
@@ -389,6 +400,7 @@ export interface FileRouteTypes {
     | '/_authenticated/crm'
     | '/_authenticated/documents'
     | '/_authenticated/finance'
+    | '/_authenticated/inventory'
     | '/_authenticated/leave'
     | '/_authenticated/operations'
     | '/_authenticated/payroll'
@@ -525,6 +537,13 @@ declare module '@tanstack/react-router' {
       path: '/leave'
       fullPath: '/leave'
       preLoaderRoute: typeof AuthenticatedLeaveRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/inventory': {
+      id: '/_authenticated/inventory'
+      path: '/inventory'
+      fullPath: '/inventory'
+      preLoaderRoute: typeof AuthenticatedInventoryRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/finance': {
@@ -675,6 +694,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCrmRoute: typeof AuthenticatedCrmRoute
   AuthenticatedDocumentsRoute: typeof AuthenticatedDocumentsRoute
   AuthenticatedFinanceRoute: typeof AuthenticatedFinanceRoute
+  AuthenticatedInventoryRoute: typeof AuthenticatedInventoryRoute
   AuthenticatedLeaveRoute: typeof AuthenticatedLeaveRoute
   AuthenticatedOperationsRoute: typeof AuthenticatedOperationsRoute
   AuthenticatedPayrollRoute: typeof AuthenticatedPayrollRoute
@@ -702,6 +722,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCrmRoute: AuthenticatedCrmRoute,
   AuthenticatedDocumentsRoute: AuthenticatedDocumentsRoute,
   AuthenticatedFinanceRoute: AuthenticatedFinanceRoute,
+  AuthenticatedInventoryRoute: AuthenticatedInventoryRoute,
   AuthenticatedLeaveRoute: AuthenticatedLeaveRoute,
   AuthenticatedOperationsRoute: AuthenticatedOperationsRoute,
   AuthenticatedPayrollRoute: AuthenticatedPayrollRoute,

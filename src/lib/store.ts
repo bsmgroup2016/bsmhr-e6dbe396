@@ -12,6 +12,7 @@ import type { TrainingCourse, TrainingRecord, SafetyIncident } from "@/lib/types
 import type { JobRequisition, Candidate } from "@/lib/types";
 import type { Lead, CrmActivity } from "@/lib/types";
 import type { Expense, PaymentReceipt } from "@/lib/types";
+import type { InventoryItem, StockMovement, PurchaseOrder } from "@/lib/types";
 import { supabase } from "@/integrations/supabase/client";
 import {
   loadAll, toEmployee, toClient, toProject, toSite, toAssignment,
@@ -24,6 +25,7 @@ import { toCourse, toTraining, toIncident } from "@/lib/db";
 import { toRequisition, toCandidate } from "@/lib/db";
 import { toLead, toActivity } from "@/lib/db";
 import { toExpense, toPaymentReceipt } from "@/lib/db";
+import { toItem, toMovement, toPurchaseOrder } from "@/lib/db";
 
 export interface AppState {
   employees: Employee[];
@@ -45,6 +47,9 @@ export interface AppState {
   trips: Trip[];
   assets: Asset[];
   issuances: AssetIssuance[];
+  inventory: InventoryItem[];
+  movements: StockMovement[];
+  purchaseOrders: PurchaseOrder[];
   courses: TrainingCourse[];
   trainings: TrainingRecord[];
   incidents: SafetyIncident[];
@@ -78,6 +83,7 @@ const emptyState: AppState = {
   requisitions: [], candidates: [],
   leads: [], activities: [],
   expenses: [], receipts: [],
+  inventory: [], movements: [], purchaseOrders: [],
   branches: defaultBranches, currentBranch: "hq",
   companies: [], currentCompany: "", currentUser: null,
 };
@@ -1678,4 +1684,144 @@ export function financeTrend(months = 6, companyId?: string) {
     out.push({ month: key, revenue: sum.revenue, cost: sum.cost, profit: sum.profit });
   }
   return out;
+}
+
+/* ---------------- Phase 13: inventory & procurement ---------------- */
+export function getInventory(): InventoryItem[] { return getState().inventory; }
+export function getMovements(): StockMovement[] { return getState().movements; }
+export function getPurchaseOrders(): PurchaseOrder[] { return getState().purchaseOrders; }
+
+export function addInventoryItem(x: Omit<InventoryItem, "id" | "createdAt" | "updatedAt">): InventoryItem {
+  const s = getState();
+  const now = new Date().toISOString();
+  const row: InventoryItem = { ...x, id: newId(), createdAt: now, updatedAt: now };
+  setState({ ...s, inventory: [row, ...s.inventory] });
+  void supabase.from("inventory_items").insert({ id: row.id, ...toItem(row) })
+    .then(({ error }) => fail("inventory_items", error));
+  addAuditLog("CREATE", "InventoryItem", row.id, `Added item ${row.name}`);
+  return row;
+}
+
+export function updateInventoryItem(id: string, updates: Partial<InventoryItem>): InventoryItem | undefined {
+  const s = getState();
+  const existing = s.inventory.find((i) => i.id === id);
+  if (!existing) return undefined;
+  const updated: InventoryItem = { ...existing, ...updates, updatedAt: new Date().toISOString() };
+  setState({ ...s, inventory: s.inventory.map((i) => (i.id === id ? updated : i)) });
+  void supabase.from("inventory_items").update(toItem(updated)).eq("id", id)
+    .then(({ error }) => fail("inventory_items", error));
+  addAuditLog("UPDATE", "InventoryItem", id, `Updated item ${updated.name}`);
+  return updated;
+}
+
+export function deleteInventoryItem(id: string): boolean {
+  const s = getState();
+  if (!s.inventory.some((i) => i.id === id)) return false;
+  setState({
+    ...s,
+    inventory: s.inventory.filter((i) => i.id !== id),
+    movements: s.movements.filter((m) => m.itemId !== id),
+  });
+  void supabase.from("inventory_items").delete().eq("id", id)
+    .then(({ error }) => fail("inventory_items", error));
+  addAuditLog("DELETE", "InventoryItem", id, "Deleted inventory item");
+  return true;
+}
+
+export function addStockMovement(x: Omit<StockMovement, "id" | "createdAt" | "updatedAt">): StockMovement {
+  const s = getState();
+  const now = new Date().toISOString();
+  const row: StockMovement = { ...x, id: newId(), createdAt: now, updatedAt: now };
+  setState({ ...s, movements: [row, ...s.movements] });
+  void supabase.from("stock_movements").insert({ id: row.id, ...toMovement(row) })
+    .then(({ error }) => fail("stock_movements", error));
+  const item = s.inventory.find((i) => i.id === row.itemId);
+  addAuditLog("CREATE", "StockMovement", row.id, `${row.movementType} ${row.quantity} x ${item?.name ?? "item"}`);
+  return row;
+}
+
+export function deleteStockMovement(id: string): boolean {
+  const s = getState();
+  if (!s.movements.some((m) => m.id === id)) return false;
+  setState({ ...s, movements: s.movements.filter((m) => m.id !== id) });
+  void supabase.from("stock_movements").delete().eq("id", id)
+    .then(({ error }) => fail("stock_movements", error));
+  addAuditLog("DELETE", "StockMovement", id, "Deleted stock movement");
+  return true;
+}
+
+/** Current stock on hand = opening qty + inbound - outbound. */
+export function stockOnHand(itemId: string): number {
+  const s = getState();
+  const item = s.inventory.find((i) => i.id === itemId);
+  const opening = item?.openingQty ?? 0;
+  return s.movements.filter((m) => m.itemId === itemId).reduce((qty, m) => {
+    if (m.movementType === "In" || m.movementType === "Return") return qty + m.quantity;
+    if (m.movementType === "Out" || m.movementType === "Damaged") return qty - m.quantity;
+    return qty + m.quantity; // Adjustment can be +/-
+  }, opening);
+}
+
+/** Items at or below their reorder level. */
+export function lowStockItems(companyId?: string) {
+  return getState().inventory
+    .filter((i) => !companyId || !i.companyId || i.companyId === companyId)
+    .map((item) => ({ item, onHand: stockOnHand(item.id) }))
+    .filter(({ item, onHand }) => item.reorderLevel > 0 && onHand <= item.reorderLevel)
+    .sort((a, b) => a.onHand - b.onHand);
+}
+
+export function addPurchaseOrder(x: Omit<PurchaseOrder, "id" | "createdAt" | "updatedAt">): PurchaseOrder {
+  const s = getState();
+  const now = new Date().toISOString();
+  const row: PurchaseOrder = { ...x, id: newId(), createdAt: now, updatedAt: now };
+  setState({ ...s, purchaseOrders: [row, ...s.purchaseOrders] });
+  void supabase.from("purchase_orders").insert({ id: row.id, ...toPurchaseOrder(row) })
+    .then(({ error }) => fail("purchase_orders", error));
+  addAuditLog("CREATE", "PurchaseOrder", row.id, `PO ${row.poNo} to ${row.supplier}`);
+  return row;
+}
+
+export function updatePurchaseOrder(id: string, updates: Partial<PurchaseOrder>): PurchaseOrder | undefined {
+  const s = getState();
+  const existing = s.purchaseOrders.find((p) => p.id === id);
+  if (!existing) return undefined;
+  const updated: PurchaseOrder = { ...existing, ...updates, updatedAt: new Date().toISOString() };
+  setState({ ...s, purchaseOrders: s.purchaseOrders.map((p) => (p.id === id ? updated : p)) });
+  void supabase.from("purchase_orders").update(toPurchaseOrder(updated)).eq("id", id)
+    .then(({ error }) => fail("purchase_orders", error));
+  addAuditLog("UPDATE", "PurchaseOrder", id, `PO ${updated.poNo} set to ${updated.status}`);
+  return updated;
+}
+
+export function deletePurchaseOrder(id: string): boolean {
+  const s = getState();
+  if (!s.purchaseOrders.some((p) => p.id === id)) return false;
+  setState({ ...s, purchaseOrders: s.purchaseOrders.filter((p) => p.id !== id) });
+  void supabase.from("purchase_orders").delete().eq("id", id)
+    .then(({ error }) => fail("purchase_orders", error));
+  addAuditLog("DELETE", "PurchaseOrder", id, "Deleted purchase order");
+  return true;
+}
+
+/** Mark a PO received and push the quantity into stock as an inbound movement. */
+export function receivePurchaseOrder(id: string, receivedDate = new Date().toISOString().slice(0, 10)) {
+  const po = getState().purchaseOrders.find((p) => p.id === id);
+  if (!po) return undefined;
+  const updated = updatePurchaseOrder(id, { status: "Received", receivedDate });
+  if (po.itemId && po.quantity > 0) {
+    addStockMovement({
+      itemId: po.itemId, movementType: "In", quantity: po.quantity,
+      movementDate: receivedDate, poId: po.id, referenceNo: po.poNo,
+      remarks: `Received from ${po.supplier}`,
+    });
+  }
+  return updated;
+}
+
+/** Total stock valuation at unit cost. */
+export function inventoryValue(companyId?: string): number {
+  return getState().inventory
+    .filter((i) => !companyId || !i.companyId || i.companyId === companyId)
+    .reduce((sum, i) => sum + stockOnHand(i.id) * (i.unitCost || 0), 0);
 }
