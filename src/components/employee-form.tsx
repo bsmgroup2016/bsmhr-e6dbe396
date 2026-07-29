@@ -463,6 +463,19 @@ export function EmployeeForm({
             <Field label="Dormitory address">
               <Input name="dormitoryAddress" defaultValue={employee?.dormitoryAddress ?? ""} />
             </Field>
+            <Field label="Medical insurance expiry">
+              <Input name="medicalInsuranceExpiry" type="date" defaultValue={dateValue(employee?.medicalInsuranceExpiry)} />
+            </Field>
+            <Field label="Medical examination due">
+              <Input name="medicalCheckupDue" type="date" defaultValue={dateValue(employee?.medicalCheckupDue)} />
+            </Field>
+            <Field label="Levy tier (MOM)">
+              <Pick
+                name="levyTier"
+                options={["Higher Skilled", "Basic Skilled"]}
+                defaultValue={employee?.levyTier ?? "Basic Skilled"}
+              />
+            </Field>
           </div>
         </TabsContent>
 
