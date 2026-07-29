@@ -43,6 +43,81 @@ export function safeKey(key: string) {
   return key.replace(/^\/+/, "").replace(/\.\./g, "");
 }
 
+/* ---------------- access control ---------------- */
+
+function serviceKey() {
+  const key = process.env.SB_SERVICE_ROLE_KEY;
+  if (!key) throw new Error("Service key missing");
+  return key;
+}
+
+async function restGet(path: string) {
+  const key = serviceKey();
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+    headers: { apikey: key, Authorization: `Bearer ${key}` },
+  });
+  if (!res.ok) return [] as any[];
+  return (await res.json()) as any[];
+}
+
+const STAFF_ROLES = ["admin", "manager", "supervisor"];
+
+export async function userRoles(userId: string): Promise<string[]> {
+  const rows = await restGet(
+    `user_roles?select=role&user_id=eq.${encodeURIComponent(userId)}`,
+  );
+  return rows.map((r) => String(r.role));
+}
+
+export async function isAdmin(userId: string) {
+  return (await userRoles(userId)).includes("admin");
+}
+
+/** A caller may read an object if they uploaded it or hold a staff role. */
+export async function canAccessKey(userId: string, key: string) {
+  const rows = await restGet(
+    `storage_objects?select=uploaded_by&key=eq.${encodeURIComponent(key)}&limit=1`,
+  );
+  if (rows.length === 0) return false;
+  if (rows[0].uploaded_by === userId) return true;
+  return (await userRoles(userId)).some((r) => STAFF_ROLES.includes(r));
+}
+
+export async function registerObject(row: {
+  key: string;
+  folder: string;
+  original_name: string;
+  content_type: string;
+  size: number;
+  employee_id: string | null;
+  uploaded_by: string;
+}) {
+  const key = serviceKey();
+  await fetch(`${SUPABASE_URL}/rest/v1/storage_objects`, {
+    method: "POST",
+    headers: {
+      apikey: key,
+      Authorization: `Bearer ${key}`,
+      "Content-Type": "application/json",
+      Prefer: "resolution=merge-duplicates",
+    },
+    body: JSON.stringify(row),
+  });
+}
+
+export async function unregisterObject(objectKey: string) {
+  const key = serviceKey();
+  await fetch(
+    `${SUPABASE_URL}/rest/v1/storage_objects?key=eq.${encodeURIComponent(objectKey)}`,
+    { method: "DELETE", headers: { apikey: key, Authorization: `Bearer ${key}` } },
+  );
+}
+
+export const ALLOWED_EXT = [
+  "pdf", "jpg", "jpeg", "png", "webp", "gif", "heic",
+  "doc", "docx", "xls", "xlsx", "csv", "txt",
+];
+
 /** Extract the object key from either a raw key or an /api/public/r2-file?key=... link. */
 export function keyFromRef(ref: string): string {
   if (!ref) return "";

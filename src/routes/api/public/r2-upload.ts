@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { r2Client, verifyUser } from "@/lib/r2.server";
+import { ALLOWED_EXT, r2Client, registerObject, verifyUser } from "@/lib/r2.server";
 
 export const Route = createFileRoute("/api/public/r2-upload")({
   server: {
@@ -16,6 +16,7 @@ export const Route = createFileRoute("/api/public/r2-upload")({
         }
         const file = form.get("file");
         const folder = String(form.get("folder") || "documents").replace(/[^a-z0-9_-]/gi, "");
+        const employeeId = String(form.get("employeeId") || "").trim() || null;
         if (!(file instanceof File) || file.size === 0) {
           return new Response("No file provided", { status: 400 });
         }
@@ -24,6 +25,9 @@ export const Route = createFileRoute("/api/public/r2-upload")({
         }
 
         const ext = file.name.split(".").pop()?.toLowerCase() ?? "bin";
+        if (!ALLOWED_EXT.includes(ext)) {
+          return new Response("File type not allowed", { status: 415 });
+        }
         const key = `${folder}/${Date.now()}-${crypto.randomUUID()}.${ext}`;
 
         try {
@@ -36,11 +40,17 @@ export const Route = createFileRoute("/api/public/r2-upload")({
           if (!put.ok) {
             return new Response(`R2 upload failed (${put.status})`, { status: 502 });
           }
-        } catch (err) {
-          return new Response(
-            err instanceof Error ? err.message : "R2 upload failed",
-            { status: 500 },
-          );
+          await registerObject({
+            key,
+            folder: folder || "documents",
+            original_name: file.name,
+            content_type: file.type || "application/octet-stream",
+            size: file.size,
+            employee_id: employeeId,
+            uploaded_by: userId,
+          });
+        } catch {
+          return new Response("R2 upload failed", { status: 500 });
         }
 
         return Response.json({
