@@ -15,6 +15,7 @@ import type { Expense, PaymentReceipt } from "@/lib/types";
 import type { InventoryItem, StockMovement, PurchaseOrder } from "@/lib/types";
 import type { BranchPrefix, EmployeeCertification, TimeCard, ClaimSheet } from "@/lib/types";
 import { supabase } from "@/integrations/supabase/client";
+import { computeStatutory, round2 } from "@/lib/sg-payroll";
 import {
   loadAll, toEmployee, toClient, toProject, toSite, toAssignment,
   toDocument, toAttendance, toPayroll, toApproval, toCompany, toLeave,
