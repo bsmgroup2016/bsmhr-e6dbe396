@@ -92,6 +92,11 @@ export interface Employee {
   workPermitNumber?: string;
   otRate?: number;
   normalHours?: number;
+  userId?: string;
+  workPermitIssueDate?: string;
+  workPermitExpiryDate?: string;
+  dormitoryAddress?: string;
+  accountHolderName?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -219,8 +224,82 @@ export interface Attendance {
   hoursWorked: number;
   overtimeHours: number;
   notes?: string;
+  checkInLat?: number;
+  checkInLng?: number;
+  checkInAddress?: string;
+  checkOutLat?: number;
+  checkOutLng?: number;
+  checkOutAddress?: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface BranchPrefix {
+  id: string;
+  code: string;
+  name: string;
+  companyId?: string;
+  active: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface EmployeeCertification {
+  id: string;
+  employeeId: string;
+  courseName: string;
+  issuingBody?: string;
+  issueDate?: string;
+  expiryDate?: string;
+  fileUrl?: string;
+  remarks?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface TimeCardEntry {
+  date: string;
+  checkIn?: string;
+  checkOut?: string;
+  resolution?: "Accepted" | "Corrected" | "Ignored";
+}
+
+export interface TimeCard {
+  id: string;
+  employeeId: string;
+  periodStart: string;
+  periodEnd: string;
+  fileUrl?: string;
+  fileName?: string;
+  status: "Draft" | "Verified" | "Has Mismatches";
+  entries: TimeCardEntry[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface ClaimSheetRow {
+  date: string;
+  checkIn?: string;
+  checkOut?: string;
+  normalHours: number;
+  otHours: number;
+  status: string;
+  site?: string;
+}
+
+export interface ClaimSheet {
+  id: string;
+  reference: string;
+  employeeId?: string;
+  companyId?: string;
+  periodStart: string;
+  periodEnd: string;
+  totalDays: number;
+  totalNormalHours: number;
+  totalOtHours: number;
+  snapshot: ClaimSheetRow[];
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export type PayrollStatus = "Draft" | "Pending Approval" | "Approved" | "Paid" | "Rejected";

@@ -13,6 +13,7 @@ import type { JobRequisition, Candidate } from "@/lib/types";
 import type { Lead, CrmActivity } from "@/lib/types";
 import type { Expense, PaymentReceipt } from "@/lib/types";
 import type { InventoryItem, StockMovement, PurchaseOrder } from "@/lib/types";
+import type { BranchPrefix, EmployeeCertification, TimeCard, ClaimSheet } from "@/lib/types";
 import { supabase } from "@/integrations/supabase/client";
 import {
   loadAll, toEmployee, toClient, toProject, toSite, toAssignment,
@@ -26,6 +27,7 @@ import { toRequisition, toCandidate } from "@/lib/db";
 import { toLead, toActivity } from "@/lib/db";
 import { toExpense, toPaymentReceipt } from "@/lib/db";
 import { toItem, toMovement, toPurchaseOrder } from "@/lib/db";
+import { toBranchPrefix, toCertification, toTimeCard, toClaimSheet } from "@/lib/db";
 
 export interface AppState {
   employees: Employee[];
@@ -60,6 +62,10 @@ export interface AppState {
   expenses: Expense[];
   receipts: PaymentReceipt[];
   users: User[];
+  branchPrefixes: BranchPrefix[];
+  certifications: EmployeeCertification[];
+  timeCards: TimeCard[];
+  claimSheets: ClaimSheet[];
   branches: AppBranch[];
   currentBranch: string;
   companies: Company[];
@@ -84,6 +90,7 @@ const emptyState: AppState = {
   leads: [], activities: [],
   expenses: [], receipts: [],
   inventory: [], movements: [], purchaseOrders: [],
+  branchPrefixes: [], certifications: [], timeCards: [], claimSheets: [],
   branches: defaultBranches, currentBranch: "hq",
   companies: [], currentCompany: "", currentUser: null,
 };
@@ -162,12 +169,106 @@ export function getEmployee(id: string): Employee | undefined { return getState(
 export function addEmployee(employee: Omit<Employee, "id" | "employeeCode" | "createdAt" | "updatedAt">): Employee {
   const s = getState();
   const now = new Date().toISOString();
-  const nextCode = `EMP-${String(s.employees.length + 1).padStart(4, "0")}`;
+  const nextCode =
+    (employee as Partial<Employee>).employeeCode?.trim() ||
+    nextEmployeeCode(employee.branch ?? "");
   const row: Employee = { ...employee, id: newId(), employeeCode: nextCode, createdAt: now, updatedAt: now };
   setState({ ...s, employees: [row, ...s.employees] });
   void supabase.from("employees").insert({ id: row.id, ...toEmployee(row) }).then(({ error }) => fail("employees", error));
   addAuditLog("CREATE", "Employee", row.id, `Created employee ${row.name} (${row.employeeCode})`);
   return row;
+}
+
+/* ------- branch-prefixed employee IDs (BS1, V1, P1 …) ------- */
+export function getBranchPrefixes(): BranchPrefix[] {
+  return getState().branchPrefixes.filter((b) => b.active);
+}
+export function getAllBranchPrefixes(): BranchPrefix[] { return getState().branchPrefixes; }
+
+export function addBranchPrefix(x: Omit<BranchPrefix, "id" | "createdAt" | "updatedAt">): BranchPrefix {
+  const s = getState();
+  const row: BranchPrefix = { ...x, code: x.code.toUpperCase(), id: newId() };
+  setState({ ...s, branchPrefixes: [...s.branchPrefixes, row] });
+  void supabase.from("branch_prefixes").insert({ id: row.id, ...toBranchPrefix(row) }).then(({ error }) => fail("branch_prefixes", error));
+  addAuditLog("CREATE", "BranchPrefix", row.id, `Added branch prefix ${row.code} (${row.name})`);
+  return row;
+}
+
+export function updateBranchPrefix(id: string, updates: Partial<BranchPrefix>): BranchPrefix | undefined {
+  const s = getState();
+  const existing = s.branchPrefixes.find((b) => b.id === id);
+  if (!existing) return undefined;
+  const updated = { ...existing, ...updates, code: (updates.code ?? existing.code).toUpperCase() };
+  setState({ ...s, branchPrefixes: s.branchPrefixes.map((b) => (b.id === id ? updated : b)) });
+  void supabase.from("branch_prefixes").update(toBranchPrefix(updated)).eq("id", id).then(({ error }) => fail("branch_prefixes", error));
+  addAuditLog("UPDATE", "BranchPrefix", id, `Updated branch prefix ${updated.code}`);
+  return updated;
+}
+
+export function deleteBranchPrefix(id: string): boolean {
+  const s = getState();
+  const row = s.branchPrefixes.find((b) => b.id === id);
+  if (!row) return false;
+  setState({ ...s, branchPrefixes: s.branchPrefixes.filter((b) => b.id !== id) });
+  void supabase.from("branch_prefixes").delete().eq("id", id).then(({ error }) => fail("branch_prefixes", error));
+  addAuditLog("DELETE", "BranchPrefix", id, `Removed branch prefix ${row.code}`);
+  return true;
+}
+
+/** Resolve the prefix for a branch/company key. Falls back to the "X" unassigned prefix. */
+export function prefixForBranch(branch?: string): string {
+  const list = getState().branchPrefixes;
+  if (!list.length) return "X";
+  const key = (branch ?? "").trim().toLowerCase();
+  const match =
+    list.find((b) => b.code.toLowerCase() === key) ||
+    list.find((b) => b.name.toLowerCase() === key) ||
+    list.find((b) => key && b.name.toLowerCase().includes(key)) ||
+    list.find((b) => key && key.includes(b.name.toLowerCase()));
+  return (match?.code ?? list.find((b) => b.code === "X")?.code ?? list[0].code).toUpperCase();
+}
+
+/** Next free sequential ID for a branch prefix — BS1, BS2 … per-prefix counters. */
+export function nextEmployeeCode(branch?: string): string {
+  const prefix = prefixForBranch(branch);
+  const re = new RegExp(`^${prefix}(\\d+)$`, "i");
+  let max = 0;
+  for (const e of getState().employees) {
+    const m = re.exec((e.employeeCode ?? "").trim());
+    if (m) max = Math.max(max, Number(m[1]));
+  }
+  return `${prefix}${max + 1}`;
+}
+
+export function isEmployeeCodeTaken(code: string, exceptId?: string): boolean {
+  const key = code.trim().toLowerCase();
+  return getState().employees.some(
+    (e) => e.id !== exceptId && (e.employeeCode ?? "").trim().toLowerCase() === key,
+  );
+}
+
+/**
+ * Rename an Employee ID. All related records (attendance, payroll, documents,
+ * assignments) reference the employee row's UUID, so this is a safe metadata
+ * rename — nothing is re-created or orphaned.
+ */
+export function changeEmployeeCode(
+  id: string,
+  newCode: string,
+  reason: string,
+): { ok: boolean; error?: string } {
+  const employee = getEmployee(id);
+  if (!employee) return { ok: false, error: "Employee not found" };
+  const code = newCode.trim();
+  if (!code) return { ok: false, error: "Employee ID cannot be empty" };
+  if (isEmployeeCodeTaken(code, id)) return { ok: false, error: `Employee ID ${code} already exists` };
+  const old = employee.employeeCode;
+  updateEmployee(id, { employeeCode: code });
+  addAuditLog(
+    "RENAME", "Employee", id,
+    `Employee ID changed ${old} → ${code}. Reason: ${reason || "not provided"}`,
+  );
+  return { ok: true };
 }
 
 export function updateEmployee(id: string, updates: Partial<Employee>): Employee | undefined {
@@ -1995,6 +2096,159 @@ export function assetSummary(): { total: number; issued: number; available: numb
   const assets = getState().assets;
   const issued = getState().issuances.filter((i) => i.status === "Issued").reduce((sum, i) => sum + i.quantity, 0);
   return { total: assets.length, issued, available: assets.length - issued, value: assets.reduce((s, a) => s + a.unitCost * a.quantity, 0) };
+}
+
+/* ---------------- courses & certifications ---------------- */
+export function getCertifications(): EmployeeCertification[] { return getState().certifications; }
+export function getCertificationsByEmployee(employeeId: string): EmployeeCertification[] {
+  return getState().certifications.filter((c) => c.employeeId === employeeId);
+}
+
+export function addCertification(x: Omit<EmployeeCertification, "id">): EmployeeCertification {
+  const s = getState();
+  const row: EmployeeCertification = { ...x, id: newId() };
+  setState({ ...s, certifications: [row, ...s.certifications] });
+  void supabase.from("employee_certifications").insert({ id: row.id, ...toCertification(row) }).then(({ error }) => fail("employee_certifications", error));
+  addAuditLog("CREATE", "Certification", row.id, `Added certification ${row.courseName}`);
+  return row;
+}
+
+export function updateCertification(id: string, updates: Partial<EmployeeCertification>): EmployeeCertification | undefined {
+  const s = getState();
+  const existing = s.certifications.find((c) => c.id === id);
+  if (!existing) return undefined;
+  const updated = { ...existing, ...updates };
+  setState({ ...s, certifications: s.certifications.map((c) => (c.id === id ? updated : c)) });
+  void supabase.from("employee_certifications").update(toCertification(updated)).eq("id", id).then(({ error }) => fail("employee_certifications", error));
+  addAuditLog("UPDATE", "Certification", id, `Updated certification ${updated.courseName}`);
+  return updated;
+}
+
+export function deleteCertification(id: string): boolean {
+  const s = getState();
+  const row = s.certifications.find((c) => c.id === id);
+  if (!row) return false;
+  setState({ ...s, certifications: s.certifications.filter((c) => c.id !== id) });
+  void supabase.from("employee_certifications").delete().eq("id", id).then(({ error }) => fail("employee_certifications", error));
+  addAuditLog("DELETE", "Certification", id, `Removed certification ${row.courseName}`);
+  return true;
+}
+
+export function certificationStatus(expiry?: string): "Valid" | "Expiring Soon" | "Expired" | "No expiry" {
+  if (!expiry) return "No expiry";
+  const days = Math.round((new Date(`${expiry}T00:00:00+08:00`).getTime() - Date.now()) / 86_400_000);
+  if (Number.isNaN(days)) return "No expiry";
+  if (days < 0) return "Expired";
+  if (days <= 60) return "Expiring Soon";
+  return "Valid";
+}
+
+/* ---------------- time cards (physical card verification) ---------------- */
+export function getTimeCards(): TimeCard[] { return getState().timeCards; }
+export function getTimeCardsByEmployee(employeeId: string): TimeCard[] {
+  return getState().timeCards.filter((t) => t.employeeId === employeeId);
+}
+
+export function addTimeCard(x: Omit<TimeCard, "id">): TimeCard {
+  const s = getState();
+  const row: TimeCard = { ...x, id: newId() };
+  setState({ ...s, timeCards: [row, ...s.timeCards] });
+  void supabase.from("time_cards").insert({ id: row.id, ...toTimeCard(row) }).then(({ error }) => fail("time_cards", error));
+  addAuditLog("CREATE", "TimeCard", row.id, `Uploaded time card ${row.periodStart} → ${row.periodEnd}`);
+  return row;
+}
+
+export function updateTimeCard(id: string, updates: Partial<TimeCard>): TimeCard | undefined {
+  const s = getState();
+  const existing = s.timeCards.find((t) => t.id === id);
+  if (!existing) return undefined;
+  const updated = { ...existing, ...updates };
+  setState({ ...s, timeCards: s.timeCards.map((t) => (t.id === id ? updated : t)) });
+  void supabase.from("time_cards").update(toTimeCard(updated)).eq("id", id).then(({ error }) => fail("time_cards", error));
+  return updated;
+}
+
+export function deleteTimeCard(id: string): boolean {
+  const s = getState();
+  if (!s.timeCards.some((t) => t.id === id)) return false;
+  setState({ ...s, timeCards: s.timeCards.filter((t) => t.id !== id) });
+  void supabase.from("time_cards").delete().eq("id", id).then(({ error }) => fail("time_cards", error));
+  addAuditLog("DELETE", "TimeCard", id, "Deleted time card");
+  return true;
+}
+
+export type TimeCardComparison = {
+  date: string;
+  cardIn?: string;
+  cardOut?: string;
+  systemIn?: string;
+  systemOut?: string;
+  state: "Verified" | "Mismatch" | "Missing in system" | "Missing on card";
+  resolution?: TimeCard["entries"][number]["resolution"];
+};
+
+const hhmm = (v?: string) => (v ? v.slice(0, 5) : "");
+
+/** Compare a manually-typed (or later OCR-filled) card against system attendance. */
+export function compareTimeCard(card: TimeCard): TimeCardComparison[] {
+  const system = getAttendanceByEmployee(card.employeeId).filter(
+    (a) => a.date >= card.periodStart && a.date <= card.periodEnd,
+  );
+  const dates = new Set<string>([...card.entries.map((e) => e.date), ...system.map((a) => a.date)]);
+  return [...dates]
+    .filter(Boolean)
+    .sort()
+    .map((date) => {
+      const entry = card.entries.find((e) => e.date === date);
+      const att = system.find((a) => a.date === date);
+      const cardIn = hhmm(entry?.checkIn);
+      const cardOut = hhmm(entry?.checkOut);
+      const systemIn = hhmm(att?.checkIn);
+      const systemOut = hhmm(att?.checkOut);
+      let state: TimeCardComparison["state"];
+      if (!att) state = "Missing in system";
+      else if (!entry || (!cardIn && !cardOut)) state = "Missing on card";
+      else if (cardIn === systemIn && cardOut === systemOut) state = "Verified";
+      else state = "Mismatch";
+      return { date, cardIn, cardOut, systemIn, systemOut, state, resolution: entry?.resolution };
+    });
+}
+
+/* ---------------- claim sheets ---------------- */
+export function getClaimSheets(): ClaimSheet[] { return getState().claimSheets; }
+
+export function buildClaimSheetRows(employeeId: string, from: string, to: string) {
+  const sites = getState().sites;
+  return getAttendanceByEmployee(employeeId)
+    .filter((a) => a.date >= from && a.date <= to)
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .map((a) => ({
+      date: a.date,
+      checkIn: a.checkIn,
+      checkOut: a.checkOut,
+      normalHours: a.hoursWorked,
+      otHours: a.overtimeHours,
+      status: a.status,
+      site: sites.find((s) => s.id === a.siteId)?.name,
+    }));
+}
+
+export function addClaimSheet(x: Omit<ClaimSheet, "id" | "reference"> & { reference?: string }): ClaimSheet {
+  const s = getState();
+  const reference = x.reference || `CS-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${s.claimSheets.length + 1}`;
+  const row: ClaimSheet = { ...x, reference, id: newId() };
+  setState({ ...s, claimSheets: [row, ...s.claimSheets] });
+  void supabase.from("claim_sheets").insert({ id: row.id, ...toClaimSheet(row) }).then(({ error }) => fail("claim_sheets", error));
+  addAuditLog("CREATE", "ClaimSheet", row.id, `Generated claim sheet ${reference}`);
+  return row;
+}
+
+export function deleteClaimSheet(id: string): boolean {
+  const s = getState();
+  if (!s.claimSheets.some((c) => c.id === id)) return false;
+  setState({ ...s, claimSheets: s.claimSheets.filter((c) => c.id !== id) });
+  void supabase.from("claim_sheets").delete().eq("id", id).then(({ error }) => fail("claim_sheets", error));
+  return true;
 }
 
 
