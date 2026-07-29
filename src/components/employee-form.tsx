@@ -11,6 +11,17 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useMemo, useState } from "react";
+import { AlertTriangle, Sparkles, Wand2 } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  getBranchPrefixes,
+  isEmployeeCodeTaken,
+  nextEmployeeCode,
+  prefixForBranch,
+} from "@/lib/store";
+import { OCR_NOT_CONFIGURED, isOcrConfigured } from "@/lib/ocr";
 import type {
   DeploymentStatus,
   Employee,
@@ -56,6 +67,7 @@ export function employeeFromForm(fd: FormData): Partial<Employee> {
   const n = (k: string) => Number((fd.get(k) as string) || 0) || 0;
   const date = (k: string) => s(k) || undefined;
   return {
+    employeeCode: s("employeeCode") || undefined,
     name: s("name"),
     preferredName: s("preferredName") || undefined,
     nationality: s("nationality"),
@@ -65,6 +77,8 @@ export function employeeFromForm(fd: FormData): Partial<Employee> {
     passportNumber: s("passportNumber") || undefined,
     passportExpiry: date("passportExpiry"),
     workPermitNumber: s("workPermitNumber") || undefined,
+    workPermitIssueDate: date("workPermitIssueDate"),
+    workPermitExpiryDate: date("workPermitExpiryDate"),
     trade: s("trade"),
     status: s("status") as EmployeeStatus,
     deploymentStatus: (s("deploymentStatus") || "Available") as DeploymentStatus,
@@ -94,6 +108,7 @@ export function employeeFromForm(fd: FormData): Partial<Employee> {
     emergencyEmail: s("emergencyEmail") || undefined,
     bankName: s("bankName") || undefined,
     bankAccount: s("bankAccount") || undefined,
+    accountHolderName: s("accountHolderName") || undefined,
     paymentMethod: (s("paymentMethod") || undefined) as PaymentMethod | undefined,
     branch: s("branch") || undefined,
     department: s("department") || undefined,
@@ -106,6 +121,7 @@ export function employeeFromForm(fd: FormData): Partial<Employee> {
     payrollGroup: s("payrollGroup") || undefined,
     payrollFrequency: (s("payrollFrequency") || undefined) as PayrollFrequency | undefined,
     dormitory: s("dormitory") || undefined,
+    dormitoryAddress: s("dormitoryAddress") || undefined,
     remarks: s("remarks") || undefined,
     internalNotes: s("internalNotes") || undefined,
     photoUrl: s("photoUrl") || undefined,
