@@ -13,6 +13,22 @@ import type { AppAuthRole } from "@/lib/permissions";
 
 type AppRole = AppAuthRole;
 
+/** Idempotently create/link the employee record for a self-signed-up user. */
+async function provisionEmployeeRecord(accessToken: string, phone: string) {
+  try {
+    await fetch("/api/public/provision-employee", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({ phone }),
+    });
+  } catch {
+    // non-blocking: admin can link the record manually
+  }
+}
+
 interface AuthContextValue {
   user: User | null;
   session: Session | null;
@@ -23,7 +39,12 @@ interface AuthContextValue {
   isManager: boolean;
   isSupervisor: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
-  signUp: (email: string, password: string, fullName: string) => Promise<{ error: Error | null }>;
+  signUp: (
+    email: string,
+    password: string,
+    fullName: string,
+    phone?: string,
+  ) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   refreshRoles: () => Promise<void>;
 }
@@ -69,6 +90,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(newSession);
       setUser(newSession?.user ?? null);
       if (newSession?.user) {
+        if (event === "SIGNED_IN" && newSession.access_token) {
+          void provisionEmployeeRecord(
+            newSession.access_token,
+            String(newSession.user.user_metadata?.phone ?? ""),
+          );
+        }
         await fetchRoles(newSession.user.id);
       } else {
         setRoles([]);
@@ -86,14 +113,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error };
   }, []);
 
-  const signUp = useCallback(async (email: string, password: string, fullName: string) => {
-    const { error } = await supabase.auth.signUp({
+  const signUp = useCallback(async (email: string, password: string, fullName: string, phone?: string) => {
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: { full_name: fullName },
+        data: { full_name: fullName, phone: phone ?? "" },
       },
     });
+    // If the session is immediately available (email confirmation off),
+    // provision the employee record right away. Otherwise it happens on first sign-in.
+    if (!error && data.session?.access_token) {
+      await provisionEmployeeRecord(data.session.access_token, phone ?? "");
+    }
     return { error };
   }, []);
 

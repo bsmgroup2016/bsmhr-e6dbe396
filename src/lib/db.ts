@@ -12,6 +12,10 @@ import type { JobRequisition, Candidate } from "@/lib/types";
 import type { Lead, CrmActivity } from "@/lib/types";
 import type { Expense, PaymentReceipt } from "@/lib/types";
 import type { InventoryItem, StockMovement, PurchaseOrder } from "@/lib/types";
+import type {
+  BranchPrefix, EmployeeCertification, TimeCard, ClaimSheet,
+  TimeCardEntry, ClaimSheetRow,
+} from "@/lib/types";
 
 type Row = Record<string, any>;
 
@@ -54,6 +58,12 @@ export const fromEmployee = (r: Row): Employee => ({
   passportExpiry: d(r.passport_expiry), workPermitNumber: r.work_permit_number ?? undefined,
   otRate: r.ot_rate != null ? Number(r.ot_rate) : undefined,
   normalHours: r.normal_hours != null ? Number(r.normal_hours) : undefined,
+  userId: r.user_id ?? undefined,
+  workPermitIssueDate: d(r.work_permit_issue_date),
+  workPermitExpiryDate: d(r.work_permit_expiry_date),
+  dormitoryAddress: r.dormitory_address ?? undefined,
+  accountHolderName: r.account_holder_name ?? undefined,
+  ipaDocumentUrl: r.ipa_document_url ?? undefined,
   createdAt: r.created_at, updatedAt: r.updated_at,
 });
 
@@ -101,6 +111,12 @@ export const fromAttendance = (r: Row): Attendance => ({
   status: (r.status ?? "Present") as Attendance["status"], checkIn: r.check_in ?? undefined,
   checkOut: r.check_out ?? undefined, hoursWorked: Number(r.hours_worked ?? 0),
   overtimeHours: Number(r.overtime_hours ?? 0), notes: r.notes ?? undefined,
+  checkInLat: r.check_in_lat != null ? Number(r.check_in_lat) : undefined,
+  checkInLng: r.check_in_lng != null ? Number(r.check_in_lng) : undefined,
+  checkInAddress: r.check_in_address ?? undefined,
+  checkOutLat: r.check_out_lat != null ? Number(r.check_out_lat) : undefined,
+  checkOutLng: r.check_out_lng != null ? Number(r.check_out_lng) : undefined,
+  checkOutAddress: r.check_out_address ?? undefined,
   createdAt: r.created_at, updatedAt: r.updated_at,
 });
 
@@ -158,6 +174,11 @@ export const toEmployee = (e: Partial<Employee>): Row => ({
   internal_notes: e.internalNotes ?? null, passport_number: e.passportNumber ?? null,
   passport_expiry: nullDate(e.passportExpiry), work_permit_number: e.workPermitNumber ?? null,
   ot_rate: e.otRate ?? null, normal_hours: e.normalHours ?? null,
+  work_permit_issue_date: nullDate(e.workPermitIssueDate),
+  work_permit_expiry_date: nullDate(e.workPermitExpiryDate),
+  dormitory_address: e.dormitoryAddress ?? null,
+  account_holder_name: e.accountHolderName ?? null,
+  ipa_document_url: e.ipaDocumentUrl ?? null,
 });
 
 export const toClient = (c: Partial<Client>): Row => ({
@@ -196,6 +217,10 @@ export const toAttendance = (a: Partial<Attendance>): Row => ({
   employee_id: a.employeeId, site_id: a.siteId || null, date: nullDate(a.date), status: a.status,
   check_in: a.checkIn || null, check_out: a.checkOut || null,
   hours_worked: a.hoursWorked ?? 0, overtime_hours: a.overtimeHours ?? 0, notes: a.notes,
+  check_in_lat: a.checkInLat ?? null, check_in_lng: a.checkInLng ?? null,
+  check_in_address: a.checkInAddress ?? null,
+  check_out_lat: a.checkOutLat ?? null, check_out_lng: a.checkOutLng ?? null,
+  check_out_address: a.checkOutAddress ?? null,
 });
 
 export const toPayroll = (p: Partial<PayrollEntry>): Row => ({
@@ -526,7 +551,59 @@ export interface LoadedData {
   leads: Lead[]; activities: CrmActivity[];
   expenses: Expense[]; receipts: PaymentReceipt[];
   inventory: InventoryItem[]; movements: StockMovement[]; purchaseOrders: PurchaseOrder[];
+  branchPrefixes: BranchPrefix[]; certifications: EmployeeCertification[];
+  timeCards: TimeCard[]; claimSheets: ClaimSheet[];
 }
+
+/* ---------- branch prefixes / certifications / time cards / claim sheets ---------- */
+export const fromBranchPrefix = (r: Row): BranchPrefix => ({
+  id: r.id, code: r.code, name: r.name, companyId: r.company_id ?? undefined,
+  active: r.active ?? true, createdAt: r.created_at, updatedAt: r.updated_at,
+});
+export const toBranchPrefix = (b: Partial<BranchPrefix>): Row => ({
+  code: (b.code ?? "").toUpperCase(), name: b.name, company_id: b.companyId || null,
+  active: b.active ?? true,
+});
+
+export const fromCertification = (r: Row): EmployeeCertification => ({
+  id: r.id, employeeId: r.employee_id, courseName: r.course_name,
+  issuingBody: r.issuing_body ?? undefined, issueDate: d(r.issue_date),
+  expiryDate: d(r.expiry_date), fileUrl: r.file_url ?? undefined,
+  remarks: r.remarks ?? undefined, createdAt: r.created_at, updatedAt: r.updated_at,
+});
+export const toCertification = (c: Partial<EmployeeCertification>): Row => ({
+  employee_id: c.employeeId, course_name: c.courseName ?? "",
+  issuing_body: c.issuingBody ?? null, issue_date: nullDate(c.issueDate),
+  expiry_date: nullDate(c.expiryDate), file_url: c.fileUrl || null, remarks: c.remarks ?? null,
+});
+
+export const fromTimeCard = (r: Row): TimeCard => ({
+  id: r.id, employeeId: r.employee_id, periodStart: d(r.period_start) ?? "",
+  periodEnd: d(r.period_end) ?? "", fileUrl: r.file_url ?? undefined,
+  fileName: r.file_name ?? undefined, status: (r.status ?? "Draft") as TimeCard["status"],
+  entries: (Array.isArray(r.entries) ? r.entries : []) as TimeCardEntry[],
+  createdAt: r.created_at, updatedAt: r.updated_at,
+});
+export const toTimeCard = (t: Partial<TimeCard>): Row => ({
+  employee_id: t.employeeId, period_start: nullDate(t.periodStart),
+  period_end: nullDate(t.periodEnd), file_url: t.fileUrl || null,
+  file_name: t.fileName ?? null, status: t.status ?? "Draft", entries: t.entries ?? [],
+});
+
+export const fromClaimSheet = (r: Row): ClaimSheet => ({
+  id: r.id, reference: r.reference, employeeId: r.employee_id ?? undefined,
+  companyId: r.company_id ?? undefined, periodStart: d(r.period_start) ?? "",
+  periodEnd: d(r.period_end) ?? "", totalDays: Number(r.total_days ?? 0),
+  totalNormalHours: Number(r.total_normal_hours ?? 0), totalOtHours: Number(r.total_ot_hours ?? 0),
+  snapshot: (Array.isArray(r.snapshot) ? r.snapshot : []) as ClaimSheetRow[],
+  createdAt: r.created_at, updatedAt: r.updated_at,
+});
+export const toClaimSheet = (c: Partial<ClaimSheet>): Row => ({
+  reference: c.reference, employee_id: c.employeeId || null, company_id: c.companyId || null,
+  period_start: nullDate(c.periodStart), period_end: nullDate(c.periodEnd),
+  total_days: c.totalDays ?? 0, total_normal_hours: c.totalNormalHours ?? 0,
+  total_ot_hours: c.totalOtHours ?? 0, snapshot: c.snapshot ?? [],
+});
 
 async function all(table: string, order = "created_at") {
   const { data, error } = await supabase.from(table).select("*").order(order, { ascending: false });
@@ -542,6 +619,7 @@ export async function loadAll(): Promise<LoadedData> {
     assets, issuances, courses, trainings, incidents,
     requisitions, candidates, leads, activities, expenses, receipts,
     inventory, movements, purchaseOrders,
+    branchPrefixes, certifications, timeCards, claimSheets,
   ] = await Promise.all([
     all("companies"), all("employees"), all("clients"), all("projects"), all("sites"),
     all("assignments"), all("employee_documents"), all("attendance"), all("payroll_entries"),
@@ -553,6 +631,7 @@ export async function loadAll(): Promise<LoadedData> {
     all("job_requisitions"), all("candidates"), all("leads"), all("crm_activities"),
     all("expenses"), all("payment_receipts"),
     all("inventory_items"), all("stock_movements"), all("purchase_orders"),
+    all("branch_prefixes"), all("employee_certifications"), all("time_cards"), all("claim_sheets"),
   ]);
 
   const roleByUser = new Map<string, string>();
@@ -607,6 +686,10 @@ export async function loadAll(): Promise<LoadedData> {
     inventory: inventory.map(fromItem),
     movements: movements.map(fromMovement),
     purchaseOrders: purchaseOrders.map(fromPurchaseOrder),
+    branchPrefixes: branchPrefixes.map(fromBranchPrefix),
+    certifications: certifications.map(fromCertification),
+    timeCards: timeCards.map(fromTimeCard),
+    claimSheets: claimSheets.map(fromClaimSheet),
   };
 }
 

@@ -12,6 +12,7 @@ import {
   AlertCircle,
   ClipboardList,
   FileSpreadsheet,
+  MapPin,
 } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
@@ -53,6 +54,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { getEmployees, getSites, getAttendance, addAttendance, saveDailySheet, getCurrentCompany } from "@/lib/store";
+import { GeoCapture } from "@/components/geo-capture";
+import { LocationMap } from "@/components/location-map";
 import type { Attendance, AttendanceStatus } from "@/lib/types";
 import { pick, type ImportColumn } from "@/lib/xlsx";
 import { monthlyAttendanceSummary } from "@/lib/ops";
@@ -94,6 +97,8 @@ export default function TimeManagementPage() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [summaryMonth, setSummaryMonth] = useState(() => new Date().toISOString().slice(0, 7));
+  const [noLocationOnly, setNoLocationOnly] = useState(false);
+  const [mapRecord, setMapRecord] = useState<Attendance | null>(null);
   const companyId = getCurrentCompany();
   const companyEmployees = employees.filter(
     (e) => (!companyId || e.companyId === companyId) && e.status !== "Inactive",
@@ -129,6 +134,8 @@ export default function TimeManagementPage() {
   const filtered = attendance.filter((a) => {
     const q = search.toLowerCase();
     const emp = employees.find((e) => e.id === a.employeeId);
+    const hasLocation = a.checkInLat != null || a.checkOutLat != null;
+    if (noLocationOnly && hasLocation) return false;
     return a.date === date && (emp?.name.toLowerCase().includes(q) || emp?.employeeCode.toLowerCase().includes(q));
   });
 
@@ -202,6 +209,10 @@ export default function TimeManagementPage() {
   }
 
   function handleCreate(formData: FormData) {
+    const num = (k: string) => {
+      const v = Number(formData.get(k));
+      return Number.isFinite(v) && formData.get(k) !== "" ? v : undefined;
+    };
     addAttendance({
       employeeId: formData.get("employeeId") as string,
       date: formData.get("date") as string,
@@ -212,6 +223,12 @@ export default function TimeManagementPage() {
       hoursWorked: Number(formData.get("hoursWorked") || 0),
       overtimeHours: Number(formData.get("overtimeHours") || 0),
       notes: (formData.get("notes") as string) || undefined,
+      checkInLat: num("checkInLat"),
+      checkInLng: num("checkInLng"),
+      checkInAddress: (formData.get("checkInAddress") as string) || undefined,
+      checkOutLat: num("checkOutLat"),
+      checkOutLng: num("checkOutLng"),
+      checkOutAddress: (formData.get("checkOutAddress") as string) || undefined,
     });
     setIsCreateOpen(false);
     refresh();
@@ -310,6 +327,14 @@ export default function TimeManagementPage() {
             <div className="flex items-center gap-2">
               <Calendar className="h-4 w-4 text-muted-foreground" />
               <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-40" />
+              <Button
+                type="button"
+                size="sm"
+                variant={noLocationOnly ? "default" : "outline"}
+                onClick={() => setNoLocationOnly((v) => !v)}
+              >
+                Without location
+              </Button>
             </div>
           </div>
 
@@ -324,12 +349,13 @@ export default function TimeManagementPage() {
                   <TableHead>Check out</TableHead>
                   <TableHead>Hours</TableHead>
                   <TableHead>OT</TableHead>
+                  <TableHead>Location</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filtered.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="h-32 text-center">
+                    <TableCell colSpan={8} className="h-32 text-center">
                       <EmptyState className="bg-transparent border-0" icon={<Calendar className="h-5 w-5" />} title="No records" description={`No attendance records for ${date}.`} />
                     </TableCell>
                   </TableRow>
@@ -355,6 +381,16 @@ export default function TimeManagementPage() {
                         <TableCell>{a.checkOut || "—"}</TableCell>
                         <TableCell>{a.hoursWorked}</TableCell>
                         <TableCell>{a.overtimeHours}</TableCell>
+                        <TableCell>
+                          {a.checkInLat != null || a.checkOutLat != null ? (
+                            <Button size="sm" variant="ghost" onClick={() => setMapRecord(a)}>
+                              <MapPin className="mr-1 h-3.5 w-3.5" />
+                              View
+                            </Button>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">Not captured</span>
+                          )}
+                        </TableCell>
                       </TableRow>
                     );
                   })
@@ -363,6 +399,35 @@ export default function TimeManagementPage() {
             </Table>
           </div>
         </div>
+
+        <Dialog open={!!mapRecord} onOpenChange={(open) => !open && setMapRecord(null)}>
+          <DialogContent className="sm:max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Attendance location</DialogTitle>
+              <DialogDescription>
+                {mapRecord
+                  ? `${employees.find((e) => e.id === mapRecord.employeeId)?.name ?? ""} — ${mapRecord.date}`
+                  : ""}
+              </DialogDescription>
+            </DialogHeader>
+            {mapRecord ? (
+              <div className="space-y-2">
+                <LocationMap
+                  points={[
+                    mapRecord.checkInLat != null && mapRecord.checkInLng != null
+                      ? { lat: mapRecord.checkInLat, lng: mapRecord.checkInLng, label: `Clock in — ${mapRecord.checkInAddress ?? ""}` }
+                      : null,
+                    mapRecord.checkOutLat != null && mapRecord.checkOutLng != null
+                      ? { lat: mapRecord.checkOutLat, lng: mapRecord.checkOutLng, label: `Clock out — ${mapRecord.checkOutAddress ?? ""}` }
+                      : null,
+                  ].filter((p): p is { lat: number; lng: number; label: string } => p !== null)}
+                />
+                <p className="text-xs text-muted-foreground">In: {mapRecord.checkInAddress ?? "—"}</p>
+                <p className="text-xs text-muted-foreground">Out: {mapRecord.checkOutAddress ?? "—"}</p>
+              </div>
+            ) : null}
+          </DialogContent>
+        </Dialog>
       </div>
     </AppShell>
   );
@@ -610,6 +675,14 @@ function AttendanceForm({ employees, sites, onSubmit }: { employees: ReturnType<
       <div className="space-y-2">
         <Label htmlFor="notes">Notes</Label>
         <Input id="notes" name="notes" placeholder="Optional notes" />
+      </div>
+      <div className="grid gap-3 rounded-lg border p-3 sm:grid-cols-2">
+        <GeoCapture label="Capture clock-in location" prefix="checkIn" />
+        <GeoCapture label="Capture clock-out location" prefix="checkOut" />
+        <p className="text-xs text-muted-foreground sm:col-span-2">
+          Location is optional — if GPS is denied the record is saved and flagged as
+          "Location not captured".
+        </p>
       </div>
       <DialogFooter>
         <Button type="submit">Save attendance</Button>
