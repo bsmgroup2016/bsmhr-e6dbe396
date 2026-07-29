@@ -259,15 +259,17 @@ export default function DocumentsPage() {
                   <TableHead>Employee</TableHead>
                   <TableHead>Document</TableHead>
                   <TableHead>Type</TableHead>
+                  <TableHead>Number</TableHead>
                   <TableHead>Expiry</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Verification</TableHead>
                   <TableHead className="w-12"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filtered.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="h-32 text-center">
+                    <TableCell colSpan={8} className="h-32 text-center">
                       <EmptyState className="bg-transparent border-0" icon={<FileText className="h-5 w-5" />} title="No documents found" description="Add a document to track expiry." />
                     </TableCell>
                   </TableRow>
@@ -282,18 +284,35 @@ export default function DocumentsPage() {
                         </TableCell>
                         <TableCell>{d.name}</TableCell>
                         <TableCell>{d.type}</TableCell>
+                        <TableCell className="font-mono text-xs">{d.docNumber || "—"}</TableCell>
                         <TableCell>
                           <div className="flex items-center gap-1.5">
                             <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
                             {d.expiryDate || "—"}
+                            {(() => {
+                              const left = daysUntil(d.expiryDate);
+                              if (left === null) return null;
+                              return (
+                                <span className={left < 0 ? "text-xs text-destructive" : "text-xs text-muted-foreground"}>
+                                  ({left < 0 ? `${Math.abs(left)}d ago` : `${left}d`})
+                                </span>
+                              );
+                            })()}
                           </div>
                         </TableCell>
                         <TableCell>
                           <StatusBadge
-                            variant={d.status === "Valid" ? "success" : d.status === "Expiring Soon" ? "warning" : d.status === "Expired" ? "destructive" : "info"}
+                            variant={d.status === "Valid" ? "success" : d.status === "Expiring Soon" ? "warning" : d.status === "Expired" ? "destructive" : d.status === "Superseded" ? "outline" : "info"}
                             label={d.status}
                             dot
                           />
+                        </TableCell>
+                        <TableCell>
+                          {d.verified ? (
+                            <StatusBadge variant="success" label="Verified" />
+                          ) : (
+                            <span className="text-xs text-muted-foreground">Unverified</span>
+                          )}
                         </TableCell>
                         <TableCell>
                           <DropdownMenu>
@@ -348,6 +367,25 @@ export default function DocumentsPage() {
               <DialogDescription>Update document details.</DialogDescription>
             </DialogHeader>
             {editingDoc && <DocumentForm employees={employees} document={editingDoc} onSubmit={handleEdit} />}
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={!!renewSource} onOpenChange={(open) => !open && setRenewSource(null)}>
+          <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
+            <DialogHeader>
+              <DialogTitle>Renew document</DialogTitle>
+              <DialogDescription>
+                The old record is kept as version {renewSource?.version ?? 1} (marked superseded). Upload the renewed copy below.
+              </DialogDescription>
+            </DialogHeader>
+            {renewSource && (
+              <DocumentForm
+                employees={employees}
+                document={{ ...renewSource, fileUrl: undefined, issueDate: undefined, expiryDate: undefined, status: "Valid" }}
+                submitLabel="Save renewal"
+                onSubmit={handleRenewSubmit}
+              />
+            )}
           </DialogContent>
         </Dialog>
 
