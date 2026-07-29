@@ -34,7 +34,7 @@ export interface ComplianceItem {
   employeeName: string;
   employeeCode: string;
   companyId?: string;
-  category: "Work Pass" | "Passport" | "Document";
+  category: "Work Pass" | "Passport" | "Document" | "Medical";
   label: string;
   reference?: string;
   expiryDate: string;
@@ -91,6 +91,24 @@ export function buildComplianceItems(
         expiryDate: e.passportExpiry!,
         daysLeft: passport,
         severity: severityFor(passport),
+      });
+    }
+    const medical: [string, string | undefined][] = [
+      ["Medical insurance", e.medicalInsuranceExpiry],
+      ["Medical examination", e.medicalCheckupDue],
+    ];
+    for (const [label, date] of medical) {
+      const days = daysUntil(date);
+      if (days === null) continue;
+      items.push({
+        ...base,
+        id: `${label.replace(/\s+/g, "-").toLowerCase()}-${e.id}`,
+        category: "Medical",
+        label,
+        reference: e.fin,
+        expiryDate: date!,
+        daysLeft: days,
+        severity: severityFor(days),
       });
     }
   }
