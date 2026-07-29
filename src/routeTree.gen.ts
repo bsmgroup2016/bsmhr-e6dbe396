@@ -17,6 +17,7 @@ import { Route as AuthenticatedUsersRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedTransportRouteImport } from './routes/_authenticated/transport'
 import { Route as AuthenticatedTrainingRouteImport } from './routes/_authenticated/training'
 import { Route as AuthenticatedTimeManagementRouteImport } from './routes/_authenticated/time-management'
+import { Route as AuthenticatedTimeCardsRouteImport } from './routes/_authenticated/time-cards'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticated/reports'
 import { Route as AuthenticatedRecruitmentRouteImport } from './routes/_authenticated/recruitment'
@@ -86,6 +87,11 @@ const AuthenticatedTimeManagementRoute =
     path: '/time-management',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedTimeCardsRoute = AuthenticatedTimeCardsRouteImport.update({
+  id: '/time-cards',
+  path: '/time-cards',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -255,6 +261,7 @@ export interface FileRoutesByFullPath {
   '/recruitment': typeof AuthenticatedRecruitmentRoute
   '/reports': typeof AuthenticatedReportsRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/time-cards': typeof AuthenticatedTimeCardsRoute
   '/time-management': typeof AuthenticatedTimeManagementRoute
   '/training': typeof AuthenticatedTrainingRoute
   '/transport': typeof AuthenticatedTransportRoute
@@ -291,6 +298,7 @@ export interface FileRoutesByTo {
   '/recruitment': typeof AuthenticatedRecruitmentRoute
   '/reports': typeof AuthenticatedReportsRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/time-cards': typeof AuthenticatedTimeCardsRoute
   '/time-management': typeof AuthenticatedTimeManagementRoute
   '/training': typeof AuthenticatedTrainingRoute
   '/transport': typeof AuthenticatedTransportRoute
@@ -330,6 +338,7 @@ export interface FileRoutesById {
   '/_authenticated/recruitment': typeof AuthenticatedRecruitmentRoute
   '/_authenticated/reports': typeof AuthenticatedReportsRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/_authenticated/time-cards': typeof AuthenticatedTimeCardsRoute
   '/_authenticated/time-management': typeof AuthenticatedTimeManagementRoute
   '/_authenticated/training': typeof AuthenticatedTrainingRoute
   '/_authenticated/transport': typeof AuthenticatedTransportRoute
@@ -370,6 +379,7 @@ export interface FileRouteTypes {
     | '/recruitment'
     | '/reports'
     | '/settings'
+    | '/time-cards'
     | '/time-management'
     | '/training'
     | '/transport'
@@ -406,6 +416,7 @@ export interface FileRouteTypes {
     | '/recruitment'
     | '/reports'
     | '/settings'
+    | '/time-cards'
     | '/time-management'
     | '/training'
     | '/transport'
@@ -444,6 +455,7 @@ export interface FileRouteTypes {
     | '/_authenticated/recruitment'
     | '/_authenticated/reports'
     | '/_authenticated/settings'
+    | '/_authenticated/time-cards'
     | '/_authenticated/time-management'
     | '/_authenticated/training'
     | '/_authenticated/transport'
@@ -526,6 +538,13 @@ declare module '@tanstack/react-router' {
       path: '/time-management'
       fullPath: '/time-management'
       preLoaderRoute: typeof AuthenticatedTimeManagementRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/time-cards': {
+      id: '/_authenticated/time-cards'
+      path: '/time-cards'
+      fullPath: '/time-cards'
+      preLoaderRoute: typeof AuthenticatedTimeCardsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/settings': {
@@ -763,6 +782,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedRecruitmentRoute: typeof AuthenticatedRecruitmentRoute
   AuthenticatedReportsRoute: typeof AuthenticatedReportsRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
+  AuthenticatedTimeCardsRoute: typeof AuthenticatedTimeCardsRoute
   AuthenticatedTimeManagementRoute: typeof AuthenticatedTimeManagementRoute
   AuthenticatedTrainingRoute: typeof AuthenticatedTrainingRoute
   AuthenticatedTransportRoute: typeof AuthenticatedTransportRoute
@@ -793,6 +813,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedRecruitmentRoute: AuthenticatedRecruitmentRoute,
   AuthenticatedReportsRoute: AuthenticatedReportsRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
+  AuthenticatedTimeCardsRoute: AuthenticatedTimeCardsRoute,
   AuthenticatedTimeManagementRoute: AuthenticatedTimeManagementRoute,
   AuthenticatedTrainingRoute: AuthenticatedTrainingRoute,
   AuthenticatedTransportRoute: AuthenticatedTransportRoute,
