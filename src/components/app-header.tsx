@@ -14,7 +14,6 @@ import { cn } from "@/lib/utils";
 import { alertCounts, buildAlerts } from "@/lib/alerts";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import {
   DropdownMenu,
