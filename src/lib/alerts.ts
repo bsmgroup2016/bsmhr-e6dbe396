@@ -3,7 +3,7 @@
  * (compliance, leave, billing, transport, assets, training, approvals)
  * into one prioritised list used by the header bell and the Alerts page.
  */
-import { buildComplianceItems } from "@/lib/compliance";
+import { buildComplianceItems, reminderLabel, reminderTier } from "@/lib/compliance";
 import {
   assetAlerts,
   certificationAlerts,
@@ -58,12 +58,16 @@ export function buildAlerts(companyId?: string): AppAlert[] {
   const employees = scoped(getEmployees());
   for (const item of buildComplianceItems(employees, getDocuments())) {
     if (item.severity === "ok" || item.severity === "warning") continue;
+    // MOM reminder tiers: 30 days = warning, 14/7 days and expired = critical.
+    const tier = reminderTier(item.daysLeft);
+    const severity: AlertSeverity =
+      item.severity === "expired" || tier === 7 || tier === 14 ? "critical" : "warning";
     out.push({
       id: `compliance-${item.id}`,
       category: "Compliance",
-      severity: item.severity === "expired" ? "critical" : "warning",
+      severity,
       title: `${item.label} — ${item.employeeName}`,
-      detail: item.severity === "expired" ? "Expired" : `Expires ${daysLabel(item.expiryDate)}`,
+      detail: reminderLabel(item.daysLeft),
       date: item.expiryDate,
       link: "/compliance",
     });

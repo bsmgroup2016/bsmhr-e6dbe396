@@ -56,7 +56,8 @@ const emptyReq = {
 const emptyCand = {
   requisitionId: "", name: "", nationality: "", phone: "", email: "", passportNumber: "",
   trade: "", experienceYears: 0, expectedSalary: 0,
-  source: "Agent" as Candidate["source"], agentName: "",
+  source: "Agent" as Candidate["source"], agentName: "", agentCommission: 0,
+  commissionStatus: "Unbilled" as NonNullable<Candidate["commissionStatus"]>,
   stage: "Applied" as Candidate["stage"], interviewDate: "", joinDate: "", remarks: "",
 };
 
@@ -157,6 +158,8 @@ export default function RecruitmentPage() {
         Requisition: reqTitle(c.requisitionId),
         Source: c.source,
         Agent: c.agentName ?? "",
+        "Agent commission": c.agentCommission ?? 0,
+        "Commission status": c.commissionStatus ?? "Unbilled",
         Stage: c.stage,
         Interview: c.interviewDate ?? "",
         "Expected salary": c.expectedSalary ?? 0,
@@ -183,6 +186,19 @@ export default function RecruitmentPage() {
           <SummaryCard title="Active candidates" value={active.length.toString()} icon={<UserPlus className="h-5 w-5" />} variant="default" caption="In pipeline" />
           <SummaryCard title="Upcoming interviews" value={interviews.length.toString()} icon={<CalendarClock className="h-5 w-5" />} variant={interviews.length ? "warning" : "default"} caption="Scheduled ahead" />
           <SummaryCard title="Hired" value={hired.length.toString()} icon={<CheckCircle2 className="h-5 w-5" />} variant="success" caption="Converted to employees" />
+          <SummaryCard
+            title="Agent commission due"
+            value={`S$${scopedCands
+              .filter((c) => (c.commissionStatus ?? "Unbilled") !== "Paid")
+              .reduce((sum, c) => sum + (c.agentCommission ?? 0), 0)
+              .toLocaleString()}`}
+            icon={<Briefcase className="h-5 w-5" />}
+            variant="warning"
+            caption={`S$${scopedCands
+              .filter((c) => c.commissionStatus === "Paid")
+              .reduce((sum, c) => sum + (c.agentCommission ?? 0), 0)
+              .toLocaleString()} already paid`}
+          />
         </div>
 
         <div className="rounded-xl border bg-card p-4 shadow-sm">
@@ -236,6 +252,16 @@ export default function RecruitmentPage() {
                         </Select>
                       </div>
                       <div className="sm:col-span-2"><Label>Agent / referrer</Label><Input value={candForm.agentName} onChange={(e) => setCandForm({ ...candForm, agentName: e.target.value })} /></div>
+                      <div><Label>Agent commission (S$)</Label><Input type="number" value={candForm.agentCommission} onChange={(e) => setCandForm({ ...candForm, agentCommission: Number(e.target.value) })} /></div>
+                      <div>
+                        <Label>Commission status</Label>
+                        <Select value={candForm.commissionStatus} onValueChange={(v) => setCandForm({ ...candForm, commissionStatus: v as NonNullable<Candidate["commissionStatus"]> })}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            {(["Unbilled", "Payable", "Paid"] as const).map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
                       <div className="sm:col-span-2">
                         <Label>Requisition</Label>
                         <Select value={candForm.requisitionId} onValueChange={(v) => setCandForm({ ...candForm, requisitionId: v })}>
@@ -287,6 +313,11 @@ export default function RecruitmentPage() {
                           <TableCell className="text-sm">
                             {c.source}
                             {c.agentName ? <div className="text-xs text-muted-foreground">{c.agentName}</div> : null}
+                            {c.agentCommission ? (
+                              <div className="text-xs text-muted-foreground">
+                                Commission S${c.agentCommission.toLocaleString()} · {c.commissionStatus ?? "Unbilled"}
+                              </div>
+                            ) : null}
                           </TableCell>
                           <TableCell>{c.interviewDate ?? "—"}</TableCell>
                           <TableCell>

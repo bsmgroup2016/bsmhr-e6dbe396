@@ -204,3 +204,40 @@ export function insuranceItems(employees: Employee[]): InsuranceItem[] {
   const order = { missing: 0, expired: 1, critical: 2, warning: 3, ok: 4 };
   return rows.sort((a, b) => order[a.severity] - order[b.severity] || (a.daysLeft ?? 0) - (b.daysLeft ?? 0));
 }
+
+/* ---------- MOM dormitory space standard ---------- */
+/** MOM minimum living space per resident in a licensed dormitory (m²). */
+export const SQM_PER_RESIDENT = 4.5;
+
+export interface DormCapacityCheck {
+  /** Beds allowed by the floor area under the MOM standard. */
+  allowedByArea: number;
+  /** Licensed/declared bed capacity. */
+  declared: number;
+  occupied: number;
+  /** Effective ceiling = the stricter of declared and area-derived capacity. */
+  effective: number;
+  overCapacity: boolean;
+  headroom: number;
+  sqmPerResident: number | null;
+}
+
+/** Check a dormitory against declared capacity and the MOM 4.5 m²/resident rule. */
+export function dormCapacityCheck(
+  dorm: { capacity: number; floorAreaSqm?: number },
+  occupied: number,
+): DormCapacityCheck {
+  const area = dorm.floorAreaSqm ?? 0;
+  const allowedByArea = area > 0 ? Math.floor(area / SQM_PER_RESIDENT) : 0;
+  const declared = dorm.capacity || 0;
+  const effective = allowedByArea > 0 ? Math.min(declared || allowedByArea, allowedByArea) : declared;
+  return {
+    allowedByArea,
+    declared,
+    occupied,
+    effective,
+    overCapacity: effective > 0 && occupied > effective,
+    headroom: effective - occupied,
+    sqmPerResident: area > 0 && occupied > 0 ? Math.round((area / occupied) * 10) / 10 : null,
+  };
+}

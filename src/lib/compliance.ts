@@ -50,6 +50,30 @@ export function severityFor(days: number): ComplianceSeverity {
   return "ok";
 }
 
+/**
+ * MOM-style reminder tiers: work passes and permits must be actioned at
+ * 30, 14 and 7 days before expiry.
+ */
+export const REMINDER_TIERS = [30, 14, 7] as const;
+export type ReminderTier = 30 | 14 | 7 | null;
+
+/** The tightest reminder tier an expiry date currently falls into. */
+export function reminderTier(days: number): ReminderTier {
+  if (days < 0) return null;
+  if (days <= 7) return 7;
+  if (days <= 14) return 14;
+  if (days <= 30) return 30;
+  return null;
+}
+
+/** Human label for the alert badge, e.g. "T-7 · 5 days left". */
+export function reminderLabel(days: number): string {
+  if (days < 0) return `Expired ${Math.abs(days)} day(s) ago`;
+  const tier = reminderTier(days);
+  const left = days === 0 ? "expires today" : `${days} day(s) left`;
+  return tier ? `T-${tier} · ${left}` : left;
+}
+
 /** Flatten employee passes, passports and documents into one expiry list. */
 export function buildComplianceItems(
   employees: Employee[],

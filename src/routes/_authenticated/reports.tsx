@@ -95,7 +95,10 @@ import {
   dormitoryOccupancy,
   assetSummary,
 } from "@/lib/store";
-import { exportSheets, timestampedName } from "@/lib/xlsx";
+import { exportSheets, exportCsv, timestampedName } from "@/lib/xlsx";
+import { getCompanies, getCurrentCompany } from "@/lib/store";
+import { manpowerReportRows, levySummaryRows } from "@/lib/gov-files";
+import { computeQuota, type MomSector } from "@/lib/mom";
 
 const COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4", "#f97316"];
 
@@ -142,6 +145,28 @@ export default function ReportsPage() {
   const vehicles = useMemo(() => getVehicles(), []);
   const trips = useMemo(() => getTrips(), []);
   const inventory = useMemo(() => getInventory(), []);
+  const sector = useMemo<MomSector>(() => {
+    const id = getCurrentCompany();
+    const company = getCompanies().find((c) => c.id === id) ?? getCompanies()[0];
+    return (company?.sector as MomSector) || "Construction";
+  }, []);
+  const manpowerRows = useMemo(() => manpowerReportRows(employees), [employees]);
+  const monthPayroll = useMemo(() => payroll.filter((p) => p.month === month), [payroll, month]);
+  const levyRows = useMemo(
+    () => levySummaryRows(monthPayroll, employees, sector),
+    [monthPayroll, employees, sector],
+  );
+  const quota = useMemo(() => computeQuota(employees, sector), [employees, sector]);
+  const levyTotals = useMemo(() => {
+    const sum = (key: string) => levyRows.reduce((t, r) => t + Number(r[key] ?? 0), 0);
+    return {
+      levy: sum("Levy Payable"),
+      cpfEmployee: sum("CPF Employee"),
+      cpfEmployer: sum("CPF Employer"),
+      sdl: sum("SDL"),
+      shg: sum("SHG Amount"),
+    };
+  }, [levyRows]);
 
   const activeCount = employees.filter((e) => e.status === "Active" || e.status === "Deployed").length;
   const deployedCount = employees.filter((e) => e.status === "Deployed").length;
@@ -224,6 +249,7 @@ export default function ReportsPage() {
             <TabsTrigger value="finance" className="data-[state=active]:bg-background"><DollarSign className="mr-1 h-4 w-4" />Finance</TabsTrigger>
             <TabsTrigger value="compliance" className="data-[state=active]:bg-background"><ShieldCheck className="mr-1 h-4 w-4" />Compliance & Safety</TabsTrigger>
             <TabsTrigger value="operations" className="data-[state=active]:bg-background"><Truck className="mr-1 h-4 w-4" />Operations</TabsTrigger>
+            <TabsTrigger value="government" className="data-[state=active]:bg-background"><ClipboardList className="mr-1 h-4 w-4" />MOM & Government</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-4 mt-4">
@@ -523,6 +549,93 @@ export default function ReportsPage() {
                       <Bar dataKey="vacant" stackId="a" fill="#e2e8f0" />
                     </BarChart>
                   </ResponsiveContainer>
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="government" className="space-y-4 mt-4">
+            <div className="flex flex-wrap items-end gap-2">
+              <div>
+                <Label className="text-xs">Month</Label>
+                <Select value={month} onValueChange={setMonth}>
+                  <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {months.map((m) => <SelectItem key={m} value={m}>{formatMonth(m)}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button size="sm" variant="outline" onClick={() => exportCsv(manpowerRows, timestampedName("mom_manpower_report", "csv"))}>
+                <Download className="mr-1 h-4 w-4" />MOM manpower report
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => exportCsv(levyRows, timestampedName(`levy_cpf_summary_${month}`, "csv"))}>
+                <Download className="mr-1 h-4 w-4" />Levy & CPF summary
+              </Button>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <SummaryCard title="Levy payable" value={`S$${levyTotals.levy.toLocaleString()}`} icon={<DollarSign className="h-5 w-5" />} variant="warning" caption={`${sector} sector, ${formatMonth(month)}`} />
+              <SummaryCard title="CPF total" value={`S$${(levyTotals.cpfEmployee + levyTotals.cpfEmployer).toLocaleString()}`} icon={<ShieldCheck className="h-5 w-5" />} variant="info" caption={`Employer S$${levyTotals.cpfEmployer.toLocaleString()}`} />
+              <SummaryCard title="SDL + SHG" value={`S$${(levyTotals.sdl + levyTotals.shg).toLocaleString()}`} icon={<ClipboardList className="h-5 w-5" />} variant="default" caption={`SDL S$${levyTotals.sdl.toLocaleString()}`} />
+              <SummaryCard title="Quota usage" value={`${Math.round(quota.drcUsage * 100)}%`} icon={<Users className="h-5 w-5" />} variant={quota.overQuota ? "warning" : "success"} caption={`${quota.foreign} foreign / ${quota.foreignAllowed} allowed`} />
+            </div>
+
+            <div className="grid gap-4 lg:grid-cols-2">
+              <div className="rounded-xl border bg-card p-4 shadow-sm">
+                <h3 className="text-sm font-medium mb-4">MOM manpower report</h3>
+                <div className="overflow-hidden rounded-lg border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Nationality</TableHead>
+                        <TableHead>Pass type</TableHead>
+                        <TableHead>Category</TableHead>
+                        <TableHead className="text-right">Headcount</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {manpowerRows.length === 0 ? (
+                        <TableRow><TableCell colSpan={4} className="h-20 text-center text-sm text-muted-foreground">No active workers</TableCell></TableRow>
+                      ) : manpowerRows.map((r, i) => (
+                        <TableRow key={i}>
+                          <TableCell>{String(r.Nationality)}</TableCell>
+                          <TableCell>{String(r["Pass Type"])}</TableCell>
+                          <TableCell>{String(r["Worker Category"])}</TableCell>
+                          <TableCell className="text-right">{String(r.Headcount)}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+
+              <div className="rounded-xl border bg-card p-4 shadow-sm">
+                <h3 className="text-sm font-medium mb-4">Monthly levy & CPF summary — {formatMonth(month)}</h3>
+                <div className="overflow-hidden rounded-lg border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Worker</TableHead>
+                        <TableHead>Pass</TableHead>
+                        <TableHead className="text-right">Levy</TableHead>
+                        <TableHead className="text-right">CPF</TableHead>
+                        <TableHead className="text-right">SDL</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {levyRows.length === 0 ? (
+                        <TableRow><TableCell colSpan={5} className="h-20 text-center text-sm text-muted-foreground">No payroll entries this month</TableCell></TableRow>
+                      ) : levyRows.map((r, i) => (
+                        <TableRow key={i}>
+                          <TableCell>{String(r.Name)}</TableCell>
+                          <TableCell>{String(r["Pass Type"])}</TableCell>
+                          <TableCell className="text-right">S${Number(r["Levy Payable"]).toLocaleString()}</TableCell>
+                          <TableCell className="text-right">S${(Number(r["CPF Employee"]) + Number(r["CPF Employer"])).toLocaleString()}</TableCell>
+                          <TableCell className="text-right">S${Number(r.SDL).toLocaleString()}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
                 </div>
               </div>
             </div>

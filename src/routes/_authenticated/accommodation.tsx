@@ -22,6 +22,7 @@ import {
   addDormitory, deleteDormitory, addAllocation, checkOutAllocation, deleteAllocation, dormOccupancy,
 } from "@/lib/store";
 import { exportRows } from "@/lib/xlsx";
+import { dormCapacityCheck, SQM_PER_RESIDENT } from "@/lib/mom";
 import type { Dormitory, BedAllocation } from "@/lib/types";
 
 export const Route = createFileRoute("/_authenticated/accommodation")({
@@ -42,7 +43,7 @@ const today = () => new Date().toISOString().slice(0, 10);
 
 const emptyDorm = {
   name: "", address: "", operator: "", contactPerson: "", contactPhone: "",
-  capacity: 0, monthlyRent: 0, licenseNo: "", licenseExpiry: "", lastInspection: "",
+  capacity: 0, monthlyRent: 0, floorAreaSqm: 0, rooms: 0, licenseNo: "", licenseExpiry: "", lastInspection: "",
   status: "Active" as Dormitory["status"], remarks: "",
 };
 
@@ -108,8 +109,13 @@ export default function AccommodationPage() {
       return toast.error("Dormitory, worker and room number required");
     }
     const dorm = dorms.find((d) => d.id === allocForm.dormitoryId);
-    if (dorm && dorm.capacity > 0 && dormOccupancy(dorm.id) >= dorm.capacity) {
-      return toast.error(`${dorm.name} is at full capacity`);
+    const check = dorm ? dormCapacityCheck(dorm, dormOccupancy(dorm.id)) : null;
+    if (dorm && check && check.effective > 0 && check.occupied >= check.effective) {
+      return toast.error(
+        check.allowedByArea > 0 && check.effective === check.allowedByArea
+          ? `${dorm.name} is at the MOM space limit (${check.effective} beds for ${dorm.floorAreaSqm} m²)`
+          : `${dorm.name} is at full capacity`,
+      );
     }
     addAllocation({
       ...allocForm,
@@ -302,6 +308,8 @@ export default function AccommodationPage() {
                       <div><Label>Contact person</Label><Input value={dormForm.contactPerson} onChange={(e) => setDormForm({ ...dormForm, contactPerson: e.target.value })} /></div>
                       <div><Label>Contact phone</Label><Input value={dormForm.contactPhone} onChange={(e) => setDormForm({ ...dormForm, contactPhone: e.target.value })} /></div>
                       <div><Label>Capacity (beds)</Label><Input type="number" value={dormForm.capacity} onChange={(e) => setDormForm({ ...dormForm, capacity: Number(e.target.value) })} /></div>
+                      <div><Label>Sleeping area (m²)</Label><Input type="number" value={dormForm.floorAreaSqm} onChange={(e) => setDormForm({ ...dormForm, floorAreaSqm: Number(e.target.value) })} /></div>
+                      <div><Label>Rooms</Label><Input type="number" value={dormForm.rooms} onChange={(e) => setDormForm({ ...dormForm, rooms: Number(e.target.value) })} /></div>
                       <div><Label>Rent per bed (S$)</Label><Input type="number" value={dormForm.monthlyRent} onChange={(e) => setDormForm({ ...dormForm, monthlyRent: Number(e.target.value) })} /></div>
                       <div><Label>Licence no</Label><Input value={dormForm.licenseNo} onChange={(e) => setDormForm({ ...dormForm, licenseNo: e.target.value })} /></div>
                       <div><Label>Licence expiry</Label><Input type="date" value={dormForm.licenseExpiry} onChange={(e) => setDormForm({ ...dormForm, licenseExpiry: e.target.value })} /></div>
@@ -322,6 +330,7 @@ export default function AccommodationPage() {
                       <TableHead>Dormitory</TableHead>
                       <TableHead>Address</TableHead>
                       <TableHead>Occupancy</TableHead>
+                      <TableHead>MOM space</TableHead>
                       <TableHead>Rent / bed</TableHead>
                       <TableHead>Licence expiry</TableHead>
                       <TableHead>Status</TableHead>
@@ -331,7 +340,7 @@ export default function AccommodationPage() {
                   <TableBody>
                     {scopedDorms.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={7} className="h-32 text-center">
+                        <TableCell colSpan={8} className="h-32 text-center">
                           <EmptyState className="border-0 bg-transparent" icon={<Building2 className="h-5 w-5" />} title="No dormitories" description="Add your first dormitory." />
                         </TableCell>
                       </TableRow>
@@ -344,6 +353,25 @@ export default function AccommodationPage() {
                           </TableCell>
                           <TableCell className="max-w-[220px] truncate">{d.address || "—"}</TableCell>
                           <TableCell>{dormOccupancy(d.id)} / {d.capacity}</TableCell>
+                          <TableCell>
+                            {(() => {
+                              const check = dormCapacityCheck(d, dormOccupancy(d.id));
+                              if (!d.floorAreaSqm) return <span className="text-xs text-muted-foreground">Area not set</span>;
+                              return (
+                                <div className="text-xs">
+                                  <StatusBadge
+                                    variant={check.overCapacity ? "destructive" : "success"}
+                                    label={check.overCapacity ? "Over MOM limit" : "Within limit"}
+                                    dot
+                                  />
+                                  <div className="mt-1 text-muted-foreground">
+                                    {check.allowedByArea} beds @ {SQM_PER_RESIDENT} m²
+                                    {check.sqmPerResident ? ` · now ${check.sqmPerResident} m²/pax` : ""}
+                                  </div>
+                                </div>
+                              );
+                            })()}
+                          </TableCell>
                           <TableCell>S${d.monthlyRent.toLocaleString()}</TableCell>
                           <TableCell>{d.licenseExpiry || "—"}</TableCell>
                           <TableCell><StatusBadge variant={d.status === "Active" ? "success" : "ghost"} label={d.status} dot /></TableCell>
