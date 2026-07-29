@@ -7,6 +7,7 @@ import type {
   Dormitory, BedAllocation, Vehicle, Trip,
   Asset, AssetIssuance,
 } from "@/lib/types";
+import type { TrainingCourse, TrainingRecord, SafetyIncident } from "@/lib/types";
 
 type Row = Record<string, any>;
 
