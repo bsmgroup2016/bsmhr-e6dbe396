@@ -8,6 +8,7 @@ import type {
   Asset, AssetIssuance,
 } from "@/lib/types";
 import type { TrainingCourse, TrainingRecord, SafetyIncident } from "@/lib/types";
+import type { JobRequisition, Candidate } from "@/lib/types";
 
 type Row = Record<string, any>;
 
@@ -268,6 +269,48 @@ export const toInvoice = (i: Partial<Invoice>): Row => ({
 });
 
 /* ---------- bulk load ---------- */
+export const fromRequisition = (r: Row): JobRequisition => ({
+  id: r.id, companyId: r.company_id ?? undefined, code: r.code ?? "", title: r.title,
+  trade: r.trade ?? "", clientId: r.client_id ?? undefined, siteId: r.site_id ?? undefined,
+  headcount: Number(r.headcount ?? 1), passType: (r.pass_type ?? undefined) as JobRequisition["passType"],
+  budgetSalary: Number(r.budget_salary ?? 0), targetDate: d(r.target_date),
+  status: (r.status ?? "Open") as JobRequisition["status"], remarks: r.remarks ?? undefined,
+  createdAt: r.created_at, updatedAt: r.updated_at,
+});
+
+export const toRequisition = (x: Partial<JobRequisition>): Row => ({
+  company_id: x.companyId || null, code: x.code ?? "", title: x.title, trade: x.trade ?? "",
+  client_id: x.clientId || null, site_id: x.siteId || null, headcount: x.headcount ?? 1,
+  pass_type: x.passType || null, budget_salary: x.budgetSalary ?? 0,
+  target_date: nullDate(x.targetDate), status: x.status, remarks: x.remarks ?? null,
+});
+
+export const fromCandidate = (r: Row): Candidate => ({
+  id: r.id, requisitionId: r.requisition_id ?? undefined, companyId: r.company_id ?? undefined,
+  name: r.name, nationality: r.nationality ?? undefined, phone: r.phone ?? undefined,
+  email: r.email ?? undefined, passportNumber: r.passport_number ?? undefined,
+  trade: r.trade ?? undefined,
+  experienceYears: r.experience_years == null ? undefined : Number(r.experience_years),
+  expectedSalary: r.expected_salary == null ? undefined : Number(r.expected_salary),
+  source: (r.source ?? "Direct") as Candidate["source"], agentName: r.agent_name ?? undefined,
+  stage: (r.stage ?? "Applied") as Candidate["stage"], interviewDate: d(r.interview_date),
+  offerDate: d(r.offer_date), joinDate: d(r.join_date), resumeUrl: r.resume_url ?? undefined,
+  employeeId: r.employee_id ?? undefined, remarks: r.remarks ?? undefined,
+  createdAt: r.created_at, updatedAt: r.updated_at,
+});
+
+export const toCandidate = (x: Partial<Candidate>): Row => ({
+  requisition_id: x.requisitionId || null, company_id: x.companyId || null, name: x.name,
+  nationality: x.nationality ?? null, phone: x.phone ?? null, email: x.email ?? null,
+  passport_number: x.passportNumber ?? null, trade: x.trade ?? null,
+  experience_years: x.experienceYears ?? null, expected_salary: x.expectedSalary ?? null,
+  source: x.source, agent_name: x.agentName ?? null, stage: x.stage,
+  interview_date: nullDate(x.interviewDate), offer_date: nullDate(x.offerDate),
+  join_date: nullDate(x.joinDate), resume_url: x.resumeUrl ?? null,
+  employee_id: x.employeeId || null, remarks: x.remarks ?? null,
+});
+
+/* ---------- bulk load ---------- */
 /* ---------- accommodation & transport ---------- */
 export const fromDormitory = (r: Row): Dormitory => ({
   id: r.id, companyId: r.company_id ?? undefined, name: r.name, address: r.address ?? "",
@@ -433,6 +476,7 @@ export interface LoadedData {
   dormitories: Dormitory[]; allocations: BedAllocation[]; vehicles: Vehicle[]; trips: Trip[];
   assets: Asset[]; issuances: AssetIssuance[];
   courses: TrainingCourse[]; trainings: TrainingRecord[]; incidents: SafetyIncident[];
+  requisitions: JobRequisition[]; candidates: Candidate[];
 }
 
 async function all(table: string, order = "created_at") {
@@ -447,6 +491,7 @@ export async function loadAll(): Promise<LoadedData> {
     documents, attendance, payroll, approvals, auditLogs, profiles, roles, leaveRequests,
     rateAgreements, invoices, dormitories, allocations, vehicles, trips,
     assets, issuances, courses, trainings, incidents,
+    requisitions, candidates,
   ] = await Promise.all([
     all("companies"), all("employees"), all("clients"), all("projects"), all("sites"),
     all("assignments"), all("employee_documents"), all("attendance"), all("payroll_entries"),
@@ -455,6 +500,7 @@ export async function loadAll(): Promise<LoadedData> {
     all("vehicles"), all("trips"),
     all("assets"), all("asset_issuances"),
     all("training_courses"), all("training_records"), all("safety_incidents"),
+    all("job_requisitions"), all("candidates"),
   ]);
 
   const roleByUser = new Map<string, string>();
@@ -500,5 +546,7 @@ export async function loadAll(): Promise<LoadedData> {
     courses: courses.map(fromCourse),
     trainings: trainings.map(fromTraining),
     incidents: incidents.map(fromIncident),
+    requisitions: requisitions.map(fromRequisition),
+    candidates: candidates.map(fromCandidate),
   };
 }
