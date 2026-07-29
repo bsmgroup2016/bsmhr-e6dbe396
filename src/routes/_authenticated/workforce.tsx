@@ -429,17 +429,16 @@ export default function WorkforcePage() {
                       <TableCell className="font-medium">{e.employeeCode}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          {e.photoUrl ? (
-                            <img
-                              src={e.photoUrl}
-                              alt={e.name}
-                              className="h-7 w-7 rounded-full object-cover ring-1 ring-border"
-                            />
-                          ) : (
-                            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-muted text-[10px] font-medium text-muted-foreground">
-                              {e.name.slice(0, 2).toUpperCase()}
-                            </span>
-                          )}
+                          <R2Image
+                            src={e.photoUrl}
+                            alt={e.name}
+                            className="h-7 w-7 rounded-full object-cover ring-1 ring-border"
+                            fallback={
+                              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-muted text-[10px] font-medium text-muted-foreground">
+                                {e.name.slice(0, 2).toUpperCase()}
+                              </span>
+                            }
+                          />
                           {e.name}
                         </div>
                       </TableCell>
