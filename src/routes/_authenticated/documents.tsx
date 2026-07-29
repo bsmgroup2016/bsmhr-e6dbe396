@@ -70,7 +70,7 @@ import type { EmployeeDocument, DocumentType, DocumentStatus } from "@/lib/types
 const documentTypes: DocumentType[] = [
   "Passport", "Work Permit", "S Pass", "Employment Pass", "IC", "Safety Certificate", "P-File", "Medical Report", "Insurance", "Other",
 ];
-const documentStatuses: DocumentStatus[] = ["Valid", "Expiring Soon", "Expired", "Pending"];
+const documentStatuses: DocumentStatus[] = ["Valid", "Expiring Soon", "Expired", "Pending", "Superseded"];
 
 export const Route = createFileRoute("/_authenticated/documents")({
   head: () => ({
@@ -249,6 +249,9 @@ export default function DocumentsPage() {
                   ))}
                 </SelectContent>
               </Select>
+              <Button variant={showSuperseded ? "secondary" : "outline"} size="sm" onClick={() => setShowSuperseded((v) => !v)}>
+                {showSuperseded ? "Hide old versions" : "Show old versions"}
+              </Button>
             </div>
           </div>
 
