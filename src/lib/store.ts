@@ -5,12 +5,14 @@ import type {
   Employee, Client, Project, Site, Assignment, EmployeeDocument,
   Attendance, PayrollEntry, Approval, AuditLog, User, AppBranch, Company,
   LeaveRequest, RateAgreement, Invoice, InvoiceLine,
+  Dormitory, BedAllocation, Vehicle, Trip,
 } from "@/lib/types";
 import { supabase } from "@/integrations/supabase/client";
 import {
   loadAll, toEmployee, toClient, toProject, toSite, toAssignment,
   toDocument, toAttendance, toPayroll, toApproval, toCompany, toLeave,
   toRate, toInvoice,
+  toDormitory, toAllocation, toVehicle, toTrip,
 } from "@/lib/db";
 
 export interface AppState {
@@ -27,6 +29,10 @@ export interface AppState {
   leaveRequests: LeaveRequest[];
   rateAgreements: RateAgreement[];
   invoices: Invoice[];
+  dormitories: Dormitory[];
+  allocations: BedAllocation[];
+  vehicles: Vehicle[];
+  trips: Trip[];
   users: User[];
   branches: AppBranch[];
   currentBranch: string;
@@ -45,6 +51,7 @@ const emptyState: AppState = {
   employees: [], clients: [], projects: [], sites: [], assignments: [], documents: [],
   attendance: [], payroll: [], approvals: [], auditLogs: [], leaveRequests: [],
   rateAgreements: [], invoices: [], users: [],
+  dormitories: [], allocations: [], vehicles: [], trips: [],
   branches: defaultBranches, currentBranch: "hq",
   companies: [], currentCompany: "", currentUser: null,
 };
@@ -821,4 +828,172 @@ export function exportState(): string {
 export function importState(json: string) {
   const parsed = JSON.parse(json) as Partial<AppState>;
   setState({ ...getState(), ...parsed });
+}
+
+/* ---------------- accommodation ---------------- */
+export function getDormitories(): Dormitory[] { return getState().dormitories; }
+export function getAllocations(): BedAllocation[] { return getState().allocations; }
+
+export function addDormitory(x: Omit<Dormitory, "id" | "createdAt" | "updatedAt">): Dormitory {
+  const s = getState();
+  const now = new Date().toISOString();
+  const row: Dormitory = { ...x, id: newId(), createdAt: now, updatedAt: now };
+  setState({ ...s, dormitories: [row, ...s.dormitories] });
+  void supabase.from("dormitories").insert({ id: row.id, ...toDormitory(row) })
+    .then(({ error }) => fail("dormitories", error));
+  addAuditLog("CREATE", "Dormitory", row.id, `Added dormitory ${row.name}`);
+  return row;
+}
+
+export function updateDormitory(id: string, updates: Partial<Dormitory>): Dormitory | undefined {
+  const s = getState();
+  const existing = s.dormitories.find((x) => x.id === id);
+  if (!existing) return undefined;
+  const updated = { ...existing, ...updates, updatedAt: new Date().toISOString() };
+  setState({ ...s, dormitories: s.dormitories.map((x) => (x.id === id ? updated : x)) });
+  void supabase.from("dormitories").update(toDormitory(updated)).eq("id", id)
+    .then(({ error }) => fail("dormitories", error));
+  addAuditLog("UPDATE", "Dormitory", id, `Updated dormitory ${updated.name}`);
+  return updated;
+}
+
+export function deleteDormitory(id: string): boolean {
+  const s = getState();
+  if (!s.dormitories.some((x) => x.id === id)) return false;
+  setState({
+    ...s,
+    dormitories: s.dormitories.filter((x) => x.id !== id),
+    allocations: s.allocations.filter((a) => a.dormitoryId !== id),
+  });
+  void supabase.from("dormitories").delete().eq("id", id).then(({ error }) => fail("dormitories", error));
+  addAuditLog("DELETE", "Dormitory", id, "Deleted dormitory");
+  return true;
+}
+
+export function addAllocation(x: Omit<BedAllocation, "id" | "createdAt" | "updatedAt">): BedAllocation {
+  const s = getState();
+  const now = new Date().toISOString();
+  const row: BedAllocation = { ...x, id: newId(), createdAt: now, updatedAt: now };
+  setState({ ...s, allocations: [row, ...s.allocations] });
+  void supabase.from("bed_allocations").insert({ id: row.id, ...toAllocation(row) })
+    .then(({ error }) => fail("bed_allocations", error));
+  const dorm = s.dormitories.find((d) => d.id === row.dormitoryId);
+  if (dorm) updateEmployee(row.employeeId, { dormitory: `${dorm.name} · ${row.roomNo}` });
+  addAuditLog("CREATE", "BedAllocation", row.id, `Allocated room ${row.roomNo}`);
+  return row;
+}
+
+export function updateAllocation(id: string, updates: Partial<BedAllocation>): BedAllocation | undefined {
+  const s = getState();
+  const existing = s.allocations.find((a) => a.id === id);
+  if (!existing) return undefined;
+  const updated = { ...existing, ...updates, updatedAt: new Date().toISOString() };
+  setState({ ...s, allocations: s.allocations.map((a) => (a.id === id ? updated : a)) });
+  void supabase.from("bed_allocations").update(toAllocation(updated)).eq("id", id)
+    .then(({ error }) => fail("bed_allocations", error));
+  addAuditLog("UPDATE", "BedAllocation", id, `Updated allocation ${updated.roomNo}`);
+  return updated;
+}
+
+/** Move out: closes the allocation and clears the employee dormitory field. */
+export function checkOutAllocation(id: string, date = new Date().toISOString().slice(0, 10)) {
+  const alloc = getState().allocations.find((a) => a.id === id);
+  if (!alloc) return undefined;
+  updateEmployee(alloc.employeeId, { dormitory: "" });
+  return updateAllocation(id, { status: "Vacated", checkOutDate: date });
+}
+
+export function deleteAllocation(id: string): boolean {
+  const s = getState();
+  if (!s.allocations.some((a) => a.id === id)) return false;
+  setState({ ...s, allocations: s.allocations.filter((a) => a.id !== id) });
+  void supabase.from("bed_allocations").delete().eq("id", id).then(({ error }) => fail("bed_allocations", error));
+  addAuditLog("DELETE", "BedAllocation", id, "Deleted allocation");
+  return true;
+}
+
+export function dormOccupancy(dormitoryId: string): number {
+  return getState().allocations.filter((a) => a.dormitoryId === dormitoryId && a.status !== "Vacated").length;
+}
+
+/* ---------------- transport ---------------- */
+export function getVehicles(): Vehicle[] { return getState().vehicles; }
+export function getTrips(): Trip[] { return getState().trips; }
+
+export function addVehicle(x: Omit<Vehicle, "id" | "createdAt" | "updatedAt">): Vehicle {
+  const s = getState();
+  const now = new Date().toISOString();
+  const row: Vehicle = { ...x, id: newId(), createdAt: now, updatedAt: now };
+  setState({ ...s, vehicles: [row, ...s.vehicles] });
+  void supabase.from("vehicles").insert({ id: row.id, ...toVehicle(row) })
+    .then(({ error }) => fail("vehicles", error));
+  addAuditLog("CREATE", "Vehicle", row.id, `Added vehicle ${row.plateNo}`);
+  return row;
+}
+
+export function updateVehicle(id: string, updates: Partial<Vehicle>): Vehicle | undefined {
+  const s = getState();
+  const existing = s.vehicles.find((v) => v.id === id);
+  if (!existing) return undefined;
+  const updated = { ...existing, ...updates, updatedAt: new Date().toISOString() };
+  setState({ ...s, vehicles: s.vehicles.map((v) => (v.id === id ? updated : v)) });
+  void supabase.from("vehicles").update(toVehicle(updated)).eq("id", id)
+    .then(({ error }) => fail("vehicles", error));
+  addAuditLog("UPDATE", "Vehicle", id, `Updated vehicle ${updated.plateNo}`);
+  return updated;
+}
+
+export function deleteVehicle(id: string): boolean {
+  const s = getState();
+  if (!s.vehicles.some((v) => v.id === id)) return false;
+  setState({ ...s, vehicles: s.vehicles.filter((v) => v.id !== id), trips: s.trips.filter((t) => t.vehicleId !== id) });
+  void supabase.from("vehicles").delete().eq("id", id).then(({ error }) => fail("vehicles", error));
+  addAuditLog("DELETE", "Vehicle", id, "Deleted vehicle");
+  return true;
+}
+
+export function addTrip(x: Omit<Trip, "id" | "createdAt" | "updatedAt">): Trip {
+  const s = getState();
+  const now = new Date().toISOString();
+  const row: Trip = { ...x, id: newId(), createdAt: now, updatedAt: now };
+  setState({ ...s, trips: [row, ...s.trips] });
+  void supabase.from("trips").insert({ id: row.id, ...toTrip(row) }).then(({ error }) => fail("trips", error));
+  addAuditLog("CREATE", "Trip", row.id, `Scheduled trip on ${row.date}`);
+  return row;
+}
+
+export function updateTrip(id: string, updates: Partial<Trip>): Trip | undefined {
+  const s = getState();
+  const existing = s.trips.find((t) => t.id === id);
+  if (!existing) return undefined;
+  const updated = { ...existing, ...updates, updatedAt: new Date().toISOString() };
+  setState({ ...s, trips: s.trips.map((t) => (t.id === id ? updated : t)) });
+  void supabase.from("trips").update(toTrip(updated)).eq("id", id).then(({ error }) => fail("trips", error));
+  addAuditLog("UPDATE", "Trip", id, `Trip set to ${updated.status}`);
+  return updated;
+}
+
+export function deleteTrip(id: string): boolean {
+  const s = getState();
+  if (!s.trips.some((t) => t.id === id)) return false;
+  setState({ ...s, trips: s.trips.filter((t) => t.id !== id) });
+  void supabase.from("trips").delete().eq("id", id).then(({ error }) => fail("trips", error));
+  addAuditLog("DELETE", "Trip", id, "Deleted trip");
+  return true;
+}
+
+/** Vehicle documents (road tax / insurance / inspection) expiring within `days`. */
+export function vehicleExpiryAlerts(days = 60) {
+  const today = new Date().toISOString().slice(0, 10);
+  const limit = new Date(Date.now() + days * 86400000).toISOString().slice(0, 10);
+  const out: { vehicle: Vehicle; label: string; date: string; expired: boolean }[] = [];
+  for (const v of getState().vehicles) {
+    const checks: [string, string | undefined][] = [
+      ["Road tax", v.roadTaxExpiry], ["Insurance", v.insuranceExpiry], ["Inspection", v.inspectionDue],
+    ];
+    for (const [label, date] of checks) {
+      if (date && date <= limit) out.push({ vehicle: v, label, date, expired: date < today });
+    }
+  }
+  return out.sort((a, b) => a.date.localeCompare(b.date));
 }
