@@ -6,6 +6,7 @@ import type {
   Attendance, PayrollEntry, Approval, AuditLog, User, AppBranch, Company,
   LeaveRequest, RateAgreement, Invoice, InvoiceLine,
   Dormitory, BedAllocation, Vehicle, Trip,
+  Asset, AssetIssuance,
 } from "@/lib/types";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -13,6 +14,7 @@ import {
   toDocument, toAttendance, toPayroll, toApproval, toCompany, toLeave,
   toRate, toInvoice,
   toDormitory, toAllocation, toVehicle, toTrip,
+  toAsset, toIssuance,
 } from "@/lib/db";
 
 export interface AppState {
@@ -33,6 +35,8 @@ export interface AppState {
   allocations: BedAllocation[];
   vehicles: Vehicle[];
   trips: Trip[];
+  assets: Asset[];
+  issuances: AssetIssuance[];
   users: User[];
   branches: AppBranch[];
   currentBranch: string;
@@ -52,6 +56,7 @@ const emptyState: AppState = {
   attendance: [], payroll: [], approvals: [], auditLogs: [], leaveRequests: [],
   rateAgreements: [], invoices: [], users: [],
   dormitories: [], allocations: [], vehicles: [], trips: [],
+  assets: [], issuances: [],
   branches: defaultBranches, currentBranch: "hq",
   companies: [], currentCompany: "", currentUser: null,
 };
@@ -996,4 +1001,133 @@ export function vehicleExpiryAlerts(days = 60) {
     }
   }
   return out.sort((a, b) => a.date.localeCompare(b.date));
+}
+
+/* ---------------- assets & PPE ---------------- */
+export function getAssets(): Asset[] { return getState().assets; }
+export function getIssuances(): AssetIssuance[] { return getState().issuances; }
+
+export function addAsset(x: Omit<Asset, "id" | "createdAt" | "updatedAt">): Asset {
+  const s = getState();
+  const now = new Date().toISOString();
+  const row: Asset = { ...x, id: newId(), createdAt: now, updatedAt: now };
+  setState({ ...s, assets: [row, ...s.assets] });
+  void supabase.from("assets").insert({ id: row.id, ...toAsset(row) })
+    .then(({ error }) => fail("assets", error));
+  addAuditLog("CREATE", "Asset", row.id, `Added asset ${row.name}`);
+  return row;
+}
+
+export function updateAsset(id: string, updates: Partial<Asset>): Asset | undefined {
+  const s = getState();
+  const existing = s.assets.find((a) => a.id === id);
+  if (!existing) return undefined;
+  const updated: Asset = { ...existing, ...updates, updatedAt: new Date().toISOString() };
+  setState({ ...s, assets: s.assets.map((a) => (a.id === id ? updated : a)) });
+  void supabase.from("assets").update(toAsset(updated)).eq("id", id)
+    .then(({ error }) => fail("assets", error));
+  addAuditLog("UPDATE", "Asset", id, `Updated asset ${updated.name}`);
+  return updated;
+}
+
+export function deleteAsset(id: string): boolean {
+  const s = getState();
+  if (!s.assets.some((a) => a.id === id)) return false;
+  setState({
+    ...s,
+    assets: s.assets.filter((a) => a.id !== id),
+    issuances: s.issuances.filter((i) => i.assetId !== id),
+  });
+  void supabase.from("assets").delete().eq("id", id).then(({ error }) => fail("assets", error));
+  addAuditLog("DELETE", "Asset", id, "Deleted asset");
+  return true;
+}
+
+/** Quantity currently out on active issuances. */
+export function assetIssuedQty(assetId: string): number {
+  return getState().issuances
+    .filter((i) => i.assetId === assetId && i.status === "Issued")
+    .reduce((sum, i) => sum + i.quantity, 0);
+}
+
+export function assetAvailableQty(assetId: string): number {
+  const asset = getState().assets.find((a) => a.id === assetId);
+  if (!asset) return 0;
+  return Math.max(0, asset.quantity - assetIssuedQty(assetId));
+}
+
+export function issueAsset(x: Omit<AssetIssuance, "id" | "createdAt" | "updatedAt">): AssetIssuance {
+  const s = getState();
+  const now = new Date().toISOString();
+  const row: AssetIssuance = { ...x, id: newId(), createdAt: now, updatedAt: now };
+  setState({ ...s, issuances: [row, ...s.issuances] });
+  void supabase.from("asset_issuances").insert({ id: row.id, ...toIssuance(row) })
+    .then(({ error }) => fail("asset_issuances", error));
+  const asset = s.assets.find((a) => a.id === row.assetId);
+  if (asset && asset.status === "Available" && assetAvailableQty(asset.id) <= 0) {
+    updateAsset(asset.id, { status: "Issued" });
+  }
+  addAuditLog("CREATE", "AssetIssuance", row.id, `Issued ${row.quantity} x ${asset?.name ?? "asset"}`);
+  return row;
+}
+
+export function updateIssuance(id: string, updates: Partial<AssetIssuance>): AssetIssuance | undefined {
+  const s = getState();
+  const existing = s.issuances.find((i) => i.id === id);
+  if (!existing) return undefined;
+  const updated: AssetIssuance = { ...existing, ...updates, updatedAt: new Date().toISOString() };
+  setState({ ...s, issuances: s.issuances.map((i) => (i.id === id ? updated : i)) });
+  void supabase.from("asset_issuances").update(toIssuance(updated)).eq("id", id)
+    .then(({ error }) => fail("asset_issuances", error));
+  addAuditLog("UPDATE", "AssetIssuance", id, "Updated issuance");
+  return updated;
+}
+
+/** Return an issued item; optionally record condition or mark lost / damaged. */
+export function returnIssuance(
+  id: string,
+  condition: AssetIssuance["conditionIn"] = "Good",
+  status: AssetIssuance["status"] = "Returned",
+  date = new Date().toISOString().slice(0, 10),
+) {
+  const result = updateIssuance(id, { status, conditionIn: condition, returnDate: date });
+  const issuance = getState().issuances.find((i) => i.id === id);
+  if (issuance) {
+    const asset = getState().assets.find((a) => a.id === issuance.assetId);
+    if (asset && asset.status === "Issued" && assetAvailableQty(asset.id) > 0) {
+      updateAsset(asset.id, { status: "Available" });
+    }
+  }
+  return result;
+}
+
+export function deleteIssuance(id: string): boolean {
+  const s = getState();
+  if (!s.issuances.some((i) => i.id === id)) return false;
+  setState({ ...s, issuances: s.issuances.filter((i) => i.id !== id) });
+  void supabase.from("asset_issuances").delete().eq("id", id).then(({ error }) => fail("asset_issuances", error));
+  addAuditLog("DELETE", "AssetIssuance", id, "Deleted issuance");
+  return true;
+}
+
+/** Assets whose warranty or calibration falls due within `days`. */
+export function assetAlerts(days = 45) {
+  const today = new Date().toISOString().slice(0, 10);
+  const limit = new Date(Date.now() + days * 86400000).toISOString().slice(0, 10);
+  const out: { asset: Asset; label: string; date: string; expired: boolean }[] = [];
+  for (const a of getState().assets) {
+    const checks: [string, string | undefined][] = [
+      ["Warranty", a.warrantyExpiry], ["Calibration", a.calibrationDue],
+    ];
+    for (const [label, date] of checks) {
+      if (date && date <= limit) out.push({ asset: a, label, date, expired: date < today });
+    }
+  }
+  return out.sort((a, b) => a.date.localeCompare(b.date));
+}
+
+/** Issued items past their due date and still not returned. */
+export function overdueIssuances() {
+  const today = new Date().toISOString().slice(0, 10);
+  return getState().issuances.filter((i) => i.status === "Issued" && i.dueDate && i.dueDate < today);
 }
