@@ -89,15 +89,26 @@ export const Route = createFileRoute("/_authenticated/payroll")({
 export default function PayrollPage() {
   const [payroll, setPayroll] = useState(getPayroll());
   const [employees] = useState(getEmployees());
+  const [companies] = useState(getCompanies());
   const [search, setSearch] = useState("");
-  const [month, setMonth] = useState("2026-07");
+  const [month, setMonth] = useState(() => new Date().toISOString().slice(0, 7));
   const [statusFilter, setStatusFilter] = useState<PayrollStatus | "all">("all");
+  const [companyFilter, setCompanyFilter] = useState<string>(getCurrentCompany() || "all");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [payslipOf, setPayslipOf] = useState<PayrollEntry | null>(null);
 
   const filtered = payroll.filter((p) => {
     const q = search.toLowerCase();
     const emp = employees.find((e) => e.id === p.employeeId);
-    return p.month === month && (emp?.name.toLowerCase().includes(q) || emp?.employeeCode.toLowerCase().includes(q)) && (statusFilter === "all" || p.status === statusFilter);
+    const matchesCompany = companyFilter === "all" || emp?.companyId === companyFilter;
+    const matchesSearch =
+      !q || emp?.name.toLowerCase().includes(q) || emp?.employeeCode.toLowerCase().includes(q);
+    return (
+      p.month === month &&
+      matchesCompany &&
+      matchesSearch &&
+      (statusFilter === "all" || p.status === statusFilter)
+    );
   });
 
   const totalNetPay = filtered.reduce((s, p) => s + p.netPay, 0);
@@ -107,6 +118,35 @@ export default function PayrollPage() {
 
   function refresh() {
     setPayroll(getPayroll());
+  }
+
+  function handleGenerate() {
+    const { created, skipped } = generatePayrollForMonth(
+      month,
+      companyFilter === "all" ? undefined : companyFilter,
+    );
+    refresh();
+    toast.success(`${created} payroll draft created`, {
+      description: skipped ? `${skipped} already existed for ${month}.` : `Month ${month}.`,
+    });
+  }
+
+  function setStatus(entry: PayrollEntry, status: PayrollStatus) {
+    const user = getCurrentUser();
+    updatePayroll(entry.id, {
+      status,
+      approvedBy: status === "Approved" ? user?.id : entry.approvedBy,
+      approvedAt: status === "Approved" ? new Date().toISOString() : entry.approvedAt,
+      paidAt: status === "Paid" ? new Date().toISOString() : entry.paidAt,
+    });
+    refresh();
+    toast.success(`Marked as ${status}`);
+  }
+
+  function handleDelete(entry: PayrollEntry) {
+    deletePayroll(entry.id);
+    refresh();
+    toast.success("Payroll entry deleted");
   }
 
   function payrollRow(entry: PayrollEntry) {
