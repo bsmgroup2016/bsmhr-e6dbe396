@@ -201,7 +201,7 @@ export default function PayrollPage() {
         cpfEmployee,
         cpfEmployer: num(get("cpfEmployer")),
         levies,
-        netPay: basicSalary + overtimePay + allowances - deductions - cpfEmployee - levies,
+        netPay: basicSalary + overtimePay + allowances - deductions - cpfEmployee,
         status: (statuses.find((s) => s.toLowerCase() === statusValue) ?? "Draft") as PayrollStatus,
       });
       imported += 1;
@@ -217,7 +217,7 @@ export default function PayrollPage() {
     const deductions = Number(formData.get("deductions") || 0);
     const cpfEmployee = Number(formData.get("cpfEmployee") || 0);
     const levies = Number(formData.get("levies") || 0);
-    const netPay = basicSalary + overtimePay + allowances - deductions - cpfEmployee - levies;
+    const netPay = basicSalary + overtimePay + allowances - deductions - cpfEmployee;
     addPayroll({
       employeeId: formData.get("employeeId") as string,
       month: formData.get("month") as string,
