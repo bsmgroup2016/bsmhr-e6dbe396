@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   Plus,
   Search,
@@ -285,6 +285,9 @@ export default function PayrollPage() {
             <p className="text-sm text-muted-foreground">Monthly payroll and payslip management.</p>
           </div>
           <div className="flex gap-2">
+            <Button size="sm" variant="outline" asChild>
+              <Link to="/time-cards">Generate claim sheet</Link>
+            </Button>
             <Button size="sm" variant="outline" onClick={handleGenerate}>
               <Wand2 className="mr-1 h-4 w-4" />
               Generate {month}
