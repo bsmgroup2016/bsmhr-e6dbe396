@@ -267,6 +267,9 @@ export default function PayrollPage() {
       const cpfEmployee = num(get("cpfEmployee"));
       const levies = num(get("levies"));
       const statusValue = get("status").toLowerCase();
+      const gross = basicSalary + overtimePay + allowances;
+      const stat = computeStatutory(emp, gross);
+      const cpfEmp = cpfEmployee || stat.cpfEmployee;
 
       addPayroll({
         employeeId: emp.id,
@@ -275,10 +278,14 @@ export default function PayrollPage() {
         overtimePay,
         allowances,
         deductions,
-        cpfEmployee,
-        cpfEmployer: num(get("cpfEmployer")),
-        levies,
-        netPay: basicSalary + overtimePay + allowances - deductions - cpfEmployee,
+        cpfEmployee: cpfEmp,
+        cpfEmployer: num(get("cpfEmployer")) || stat.cpfEmployer,
+        levies: levies || stat.levy,
+        sdl: stat.sdl,
+        shgFund: stat.shgFund,
+        shgAmount: stat.shgAmount,
+        employerCost: round2(stat.employerCost - deductions),
+        netPay: round2(gross - deductions - cpfEmp - stat.shgAmount),
         status: (statuses.find((s) => s.toLowerCase() === statusValue) ?? "Draft") as PayrollStatus,
       });
       imported += 1;
@@ -322,23 +329,33 @@ export default function PayrollPage() {
   }
 
   function handleCreateEntry(formData: FormData) {
+    const employeeId = formData.get("employeeId") as string;
+    const emp = employees.find((e) => e.id === employeeId);
     const basicSalary = Number(formData.get("basicSalary") || 0);
     const overtimePay = Number(formData.get("overtimePay") || 0);
     const allowances = Number(formData.get("allowances") || 0);
     const deductions = Number(formData.get("deductions") || 0);
-    const cpfEmployee = Number(formData.get("cpfEmployee") || 0);
-    const levies = Number(formData.get("levies") || 0);
-    const netPay = basicSalary + overtimePay + allowances - deductions - cpfEmployee;
+    const gross = basicSalary + overtimePay + allowances;
+    const stat = emp
+      ? computeStatutory(emp, gross)
+      : { cpfEmployee: 0, cpfEmployer: 0, sdl: 0, shgFund: "None" as const, shgAmount: 0, levy: 0, employerCost: gross, age: 0 };
+    const cpfEmployee = Number(formData.get("cpfEmployee") || 0) || stat.cpfEmployee;
+    const levies = Number(formData.get("levies") || 0) || stat.levy;
+    const netPay = round2(gross - deductions - cpfEmployee - stat.shgAmount);
     addPayroll({
-      employeeId: formData.get("employeeId") as string,
+      employeeId,
       month: formData.get("month") as string,
       basicSalary,
       overtimePay,
       allowances,
       deductions,
       cpfEmployee,
-      cpfEmployer: Number(formData.get("cpfEmployer") || 0),
+      cpfEmployer: Number(formData.get("cpfEmployer") || 0) || stat.cpfEmployer,
       levies,
+      sdl: stat.sdl,
+      shgFund: stat.shgFund,
+      shgAmount: stat.shgAmount,
+      employerCost: round2(stat.employerCost - deductions),
       netPay,
       status: formData.get("status") as PayrollStatus,
     });
