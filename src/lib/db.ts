@@ -667,7 +667,7 @@ export async function loadAll(): Promise<LoadedData> {
     assets, issuances, courses, trainings, incidents,
     requisitions, candidates, leads, activities, expenses, receipts,
     inventory, movements, purchaseOrders,
-    branchPrefixes, certifications, timeCards, claimSheets,
+    branchPrefixes, certifications, timeCards, claimSheets, contracts,
   ] = await Promise.all([
     all("companies"), all("employees"), all("clients"), all("projects"), all("sites"),
     all("assignments"), all("employee_documents"), all("attendance"), all("payroll_entries"),
@@ -680,6 +680,7 @@ export async function loadAll(): Promise<LoadedData> {
     all("expenses"), all("payment_receipts"),
     all("inventory_items"), all("stock_movements"), all("purchase_orders"),
     all("branch_prefixes"), all("employee_certifications"), all("time_cards"), all("claim_sheets"),
+    all("client_contracts"),
   ]);
 
   const roleByUser = new Map<string, string>();
@@ -738,6 +739,7 @@ export async function loadAll(): Promise<LoadedData> {
     certifications: certifications.map(fromCertification),
     timeCards: timeCards.map(fromTimeCard),
     claimSheets: claimSheets.map(fromClaimSheet),
+    contracts: contracts.map(fromContract),
   };
 }
 
