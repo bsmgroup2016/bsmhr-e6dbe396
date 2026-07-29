@@ -34,6 +34,7 @@ import {
 } from "@/components/ui/tabs";
 import { getBranches, getCurrentBranch, setCurrentBranch, exportState, importState, resetState } from "@/lib/store";
 import { checkR2Status } from "@/lib/r2";
+import { SystemHealth } from "@/components/settings/system-health";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({
@@ -103,12 +104,13 @@ export default function SettingsPage() {
         </div>
 
         <Tabs defaultValue="general" className="w-full">
-          <TabsList className="grid w-full grid-cols-5 sm:w-auto">
+          <TabsList className="grid w-full grid-cols-3 sm:w-auto sm:grid-cols-6">
             <TabsTrigger value="general">General</TabsTrigger>
             <TabsTrigger value="notifications">Notifications</TabsTrigger>
             <TabsTrigger value="security">Security</TabsTrigger>
             <TabsTrigger value="storage">Storage</TabsTrigger>
             <TabsTrigger value="data">Data</TabsTrigger>
+            <TabsTrigger value="health">Health</TabsTrigger>
           </TabsList>
 
           <TabsContent value="general" className="mt-4 space-y-4">
