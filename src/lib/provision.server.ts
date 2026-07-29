@@ -55,6 +55,7 @@ export async function provisionEmployee(
   userId: string,
   email: string,
   phone: string,
+  emailVerified = false,
 ): Promise<ProvisionResult> {
   const existing = await rest<{ id: string; employee_code: string }>(
     `employees?select=id,employee_code&user_id=eq.${userId}&limit=1`,
@@ -64,8 +65,9 @@ export async function provisionEmployee(
     return { employeeId: existing[0].id, employeeCode: existing[0].employee_code, created: false };
   }
 
-  // Adopt a pre-existing record created by HR with the same email, if any.
-  const byEmail = email
+  // Adopt a pre-existing record created by HR with the same email, but only
+  // when Supabase has confirmed the caller actually owns that email address.
+  const byEmail = email && emailVerified
     ? await rest<{ id: string; employee_code: string }>(
         `employees?select=id,employee_code&email=eq.${encodeURIComponent(email)}&user_id=is.null&limit=1`,
       )
@@ -121,7 +123,7 @@ async function grantEmployeeRole(userId: string) {
 /** Validate a Supabase access token and return { id, email } or null. */
 export async function verifyToken(
   request: Request,
-): Promise<{ id: string; email: string } | null> {
+): Promise<{ id: string; email: string; emailVerified: boolean } | null> {
   const auth = request.headers.get("authorization");
   if (!auth?.startsWith("Bearer ")) return null;
   const key = process.env.SUPABASE_PUBLISHABLE_KEY || serviceKey();
@@ -129,6 +131,16 @@ export async function verifyToken(
     headers: { apikey: key, Authorization: auth },
   });
   if (!res.ok) return null;
-  const user = (await res.json()) as { id?: string; email?: string };
-  return user?.id ? { id: user.id, email: user.email ?? "" } : null;
+  const user = (await res.json()) as {
+    id?: string;
+    email?: string;
+    email_confirmed_at?: string | null;
+    confirmed_at?: string | null;
+  };
+  if (!user?.id) return null;
+  return {
+    id: user.id,
+    email: user.email ?? "",
+    emailVerified: Boolean(user.email_confirmed_at || user.confirmed_at),
+  };
 }
