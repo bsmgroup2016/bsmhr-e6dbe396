@@ -205,6 +205,15 @@ export default function WorkforcePage() {
     setEmployees(getEmployees());
   }
 
+  const pendingProfiles = employees.filter(
+    (e) => e.status === "Pending Verification" || e.status === "Pending Profile Completion",
+  );
+
+  function verifyProfile(id: string) {
+    updateEmployee(id, { status: "Active" });
+    refresh();
+  }
+
   function handleImport(rows: Record<string, string>[]) {
     const errors: string[] = [];
     let imported = 0;
