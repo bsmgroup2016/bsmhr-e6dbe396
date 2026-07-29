@@ -106,7 +106,34 @@ function DashboardPage() {
   const pipelineValue = openLeads.reduce((s, l) => s + (l.monthlyValue || 0), 0);
   const weightedValue = pipeline.reduce((s, p) => s + p.weighted, 0);
   const maxStageCount = Math.max(1, ...pipeline.map((p) => p.count));
-  const followUps = dueFollowUps(companyId ?? undefined).length;
+  const followUpsDue = dueFollowUps(companyId ?? undefined).length;
+  // Open follow-up reminders (due, overdue and upcoming), soonest first
+  const followUpCards = getActivities()
+    .filter(
+      (a) =>
+        !a.done &&
+        a.followUpDate &&
+        (!companyId || !a.companyId || a.companyId === companyId),
+    )
+    .map((a) => ({
+      ...a,
+      days: Math.ceil(
+        (new Date(`${a.followUpDate}T00:00:00`).getTime() -
+          new Date(`${todayKey}T00:00:00`).getTime()) /
+          86_400_000,
+      ),
+    }))
+    .sort((a, b) => a.days - b.days || a.subject.localeCompare(b.subject))
+    .slice(0, 8);
+  const overdueCount = followUpCards.filter((f) => f.days < 0).length;
+  const followUpBadge = (days: number) =>
+    days < 0
+      ? { variant: "destructive" as const, label: `Overdue ${Math.abs(days)}d` }
+      : days === 0
+        ? { variant: "warning" as const, label: "Due today" }
+        : days <= 3
+          ? { variant: "info" as const, label: `In ${days}d` }
+          : { variant: "outline" as const, label: `In ${days}d` };
   const activeClients = getClients().filter((c) => c.status === "Active").length;
   const clientNames = new Map(getClients().map((c) => [c.id, c.name]));
   const leadNames = new Map(leads.map((l) => [l.id, l.companyName]));
