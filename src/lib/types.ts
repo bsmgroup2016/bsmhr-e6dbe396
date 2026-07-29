@@ -650,3 +650,46 @@ export interface CrmActivity {
   createdAt: string;
   updatedAt: string;
 }
+
+/* ---------- Phase 12: finance ---------- */
+export type ExpenseCategory =
+  | "Levy" | "Salary" | "Dormitory" | "Transport" | "Insurance" | "Medical"
+  | "PPE & Assets" | "Training" | "Agent Fee" | "Office" | "Government Fee" | "Other";
+export type ExpenseStatus = "Pending" | "Approved" | "Paid" | "Rejected";
+export type PaymentMode = "Bank Transfer" | "GIRO" | "Cheque" | "Cash" | "PayNow" | "Other";
+
+export interface Expense {
+  id: string;
+  companyId?: string;
+  expenseDate: string;
+  category: ExpenseCategory;
+  description: string;
+  vendor?: string;
+  projectId?: string;
+  employeeId?: string;
+  amount: number;
+  gstAmount: number;
+  paymentMode?: PaymentMode;
+  referenceNo?: string;
+  status: ExpenseStatus;
+  paidOn?: string;
+  documentUrl?: string;
+  remarks?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PaymentReceipt {
+  id: string;
+  companyId?: string;
+  invoiceId?: string;
+  clientId?: string;
+  receiptNo: string;
+  receivedOn: string;
+  amount: number;
+  paymentMode: PaymentMode;
+  referenceNo?: string;
+  remarks?: string;
+  createdAt: string;
+  updatedAt: string;
+}
