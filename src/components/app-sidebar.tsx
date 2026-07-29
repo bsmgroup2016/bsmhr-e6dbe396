@@ -1,19 +1,27 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
+  BadgeDollarSign,
+  BedDouble,
   Briefcase,
   Building2,
+  Boxes,
   CalendarClock,
   ClipboardList,
   FileText,
   FolderKanban,
   Gauge,
   HardHat,
+  Handshake,
   Layers,
   Loader2,
   LogOut,
+  Receipt,
   Settings,
   ShieldCheck,
+  Truck,
+  UserPlus,
   Users,
+  Wallet,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -32,26 +40,61 @@ import {
 } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 
-const mainNav = [
-  { title: "Dashboard", url: "/", icon: Gauge },
-  { title: "Companies", url: "/companies", icon: Building2 },
-  { title: "Employees", url: "/workforce", icon: Users },
-  { title: "Clients", url: "/clients", icon: Building2 },
-  { title: "Projects & Sites", url: "/projects", icon: FolderKanban },
-  { title: "Operations", url: "/operations", icon: Layers },
-  { title: "Time Management", url: "/time-management", icon: CalendarClock },
-];
+type NavItem = { title: string; url: string; icon: typeof Gauge; soon?: boolean };
 
-const adminNav = [
-  { title: "Payroll", url: "/payroll", icon: Briefcase },
-  { title: "Documents", url: "/documents", icon: FileText },
-  { title: "Approvals", url: "/approvals", icon: ClipboardList },
-  { title: "Reports", url: "/reports", icon: ClipboardList },
-  { title: "Users & Permissions", url: "/users", icon: ShieldCheck },
-  { title: "Audit Logs", url: "/audit-logs", icon: HardHat },
-  { title: "Settings", url: "/settings", icon: Settings },
+const navGroups: { label: string; items: NavItem[] }[] = [
+  {
+    label: "Overview",
+    items: [
+      { title: "Dashboard", url: "/", icon: Gauge },
+      { title: "Companies", url: "/companies", icon: Building2 },
+    ],
+  },
+  {
+    label: "Workforce",
+    items: [
+      { title: "Employees", url: "/workforce", icon: Users },
+      { title: "Documents", url: "/documents", icon: FileText },
+      { title: "Time Management", url: "/time-management", icon: CalendarClock },
+      { title: "Payroll", url: "/payroll", icon: Briefcase },
+    ],
+  },
+  {
+    label: "Operations",
+    items: [
+      { title: "Clients", url: "/clients", icon: Handshake },
+      { title: "Projects & Sites", url: "/projects", icon: FolderKanban },
+      { title: "Deployment", url: "/operations", icon: Layers },
+    ],
+  },
+  {
+    label: "Business",
+    items: [
+      { title: "Recruitment", url: "/recruitment", icon: UserPlus, soon: true },
+      { title: "Client CRM", url: "/crm", icon: BadgeDollarSign, soon: true },
+      { title: "Billing & Invoicing", url: "/billing", icon: Receipt, soon: true },
+      { title: "Finance", url: "/finance", icon: Wallet, soon: true },
+    ],
+  },
+  {
+    label: "Resources",
+    items: [
+      { title: "Accommodation", url: "/accommodation", icon: BedDouble, soon: true },
+      { title: "Transport & Drivers", url: "/transport", icon: Truck, soon: true },
+      { title: "Assets & PPE", url: "/assets", icon: Boxes, soon: true },
+    ],
+  },
+  {
+    label: "Administration",
+    items: [
+      { title: "Approvals", url: "/approvals", icon: ClipboardList },
+      { title: "Reports", url: "/reports", icon: ClipboardList },
+      { title: "Users & Permissions", url: "/users", icon: ShieldCheck },
+      { title: "Audit Logs", url: "/audit-logs", icon: HardHat },
+      { title: "Settings", url: "/settings", icon: Settings },
+    ],
+  },
 ];
-
 
 export function AppSidebar() {
   const { state } = useSidebar();
@@ -87,37 +130,28 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-sidebar-foreground/50">Operations</SidebarGroupLabel>
-          <SidebarMenu>
-            {mainNav.map((item) => (
-              <SidebarMenuItem key={item.title}>
-                <SidebarMenuButton asChild isActive={isActive(item.url)} tooltip={item.title}>
-                  <Link to={item.url} className="flex items-center gap-3">
-                    <item.icon className="h-4 w-4 shrink-0" />
-                    <span className="truncate">{item.title}</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            ))}
-          </SidebarMenu>
-        </SidebarGroup>
-
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-sidebar-foreground/50">Administration</SidebarGroupLabel>
-          <SidebarMenu>
-            {adminNav.map((item) => (
-              <SidebarMenuItem key={item.title}>
-                <SidebarMenuButton asChild isActive={isActive(item.url)} tooltip={item.title}>
-                  <Link to={item.url} className="flex items-center gap-3">
-                    <item.icon className="h-4 w-4 shrink-0" />
-                    <span className="truncate">{item.title}</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            ))}
-          </SidebarMenu>
-        </SidebarGroup>
+        {navGroups.map((group) => (
+          <SidebarGroup key={group.label}>
+            <SidebarGroupLabel className="text-sidebar-foreground/50">{group.label}</SidebarGroupLabel>
+            <SidebarMenu>
+              {group.items.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild isActive={isActive(item.url)} tooltip={item.title}>
+                    <Link to={item.url} className="flex items-center gap-3">
+                      <item.icon className="h-4 w-4 shrink-0" />
+                      <span className="truncate">{item.title}</span>
+                      {item.soon && !collapsed && (
+                        <span className="ml-auto rounded-full bg-sidebar-foreground/10 px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-wide text-sidebar-foreground/60">
+                          Soon
+                        </span>
+                      )}
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroup>
+        ))}
       </SidebarContent>
 
       <SidebarFooter className="border-t border-sidebar-border">
