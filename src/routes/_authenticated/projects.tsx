@@ -61,7 +61,8 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { getClients, getProjects, getSites, addProject, updateProject, addSite, updateSite, deleteProject } from "@/lib/store";
+import { getClients, getProjects, getSites, getAssignments, addProject, updateProject, addSite, updateSite, deleteProject } from "@/lib/store";
+import { projectFulfilment } from "@/lib/ops";
 import type { Project, Site, ProjectStatus, SiteStatus } from "@/lib/types";
 
 const projectStatuses: ProjectStatus[] = ["Planning", "Active", "On Hold", "Completed", "Cancelled"];
