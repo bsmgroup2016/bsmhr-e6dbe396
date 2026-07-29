@@ -1086,7 +1086,7 @@ export function updateIssuance(id: string, updates: Partial<AssetIssuance>): Ass
 /** Return an issued item; optionally record condition or mark lost / damaged. */
 export function returnIssuance(
   id: string,
-  condition: Asset extends never ? never : AssetIssuance["conditionIn"] = "Good",
+  condition: AssetIssuance["conditionIn"] = "Good",
   status: AssetIssuance["status"] = "Returned",
   date = new Date().toISOString().slice(0, 10),
 ) {
