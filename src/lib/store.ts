@@ -1137,3 +1137,150 @@ export function overdueIssuances() {
   const today = new Date().toISOString().slice(0, 10);
   return getState().issuances.filter((i) => i.status === "Issued" && i.dueDate && i.dueDate < today);
 }
+
+/* ---------------- training & safety ---------------- */
+export function getCourses(): TrainingCourse[] { return getState().courses; }
+export function getTrainings(): TrainingRecord[] { return getState().trainings; }
+export function getIncidents(): SafetyIncident[] { return getState().incidents; }
+
+export function addCourse(x: Omit<TrainingCourse, "id" | "createdAt" | "updatedAt">): TrainingCourse {
+  const s = getState();
+  const now = new Date().toISOString();
+  const row: TrainingCourse = { ...x, id: newId(), createdAt: now, updatedAt: now };
+  setState({ ...s, courses: [row, ...s.courses] });
+  void supabase.from("training_courses").insert({ id: row.id, ...toCourse(row) })
+    .then(({ error }) => fail("training_courses", error));
+  addAuditLog("CREATE", "TrainingCourse", row.id, `Added course ${row.name}`);
+  return row;
+}
+
+export function updateCourse(id: string, updates: Partial<TrainingCourse>): TrainingCourse | undefined {
+  const s = getState();
+  const existing = s.courses.find((c) => c.id === id);
+  if (!existing) return undefined;
+  const updated: TrainingCourse = { ...existing, ...updates, updatedAt: new Date().toISOString() };
+  setState({ ...s, courses: s.courses.map((c) => (c.id === id ? updated : c)) });
+  void supabase.from("training_courses").update(toCourse(updated)).eq("id", id)
+    .then(({ error }) => fail("training_courses", error));
+  addAuditLog("UPDATE", "TrainingCourse", id, `Updated course ${updated.name}`);
+  return updated;
+}
+
+export function deleteCourse(id: string): boolean {
+  const s = getState();
+  if (!s.courses.some((c) => c.id === id)) return false;
+  setState({
+    ...s,
+    courses: s.courses.filter((c) => c.id !== id),
+    trainings: s.trainings.filter((t) => t.courseId !== id),
+  });
+  void supabase.from("training_courses").delete().eq("id", id)
+    .then(({ error }) => fail("training_courses", error));
+  addAuditLog("DELETE", "TrainingCourse", id, "Deleted course");
+  return true;
+}
+
+/** Add a training record; expiry auto-derived from course validity when absent. */
+export function addTraining(x: Omit<TrainingRecord, "id" | "createdAt" | "updatedAt">): TrainingRecord {
+  const s = getState();
+  const now = new Date().toISOString();
+  let expiryDate = x.expiryDate;
+  if (!expiryDate && x.completionDate) {
+    const course = s.courses.find((c) => c.id === x.courseId);
+    if (course?.validityMonths) {
+      const dt = new Date(x.completionDate);
+      dt.setMonth(dt.getMonth() + course.validityMonths);
+      expiryDate = dt.toISOString().slice(0, 10);
+    }
+  }
+  const row: TrainingRecord = { ...x, expiryDate, id: newId(), createdAt: now, updatedAt: now };
+  setState({ ...s, trainings: [row, ...s.trainings] });
+  void supabase.from("training_records").insert({ id: row.id, ...toTraining(row) })
+    .then(({ error }) => fail("training_records", error));
+  addAuditLog("CREATE", "TrainingRecord", row.id, "Added training record");
+  return row;
+}
+
+export function updateTraining(id: string, updates: Partial<TrainingRecord>): TrainingRecord | undefined {
+  const s = getState();
+  const existing = s.trainings.find((t) => t.id === id);
+  if (!existing) return undefined;
+  const updated: TrainingRecord = { ...existing, ...updates, updatedAt: new Date().toISOString() };
+  setState({ ...s, trainings: s.trainings.map((t) => (t.id === id ? updated : t)) });
+  void supabase.from("training_records").update(toTraining(updated)).eq("id", id)
+    .then(({ error }) => fail("training_records", error));
+  addAuditLog("UPDATE", "TrainingRecord", id, "Updated training record");
+  return updated;
+}
+
+export function deleteTraining(id: string): boolean {
+  const s = getState();
+  if (!s.trainings.some((t) => t.id === id)) return false;
+  setState({ ...s, trainings: s.trainings.filter((t) => t.id !== id) });
+  void supabase.from("training_records").delete().eq("id", id)
+    .then(({ error }) => fail("training_records", error));
+  addAuditLog("DELETE", "TrainingRecord", id, "Deleted training record");
+  return true;
+}
+
+export function addIncident(x: Omit<SafetyIncident, "id" | "createdAt" | "updatedAt">): SafetyIncident {
+  const s = getState();
+  const now = new Date().toISOString();
+  const row: SafetyIncident = { ...x, id: newId(), createdAt: now, updatedAt: now };
+  setState({ ...s, incidents: [row, ...s.incidents] });
+  void supabase.from("safety_incidents").insert({ id: row.id, ...toIncident(row) })
+    .then(({ error }) => fail("safety_incidents", error));
+  addAuditLog("CREATE", "SafetyIncident", row.id, `Reported ${row.incidentType}`);
+  return row;
+}
+
+export function updateIncident(id: string, updates: Partial<SafetyIncident>): SafetyIncident | undefined {
+  const s = getState();
+  const existing = s.incidents.find((i) => i.id === id);
+  if (!existing) return undefined;
+  const updated: SafetyIncident = { ...existing, ...updates, updatedAt: new Date().toISOString() };
+  setState({ ...s, incidents: s.incidents.map((i) => (i.id === id ? updated : i)) });
+  void supabase.from("safety_incidents").update(toIncident(updated)).eq("id", id)
+    .then(({ error }) => fail("safety_incidents", error));
+  addAuditLog("UPDATE", "SafetyIncident", id, "Updated incident");
+  return updated;
+}
+
+export function deleteIncident(id: string): boolean {
+  const s = getState();
+  if (!s.incidents.some((i) => i.id === id)) return false;
+  setState({ ...s, incidents: s.incidents.filter((i) => i.id !== id) });
+  void supabase.from("safety_incidents").delete().eq("id", id)
+    .then(({ error }) => fail("safety_incidents", error));
+  addAuditLog("DELETE", "SafetyIncident", id, "Deleted incident");
+  return true;
+}
+
+/** Certifications expiring within `days` (or already expired). */
+export function certificationAlerts(days = 60) {
+  const today = new Date().toISOString().slice(0, 10);
+  const limit = new Date(Date.now() + days * 86400000).toISOString().slice(0, 10);
+  return getState().trainings
+    .filter((t) => t.expiryDate && t.expiryDate <= limit && t.status !== "Failed")
+    .map((t) => ({ training: t, date: t.expiryDate!, expired: t.expiryDate! < today }))
+    .sort((a, b) => a.date.localeCompare(b.date));
+}
+
+/** Employees missing a valid record for each mandatory course. */
+export function mandatoryTrainingGaps(companyId?: string) {
+  const s = getState();
+  const today = new Date().toISOString().slice(0, 10);
+  const mandatory = s.courses.filter((c) => c.mandatory && (!companyId || !c.companyId || c.companyId === companyId));
+  const employees = s.employees.filter((e) => e.status === "Active" && (!companyId || e.companyId === companyId));
+  const gaps: { employeeId: string; courseId: string }[] = [];
+  for (const c of mandatory) {
+    for (const e of employees) {
+      const ok = s.trainings.some(
+        (t) => t.courseId === c.id && t.employeeId === e.id && t.status === "Completed" &&
+          (!t.expiryDate || t.expiryDate >= today),
+      );
+      if (!ok) gaps.push({ employeeId: e.id, courseId: c.id });
+    }
+  }
+  return gaps;
+}
