@@ -397,6 +397,15 @@ function TimeCardsPage() {
                           <Button
                             size="sm"
                             variant="ghost"
+                            disabled={!c.fileUrl || rescanId === c.id}
+                            onClick={() => void rescan(c)}
+                          >
+                            <ScanLine className="mr-1 h-4 w-4" />
+                            {rescanId === c.id ? "Scanning…" : "Auto-fill"}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
                             onClick={() => {
                               deleteTimeCard(c.id);
                               if (selectedId === c.id) setSelectedId(null);
