@@ -110,7 +110,7 @@ function MyPortalPage() {
           <EmptyState
             icon={<UserRound className="h-5 w-5" />}
             title="No employee record linked"
-            caption={`No employee profile matches ${email || "your account"}. Ask an administrator to set your work email on your employee record.`}
+            description={`No employee profile matches ${email || "your account"}. Ask an administrator to set your work email on your employee record.`}
           />
         </div>
       </AppShell>
