@@ -10,6 +10,7 @@ import {
   FileText,
   FolderKanban,
   Gauge,
+  GraduationCap,
   HardHat,
   Handshake,
   Layers,
