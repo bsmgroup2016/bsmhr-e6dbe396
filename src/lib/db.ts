@@ -16,6 +16,7 @@ import type {
   BranchPrefix, EmployeeCertification, TimeCard, ClaimSheet,
   TimeCardEntry, ClaimSheetRow,
 } from "@/lib/types";
+import type { ClientContract } from "@/lib/types";
 
 type Row = Record<string, any>;
 
