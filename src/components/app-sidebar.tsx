@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
   BadgeDollarSign,
@@ -8,6 +9,7 @@ import {
   CalendarClock,
   ScanLine,
   BellRing,
+  ChevronRight,
   ClipboardList,
   FileText,
   FolderKanban,
@@ -42,6 +44,9 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
@@ -97,16 +102,14 @@ const navGroups: { label: string; items: NavItem[] }[] = [
       { title: "Inventory", url: "/inventory", icon: Package },
     ],
   },
-  {
-    label: "Administration",
-    items: [
-      { title: "Approvals", url: "/approvals", icon: ClipboardList },
-      { title: "Reports", url: "/reports", icon: ClipboardList },
-      { title: "Users & Permissions", url: "/users", icon: ShieldCheck },
-      { title: "Audit Logs", url: "/audit-logs", icon: HardHat },
-      { title: "Settings", url: "/settings", icon: Settings },
-    ],
-  },
+];
+
+const adminItems: NavItem[] = [
+  { title: "Approvals", url: "/approvals", icon: ClipboardList },
+  { title: "Reports", url: "/reports", icon: ClipboardList },
+  { title: "Users & Permissions", url: "/users", icon: ShieldCheck },
+  { title: "Audit Logs", url: "/audit-logs", icon: HardHat },
+  { title: "General Settings", url: "/settings", icon: Settings },
 ];
 
 export function AppSidebar() {
@@ -126,6 +129,11 @@ export function AppSidebar() {
     if (path === "/") return currentPath === "/";
     return currentPath === path || currentPath.startsWith(`${path}/`);
   };
+
+  const visibleAdminItems = adminItems.filter((item) => canAccess(item.url, roles));
+  const adminActive = visibleAdminItems.some((item) => isActive(item.url));
+  const [adminOpen, setAdminOpen] = useState(adminActive);
+  const settingsOpen = adminOpen || adminActive;
 
   const initials = user?.email?.slice(0, 2).toUpperCase() ?? "BS";
   const roleLabel = roles.length ? roles.join(", ").replace(/_/g, " ") : "No role assigned";
@@ -173,6 +181,44 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroup>
         ))}
+
+        {visibleAdminItems.length > 0 && (
+          <SidebarGroup>
+            <SidebarGroupLabel className="text-sidebar-foreground/50">Administration</SidebarGroupLabel>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  isActive={adminActive}
+                  tooltip="Settings"
+                  onClick={() => setAdminOpen((v) => !v)}
+                >
+                  <Settings className="h-4 w-4 shrink-0" />
+                  <span className="truncate">Settings</span>
+                  <ChevronRight
+                    className={cn(
+                      "ml-auto h-4 w-4 shrink-0 transition-transform",
+                      settingsOpen && "rotate-90",
+                    )}
+                  />
+                </SidebarMenuButton>
+                {settingsOpen && !collapsed && (
+                  <SidebarMenuSub>
+                    {visibleAdminItems.map((item) => (
+                      <SidebarMenuSubItem key={item.title}>
+                        <SidebarMenuSubButton asChild isActive={isActive(item.url)}>
+                          <Link to={item.url} className="flex items-center gap-2">
+                            <item.icon className="h-4 w-4 shrink-0" />
+                            <span className="truncate">{item.title}</span>
+                          </Link>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                    ))}
+                  </SidebarMenuSub>
+                )}
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroup>
+        )}
       </SidebarContent>
 
       <SidebarFooter className="border-t border-sidebar-border">
