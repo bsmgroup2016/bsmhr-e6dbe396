@@ -100,17 +100,22 @@ function expiryBadge(passExpiry: string) {
 }
 
 const EMPLOYEE_IMPORT_COLUMNS: ImportColumn[] = [
+  { key: "employeeCode", label: "Employee ID", example: "BS12" },
   { key: "name", label: "Name", required: true, example: "Rahman Md" },
-  { key: "fin", label: "FIN", required: true, example: "G1234567X" },
-  { key: "nationality", label: "Nationality", required: true, example: "Bangladesh" },
-  { key: "passType", label: "Pass Type", required: true, example: "Work Permit" },
+  { key: "fin", label: "FIN", example: "G1234567X" },
+  { key: "passportNumber", label: "Passport Number", example: "BX0912345" },
+  { key: "nationality", label: "Nationality", example: "Bangladesh" },
+  { key: "passType", label: "Pass Type", example: "Work Permit" },
   { key: "passExpiry", label: "Pass Expiry", example: "2027-05-31" },
+  { key: "workPermitNumber", label: "Work Permit Number", example: "0-1234567" },
+  { key: "branch", label: "Branch", example: "BSM Engineering" },
   { key: "trade", label: "Trade", example: "Welder" },
   { key: "status", label: "Status", example: "Active" },
   { key: "basicSalary", label: "Basic Salary", example: "1400" },
   { key: "joinedOn", label: "Joined On", example: "2025-01-15" },
   { key: "site", label: "Site", example: "Tuas Yard" },
   { key: "phone", label: "Phone", example: "+65 8123 4567" },
+  { key: "email", label: "Email", example: "worker@bsm.sg" },
   { key: "levyRate", label: "Levy Rate", example: "300" },
   { key: "dormitory", label: "Dormitory", example: "Kranji Dorm B" },
 ];
@@ -202,6 +207,7 @@ export default function WorkforcePage() {
   function handleImport(rows: Record<string, string>[]) {
     const errors: string[] = [];
     let imported = 0;
+    let updated = 0;
     const existing = getEmployees();
 
     rows.forEach((row, index) => {
@@ -235,11 +241,33 @@ export default function WorkforcePage() {
         phone: get("phone"),
         levyRate: Number(get("levyRate").replace(/[^0-9.-]/g, "")) || 0,
         dormitory: get("dormitory"),
+        email: get("email") || undefined,
+        branch: get("branch") || undefined,
+        passportNumber: get("passportNumber") || undefined,
+        workPermitNumber: get("workPermitNumber") || undefined,
       };
 
-      const match = existing.find((e) => e.fin.toUpperCase() === fin);
+      const code = get("employeeCode").trim();
+      // Employee ID is the primary identifier — match on it first, FIN second.
+      const byCode = code
+        ? existing.find((e) => (e.employeeCode ?? "").toLowerCase() === code.toLowerCase())
+        : undefined;
+      if (byCode) {
+        updateEmployee(byCode.id, payload);
+        updated += 1;
+        imported += 1;
+        return;
+      }
+      if (code) {
+        addEmployee({ ...payload, employeeCode: code } as never);
+        imported += 1;
+        return;
+      }
+
+      const match = fin ? existing.find((e) => e.fin.toUpperCase() === fin) : undefined;
       if (match) {
         updateEmployee(match.id, payload);
+        updated += 1;
       } else {
         addEmployee(payload);
       }
