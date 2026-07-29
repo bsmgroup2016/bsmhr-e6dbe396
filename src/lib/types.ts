@@ -1,6 +1,5 @@
 export type AppRole = "admin" | "manager" | "supervisor" | "client" | "hr" | "payroll";
-
-export interface User {
+export type EmployeeStatus =
   id: string;
   name: string;
   email: string;
