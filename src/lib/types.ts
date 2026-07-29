@@ -457,3 +457,46 @@ export interface Trip {
   createdAt: string;
   updatedAt: string;
 }
+
+/* ---------- Phase 8: assets & PPE ---------- */
+export type AssetCategory = "PPE" | "Tool" | "Equipment" | "Machinery" | "IT" | "Vehicle Part" | "Other";
+export type AssetStatus = "Available" | "Issued" | "Under Repair" | "Lost" | "Damaged" | "Retired";
+export type IssuanceStatus = "Issued" | "Returned" | "Lost" | "Damaged";
+export type AssetCondition = "New" | "Good" | "Fair" | "Poor" | "Unusable";
+
+export interface Asset {
+  id: string;
+  companyId?: string;
+  assetCode: string;
+  name: string;
+  category: AssetCategory;
+  serialNo?: string;
+  brand?: string;
+  quantity: number;
+  unitCost: number;
+  purchaseDate?: string;
+  warrantyExpiry?: string;
+  calibrationDue?: string;
+  location?: string;
+  status: AssetStatus;
+  remarks?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AssetIssuance {
+  id: string;
+  assetId: string;
+  employeeId: string;
+  siteId?: string;
+  quantity: number;
+  issueDate: string;
+  dueDate?: string;
+  returnDate?: string;
+  conditionOut: AssetCondition;
+  conditionIn?: AssetCondition;
+  status: IssuanceStatus;
+  remarks?: string;
+  createdAt: string;
+  updatedAt: string;
+}
