@@ -574,6 +574,34 @@ export interface LoadedData {
   timeCards: TimeCard[]; claimSheets: ClaimSheet[];
 }
 
+/* ---------- client contracts (recurring auto-invoicing) ---------- */
+export const fromContract = (r: Row): ClientContract => ({
+  id: r.id, companyId: r.company_id ?? undefined, clientId: r.client_id,
+  projectId: r.project_id ?? undefined, contractNo: r.contract_no ?? "",
+  title: r.title ?? "", startDate: d(r.start_date), endDate: d(r.end_date),
+  billingCycle: (r.billing_cycle ?? "Monthly") as ClientContract["billingCycle"],
+  billingDay: Number(r.billing_day ?? 1),
+  billingSource: (r.billing_source ?? "Timesheet") as ClientContract["billingSource"],
+  fixedAmount: Number(r.fixed_amount ?? 0), gstRate: Number(r.gst_rate ?? 9),
+  paymentTermsDays: Number(r.payment_terms_days ?? 30),
+  autoInvoice: r.auto_invoice ?? true,
+  lastInvoicedOn: d(r.last_invoiced_on), nextInvoiceOn: d(r.next_invoice_on),
+  status: (r.status ?? "Active") as ClientContract["status"],
+  remarks: r.remarks ?? undefined,
+  createdAt: r.created_at, updatedAt: r.updated_at,
+});
+
+export const toContract = (c: Partial<ClientContract>): Row => ({
+  company_id: c.companyId || null, client_id: c.clientId, project_id: c.projectId || null,
+  contract_no: c.contractNo, title: c.title ?? "", start_date: nullDate(c.startDate),
+  end_date: nullDate(c.endDate), billing_cycle: c.billingCycle ?? "Monthly",
+  billing_day: c.billingDay ?? 1, billing_source: c.billingSource ?? "Timesheet",
+  fixed_amount: c.fixedAmount ?? 0, gst_rate: c.gstRate ?? 9,
+  payment_terms_days: c.paymentTermsDays ?? 30, auto_invoice: c.autoInvoice ?? true,
+  last_invoiced_on: nullDate(c.lastInvoicedOn), next_invoice_on: nullDate(c.nextInvoiceOn),
+  status: c.status ?? "Active", remarks: c.remarks ?? null,
+});
+
 /* ---------- branch prefixes / certifications / time cards / claim sheets ---------- */
 export const fromBranchPrefix = (r: Row): BranchPrefix => ({
   id: r.id, code: r.code, name: r.name, companyId: r.company_id ?? undefined,
