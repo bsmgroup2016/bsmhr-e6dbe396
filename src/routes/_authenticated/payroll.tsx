@@ -542,6 +542,10 @@ function PayslipDialog({
             <Printer className="mr-1 h-4 w-4" />
             Print
           </Button>
+          <Button onClick={() => void downloadPayslipPdf(entry, { employee, companyName })}>
+            <FileDown className="mr-1 h-4 w-4" />
+            Download PDF
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
