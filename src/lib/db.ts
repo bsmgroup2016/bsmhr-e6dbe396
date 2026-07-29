@@ -446,7 +446,7 @@ export async function loadAll(): Promise<LoadedData> {
     companies, employees, clients, projects, sites, assignments,
     documents, attendance, payroll, approvals, auditLogs, profiles, roles, leaveRequests,
     rateAgreements, invoices, dormitories, allocations, vehicles, trips,
-    assets, issuances,
+    assets, issuances, courses, trainings, incidents,
   ] = await Promise.all([
     all("companies"), all("employees"), all("clients"), all("projects"), all("sites"),
     all("assignments"), all("employee_documents"), all("attendance"), all("payroll_entries"),
@@ -454,6 +454,7 @@ export async function loadAll(): Promise<LoadedData> {
     all("rate_agreements"), all("invoices"), all("dormitories"), all("bed_allocations"),
     all("vehicles"), all("trips"),
     all("assets"), all("asset_issuances"),
+    all("training_courses"), all("training_records"), all("safety_incidents"),
   ]);
 
   const roleByUser = new Map<string, string>();
@@ -496,5 +497,8 @@ export async function loadAll(): Promise<LoadedData> {
     trips: trips.map(fromTrip),
     assets: assets.map(fromAsset),
     issuances: issuances.map(fromIssuance),
+    courses: courses.map(fromCourse),
+    trainings: trainings.map(fromTraining),
+    incidents: incidents.map(fromIncident),
   };
 }
