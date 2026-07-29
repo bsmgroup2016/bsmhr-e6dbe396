@@ -376,7 +376,7 @@ export default function FinancePage() {
                         <TableCell className="max-w-[240px] truncate">{e.description}</TableCell>
                         <TableCell>{e.vendor || "—"}</TableCell>
                         <TableCell className="text-right">{sgd(e.amount)}</TableCell>
-                        <TableCell><StatusBadge variant={expenseVariant(e.status)}>{e.status}</StatusBadge></TableCell>
+                        <TableCell><StatusBadge variant={expenseVariant(e.status)} label={e.status} /></TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-1">
                             {e.status !== "Paid" && (
