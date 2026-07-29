@@ -17,7 +17,12 @@ export const Route = createFileRoute("/api/public/provision-employee")({
         }
 
         try {
-          const result = await provisionEmployee(user.id, user.email, phone);
+          const result = await provisionEmployee(
+            user.id,
+            user.email,
+            phone,
+            user.emailVerified,
+          );
           return Response.json(result);
         } catch {
           return new Response("Provisioning failed", { status: 500 });
