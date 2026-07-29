@@ -58,6 +58,7 @@ const navGroups: { label: string; items: NavItem[] }[] = [
       { title: "Documents", url: "/documents", icon: FileText },
       { title: "Compliance", url: "/compliance", icon: ShieldCheck },
       { title: "Time Management", url: "/time-management", icon: CalendarClock },
+      { title: "Leave", url: "/leave", icon: CalendarClock },
       { title: "Payroll", url: "/payroll", icon: Briefcase },
     ],
   },
