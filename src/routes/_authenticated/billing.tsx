@@ -13,6 +13,8 @@ import {
   CheckCircle2,
   Percent,
   Banknote,
+  Repeat,
+  PlayCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -64,14 +66,25 @@ import {
   getRateAgreements,
   addRateAgreement,
   deleteRateAgreement,
+  getContracts,
+  addContract,
+  updateContract,
+  deleteContract,
+  contractsDue,
+  runContractBilling,
+  firstRunDate,
   getCurrentCompany,
   getCompanies,
 } from "@/lib/store";
-import type { Invoice, InvoiceLine, InvoiceStatus, RateUnit } from "@/lib/types";
+import type {
+  BillingCycle, BillingSource, ClientContract,
+  Invoice, InvoiceLine, InvoiceStatus, RateUnit,
+} from "@/lib/types";
 
 const GST_DEFAULT = 9;
 const statuses: InvoiceStatus[] = ["Draft", "Sent", "Partially Paid", "Paid", "Overdue", "Cancelled"];
 const units: RateUnit[] = ["Hourly", "Daily", "Monthly"];
+const cycles: BillingCycle[] = ["Weekly", "Fortnightly", "Monthly"];
 
 const money = (n: number) =>
   `S$${n.toLocaleString("en-SG", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -93,12 +106,14 @@ export const Route = createFileRoute("/_authenticated/billing")({
 function BillingPage() {
   const [invoices, setInvoices] = useState(getInvoices());
   const [rates, setRates] = useState(getRateAgreements());
+  const [contracts, setContracts] = useState(getContracts());
   const [clients] = useState(getClients());
   const [projects] = useState(getProjects());
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<InvoiceStatus | "all">("all");
   const [isGenOpen, setIsGenOpen] = useState(false);
   const [isRateOpen, setIsRateOpen] = useState(false);
+  const [isContractOpen, setIsContractOpen] = useState(false);
   const [preview, setPreview] = useState<Invoice | null>(null);
 
   const companyId = getCurrentCompany();
@@ -107,6 +122,7 @@ function BillingPage() {
   function refresh() {
     setInvoices(getInvoices());
     setRates(getRateAgreements());
+    setContracts(getContracts());
   }
 
   const filtered = invoices.filter((i) => {
