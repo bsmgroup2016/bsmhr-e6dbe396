@@ -10,6 +10,7 @@ import {
   Upload,
   Trash2,
   Save,
+  HardDrive,
 } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
@@ -32,6 +33,7 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs";
 import { getBranches, getCurrentBranch, setCurrentBranch, exportState, importState, resetState } from "@/lib/store";
+import { getR2Config, setR2Config } from "@/lib/r2";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({
@@ -51,6 +53,25 @@ export default function SettingsPage() {
   const [exportData, setExportData] = useState("");
   const [importData, setImportData] = useState("");
   const [saved, setSaved] = useState(false);
+  const [r2, setR2] = useState(() => getR2Config());
+  const [r2Saved, setR2Saved] = useState(false);
+  const [r2Test, setR2Test] = useState<string | null>(null);
+
+  function handleSaveR2() {
+    setR2Config(r2);
+    setR2Saved(true);
+    setTimeout(() => setR2Saved(false), 2000);
+  }
+
+  async function handleTestR2() {
+    setR2Test("Checking...");
+    try {
+      const res = await fetch(`${r2.workerUrl.replace(/\/+$/, "")}/upload`, { method: "OPTIONS" });
+      setR2Test(res.ok || res.status === 204 ? "Worker reachable ✓" : `Worker responded ${res.status}`);
+    } catch {
+      setR2Test("Could not reach the Worker URL");
+    }
+  }
 
   function handleSave() {
     setCurrentBranch(currentBranch);
@@ -89,10 +110,11 @@ export default function SettingsPage() {
         </div>
 
         <Tabs defaultValue="general" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 sm:w-auto">
+          <TabsList className="grid w-full grid-cols-5 sm:w-auto">
             <TabsTrigger value="general">General</TabsTrigger>
             <TabsTrigger value="notifications">Notifications</TabsTrigger>
             <TabsTrigger value="security">Security</TabsTrigger>
+            <TabsTrigger value="storage">Storage</TabsTrigger>
             <TabsTrigger value="data">Data</TabsTrigger>
           </TabsList>
 
@@ -202,6 +224,51 @@ export default function SettingsPage() {
                   </div>
                   <Switch defaultChecked />
                 </div>
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="storage" className="mt-4 space-y-4">
+            <div className="rounded-xl border bg-card p-5 shadow-sm">
+              <div className="mb-4 flex items-center gap-2">
+                <HardDrive className="h-5 w-5 text-muted-foreground" />
+                <h2 className="text-lg font-semibold">Cloudflare R2 file storage</h2>
+              </div>
+              <p className="mb-4 text-sm text-muted-foreground">
+                All uploaded files (work permits, ICs, certificates, time cards) are stored in your
+                Cloudflare R2 bucket through a Worker. Only the file link is saved in the database.
+                Deployment steps are in the <code className="rounded bg-muted px-1">worker/</code> folder.
+              </p>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2 sm:col-span-2">
+                  <Label htmlFor="workerUrl">Worker URL</Label>
+                  <Input
+                    id="workerUrl"
+                    value={r2.workerUrl}
+                    onChange={(e) => setR2({ ...r2, workerUrl: e.target.value })}
+                    placeholder="https://bsm-storage.your-subdomain.workers.dev"
+                  />
+                </div>
+                <div className="space-y-2 sm:col-span-2">
+                  <Label htmlFor="uploadToken">Upload token</Label>
+                  <Input
+                    id="uploadToken"
+                    type="password"
+                    value={r2.uploadToken}
+                    onChange={(e) => setR2({ ...r2, uploadToken: e.target.value })}
+                    placeholder="Same value as UPLOAD_TOKEN in the Worker"
+                  />
+                </div>
+              </div>
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                <Button onClick={handleSaveR2}>
+                  <Save className="mr-2 h-4 w-4" />
+                  {r2Saved ? "Saved!" : "Save storage settings"}
+                </Button>
+                <Button variant="outline" onClick={handleTestR2} disabled={!r2.workerUrl}>
+                  Test connection
+                </Button>
+                {r2Test && <span className="text-sm text-muted-foreground">{r2Test}</span>}
               </div>
             </div>
           </TabsContent>

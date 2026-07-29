@@ -60,6 +60,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { getDocuments, getEmployees, addDocument, updateDocument, deleteDocument } from "@/lib/store";
+import { FileUpload } from "@/components/file-upload";
 import type { EmployeeDocument, DocumentType, DocumentStatus } from "@/lib/types";
 
 const documentTypes: DocumentType[] = [
@@ -415,10 +416,12 @@ function DocumentForm({ employees, document, onSubmit }: { employees: ReturnType
           <Input id="expiryDate" name="expiryDate" type="date" defaultValue={document?.expiryDate} />
         </div>
       </div>
-      <div className="space-y-2">
-        <Label htmlFor="fileUrl">File URL (optional)</Label>
-        <Input id="fileUrl" name="fileUrl" defaultValue={document?.fileUrl} placeholder="https://..." />
-      </div>
+      <FileUpload
+        name="fileUrl"
+        label="Document file"
+        folder="documents"
+        defaultValue={document?.fileUrl}
+      />
       <DialogFooter>
         <Button type="submit">{document ? "Save changes" : "Add document"}</Button>
       </DialogFooter>
