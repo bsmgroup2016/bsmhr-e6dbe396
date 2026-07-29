@@ -33,7 +33,7 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs";
 import { getBranches, getCurrentBranch, setCurrentBranch, exportState, importState, resetState } from "@/lib/store";
-import { getR2Config, setR2Config } from "@/lib/r2";
+import { checkR2Status } from "@/lib/r2";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({
@@ -53,23 +53,16 @@ export default function SettingsPage() {
   const [exportData, setExportData] = useState("");
   const [importData, setImportData] = useState("");
   const [saved, setSaved] = useState(false);
-  const [r2, setR2] = useState(() => getR2Config());
-  const [r2Saved, setR2Saved] = useState(false);
   const [r2Test, setR2Test] = useState<string | null>(null);
-
-  function handleSaveR2() {
-    setR2Config(r2);
-    setR2Saved(true);
-    setTimeout(() => setR2Saved(false), 2000);
-  }
 
   async function handleTestR2() {
     setR2Test("Checking...");
     try {
-      const res = await fetch(`${r2.workerUrl.replace(/\/+$/, "")}/upload`, { method: "OPTIONS" });
-      setR2Test(res.ok || res.status === 204 ? "Worker reachable ✓" : `Worker responded ${res.status}`);
+      const status = await checkR2Status();
+      if (!status.configured) setR2Test(status.message || "R2 keys are missing");
+      else setR2Test(status.reachable ? "R2 bucket connected ✓" : `R2 responded ${status.status}`);
     } catch {
-      setR2Test("Could not reach the Worker URL");
+      setR2Test("Could not reach the storage service");
     }
   }
 
@@ -236,37 +229,12 @@ export default function SettingsPage() {
               </div>
               <p className="mb-4 text-sm text-muted-foreground">
                 All uploaded files (work permits, ICs, certificates, time cards) are stored in your
-                Cloudflare R2 bucket through a Worker. Only the file link is saved in the database.
-                Deployment steps are in the <code className="rounded bg-muted px-1">worker/</code> folder.
+                Cloudflare R2 bucket. Your R2 keys are saved securely as project secrets — nothing to
+                fill in here. Only the file link is saved in the database.
               </p>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2 sm:col-span-2">
-                  <Label htmlFor="workerUrl">Worker URL</Label>
-                  <Input
-                    id="workerUrl"
-                    value={r2.workerUrl}
-                    onChange={(e) => setR2({ ...r2, workerUrl: e.target.value })}
-                    placeholder="https://bsm-storage.your-subdomain.workers.dev"
-                  />
-                </div>
-                <div className="space-y-2 sm:col-span-2">
-                  <Label htmlFor="uploadToken">Upload token</Label>
-                  <Input
-                    id="uploadToken"
-                    type="password"
-                    value={r2.uploadToken}
-                    onChange={(e) => setR2({ ...r2, uploadToken: e.target.value })}
-                    placeholder="Same value as UPLOAD_TOKEN in the Worker"
-                  />
-                </div>
-              </div>
-              <div className="mt-4 flex flex-wrap items-center gap-2">
-                <Button onClick={handleSaveR2}>
-                  <Save className="mr-2 h-4 w-4" />
-                  {r2Saved ? "Saved!" : "Save storage settings"}
-                </Button>
-                <Button variant="outline" onClick={handleTestR2} disabled={!r2.workerUrl}>
-                  Test connection
+              <div className="flex flex-wrap items-center gap-2">
+                <Button variant="outline" onClick={handleTestR2}>
+                  Test R2 connection
                 </Button>
                 {r2Test && <span className="text-sm text-muted-foreground">{r2Test}</span>}
               </div>

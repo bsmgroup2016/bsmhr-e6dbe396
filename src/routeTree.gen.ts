@@ -25,6 +25,10 @@ import { Route as AuthenticatedCompaniesRouteImport } from './routes/_authentica
 import { Route as AuthenticatedClientsRouteImport } from './routes/_authenticated/clients'
 import { Route as AuthenticatedAuditLogsRouteImport } from './routes/_authenticated/audit-logs'
 import { Route as AuthenticatedApprovalsRouteImport } from './routes/_authenticated/approvals'
+import { Route as ApiPublicR2UploadRouteImport } from './routes/api/public/r2-upload'
+import { Route as ApiPublicR2StatusRouteImport } from './routes/api/public/r2-status'
+import { Route as ApiPublicR2FileRouteImport } from './routes/api/public/r2-file'
+import { Route as ApiPublicR2DeleteRouteImport } from './routes/api/public/r2-delete'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -106,6 +110,26 @@ const AuthenticatedApprovalsRoute = AuthenticatedApprovalsRouteImport.update({
   path: '/approvals',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const ApiPublicR2UploadRoute = ApiPublicR2UploadRouteImport.update({
+  id: '/api/public/r2-upload',
+  path: '/api/public/r2-upload',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicR2StatusRoute = ApiPublicR2StatusRouteImport.update({
+  id: '/api/public/r2-status',
+  path: '/api/public/r2-status',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicR2FileRoute = ApiPublicR2FileRouteImport.update({
+  id: '/api/public/r2-file',
+  path: '/api/public/r2-file',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicR2DeleteRoute = ApiPublicR2DeleteRouteImport.update({
+  id: '/api/public/r2-delete',
+  path: '/api/public/r2-delete',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
@@ -123,6 +147,10 @@ export interface FileRoutesByFullPath {
   '/time-management': typeof AuthenticatedTimeManagementRoute
   '/users': typeof AuthenticatedUsersRoute
   '/workforce': typeof AuthenticatedWorkforceRoute
+  '/api/public/r2-delete': typeof ApiPublicR2DeleteRoute
+  '/api/public/r2-file': typeof ApiPublicR2FileRoute
+  '/api/public/r2-status': typeof ApiPublicR2StatusRoute
+  '/api/public/r2-upload': typeof ApiPublicR2UploadRoute
 }
 export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
@@ -140,6 +168,10 @@ export interface FileRoutesByTo {
   '/users': typeof AuthenticatedUsersRoute
   '/workforce': typeof AuthenticatedWorkforceRoute
   '/': typeof AuthenticatedIndexRoute
+  '/api/public/r2-delete': typeof ApiPublicR2DeleteRoute
+  '/api/public/r2-file': typeof ApiPublicR2FileRoute
+  '/api/public/r2-status': typeof ApiPublicR2StatusRoute
+  '/api/public/r2-upload': typeof ApiPublicR2UploadRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -159,6 +191,10 @@ export interface FileRoutesById {
   '/_authenticated/users': typeof AuthenticatedUsersRoute
   '/_authenticated/workforce': typeof AuthenticatedWorkforceRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/api/public/r2-delete': typeof ApiPublicR2DeleteRoute
+  '/api/public/r2-file': typeof ApiPublicR2FileRoute
+  '/api/public/r2-status': typeof ApiPublicR2StatusRoute
+  '/api/public/r2-upload': typeof ApiPublicR2UploadRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -178,6 +214,10 @@ export interface FileRouteTypes {
     | '/time-management'
     | '/users'
     | '/workforce'
+    | '/api/public/r2-delete'
+    | '/api/public/r2-file'
+    | '/api/public/r2-status'
+    | '/api/public/r2-upload'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/auth'
@@ -195,6 +235,10 @@ export interface FileRouteTypes {
     | '/users'
     | '/workforce'
     | '/'
+    | '/api/public/r2-delete'
+    | '/api/public/r2-file'
+    | '/api/public/r2-status'
+    | '/api/public/r2-upload'
   id:
     | '__root__'
     | '/_authenticated'
@@ -213,11 +257,19 @@ export interface FileRouteTypes {
     | '/_authenticated/users'
     | '/_authenticated/workforce'
     | '/_authenticated/'
+    | '/api/public/r2-delete'
+    | '/api/public/r2-file'
+    | '/api/public/r2-status'
+    | '/api/public/r2-upload'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ApiPublicR2DeleteRoute: typeof ApiPublicR2DeleteRoute
+  ApiPublicR2FileRoute: typeof ApiPublicR2FileRoute
+  ApiPublicR2StatusRoute: typeof ApiPublicR2StatusRoute
+  ApiPublicR2UploadRoute: typeof ApiPublicR2UploadRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -334,6 +386,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedApprovalsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/r2-upload': {
+      id: '/api/public/r2-upload'
+      path: '/api/public/r2-upload'
+      fullPath: '/api/public/r2-upload'
+      preLoaderRoute: typeof ApiPublicR2UploadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/r2-status': {
+      id: '/api/public/r2-status'
+      path: '/api/public/r2-status'
+      fullPath: '/api/public/r2-status'
+      preLoaderRoute: typeof ApiPublicR2StatusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/r2-file': {
+      id: '/api/public/r2-file'
+      path: '/api/public/r2-file'
+      fullPath: '/api/public/r2-file'
+      preLoaderRoute: typeof ApiPublicR2FileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/r2-delete': {
+      id: '/api/public/r2-delete'
+      path: '/api/public/r2-delete'
+      fullPath: '/api/public/r2-delete'
+      preLoaderRoute: typeof ApiPublicR2DeleteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -377,6 +457,10 @@ const AuthenticatedRouteRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  ApiPublicR2DeleteRoute: ApiPublicR2DeleteRoute,
+  ApiPublicR2FileRoute: ApiPublicR2FileRoute,
+  ApiPublicR2StatusRoute: ApiPublicR2StatusRoute,
+  ApiPublicR2UploadRoute: ApiPublicR2UploadRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
