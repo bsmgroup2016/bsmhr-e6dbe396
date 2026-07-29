@@ -65,6 +65,7 @@ import type { Employee, PayrollEntry, PayrollStatus } from "@/lib/types";
 import { pick, type ImportColumn } from "@/lib/xlsx";
 import { exportCsv, timestampedName } from "@/lib/xlsx";
 import { bankFileRows } from "@/lib/ops";
+import { computeStatutory, round2 } from "@/lib/sg-payroll";
 
 const statuses: PayrollStatus[] = ["Draft", "Pending Approval", "Approved", "Paid", "Rejected"];
 
@@ -169,10 +170,73 @@ export default function PayrollPage() {
       Deductions: entry.deductions,
       "CPF Employee": entry.cpfEmployee,
       "CPF Employer": entry.cpfEmployer,
+      SDL: entry.sdl ?? 0,
+      "SHG Fund": entry.shgFund ?? "None",
+      "SHG Amount": entry.shgAmount ?? 0,
       Levies: entry.levies,
       "Net Pay": entry.netPay,
+      "Employer Cost": entry.employerCost ?? 0,
       Status: entry.status,
     };
+  }
+
+  /** CPF / SDL / SHG submission sheet for the selected month. */
+  async function exportCpfReport() {
+    if (!filtered.length) {
+      toast.error("No payroll entries for this month");
+      return;
+    }
+    const rows = filtered.map((p) => {
+      const emp = employees.find((e) => e.id === p.employeeId);
+      const gross = p.basicSalary + p.overtimePay + p.allowances;
+      return {
+        Month: p.month,
+        "Employee Code": emp?.employeeCode ?? "",
+        Name: emp?.name ?? "",
+        "NRIC / FIN": emp?.fin ?? "",
+        "Pass Type": emp?.passType ?? "",
+        "PR Status": emp?.prStatus ?? "Citizen",
+        "Ordinary Wage": gross,
+        "CPF Employee": p.cpfEmployee,
+        "CPF Employer": p.cpfEmployer,
+        "CPF Total": round2(p.cpfEmployee + p.cpfEmployer),
+        SDL: p.sdl ?? 0,
+        "SHG Fund": p.shgFund ?? "None",
+        "SHG Amount": p.shgAmount ?? 0,
+        "Foreign Worker Levy": p.levies,
+        "Employer Cost": p.employerCost ?? 0,
+      };
+    });
+    await exportCsv(rows, timestampedName(`cpf_statutory_${month}`, "csv"));
+    toast.success(`CPF submission sheet exported (${rows.length} workers)`);
+  }
+
+  /** Recalculate CPF/SDL/SHG for every entry of the month from current profiles. */
+  function recalcStatutory() {
+    if (!filtered.length) {
+      toast.error("No payroll entries for this month");
+      return;
+    }
+    let updated = 0;
+    filtered.forEach((p) => {
+      const emp = employees.find((e) => e.id === p.employeeId);
+      if (!emp) return;
+      const gross = p.basicSalary + p.overtimePay + p.allowances;
+      const stat = computeStatutory(emp, gross);
+      updatePayroll(p.id, {
+        cpfEmployee: stat.cpfEmployee,
+        cpfEmployer: stat.cpfEmployer,
+        sdl: stat.sdl,
+        shgFund: stat.shgFund,
+        shgAmount: stat.shgAmount,
+        levies: stat.levy,
+        employerCost: round2(stat.employerCost - p.deductions),
+        netPay: round2(gross - p.deductions - stat.cpfEmployee - stat.shgAmount),
+      });
+      updated += 1;
+    });
+    refresh();
+    toast.success(`Statutory contributions recalculated for ${updated} workers`);
   }
 
   function handleImport(rows: Record<string, string>[]) {
