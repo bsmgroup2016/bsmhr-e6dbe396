@@ -110,7 +110,7 @@ function MyPortalPage() {
           <EmptyState
             icon={<UserRound className="h-5 w-5" />}
             title="No employee record linked"
-            description={`No employee profile matches ${email || "your account"}. Ask an administrator to set your work email on your employee record.`}
+            caption={`No employee profile matches ${email || "your account"}. Ask an administrator to set your work email on your employee record.`}
           />
         </div>
       </AppShell>
@@ -231,25 +231,25 @@ function MyPortalPage() {
             title="Pass status"
             value={passDays === null ? "—" : `${passDays} days`}
             icon={<IdCard className="h-5 w-5" />}
-            description={`${employee.passType} · expires ${employee.passExpiry}`}
+            caption={`${employee.passType} · expires ${employee.passExpiry}`}
           />
           <SummaryCard
             title="Leave taken"
             value={`${approvedLeaveDays} days`}
             icon={<CalendarPlus className="h-5 w-5" />}
-            description={`${leaves.filter((l) => l.status === "Pending").length} pending`}
+            caption={`${leaves.filter((l) => l.status === "Pending").length} pending`}
           />
           <SummaryCard
             title="Latest net pay"
             value={lastPayslip ? `S$${lastPayslip.netPay.toLocaleString()}` : "—"}
             icon={<Wallet className="h-5 w-5" />}
-            description={lastPayslip ? lastPayslip.month : "No payslip yet"}
+            caption={lastPayslip ? lastPayslip.month : "No payslip yet"}
           />
           <SummaryCard
             title="Documents"
             value={String(documents.length)}
             icon={<FileText className="h-5 w-5" />}
-            description={`${documents.filter((d) => d.verified).length} verified`}
+            caption={`${documents.filter((d) => d.verified).length} verified`}
           />
         </div>
 
@@ -315,7 +315,7 @@ function MyPortalPage() {
                         <TableCell>{l.endDate}</TableCell>
                         <TableCell>{l.days}</TableCell>
                         <TableCell>
-                          <StatusBadge status={l.status} />
+                          <StatusBadge label={l.status} />
                         </TableCell>
                       </TableRow>
                     ))
@@ -360,7 +360,7 @@ function MyPortalPage() {
                             {p.netPay.toLocaleString()}
                           </TableCell>
                           <TableCell>
-                            <StatusBadge status={p.status} />
+                            <StatusBadge label={p.status} />
                           </TableCell>
                         </TableRow>
                       ))
@@ -395,7 +395,7 @@ function MyPortalPage() {
                         <TableCell>{d.type}</TableCell>
                         <TableCell>{d.expiryDate ?? "-"}</TableCell>
                         <TableCell>
-                          <StatusBadge status={d.status} />
+                          <StatusBadge label={d.status} />
                         </TableCell>
                       </TableRow>
                     ))
