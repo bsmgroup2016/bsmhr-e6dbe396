@@ -427,7 +427,22 @@ export default function WorkforcePage() {
                   filtered.map((e) => (
                     <TableRow key={e.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setViewingEmployee(e)}>
                       <TableCell className="font-medium">{e.employeeCode}</TableCell>
-                      <TableCell>{e.name}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          {e.photoUrl ? (
+                            <img
+                              src={e.photoUrl}
+                              alt={e.name}
+                              className="h-7 w-7 rounded-full object-cover ring-1 ring-border"
+                            />
+                          ) : (
+                            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-muted text-[10px] font-medium text-muted-foreground">
+                              {e.name.slice(0, 2).toUpperCase()}
+                            </span>
+                          )}
+                          {e.name}
+                        </div>
+                      </TableCell>
                       <TableCell>{e.nationality}</TableCell>
                       <TableCell>{e.fin}</TableCell>
                       <TableCell>
