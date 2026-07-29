@@ -283,10 +283,12 @@ export async function loadAll(): Promise<LoadedData> {
   const [
     companies, employees, clients, projects, sites, assignments,
     documents, attendance, payroll, approvals, auditLogs, profiles, roles, leaveRequests,
+    rateAgreements, invoices,
   ] = await Promise.all([
     all("companies"), all("employees"), all("clients"), all("projects"), all("sites"),
     all("assignments"), all("employee_documents"), all("attendance"), all("payroll_entries"),
     all("approvals"), all("audit_logs"), all("profiles"), all("user_roles"), all("leave_requests"),
+    all("rate_agreements"), all("invoices"),
   ]);
 
   const roleByUser = new Map<string, string>();
@@ -321,5 +323,7 @@ export async function loadAll(): Promise<LoadedData> {
     auditLogs: auditLogs.map(fromAuditLog),
     users,
     leaveRequests: leaveRequests.map(fromLeave),
+    rateAgreements: rateAgreements.map(fromRate),
+    invoices: invoices.map(fromInvoice),
   };
 }
