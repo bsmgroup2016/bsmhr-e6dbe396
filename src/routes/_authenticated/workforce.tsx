@@ -15,8 +15,8 @@ import {
 } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
-import { FileUpload } from "@/components/file-upload";
 import { R2Image } from "@/components/r2-image";
+import { EmployeeForm, employeeFromForm, WORKER_CATEGORIES, DEPLOYMENT_STATUSES } from "@/components/employee-form";
 import { ExportButton, ImportDialog } from "@/components/data-io";
 import { SummaryCard } from "@/components/ui/summary-card";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -62,13 +62,15 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { getEmployees, addEmployee, updateEmployee, deleteEmployee } from "@/lib/store";
-import type { Employee, PassType, EmployeeStatus } from "@/lib/types";
+import { getEmployees, addEmployee, updateEmployee, deleteEmployee, getCurrentCompany } from "@/lib/store";
+import type { Employee, PassType, EmployeeStatus, DeploymentStatus, WorkerCategory } from "@/lib/types";
 import { pick, type ImportColumn } from "@/lib/xlsx";
 
 const passTypes: PassType[] = ["Work Permit", "S Pass", "Employment Pass", "Singaporean/PR"];
-const statuses: EmployeeStatus[] = ["Active", "On Leave", "Deployed", "Inactive"];
-const trades = ["Welder", "Pipe Fitter", "Scaffolder", "Rigger", "General Worker", "Painter", "Foreman", "Site Supervisor", "QA/QC Manager", "Project Engineer", "Safety Officer"];
+const statuses: EmployeeStatus[] = [
+  "Draft", "Pending Approval", "Active", "Inactive", "On Leave", "Deployed",
+  "Suspended", "Resigned", "Terminated", "Repatriated", "Archived",
+];
 
 export const Route = createFileRoute("/_authenticated/workforce")({
   head: () => ({
