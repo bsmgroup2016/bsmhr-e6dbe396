@@ -372,6 +372,14 @@ export default function PayrollPage() {
               <Landmark className="mr-1 h-4 w-4" />
               Bank file
             </Button>
+            <Button size="sm" variant="outline" onClick={recalcStatutory}>
+              <Calculator className="mr-1 h-4 w-4" />
+              Recalc CPF
+            </Button>
+            <Button size="sm" variant="outline" onClick={exportCpfReport}>
+              <FileDown className="mr-1 h-4 w-4" />
+              CPF sheet
+            </Button>
             <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
               <DialogTrigger asChild>
                 <Button size="sm">
