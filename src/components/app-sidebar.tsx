@@ -6,6 +6,7 @@ import {
   Building2,
   Boxes,
   CalendarClock,
+  BellRing,
   ClipboardList,
   FileText,
   FolderKanban,
@@ -50,6 +51,7 @@ const navGroups: { label: string; items: NavItem[] }[] = [
     label: "Overview",
     items: [
       { title: "Dashboard", url: "/", icon: Gauge },
+      { title: "Alerts Centre", url: "/alerts", icon: BellRing },
       { title: "Companies", url: "/companies", icon: Building2 },
     ],
   },
