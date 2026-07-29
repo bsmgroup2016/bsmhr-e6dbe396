@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { keyFromRef, presignGet, verifyUser } from "@/lib/r2.server";
+import { canAccessKey, keyFromRef, presignGet, verifyUser } from "@/lib/r2.server";
 
 export const Route = createFileRoute("/api/public/r2-signed")({
   server: {
@@ -10,12 +10,14 @@ export const Route = createFileRoute("/api/public/r2-signed")({
 
         const key = keyFromRef(new URL(request.url).searchParams.get("key") || "");
         if (!key) return new Response("Missing key", { status: 400 });
+        if (!(await canAccessKey(userId, key)))
+          return new Response("Not found", { status: 404 });
 
         try {
           const url = await presignGet(key, 300);
           return Response.json({ url, expiresIn: 300 });
-        } catch (err) {
-          return new Response(err instanceof Error ? err.message : "Error", { status: 500 });
+        } catch {
+          return new Response("Unable to create link", { status: 500 });
         }
       },
     },
