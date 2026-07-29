@@ -16,6 +16,7 @@ import {
 
 import { AppShell } from "@/components/app-shell";
 import { FileUpload } from "@/components/file-upload";
+import { R2Image } from "@/components/r2-image";
 import { ExportButton, ImportDialog } from "@/components/data-io";
 import { SummaryCard } from "@/components/ui/summary-card";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -429,17 +430,16 @@ export default function WorkforcePage() {
                       <TableCell className="font-medium">{e.employeeCode}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          {e.photoUrl ? (
-                            <img
-                              src={e.photoUrl}
-                              alt={e.name}
-                              className="h-7 w-7 rounded-full object-cover ring-1 ring-border"
-                            />
-                          ) : (
-                            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-muted text-[10px] font-medium text-muted-foreground">
-                              {e.name.slice(0, 2).toUpperCase()}
-                            </span>
-                          )}
+                          <R2Image
+                            src={e.photoUrl}
+                            alt={e.name}
+                            className="h-7 w-7 rounded-full object-cover ring-1 ring-border"
+                            fallback={
+                              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-muted text-[10px] font-medium text-muted-foreground">
+                                {e.name.slice(0, 2).toUpperCase()}
+                              </span>
+                            }
+                          />
                           {e.name}
                         </div>
                       </TableCell>

@@ -14,19 +14,27 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedWorkforceRouteImport } from './routes/_authenticated/workforce'
 import { Route as AuthenticatedUsersRouteImport } from './routes/_authenticated/users'
+import { Route as AuthenticatedTransportRouteImport } from './routes/_authenticated/transport'
 import { Route as AuthenticatedTimeManagementRouteImport } from './routes/_authenticated/time-management'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticated/reports'
+import { Route as AuthenticatedRecruitmentRouteImport } from './routes/_authenticated/recruitment'
 import { Route as AuthenticatedProjectsRouteImport } from './routes/_authenticated/projects'
 import { Route as AuthenticatedPayrollRouteImport } from './routes/_authenticated/payroll'
 import { Route as AuthenticatedOperationsRouteImport } from './routes/_authenticated/operations'
+import { Route as AuthenticatedFinanceRouteImport } from './routes/_authenticated/finance'
 import { Route as AuthenticatedDocumentsRouteImport } from './routes/_authenticated/documents'
+import { Route as AuthenticatedCrmRouteImport } from './routes/_authenticated/crm'
 import { Route as AuthenticatedCompaniesRouteImport } from './routes/_authenticated/companies'
 import { Route as AuthenticatedClientsRouteImport } from './routes/_authenticated/clients'
+import { Route as AuthenticatedBillingRouteImport } from './routes/_authenticated/billing'
 import { Route as AuthenticatedAuditLogsRouteImport } from './routes/_authenticated/audit-logs'
+import { Route as AuthenticatedAssetsRouteImport } from './routes/_authenticated/assets'
 import { Route as AuthenticatedApprovalsRouteImport } from './routes/_authenticated/approvals'
+import { Route as AuthenticatedAccommodationRouteImport } from './routes/_authenticated/accommodation'
 import { Route as ApiPublicR2UploadRouteImport } from './routes/api/public/r2-upload'
 import { Route as ApiPublicR2StatusRouteImport } from './routes/api/public/r2-status'
+import { Route as ApiPublicR2SignedRouteImport } from './routes/api/public/r2-signed'
 import { Route as ApiPublicR2FileRouteImport } from './routes/api/public/r2-file'
 import { Route as ApiPublicR2DeleteRouteImport } from './routes/api/public/r2-delete'
 
@@ -54,6 +62,11 @@ const AuthenticatedUsersRoute = AuthenticatedUsersRouteImport.update({
   path: '/users',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedTransportRoute = AuthenticatedTransportRouteImport.update({
+  id: '/transport',
+  path: '/transport',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedTimeManagementRoute =
   AuthenticatedTimeManagementRouteImport.update({
     id: '/time-management',
@@ -70,6 +83,12 @@ const AuthenticatedReportsRoute = AuthenticatedReportsRouteImport.update({
   path: '/reports',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedRecruitmentRoute =
+  AuthenticatedRecruitmentRouteImport.update({
+    id: '/recruitment',
+    path: '/recruitment',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedProjectsRoute = AuthenticatedProjectsRouteImport.update({
   id: '/projects',
   path: '/projects',
@@ -85,9 +104,19 @@ const AuthenticatedOperationsRoute = AuthenticatedOperationsRouteImport.update({
   path: '/operations',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedFinanceRoute = AuthenticatedFinanceRouteImport.update({
+  id: '/finance',
+  path: '/finance',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedDocumentsRoute = AuthenticatedDocumentsRouteImport.update({
   id: '/documents',
   path: '/documents',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedCrmRoute = AuthenticatedCrmRouteImport.update({
+  id: '/crm',
+  path: '/crm',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedCompaniesRoute = AuthenticatedCompaniesRouteImport.update({
@@ -100,9 +129,19 @@ const AuthenticatedClientsRoute = AuthenticatedClientsRouteImport.update({
   path: '/clients',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedBillingRoute = AuthenticatedBillingRouteImport.update({
+  id: '/billing',
+  path: '/billing',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedAuditLogsRoute = AuthenticatedAuditLogsRouteImport.update({
   id: '/audit-logs',
   path: '/audit-logs',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAssetsRoute = AuthenticatedAssetsRouteImport.update({
+  id: '/assets',
+  path: '/assets',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedApprovalsRoute = AuthenticatedApprovalsRouteImport.update({
@@ -110,6 +149,12 @@ const AuthenticatedApprovalsRoute = AuthenticatedApprovalsRouteImport.update({
   path: '/approvals',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAccommodationRoute =
+  AuthenticatedAccommodationRouteImport.update({
+    id: '/accommodation',
+    path: '/accommodation',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const ApiPublicR2UploadRoute = ApiPublicR2UploadRouteImport.update({
   id: '/api/public/r2-upload',
   path: '/api/public/r2-upload',
@@ -118,6 +163,11 @@ const ApiPublicR2UploadRoute = ApiPublicR2UploadRouteImport.update({
 const ApiPublicR2StatusRoute = ApiPublicR2StatusRouteImport.update({
   id: '/api/public/r2-status',
   path: '/api/public/r2-status',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicR2SignedRoute = ApiPublicR2SignedRouteImport.update({
+  id: '/api/public/r2-signed',
+  path: '/api/public/r2-signed',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicR2FileRoute = ApiPublicR2FileRouteImport.update({
@@ -134,42 +184,58 @@ const ApiPublicR2DeleteRoute = ApiPublicR2DeleteRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/auth': typeof AuthRoute
+  '/accommodation': typeof AuthenticatedAccommodationRoute
   '/approvals': typeof AuthenticatedApprovalsRoute
+  '/assets': typeof AuthenticatedAssetsRoute
   '/audit-logs': typeof AuthenticatedAuditLogsRoute
+  '/billing': typeof AuthenticatedBillingRoute
   '/clients': typeof AuthenticatedClientsRoute
   '/companies': typeof AuthenticatedCompaniesRoute
+  '/crm': typeof AuthenticatedCrmRoute
   '/documents': typeof AuthenticatedDocumentsRoute
+  '/finance': typeof AuthenticatedFinanceRoute
   '/operations': typeof AuthenticatedOperationsRoute
   '/payroll': typeof AuthenticatedPayrollRoute
   '/projects': typeof AuthenticatedProjectsRoute
+  '/recruitment': typeof AuthenticatedRecruitmentRoute
   '/reports': typeof AuthenticatedReportsRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/time-management': typeof AuthenticatedTimeManagementRoute
+  '/transport': typeof AuthenticatedTransportRoute
   '/users': typeof AuthenticatedUsersRoute
   '/workforce': typeof AuthenticatedWorkforceRoute
   '/api/public/r2-delete': typeof ApiPublicR2DeleteRoute
   '/api/public/r2-file': typeof ApiPublicR2FileRoute
+  '/api/public/r2-signed': typeof ApiPublicR2SignedRoute
   '/api/public/r2-status': typeof ApiPublicR2StatusRoute
   '/api/public/r2-upload': typeof ApiPublicR2UploadRoute
 }
 export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
+  '/accommodation': typeof AuthenticatedAccommodationRoute
   '/approvals': typeof AuthenticatedApprovalsRoute
+  '/assets': typeof AuthenticatedAssetsRoute
   '/audit-logs': typeof AuthenticatedAuditLogsRoute
+  '/billing': typeof AuthenticatedBillingRoute
   '/clients': typeof AuthenticatedClientsRoute
   '/companies': typeof AuthenticatedCompaniesRoute
+  '/crm': typeof AuthenticatedCrmRoute
   '/documents': typeof AuthenticatedDocumentsRoute
+  '/finance': typeof AuthenticatedFinanceRoute
   '/operations': typeof AuthenticatedOperationsRoute
   '/payroll': typeof AuthenticatedPayrollRoute
   '/projects': typeof AuthenticatedProjectsRoute
+  '/recruitment': typeof AuthenticatedRecruitmentRoute
   '/reports': typeof AuthenticatedReportsRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/time-management': typeof AuthenticatedTimeManagementRoute
+  '/transport': typeof AuthenticatedTransportRoute
   '/users': typeof AuthenticatedUsersRoute
   '/workforce': typeof AuthenticatedWorkforceRoute
   '/': typeof AuthenticatedIndexRoute
   '/api/public/r2-delete': typeof ApiPublicR2DeleteRoute
   '/api/public/r2-file': typeof ApiPublicR2FileRoute
+  '/api/public/r2-signed': typeof ApiPublicR2SignedRoute
   '/api/public/r2-status': typeof ApiPublicR2StatusRoute
   '/api/public/r2-upload': typeof ApiPublicR2UploadRoute
 }
@@ -177,22 +243,30 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/_authenticated/accommodation': typeof AuthenticatedAccommodationRoute
   '/_authenticated/approvals': typeof AuthenticatedApprovalsRoute
+  '/_authenticated/assets': typeof AuthenticatedAssetsRoute
   '/_authenticated/audit-logs': typeof AuthenticatedAuditLogsRoute
+  '/_authenticated/billing': typeof AuthenticatedBillingRoute
   '/_authenticated/clients': typeof AuthenticatedClientsRoute
   '/_authenticated/companies': typeof AuthenticatedCompaniesRoute
+  '/_authenticated/crm': typeof AuthenticatedCrmRoute
   '/_authenticated/documents': typeof AuthenticatedDocumentsRoute
+  '/_authenticated/finance': typeof AuthenticatedFinanceRoute
   '/_authenticated/operations': typeof AuthenticatedOperationsRoute
   '/_authenticated/payroll': typeof AuthenticatedPayrollRoute
   '/_authenticated/projects': typeof AuthenticatedProjectsRoute
+  '/_authenticated/recruitment': typeof AuthenticatedRecruitmentRoute
   '/_authenticated/reports': typeof AuthenticatedReportsRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/time-management': typeof AuthenticatedTimeManagementRoute
+  '/_authenticated/transport': typeof AuthenticatedTransportRoute
   '/_authenticated/users': typeof AuthenticatedUsersRoute
   '/_authenticated/workforce': typeof AuthenticatedWorkforceRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/api/public/r2-delete': typeof ApiPublicR2DeleteRoute
   '/api/public/r2-file': typeof ApiPublicR2FileRoute
+  '/api/public/r2-signed': typeof ApiPublicR2SignedRoute
   '/api/public/r2-status': typeof ApiPublicR2StatusRoute
   '/api/public/r2-upload': typeof ApiPublicR2UploadRoute
 }
@@ -201,64 +275,88 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/accommodation'
     | '/approvals'
+    | '/assets'
     | '/audit-logs'
+    | '/billing'
     | '/clients'
     | '/companies'
+    | '/crm'
     | '/documents'
+    | '/finance'
     | '/operations'
     | '/payroll'
     | '/projects'
+    | '/recruitment'
     | '/reports'
     | '/settings'
     | '/time-management'
+    | '/transport'
     | '/users'
     | '/workforce'
     | '/api/public/r2-delete'
     | '/api/public/r2-file'
+    | '/api/public/r2-signed'
     | '/api/public/r2-status'
     | '/api/public/r2-upload'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/auth'
+    | '/accommodation'
     | '/approvals'
+    | '/assets'
     | '/audit-logs'
+    | '/billing'
     | '/clients'
     | '/companies'
+    | '/crm'
     | '/documents'
+    | '/finance'
     | '/operations'
     | '/payroll'
     | '/projects'
+    | '/recruitment'
     | '/reports'
     | '/settings'
     | '/time-management'
+    | '/transport'
     | '/users'
     | '/workforce'
     | '/'
     | '/api/public/r2-delete'
     | '/api/public/r2-file'
+    | '/api/public/r2-signed'
     | '/api/public/r2-status'
     | '/api/public/r2-upload'
   id:
     | '__root__'
     | '/_authenticated'
     | '/auth'
+    | '/_authenticated/accommodation'
     | '/_authenticated/approvals'
+    | '/_authenticated/assets'
     | '/_authenticated/audit-logs'
+    | '/_authenticated/billing'
     | '/_authenticated/clients'
     | '/_authenticated/companies'
+    | '/_authenticated/crm'
     | '/_authenticated/documents'
+    | '/_authenticated/finance'
     | '/_authenticated/operations'
     | '/_authenticated/payroll'
     | '/_authenticated/projects'
+    | '/_authenticated/recruitment'
     | '/_authenticated/reports'
     | '/_authenticated/settings'
     | '/_authenticated/time-management'
+    | '/_authenticated/transport'
     | '/_authenticated/users'
     | '/_authenticated/workforce'
     | '/_authenticated/'
     | '/api/public/r2-delete'
     | '/api/public/r2-file'
+    | '/api/public/r2-signed'
     | '/api/public/r2-status'
     | '/api/public/r2-upload'
   fileRoutesById: FileRoutesById
@@ -268,6 +366,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   ApiPublicR2DeleteRoute: typeof ApiPublicR2DeleteRoute
   ApiPublicR2FileRoute: typeof ApiPublicR2FileRoute
+  ApiPublicR2SignedRoute: typeof ApiPublicR2SignedRoute
   ApiPublicR2StatusRoute: typeof ApiPublicR2StatusRoute
   ApiPublicR2UploadRoute: typeof ApiPublicR2UploadRoute
 }
@@ -309,6 +408,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedUsersRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/transport': {
+      id: '/_authenticated/transport'
+      path: '/transport'
+      fullPath: '/transport'
+      preLoaderRoute: typeof AuthenticatedTransportRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/time-management': {
       id: '/_authenticated/time-management'
       path: '/time-management'
@@ -328,6 +434,13 @@ declare module '@tanstack/react-router' {
       path: '/reports'
       fullPath: '/reports'
       preLoaderRoute: typeof AuthenticatedReportsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/recruitment': {
+      id: '/_authenticated/recruitment'
+      path: '/recruitment'
+      fullPath: '/recruitment'
+      preLoaderRoute: typeof AuthenticatedRecruitmentRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/projects': {
@@ -351,11 +464,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedOperationsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/finance': {
+      id: '/_authenticated/finance'
+      path: '/finance'
+      fullPath: '/finance'
+      preLoaderRoute: typeof AuthenticatedFinanceRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/documents': {
       id: '/_authenticated/documents'
       path: '/documents'
       fullPath: '/documents'
       preLoaderRoute: typeof AuthenticatedDocumentsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/crm': {
+      id: '/_authenticated/crm'
+      path: '/crm'
+      fullPath: '/crm'
+      preLoaderRoute: typeof AuthenticatedCrmRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/companies': {
@@ -372,6 +499,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedClientsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/billing': {
+      id: '/_authenticated/billing'
+      path: '/billing'
+      fullPath: '/billing'
+      preLoaderRoute: typeof AuthenticatedBillingRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/audit-logs': {
       id: '/_authenticated/audit-logs'
       path: '/audit-logs'
@@ -379,11 +513,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAuditLogsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/assets': {
+      id: '/_authenticated/assets'
+      path: '/assets'
+      fullPath: '/assets'
+      preLoaderRoute: typeof AuthenticatedAssetsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/approvals': {
       id: '/_authenticated/approvals'
       path: '/approvals'
       fullPath: '/approvals'
       preLoaderRoute: typeof AuthenticatedApprovalsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/accommodation': {
+      id: '/_authenticated/accommodation'
+      path: '/accommodation'
+      fullPath: '/accommodation'
+      preLoaderRoute: typeof AuthenticatedAccommodationRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/api/public/r2-upload': {
@@ -398,6 +546,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/r2-status'
       fullPath: '/api/public/r2-status'
       preLoaderRoute: typeof ApiPublicR2StatusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/r2-signed': {
+      id: '/api/public/r2-signed'
+      path: '/api/public/r2-signed'
+      fullPath: '/api/public/r2-signed'
+      preLoaderRoute: typeof ApiPublicR2SignedRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/r2-file': {
@@ -418,34 +573,48 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAccommodationRoute: typeof AuthenticatedAccommodationRoute
   AuthenticatedApprovalsRoute: typeof AuthenticatedApprovalsRoute
+  AuthenticatedAssetsRoute: typeof AuthenticatedAssetsRoute
   AuthenticatedAuditLogsRoute: typeof AuthenticatedAuditLogsRoute
+  AuthenticatedBillingRoute: typeof AuthenticatedBillingRoute
   AuthenticatedClientsRoute: typeof AuthenticatedClientsRoute
   AuthenticatedCompaniesRoute: typeof AuthenticatedCompaniesRoute
+  AuthenticatedCrmRoute: typeof AuthenticatedCrmRoute
   AuthenticatedDocumentsRoute: typeof AuthenticatedDocumentsRoute
+  AuthenticatedFinanceRoute: typeof AuthenticatedFinanceRoute
   AuthenticatedOperationsRoute: typeof AuthenticatedOperationsRoute
   AuthenticatedPayrollRoute: typeof AuthenticatedPayrollRoute
   AuthenticatedProjectsRoute: typeof AuthenticatedProjectsRoute
+  AuthenticatedRecruitmentRoute: typeof AuthenticatedRecruitmentRoute
   AuthenticatedReportsRoute: typeof AuthenticatedReportsRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedTimeManagementRoute: typeof AuthenticatedTimeManagementRoute
+  AuthenticatedTransportRoute: typeof AuthenticatedTransportRoute
   AuthenticatedUsersRoute: typeof AuthenticatedUsersRoute
   AuthenticatedWorkforceRoute: typeof AuthenticatedWorkforceRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAccommodationRoute: AuthenticatedAccommodationRoute,
   AuthenticatedApprovalsRoute: AuthenticatedApprovalsRoute,
+  AuthenticatedAssetsRoute: AuthenticatedAssetsRoute,
   AuthenticatedAuditLogsRoute: AuthenticatedAuditLogsRoute,
+  AuthenticatedBillingRoute: AuthenticatedBillingRoute,
   AuthenticatedClientsRoute: AuthenticatedClientsRoute,
   AuthenticatedCompaniesRoute: AuthenticatedCompaniesRoute,
+  AuthenticatedCrmRoute: AuthenticatedCrmRoute,
   AuthenticatedDocumentsRoute: AuthenticatedDocumentsRoute,
+  AuthenticatedFinanceRoute: AuthenticatedFinanceRoute,
   AuthenticatedOperationsRoute: AuthenticatedOperationsRoute,
   AuthenticatedPayrollRoute: AuthenticatedPayrollRoute,
   AuthenticatedProjectsRoute: AuthenticatedProjectsRoute,
+  AuthenticatedRecruitmentRoute: AuthenticatedRecruitmentRoute,
   AuthenticatedReportsRoute: AuthenticatedReportsRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedTimeManagementRoute: AuthenticatedTimeManagementRoute,
+  AuthenticatedTransportRoute: AuthenticatedTransportRoute,
   AuthenticatedUsersRoute: AuthenticatedUsersRoute,
   AuthenticatedWorkforceRoute: AuthenticatedWorkforceRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
@@ -459,6 +628,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   ApiPublicR2DeleteRoute: ApiPublicR2DeleteRoute,
   ApiPublicR2FileRoute: ApiPublicR2FileRoute,
+  ApiPublicR2SignedRoute: ApiPublicR2SignedRoute,
   ApiPublicR2StatusRoute: ApiPublicR2StatusRoute,
   ApiPublicR2UploadRoute: ApiPublicR2UploadRoute,
 }

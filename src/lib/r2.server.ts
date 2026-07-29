@@ -42,3 +42,24 @@ export async function verifyUser(request: Request): Promise<string | null> {
 export function safeKey(key: string) {
   return key.replace(/^\/+/, "").replace(/\.\./g, "");
 }
+
+/** Extract the object key from either a raw key or an /api/public/r2-file?key=... link. */
+export function keyFromRef(ref: string): string {
+  if (!ref) return "";
+  if (ref.includes("r2-file")) {
+    const q = ref.split("?")[1] ?? "";
+    const k = new URLSearchParams(q).get("key") ?? "";
+    return safeKey(k);
+  }
+  return safeKey(ref);
+}
+
+/** Create a short-lived presigned GET url for an object (default 5 minutes). */
+export async function presignGet(key: string, expiresIn = 300): Promise<string> {
+  const { client, base } = r2Client();
+  const signed = await client.sign(
+    new Request(`${base}/${key}?X-Amz-Expires=${expiresIn}`),
+    { aws: { signQuery: true } },
+  );
+  return signed.url;
+}
