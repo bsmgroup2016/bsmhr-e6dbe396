@@ -7,6 +7,7 @@ import type {
   Dormitory, BedAllocation, Vehicle, Trip,
   Asset, AssetIssuance,
 } from "@/lib/types";
+import type { TrainingCourse, TrainingRecord, SafetyIncident } from "@/lib/types";
 
 type Row = Record<string, any>;
 
@@ -371,6 +372,57 @@ export const toIssuance = (x: Partial<AssetIssuance>): Row => ({
   condition_in: x.conditionIn ?? null, status: x.status, remarks: x.remarks ?? null,
 });
 
+/* ---------- Phase 9: training & safety ---------- */
+export const fromCourse = (r: Row): TrainingCourse => ({
+  id: r.id, companyId: r.company_id ?? undefined, code: r.code ?? "", name: r.name,
+  category: (r.category ?? "Safety") as TrainingCourse["category"], provider: r.provider ?? undefined,
+  validityMonths: r.validity_months ?? undefined, mandatory: !!r.mandatory,
+  cost: Number(r.cost ?? 0), remarks: r.remarks ?? undefined,
+  createdAt: r.created_at, updatedAt: r.updated_at,
+});
+
+export const toCourse = (x: Partial<TrainingCourse>): Row => ({
+  company_id: x.companyId || null, code: x.code ?? "", name: x.name, category: x.category,
+  provider: x.provider ?? null, validity_months: x.validityMonths ?? null,
+  mandatory: !!x.mandatory, cost: x.cost ?? 0, remarks: x.remarks ?? null,
+});
+
+export const fromTraining = (r: Row): TrainingRecord => ({
+  id: r.id, courseId: r.course_id, employeeId: r.employee_id,
+  completionDate: d(r.completion_date), expiryDate: d(r.expiry_date),
+  certificateNo: r.certificate_no ?? undefined,
+  score: r.score === null || r.score === undefined ? undefined : Number(r.score),
+  cost: r.cost === null || r.cost === undefined ? undefined : Number(r.cost),
+  status: (r.status ?? "Completed") as TrainingRecord["status"],
+  documentUrl: r.document_url ?? undefined, remarks: r.remarks ?? undefined,
+  createdAt: r.created_at, updatedAt: r.updated_at,
+});
+
+export const toTraining = (x: Partial<TrainingRecord>): Row => ({
+  course_id: x.courseId, employee_id: x.employeeId,
+  completion_date: nullDate(x.completionDate), expiry_date: nullDate(x.expiryDate),
+  certificate_no: x.certificateNo ?? null, score: x.score ?? null, cost: x.cost ?? null,
+  status: x.status, document_url: x.documentUrl ?? null, remarks: x.remarks ?? null,
+});
+
+export const fromIncident = (r: Row): SafetyIncident => ({
+  id: r.id, companyId: r.company_id ?? undefined, siteId: r.site_id ?? undefined,
+  employeeId: r.employee_id ?? undefined, incidentDate: d(r.incident_date) ?? "",
+  incidentType: (r.incident_type ?? "Near Miss") as SafetyIncident["incidentType"],
+  severity: (r.severity ?? "Low") as SafetyIncident["severity"],
+  description: r.description ?? "", actionTaken: r.action_taken ?? undefined,
+  momReported: !!r.mom_reported, lostDays: Number(r.lost_days ?? 0),
+  status: (r.status ?? "Open") as SafetyIncident["status"],
+  createdAt: r.created_at, updatedAt: r.updated_at,
+});
+
+export const toIncident = (x: Partial<SafetyIncident>): Row => ({
+  company_id: x.companyId || null, site_id: x.siteId || null, employee_id: x.employeeId || null,
+  incident_date: nullDate(x.incidentDate), incident_type: x.incidentType, severity: x.severity,
+  description: x.description ?? "", action_taken: x.actionTaken ?? null,
+  mom_reported: !!x.momReported, lost_days: x.lostDays ?? 0, status: x.status,
+});
+
 /* ---------- bulk load ---------- */
 export interface LoadedData {
   companies: Company[]; employees: Employee[]; clients: Client[]; projects: Project[];
@@ -380,6 +432,7 @@ export interface LoadedData {
   rateAgreements: RateAgreement[]; invoices: Invoice[];
   dormitories: Dormitory[]; allocations: BedAllocation[]; vehicles: Vehicle[]; trips: Trip[];
   assets: Asset[]; issuances: AssetIssuance[];
+  courses: TrainingCourse[]; trainings: TrainingRecord[]; incidents: SafetyIncident[];
 }
 
 async function all(table: string, order = "created_at") {
@@ -393,7 +446,7 @@ export async function loadAll(): Promise<LoadedData> {
     companies, employees, clients, projects, sites, assignments,
     documents, attendance, payroll, approvals, auditLogs, profiles, roles, leaveRequests,
     rateAgreements, invoices, dormitories, allocations, vehicles, trips,
-    assets, issuances,
+    assets, issuances, courses, trainings, incidents,
   ] = await Promise.all([
     all("companies"), all("employees"), all("clients"), all("projects"), all("sites"),
     all("assignments"), all("employee_documents"), all("attendance"), all("payroll_entries"),
@@ -401,6 +454,7 @@ export async function loadAll(): Promise<LoadedData> {
     all("rate_agreements"), all("invoices"), all("dormitories"), all("bed_allocations"),
     all("vehicles"), all("trips"),
     all("assets"), all("asset_issuances"),
+    all("training_courses"), all("training_records"), all("safety_incidents"),
   ]);
 
   const roleByUser = new Map<string, string>();
@@ -443,5 +497,8 @@ export async function loadAll(): Promise<LoadedData> {
     trips: trips.map(fromTrip),
     assets: assets.map(fromAsset),
     issuances: issuances.map(fromIssuance),
+    courses: courses.map(fromCourse),
+    trainings: trainings.map(fromTraining),
+    incidents: incidents.map(fromIncident),
   };
 }
