@@ -485,6 +485,37 @@ export interface Invoice {
 
 /* ---------------- Phase 7: Accommodation & Transport ---------------- */
 
+export type BillingCycle = "Weekly" | "Fortnightly" | "Monthly";
+export type BillingSource = "Timesheet" | "Fixed";
+export type ContractStatus = "Draft" | "Active" | "Expired" | "Terminated";
+
+/** Client service contract that drives recurring auto-invoicing. */
+export interface ClientContract {
+  id: string;
+  companyId?: string;
+  clientId: string;
+  projectId?: string;
+  contractNo: string;
+  title: string;
+  startDate?: string;
+  endDate?: string;
+  billingCycle: BillingCycle;
+  /** Day of month (Monthly) or day-of-cycle offset used to schedule runs. */
+  billingDay: number;
+  billingSource: BillingSource;
+  /** Flat charge per cycle when billingSource is "Fixed". */
+  fixedAmount: number;
+  gstRate: number;
+  paymentTermsDays: number;
+  autoInvoice: boolean;
+  lastInvoicedOn?: string;
+  nextInvoiceOn?: string;
+  status: ContractStatus;
+  remarks?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export type DormStatus = "Active" | "Inactive" | "Full";
 
 export interface Dormitory {
