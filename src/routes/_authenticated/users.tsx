@@ -96,12 +96,18 @@ export default function UsersPage() {
     void load();
   }, [load]);
 
-  async function changeRole(u: SystemUser, role: AppAuthRole) {
+  async function changeRole(u: SystemUser, role: AppAuthRole | "none") {
     setSavingId(u.id);
     const { error: delErr } = await supabase.from("user_roles").delete().eq("user_id", u.id);
     if (delErr) {
       toast.error(delErr.message);
       setSavingId(null);
+      return;
+    }
+    if (role === "none") {
+      setSavingId(null);
+      toast.success("Role removed — user is now a normal user");
+      setUsers((prev) => prev.map((x) => (x.id === u.id ? { ...x, role: null } : x)));
       return;
     }
     const { error } = await supabase.from("user_roles").insert({ user_id: u.id, role });
@@ -233,16 +239,17 @@ export default function UsersPage() {
                       <TableCell>
                         <Select
                           value={u.role ?? ""}
-                          onValueChange={(v) => void changeRole(u, v as AppAuthRole)}
+                          onValueChange={(v) => void changeRole(u, v as AppAuthRole | "none")}
                           disabled={savingId === u.id}
                         >
-                          <SelectTrigger className="h-8 w-40">
-                            <SelectValue placeholder="No role" />
+                          <SelectTrigger className="h-8 w-52">
+                            <SelectValue placeholder="Normal user (no role)" />
                           </SelectTrigger>
                           <SelectContent>
+                            <SelectItem value="none">Normal user (no role)</SelectItem>
                             {roles.map((r) => (
-                              <SelectItem key={r} value={r} className="capitalize">
-                                {r.replace("_", " ")}
+                              <SelectItem key={r} value={r}>
+                                {ROLE_LABELS[r]}
                               </SelectItem>
                             ))}
                           </SelectContent>
