@@ -8,6 +8,7 @@ import {
   Clock,
   Wand2,
   Printer,
+  FileDown,
   Trash2,
   Building2,
   Landmark,
