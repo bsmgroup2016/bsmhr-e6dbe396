@@ -618,8 +618,11 @@ function EmployeeDetail({ employee, onEdit }: { employee: Employee; onEdit: () =
         <p className="text-sm text-foreground">{employee.remarks || "—"}</p>
       </div>
 
-      <div className="flex gap-2">
-        <Button onClick={onEdit}>
+      <div className="flex flex-wrap gap-2">
+        <Button asChild>
+          <Link to="/workforce/$id" params={{ id: employee.id }}>Open full profile</Link>
+        </Button>
+        <Button variant="outline" onClick={onEdit}>
           <Pencil className="mr-2 h-4 w-4" />
           Edit
         </Button>
