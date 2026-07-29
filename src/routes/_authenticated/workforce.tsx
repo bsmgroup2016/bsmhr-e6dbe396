@@ -384,7 +384,7 @@ export default function WorkforcePage() {
                     </p>
                   </div>
                   <div className="flex gap-2">
-                    <Button size="sm" variant="outline" onClick={() => setSelected(e)}>
+                    <Button size="sm" variant="outline" onClick={() => setViewingEmployee(e)}>
                       Open
                     </Button>
                     <Button
