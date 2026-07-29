@@ -17,6 +17,7 @@ import {
 
 import { AppShell } from "@/components/app-shell";
 import { ExportButton, ImportDialog } from "@/components/data-io";
+import { downloadPayslipPdf } from "@/lib/pdf";
 import { SummaryCard } from "@/components/ui/summary-card";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -437,6 +438,20 @@ export default function PayrollPage() {
                             </Select>
                             <Button size="icon" variant="ghost" title="Payslip" onClick={() => setPayslipOf(p)}>
                               <Printer className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              title="Payslip PDF"
+                              onClick={() =>
+                                void downloadPayslipPdf(p, {
+                                  employee: emp,
+                                  companyName:
+                                    companies.find((c) => c.id === emp?.companyId)?.name ?? "BSM Engineering",
+                                }).then(() => toast.success("Payslip PDF downloaded"))
+                              }
+                            >
+                              <FileDown className="h-4 w-4" />
                             </Button>
                             <Button size="icon" variant="ghost" title="Delete" onClick={() => handleDelete(p)}>
                               <Trash2 className="h-4 w-4 text-destructive" />
