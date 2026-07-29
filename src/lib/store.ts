@@ -83,6 +83,7 @@ const emptyState: AppState = {
   requisitions: [], candidates: [],
   leads: [], activities: [],
   expenses: [], receipts: [],
+  inventory: [], movements: [], purchaseOrders: [],
   branches: defaultBranches, currentBranch: "hq",
   companies: [], currentCompany: "", currentUser: null,
 };
