@@ -1467,7 +1467,6 @@ export function convertLeadToClient(id: string): Client | undefined {
   const lead = s.leads.find((l) => l.id === id);
   if (!lead || lead.clientId) return undefined;
   const client = addClient({
-    code: `CL-${String(s.clients.length + 1).padStart(3, "0")}`,
     name: lead.companyName,
     contactPerson: lead.contactPerson ?? "",
     email: lead.email ?? "",
