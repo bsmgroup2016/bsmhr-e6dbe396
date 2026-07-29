@@ -27,6 +27,7 @@ import { Route as AuthenticatedAuditLogsRouteImport } from './routes/_authentica
 import { Route as AuthenticatedApprovalsRouteImport } from './routes/_authenticated/approvals'
 import { Route as ApiPublicR2UploadRouteImport } from './routes/api/public/r2-upload'
 import { Route as ApiPublicR2StatusRouteImport } from './routes/api/public/r2-status'
+import { Route as ApiPublicR2SignedRouteImport } from './routes/api/public/r2-signed'
 import { Route as ApiPublicR2FileRouteImport } from './routes/api/public/r2-file'
 import { Route as ApiPublicR2DeleteRouteImport } from './routes/api/public/r2-delete'
 
@@ -120,6 +121,11 @@ const ApiPublicR2StatusRoute = ApiPublicR2StatusRouteImport.update({
   path: '/api/public/r2-status',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicR2SignedRoute = ApiPublicR2SignedRouteImport.update({
+  id: '/api/public/r2-signed',
+  path: '/api/public/r2-signed',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicR2FileRoute = ApiPublicR2FileRouteImport.update({
   id: '/api/public/r2-file',
   path: '/api/public/r2-file',
@@ -149,6 +155,7 @@ export interface FileRoutesByFullPath {
   '/workforce': typeof AuthenticatedWorkforceRoute
   '/api/public/r2-delete': typeof ApiPublicR2DeleteRoute
   '/api/public/r2-file': typeof ApiPublicR2FileRoute
+  '/api/public/r2-signed': typeof ApiPublicR2SignedRoute
   '/api/public/r2-status': typeof ApiPublicR2StatusRoute
   '/api/public/r2-upload': typeof ApiPublicR2UploadRoute
 }
@@ -170,6 +177,7 @@ export interface FileRoutesByTo {
   '/': typeof AuthenticatedIndexRoute
   '/api/public/r2-delete': typeof ApiPublicR2DeleteRoute
   '/api/public/r2-file': typeof ApiPublicR2FileRoute
+  '/api/public/r2-signed': typeof ApiPublicR2SignedRoute
   '/api/public/r2-status': typeof ApiPublicR2StatusRoute
   '/api/public/r2-upload': typeof ApiPublicR2UploadRoute
 }
@@ -193,6 +201,7 @@ export interface FileRoutesById {
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/api/public/r2-delete': typeof ApiPublicR2DeleteRoute
   '/api/public/r2-file': typeof ApiPublicR2FileRoute
+  '/api/public/r2-signed': typeof ApiPublicR2SignedRoute
   '/api/public/r2-status': typeof ApiPublicR2StatusRoute
   '/api/public/r2-upload': typeof ApiPublicR2UploadRoute
 }
@@ -216,6 +225,7 @@ export interface FileRouteTypes {
     | '/workforce'
     | '/api/public/r2-delete'
     | '/api/public/r2-file'
+    | '/api/public/r2-signed'
     | '/api/public/r2-status'
     | '/api/public/r2-upload'
   fileRoutesByTo: FileRoutesByTo
@@ -237,6 +247,7 @@ export interface FileRouteTypes {
     | '/'
     | '/api/public/r2-delete'
     | '/api/public/r2-file'
+    | '/api/public/r2-signed'
     | '/api/public/r2-status'
     | '/api/public/r2-upload'
   id:
@@ -259,6 +270,7 @@ export interface FileRouteTypes {
     | '/_authenticated/'
     | '/api/public/r2-delete'
     | '/api/public/r2-file'
+    | '/api/public/r2-signed'
     | '/api/public/r2-status'
     | '/api/public/r2-upload'
   fileRoutesById: FileRoutesById
@@ -268,6 +280,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   ApiPublicR2DeleteRoute: typeof ApiPublicR2DeleteRoute
   ApiPublicR2FileRoute: typeof ApiPublicR2FileRoute
+  ApiPublicR2SignedRoute: typeof ApiPublicR2SignedRoute
   ApiPublicR2StatusRoute: typeof ApiPublicR2StatusRoute
   ApiPublicR2UploadRoute: typeof ApiPublicR2UploadRoute
 }
@@ -400,6 +413,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicR2StatusRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/r2-signed': {
+      id: '/api/public/r2-signed'
+      path: '/api/public/r2-signed'
+      fullPath: '/api/public/r2-signed'
+      preLoaderRoute: typeof ApiPublicR2SignedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/r2-file': {
       id: '/api/public/r2-file'
       path: '/api/public/r2-file'
@@ -459,6 +479,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   ApiPublicR2DeleteRoute: ApiPublicR2DeleteRoute,
   ApiPublicR2FileRoute: ApiPublicR2FileRoute,
+  ApiPublicR2SignedRoute: ApiPublicR2SignedRoute,
   ApiPublicR2StatusRoute: ApiPublicR2StatusRoute,
   ApiPublicR2UploadRoute: ApiPublicR2UploadRoute,
 }

@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 export const R2_UPLOAD_URL = "/api/public/r2-upload";
 export const R2_DELETE_URL = "/api/public/r2-delete";
 export const R2_STATUS_URL = "/api/public/r2-status";
+export const R2_SIGNED_URL = "/api/public/r2-signed";
 
 async function accessToken(): Promise<string> {
   const { data } = await supabase.auth.getSession();
@@ -109,4 +110,24 @@ export async function deleteFromR2(key: string): Promise<void> {
     body: JSON.stringify({ key }),
   });
   if (!res.ok) throw new Error(`Delete failed (${res.status})`);
+}
+
+/**
+ * Exchange a stored file reference for a short-lived (5 min) signed download
+ * URL. Requires a signed-in session — stored links are not publicly readable.
+ */
+export async function getSignedUrl(ref: string): Promise<string> {
+  const token = await accessToken();
+  const res = await fetch(`${R2_SIGNED_URL}?key=${encodeURIComponent(ref)}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  if (!res.ok) throw new Error(`Could not open file (${res.status})`);
+  const data = (await res.json()) as { url: string };
+  return data.url;
+}
+
+/** Open a stored file in a new tab using a temporary signed link. */
+export async function openR2File(ref: string): Promise<void> {
+  const url = await getSignedUrl(ref);
+  window.open(url, "_blank", "noopener");
 }
