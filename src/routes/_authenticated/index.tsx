@@ -15,6 +15,9 @@ import {
   FileText,
   ShieldAlert,
 } from "lucide-react";
+import { Target, PhoneCall, TrendingUp } from "lucide-react";
+import { useAuth } from "@/lib/auth";
+import { canAccess } from "@/lib/permissions";
 import {
   getEmployees,
   getSites,
@@ -25,6 +28,11 @@ import {
   getAttendance,
   getCompanies,
   getCurrentCompany,
+  getLeads,
+  getActivities,
+  getClients,
+  crmPipeline,
+  dueFollowUps,
 } from "@/lib/store";
 
 export const Route = createFileRoute("/_authenticated/")({
@@ -59,6 +67,8 @@ function SectionHeading({
 
 function DashboardPage() {
   const companyId = getCurrentCompany();
+  const { roles } = useAuth();
+  const showCrm = canAccess("/clients", roles);
   const company = getCompanies().find((c) => c.id === companyId);
   const allEmployees = getEmployees();
   const employees = companyId
@@ -85,6 +95,28 @@ function DashboardPage() {
 
   const daysLeft = (iso: string) =>
     Math.ceil((new Date(iso).getTime() - today.getTime()) / 86_400_000);
+
+  // CRM overview
+  const leads = getLeads().filter((l) => !companyId || !l.companyId || l.companyId === companyId);
+  const pipeline = crmPipeline(companyId ?? undefined).filter(
+    (p) => p.stage !== "Won" && p.stage !== "Lost",
+  );
+  const openLeads = leads.filter((l) => l.stage !== "Won" && l.stage !== "Lost");
+  const wonLeads = leads.filter((l) => l.stage === "Won");
+  const pipelineValue = openLeads.reduce((s, l) => s + (l.monthlyValue || 0), 0);
+  const weightedValue = pipeline.reduce((s, p) => s + p.weighted, 0);
+  const maxStageCount = Math.max(1, ...pipeline.map((p) => p.count));
+  const followUps = dueFollowUps(companyId ?? undefined).length;
+  const activeClients = getClients().filter((c) => c.status === "Active").length;
+  const clientNames = new Map(getClients().map((c) => [c.id, c.name]));
+  const leadNames = new Map(leads.map((l) => [l.id, l.companyName]));
+  const recentActivities = getActivities()
+    .filter((a) => !companyId || !a.companyId || a.companyId === companyId)
+    .slice()
+    .sort((a, b) => (a.activityDate < b.activityDate ? 1 : -1))
+    .slice(0, 6);
+  const money = (n: number) =>
+    `S$${Math.round(n).toLocaleString("en-SG")}`;
 
   const expiringPasses = employees
     .filter((e) => e.passExpiry && e.passExpiry !== "-" && daysLeft(e.passExpiry) <= 60)
