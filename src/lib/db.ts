@@ -64,6 +64,9 @@ export const fromEmployee = (r: Row): Employee => ({
   dormitoryAddress: r.dormitory_address ?? undefined,
   accountHolderName: r.account_holder_name ?? undefined,
   ipaDocumentUrl: r.ipa_document_url ?? undefined,
+  ethnicGroup: r.ethnic_group ?? undefined,
+  religion: r.religion ?? undefined,
+  prStatus: r.pr_status ?? undefined,
   createdAt: r.created_at, updatedAt: r.updated_at,
 });
 
@@ -181,6 +184,9 @@ export const toEmployee = (e: Partial<Employee>): Row => ({
   dormitory_address: e.dormitoryAddress ?? null,
   account_holder_name: e.accountHolderName ?? null,
   ipa_document_url: e.ipaDocumentUrl ?? null,
+  ethnic_group: e.ethnicGroup ?? null,
+  religion: e.religion ?? null,
+  pr_status: e.prStatus ?? null,
 });
 
 export const toClient = (c: Partial<Client>): Row => ({
