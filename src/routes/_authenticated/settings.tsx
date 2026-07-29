@@ -164,6 +164,8 @@ export default function SettingsPage() {
                 </div>
               </div>
             </div>
+
+            <BranchPrefixManager />
           </TabsContent>
 
           <TabsContent value="notifications" className="mt-4 space-y-4">
