@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type {
   Employee, Client, Project, Site, Assignment, EmployeeDocument,
   Attendance, PayrollEntry, Approval, AuditLog, Company, User,
-  LeaveRequest,
+  LeaveRequest, RateAgreement, Invoice, InvoiceLine,
 } from "@/lib/types";
 
 type Row = Record<string, any>;
@@ -232,6 +232,7 @@ export interface LoadedData {
   sites: Site[]; assignments: Assignment[]; documents: EmployeeDocument[];
   attendance: Attendance[]; payroll: PayrollEntry[]; approvals: Approval[];
   auditLogs: AuditLog[]; users: User[]; leaveRequests: LeaveRequest[];
+  rateAgreements: RateAgreement[]; invoices: Invoice[];
 }
 
 async function all(table: string, order = "created_at") {
