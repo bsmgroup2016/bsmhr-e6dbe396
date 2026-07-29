@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { r2Client, safeKey, verifyUser } from "@/lib/r2.server";
+import { canAccessKey, r2Client, safeKey, verifyUser } from "@/lib/r2.server";
 
 export const Route = createFileRoute("/api/public/r2-file")({
   server: {
@@ -9,6 +9,8 @@ export const Route = createFileRoute("/api/public/r2-file")({
         if (!userId) return new Response("Unauthorized", { status: 401 });
         const key = safeKey(new URL(request.url).searchParams.get("key") || "");
         if (!key) return new Response("Missing key", { status: 400 });
+        if (!(await canAccessKey(userId, key)))
+          return new Response("Not found", { status: 404 });
         try {
           const { client, base } = r2Client();
           const res = await client.fetch(`${base}/${key}`);
@@ -19,8 +21,8 @@ export const Route = createFileRoute("/api/public/r2-file")({
               "Cache-Control": "private, max-age=300",
             },
           });
-        } catch (err) {
-          return new Response(err instanceof Error ? err.message : "Error", { status: 500 });
+        } catch {
+          return new Response("Unable to fetch file", { status: 500 });
         }
       },
     },
