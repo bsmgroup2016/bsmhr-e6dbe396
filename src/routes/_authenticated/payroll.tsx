@@ -218,6 +218,38 @@ export default function PayrollPage() {
   function handleCreate(formData: FormData) {
     /* create single entry */
     void 0;
+    return handleCreateEntry(formData);
+  }
+
+  function bulkStatus(next: PayrollStatus, from: PayrollStatus[]) {
+    const targets = filtered.filter((p) => from.includes(p.status));
+    if (!targets.length) {
+      toast.error(`No entries to move to ${next}`);
+      return;
+    }
+    targets.forEach((p) =>
+      updatePayroll(p.id, {
+        status: next,
+        ...(next === "Approved"
+          ? { approvedBy: getCurrentUser()?.id, approvedAt: new Date().toISOString() }
+          : {}),
+      }),
+    );
+    setPayroll(getPayroll());
+    toast.success(`${targets.length} payroll entries → ${next}`);
+  }
+
+  async function exportBankFile() {
+    const payable = filtered.filter((p) => p.status === "Approved" || p.status === "Paid");
+    if (!payable.length) {
+      toast.error("No approved payroll entries to export");
+      return;
+    }
+    await exportCsv(bankFileRows(payable, employees), timestampedName(`bank_giro_${month}`, "csv"));
+    toast.success(`Bank file created for ${payable.length} workers`);
+  }
+
+  function handleCreateEntry(formData: FormData) {
     const basicSalary = Number(formData.get("basicSalary") || 0);
     const overtimePay = Number(formData.get("overtimePay") || 0);
     const allowances = Number(formData.get("allowances") || 0);
