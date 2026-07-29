@@ -142,6 +142,9 @@ function BillingPage() {
     (i) => i.status !== "Paid" && i.status !== "Cancelled" && i.dueDate && i.dueDate < new Date().toISOString().slice(0, 10),
   ).length;
 
+  const visibleContracts = contracts.filter((c) => !companyId || !c.companyId || c.companyId === companyId);
+  const dueContracts = contractsDue();
+
   function handleGenerate(form: FormData) {
     const clientId = form.get("clientId") as string;
     const projectId = (form.get("projectId") as string) || undefined;
