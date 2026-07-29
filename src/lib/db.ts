@@ -26,6 +26,7 @@ export const fromEmployee = (r: Row): Employee => ({
   joinedOn: d(r.joined_on) ?? "", phone: r.phone ?? undefined, email: r.email ?? undefined,
   address: r.address ?? undefined, emergencyContact: r.emergency_contact ?? undefined,
   emergencyPhone: r.emergency_phone ?? undefined, dormitory: r.dormitory ?? undefined,
+  photoUrl: r.photo_url ?? undefined,
   branch: r.branch ?? undefined, companyId: r.company_id ?? undefined, remarks: r.remarks ?? undefined,
   createdAt: r.created_at, updatedAt: r.updated_at,
 });
@@ -108,6 +109,7 @@ export const toEmployee = (e: Partial<Employee>): Row => ({
   basic_salary: e.basicSalary, levy_rate: e.levyRate, joined_on: nullDate(e.joinedOn),
   phone: e.phone, email: e.email, address: e.address, emergency_contact: e.emergencyContact,
   emergency_phone: e.emergencyPhone, dormitory: e.dormitory, branch: e.branch,
+  photo_url: e.photoUrl || null,
   company_id: e.companyId || null, remarks: e.remarks,
 });
 

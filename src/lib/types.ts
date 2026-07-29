@@ -33,6 +33,7 @@ export interface Employee {
   emergencyPhone?: string;
   levyRate?: number;
   dormitory?: string;
+  photoUrl?: string;
   branch?: string;
   companyId?: string;
   remarks?: string;

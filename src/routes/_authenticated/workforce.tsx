@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
+import { FileUpload } from "@/components/file-upload";
 import { ExportButton, ImportDialog } from "@/components/data-io";
 import { SummaryCard } from "@/components/ui/summary-card";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -252,6 +253,7 @@ export default function WorkforcePage() {
       levyRate: Number(formData.get("levyRate") || 0),
       branch: formData.get("branch") as string,
       remarks: formData.get("remarks") as string,
+      photoUrl: (formData.get("photoUrl") as string) || undefined,
     };
     addEmployee(employee);
     setIsCreateOpen(false);
@@ -279,6 +281,7 @@ export default function WorkforcePage() {
       levyRate: Number(formData.get("levyRate") || 0),
       branch: formData.get("branch") as string,
       remarks: formData.get("remarks") as string,
+      photoUrl: (formData.get("photoUrl") as string) || undefined,
     };
     updateEmployee(editingEmployee.id, updates);
     setEditingEmployee(null);
@@ -424,7 +427,22 @@ export default function WorkforcePage() {
                   filtered.map((e) => (
                     <TableRow key={e.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setViewingEmployee(e)}>
                       <TableCell className="font-medium">{e.employeeCode}</TableCell>
-                      <TableCell>{e.name}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          {e.photoUrl ? (
+                            <img
+                              src={e.photoUrl}
+                              alt={e.name}
+                              className="h-7 w-7 rounded-full object-cover ring-1 ring-border"
+                            />
+                          ) : (
+                            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-muted text-[10px] font-medium text-muted-foreground">
+                              {e.name.slice(0, 2).toUpperCase()}
+                            </span>
+                          )}
+                          {e.name}
+                        </div>
+                      </TableCell>
                       <TableCell>{e.nationality}</TableCell>
                       <TableCell>{e.fin}</TableCell>
                       <TableCell>
@@ -640,6 +658,12 @@ function EmployeeForm({ employee, onSubmit }: { employee?: Employee; onSubmit: (
         <Label htmlFor="remarks">Remarks</Label>
         <Input id="remarks" name="remarks" defaultValue={employee?.remarks || ""} />
       </div>
+      <FileUpload
+        name="photoUrl"
+        label="Worker photo (stored in Cloudflare R2)"
+        folder="photos"
+        defaultValue={employee?.photoUrl || ""}
+      />
       <DialogFooter>
         <Button type="submit">{employee ? "Save changes" : "Register employee"}</Button>
       </DialogFooter>
