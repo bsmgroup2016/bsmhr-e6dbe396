@@ -556,3 +556,53 @@ export interface SafetyIncident {
   createdAt: string;
   updatedAt: string;
 }
+
+/* ---------- Phase 10: recruitment ---------- */
+export type RequisitionStatus = "Open" | "On Hold" | "Filled" | "Cancelled";
+export type CandidateStage =
+  | "Applied" | "Screening" | "Interview" | "Selected" | "Offer Sent"
+  | "Offer Accepted" | "Onboarding" | "Hired" | "Rejected" | "Withdrawn";
+export type CandidateSource = "Agent" | "Referral" | "Walk-in" | "Job Portal" | "Direct" | "Other";
+
+export interface JobRequisition {
+  id: string;
+  companyId?: string;
+  code: string;
+  title: string;
+  trade: string;
+  clientId?: string;
+  siteId?: string;
+  headcount: number;
+  passType?: PassType;
+  budgetSalary: number;
+  targetDate?: string;
+  status: RequisitionStatus;
+  remarks?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Candidate {
+  id: string;
+  requisitionId?: string;
+  companyId?: string;
+  name: string;
+  nationality?: string;
+  phone?: string;
+  email?: string;
+  passportNumber?: string;
+  trade?: string;
+  experienceYears?: number;
+  expectedSalary?: number;
+  source: CandidateSource;
+  agentName?: string;
+  stage: CandidateStage;
+  interviewDate?: string;
+  offerDate?: string;
+  joinDate?: string;
+  resumeUrl?: string;
+  employeeId?: string;
+  remarks?: string;
+  createdAt: string;
+  updatedAt: string;
+}
