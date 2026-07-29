@@ -290,6 +290,20 @@ export default function PayrollPage() {
             </div>
             <div className="flex gap-2">
               <Input type="month" value={month} onChange={(e) => setMonth(e.target.value)} className="w-40" />
+              <Select value={companyFilter} onValueChange={setCompanyFilter}>
+                <SelectTrigger className="w-44">
+                  <Building2 className="mr-1 h-4 w-4 text-muted-foreground" />
+                  <SelectValue placeholder="Company" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All companies</SelectItem>
+                  {companies.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as PayrollStatus | "all")}>
                 <SelectTrigger className="w-40">
                   <SelectValue placeholder="Status" />
