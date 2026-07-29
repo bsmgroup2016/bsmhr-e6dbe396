@@ -81,6 +81,10 @@ export const fromDocument = (r: Row): EmployeeDocument => ({
   id: r.id, employeeId: r.employee_id, type: r.doc_type as EmployeeDocument["type"], name: r.name,
   fileUrl: r.file_url ?? undefined, issueDate: d(r.issue_date), expiryDate: d(r.expiry_date),
   status: (r.status ?? "Valid") as EmployeeDocument["status"],
+  docNumber: r.doc_number ?? undefined, issuingAuthority: r.issuing_authority ?? undefined,
+  reminderDays: r.reminder_days ?? undefined, verified: r.verified ?? undefined,
+  verifiedBy: r.verified_by ?? undefined, verifiedAt: r.verified_at ?? undefined,
+  remarks: r.remarks ?? undefined, version: r.version ?? undefined, replacesId: r.replaces_id ?? undefined,
   uploadedAt: r.uploaded_at, updatedAt: r.updated_at,
 });
 
