@@ -53,6 +53,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { getEmployees, getSites, getAttendance, addAttendance, saveDailySheet, getCurrentCompany } from "@/lib/store";
+import { GeoCapture } from "@/components/geo-capture";
+import { LocationMap } from "@/components/location-map";
 import type { Attendance, AttendanceStatus } from "@/lib/types";
 import { pick, type ImportColumn } from "@/lib/xlsx";
 import { monthlyAttendanceSummary } from "@/lib/ops";
@@ -202,6 +204,10 @@ export default function TimeManagementPage() {
   }
 
   function handleCreate(formData: FormData) {
+    const num = (k: string) => {
+      const v = Number(formData.get(k));
+      return Number.isFinite(v) && formData.get(k) !== "" ? v : undefined;
+    };
     addAttendance({
       employeeId: formData.get("employeeId") as string,
       date: formData.get("date") as string,
@@ -212,6 +218,12 @@ export default function TimeManagementPage() {
       hoursWorked: Number(formData.get("hoursWorked") || 0),
       overtimeHours: Number(formData.get("overtimeHours") || 0),
       notes: (formData.get("notes") as string) || undefined,
+      checkInLat: num("checkInLat"),
+      checkInLng: num("checkInLng"),
+      checkInAddress: (formData.get("checkInAddress") as string) || undefined,
+      checkOutLat: num("checkOutLat"),
+      checkOutLng: num("checkOutLng"),
+      checkOutAddress: (formData.get("checkOutAddress") as string) || undefined,
     });
     setIsCreateOpen(false);
     refresh();
