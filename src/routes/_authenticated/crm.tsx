@@ -146,33 +146,39 @@ export default function CrmPage() {
   }
 
   return (
-    <AppShell
-      title="Client CRM"
-      description="Leads, opportunity pipeline, quotations and follow-up reminders."
-      actions={
-        <Button
-          variant="outline"
-          onClick={() =>
-            exportRows(
-              "crm-leads",
-              filteredLeads.map((l) => ({
-                Company: l.companyName, Contact: l.contactPerson ?? "", Phone: l.phone ?? "",
-                Trade: l.trade ?? "", Headcount: l.headcountNeeded ?? "", MonthlyValue: l.monthlyValue,
-                Source: l.source, Stage: l.stage, Probability: l.probability,
-                ExpectedClose: l.expectedCloseDate ?? "", Owner: l.ownerName ?? "",
-              })),
-            )
-          }
-        >
-          <Download className="mr-2 size-4" /> Export
-        </Button>
-      }
-    >
+    <AppShell>
+      <div className="mx-auto max-w-7xl space-y-6">
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Client CRM</h1>
+            <p className="text-sm text-muted-foreground">Leads, opportunity pipeline, quotations and follow-up reminders.</p>
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            className="mt-2 sm:mt-0"
+            disabled={filteredLeads.length === 0}
+            onClick={() =>
+              exportRows(
+                "crm-leads",
+                filteredLeads.map((l) => ({
+                  Company: l.companyName, Contact: l.contactPerson ?? "", Phone: l.phone ?? "",
+                  Trade: l.trade ?? "", Headcount: l.headcountNeeded ?? "", MonthlyValue: l.monthlyValue,
+                  Source: l.source, Stage: l.stage, Probability: l.probability,
+                  ExpectedClose: l.expectedCloseDate ?? "", Owner: l.ownerName ?? "",
+                })),
+              )
+            }
+          >
+            <Download className="mr-1 h-4 w-4" /> Export
+          </Button>
+        </div>
+
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <SummaryCard title="Open leads" value={String(openLeads.length)} icon={Target} hint={`${sgd(openValue)} / month`} />
-        <SummaryCard title="Weighted pipeline" value={sgd(Math.round(weighted))} icon={TrendingUp} hint="Probability adjusted" />
-        <SummaryCard title="Win rate" value={`${winRate}%`} icon={BadgeDollarSign} hint={`${won.length} won · ${lost.length} lost`} />
-        <SummaryCard title="Follow-ups due" value={String(followUps.length)} icon={CalendarClock} hint="Today or overdue" />
+        <SummaryCard title="Open leads" value={String(openLeads.length)} icon={<Target className="h-5 w-5" />} variant="primary" caption={`${sgd(openValue)} / month`} />
+        <SummaryCard title="Weighted pipeline" value={sgd(Math.round(weighted))} icon={<TrendingUp className="h-5 w-5" />} variant="info" caption="Probability adjusted" />
+        <SummaryCard title="Win rate" value={`${winRate}%`} icon={<BadgeDollarSign className="h-5 w-5" />} variant="success" caption={`${won.length} won · ${lost.length} lost`} />
+        <SummaryCard title="Follow-ups due" value={String(followUps.length)} icon={<CalendarClock className="h-5 w-5" />} variant={followUps.length ? "warning" : "default"} caption="Today or overdue" />
       </div>
 
       <div className="rounded-xl border bg-card p-5">
@@ -284,7 +290,7 @@ export default function CrmPage() {
           </div>
 
           {filteredLeads.length === 0 ? (
-            <EmptyState title="No leads yet" description="Add your first prospective client enquiry." icon={Target} />
+            <EmptyState icon={<Target className="h-5 w-5" />} title="No leads yet" description="Add your first prospective client enquiry." />
           ) : (
             <div className="overflow-x-auto rounded-xl border bg-card">
               <Table>
@@ -328,7 +334,7 @@ export default function CrmPage() {
                               <UserPlus className="mr-1 size-3.5" /> To client
                             </Button>
                           )}
-                          {l.clientId && <StatusBadge variant="success">Client</StatusBadge>}
+                          {l.clientId && <StatusBadge variant="success" label="Client" />}
                           <Button size="icon" variant="ghost" onClick={() => { deleteLead(l.id); refresh(); }}>
                             <Trash2 className="size-4 text-destructive" />
                           </Button>
@@ -396,7 +402,7 @@ export default function CrmPage() {
           </div>
 
           {scopedActs.length === 0 ? (
-            <EmptyState title="No activities logged" description="Track calls, meetings and quotations with clients." icon={CalendarClock} />
+            <EmptyState icon={<CalendarClock className="h-5 w-5" />} title="No activities logged" description="Track calls, meetings and quotations with clients." />
           ) : (
             <div className="overflow-x-auto rounded-xl border bg-card">
               <Table>
@@ -416,7 +422,7 @@ export default function CrmPage() {
                     return (
                       <TableRow key={a.id}>
                         <TableCell className="text-sm">{a.activityDate}</TableCell>
-                        <TableCell><StatusBadge variant="default">{a.activityType}</StatusBadge></TableCell>
+                        <TableCell><StatusBadge variant="default" label={a.activityType} /></TableCell>
                         <TableCell className="text-sm">{leadName(a.leadId)}</TableCell>
                         <TableCell>
                           <div className="font-medium">{a.subject}</div>
@@ -424,9 +430,7 @@ export default function CrmPage() {
                         </TableCell>
                         <TableCell>
                           {a.followUpDate ? (
-                            <StatusBadge variant={a.done ? "success" : overdue ? "destructive" : "warning"}>
-                              {a.done ? "Done" : a.followUpDate}
-                            </StatusBadge>
+                            <StatusBadge variant={a.done ? "success" : overdue ? "destructive" : "warning"} label={a.done ? "Done" : a.followUpDate} />
                           ) : "—"}
                         </TableCell>
                         <TableCell className="text-right">
@@ -450,6 +454,7 @@ export default function CrmPage() {
           )}
         </TabsContent>
       </Tabs>
+      </div>
     </AppShell>
   );
 }
