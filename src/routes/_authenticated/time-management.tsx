@@ -10,6 +10,8 @@ import {
   Trash2,
   CheckCircle2,
   AlertCircle,
+  ClipboardList,
+  FileSpreadsheet,
 } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
@@ -50,9 +52,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { getEmployees, getSites, getAttendance, addAttendance } from "@/lib/store";
+import { getEmployees, getSites, getAttendance, addAttendance, saveDailySheet, getCurrentCompany } from "@/lib/store";
 import type { Attendance, AttendanceStatus } from "@/lib/types";
 import { pick, type ImportColumn } from "@/lib/xlsx";
+import { monthlyAttendanceSummary } from "@/lib/ops";
+import { exportRows, timestampedName } from "@/lib/xlsx";
+import { toast } from "sonner";
 
 const statuses: AttendanceStatus[] = ["Present", "Absent", "On Leave", "MC", "Half Day", "Off", "Public Holiday", "Pending"];
 
@@ -87,6 +92,39 @@ export default function TimeManagementPage() {
   const [search, setSearch] = useState("");
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [summaryMonth, setSummaryMonth] = useState(() => new Date().toISOString().slice(0, 7));
+  const companyId = getCurrentCompany();
+  const companyEmployees = employees.filter(
+    (e) => (!companyId || e.companyId === companyId) && e.status !== "Inactive",
+  );
+
+  async function exportMonthlySummary() {
+    const rows = monthlyAttendanceSummary(
+      attendance,
+      summaryMonth,
+      companyEmployees.map((e) => e.id),
+    ).map((r) => {
+      const emp = employees.find((e) => e.id === r.employeeId);
+      return {
+        "Employee Code": emp?.employeeCode ?? "",
+        Name: emp?.name ?? "",
+        Month: summaryMonth,
+        "Present Days": r.presentDays,
+        "Absent / MC": r.absentDays,
+        "Leave / Off": r.leaveDays,
+        "Normal Hours": r.normalHours,
+        "OT Hours": r.otHours,
+        "Total Hours": r.totalHours,
+      };
+    });
+    if (!rows.length) {
+      toast.error(`No attendance records for ${summaryMonth}`);
+      return;
+    }
+    await exportRows(rows, timestampedName(`timesheet_summary_${summaryMonth}`, "xlsx"), "Summary");
+    toast.success("Monthly summary exported");
+  }
 
   const filtered = attendance.filter((a) => {
     const q = search.toLowerCase();
@@ -203,6 +241,43 @@ export default function TimeManagementPage() {
             </DialogContent>
           </Dialog>
           <div className="mt-2 flex flex-wrap gap-2 sm:mt-0">
+            <Dialog open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm" variant="secondary">
+                  <ClipboardList className="mr-1 h-4 w-4" />
+                  Daily sheet
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
+                <DialogHeader>
+                  <DialogTitle>Daily attendance sheet</DialogTitle>
+                  <DialogDescription>Mark every worker for a site in one go.</DialogDescription>
+                </DialogHeader>
+                <DailySheet
+                  employees={companyEmployees}
+                  sites={sites}
+                  existing={attendance}
+                  defaultDate={date}
+                  onSaved={(d) => {
+                    setDate(d);
+                    setIsSheetOpen(false);
+                    refresh();
+                  }}
+                />
+              </DialogContent>
+            </Dialog>
+            <div className="flex items-center gap-1">
+              <Input
+                type="month"
+                value={summaryMonth}
+                onChange={(e) => setSummaryMonth(e.target.value)}
+                className="h-9 w-36"
+              />
+              <Button size="sm" variant="outline" onClick={exportMonthlySummary}>
+                <FileSpreadsheet className="mr-1 h-4 w-4" />
+                Monthly summary
+              </Button>
+            </div>
             <ImportDialog
               title="Import timesheet"
               description="Upload daily attendance from Excel or CSV. Employees are matched by employee code or FIN."
