@@ -114,6 +114,9 @@ export function employeeFromForm(fd: FormData): Partial<Employee> {
     ethnicGroup: (s("ethnicGroup") || undefined) as Employee["ethnicGroup"],
     religion: (s("religion") || undefined) as Employee["religion"],
     prStatus: (s("prStatus") || undefined) as Employee["prStatus"],
+    levyTier: (s("levyTier") || undefined) as Employee["levyTier"],
+    medicalInsuranceExpiry: s("medicalInsuranceExpiry") || undefined,
+    medicalCheckupDue: s("medicalCheckupDue") || undefined,
     branch: s("branch") || undefined,
     department: s("department") || undefined,
     employmentType: (s("employmentType") || undefined) as EmploymentType | undefined,
@@ -462,6 +465,19 @@ export function EmployeeForm({
             </Field>
             <Field label="Dormitory address">
               <Input name="dormitoryAddress" defaultValue={employee?.dormitoryAddress ?? ""} />
+            </Field>
+            <Field label="Medical insurance expiry">
+              <Input name="medicalInsuranceExpiry" type="date" defaultValue={dateValue(employee?.medicalInsuranceExpiry)} />
+            </Field>
+            <Field label="Medical examination due">
+              <Input name="medicalCheckupDue" type="date" defaultValue={dateValue(employee?.medicalCheckupDue)} />
+            </Field>
+            <Field label="Levy tier (MOM)">
+              <Pick
+                name="levyTier"
+                options={["Higher Skilled", "Basic Skilled"]}
+                defaultValue={employee?.levyTier ?? "Basic Skilled"}
+              />
             </Field>
           </div>
         </TabsContent>

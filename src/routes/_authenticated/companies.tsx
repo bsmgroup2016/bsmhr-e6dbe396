@@ -33,6 +33,7 @@ import {
   getEmployees,
 } from "@/lib/store";
 import type { Company } from "@/lib/types";
+import { MOM_SECTORS } from "@/lib/mom";
 
 export const Route = createFileRoute("/_authenticated/companies")({
   head: () => ({
@@ -82,6 +83,7 @@ function CompaniesPage() {
       legalName: fd.get("legalName") as string,
       uen: fd.get("uen") as string,
       industry: fd.get("industry") as string,
+      sector: fd.get("sector") as string,
       address: fd.get("address") as string,
       phone: fd.get("phone") as string,
       email: fd.get("email") as string,
@@ -263,6 +265,17 @@ function CompanyFields({ company }: { company?: Company }) {
       <div className="space-y-1.5">
         <Label htmlFor="industry">Industry</Label>
         <Input id="industry" name="industry" defaultValue={company?.industry} />
+      </div>
+      <div className="space-y-1.5">
+        <Label htmlFor="sector">MOM sector (levy & quota)</Label>
+        <Select name="sector" defaultValue={company?.sector ?? "Construction"}>
+          <SelectTrigger id="sector"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {MOM_SECTORS.map((s) => (
+              <SelectItem key={s} value={s}>{s}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
       <div className="space-y-1.5 sm:col-span-2">
         <Label htmlFor="address">Address</Label>
