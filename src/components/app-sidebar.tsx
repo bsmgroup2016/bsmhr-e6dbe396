@@ -59,6 +59,7 @@ const navGroups: { label: string; items: NavItem[] }[] = [
       { title: "Compliance", url: "/compliance", icon: ShieldCheck },
       { title: "Time Management", url: "/time-management", icon: CalendarClock },
       { title: "Leave", url: "/leave", icon: CalendarClock },
+      { title: "Training & Safety", url: "/training", icon: GraduationCap },
       { title: "Payroll", url: "/payroll", icon: Briefcase },
     ],
   },
@@ -75,7 +76,7 @@ const navGroups: { label: string; items: NavItem[] }[] = [
     items: [
       { title: "Recruitment", url: "/recruitment", icon: UserPlus, soon: true },
       { title: "Client CRM", url: "/crm", icon: BadgeDollarSign, soon: true },
-      { title: "Billing & Invoicing", url: "/billing", icon: Receipt, soon: true },
+      { title: "Billing & Invoicing", url: "/billing", icon: Receipt },
       { title: "Finance", url: "/finance", icon: Wallet, soon: true },
     ],
   },
