@@ -185,7 +185,7 @@ export default function AssetsPage() {
                 <div key={`${a.asset.id}-${idx}`} className="rounded-lg border px-3 py-2 text-xs">
                   <span className="font-medium">{a.asset.name}</span>{" "}
                   <span className="text-muted-foreground">{a.label} · {a.date}</span>{" "}
-                  <StatusBadge variant={a.expired ? "danger" : "warning"} label={a.expired ? "Overdue" : "Due soon"} dot />
+                  <StatusBadge variant={a.expired ? "destructive" : "warning"} label={a.expired ? "Overdue" : "Due soon"} dot />
                 </div>
               ))}
             </div>
@@ -314,8 +314,8 @@ export default function AssetsPage() {
                               <StatusBadge
                                 variant={
                                   i.status === "Returned" ? "success"
-                                    : i.status === "Issued" ? (isOverdue ? "danger" : "warning")
-                                      : "danger"
+                                    : i.status === "Issued" ? (isOverdue ? "destructive" : "warning")
+                                      : "destructive"
                                 }
                                 label={isOverdue && i.status === "Issued" ? "Overdue" : i.status}
                                 dot
@@ -427,7 +427,7 @@ export default function AssetsPage() {
                           <TableCell>{a.calibrationDue ?? "—"}</TableCell>
                           <TableCell>
                             <StatusBadge
-                              variant={a.status === "Available" ? "success" : a.status === "Issued" ? "warning" : "danger"}
+                              variant={a.status === "Available" ? "success" : a.status === "Issued" ? "warning" : "destructive"}
                               label={a.status}
                               dot
                             />
