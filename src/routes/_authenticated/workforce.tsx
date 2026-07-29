@@ -15,8 +15,8 @@ import {
 } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
-import { FileUpload } from "@/components/file-upload";
 import { R2Image } from "@/components/r2-image";
+import { EmployeeForm, employeeFromForm, WORKER_CATEGORIES, DEPLOYMENT_STATUSES } from "@/components/employee-form";
 import { ExportButton, ImportDialog } from "@/components/data-io";
 import { SummaryCard } from "@/components/ui/summary-card";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -62,13 +62,15 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { getEmployees, addEmployee, updateEmployee, deleteEmployee } from "@/lib/store";
-import type { Employee, PassType, EmployeeStatus } from "@/lib/types";
+import { getEmployees, addEmployee, updateEmployee, deleteEmployee, getCurrentCompany } from "@/lib/store";
+import type { Employee, PassType, EmployeeStatus, DeploymentStatus, WorkerCategory } from "@/lib/types";
 import { pick, type ImportColumn } from "@/lib/xlsx";
 
 const passTypes: PassType[] = ["Work Permit", "S Pass", "Employment Pass", "Singaporean/PR"];
-const statuses: EmployeeStatus[] = ["Active", "On Leave", "Deployed", "Inactive"];
-const trades = ["Welder", "Pipe Fitter", "Scaffolder", "Rigger", "General Worker", "Painter", "Foreman", "Site Supervisor", "QA/QC Manager", "Project Engineer", "Safety Officer"];
+const statuses: EmployeeStatus[] = [
+  "Draft", "Pending Approval", "Active", "Inactive", "On Leave", "Deployed",
+  "Suspended", "Resigned", "Terminated", "Repatriated", "Archived",
+];
 
 export const Route = createFileRoute("/_authenticated/workforce")({
   head: () => ({
@@ -142,17 +144,23 @@ function normalizeDate(value: string) {
 }
 
 export default function WorkforcePage() {
-  const [employees, setEmployees] = useState<Employee[]>(getEmployees());
+  const companyId = getCurrentCompany();
+  const [allEmployees, setEmployees] = useState<Employee[]>(getEmployees());
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<EmployeeStatus | "all">("all");
   const [passFilter, setPassFilter] = useState<PassType | "all">("all");
   const [siteFilter, setSiteFilter] = useState<string | "all">("all");
+  const [categoryFilter, setCategoryFilter] = useState<WorkerCategory | "all">("all");
+  const [deployFilter, setDeployFilter] = useState<DeploymentStatus | "all">("all");
+  const [nationalityFilter, setNationalityFilter] = useState<string>("all");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   const [viewingEmployee, setViewingEmployee] = useState<Employee | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Employee | null>(null);
 
+  const employees = companyId ? allEmployees.filter((e) => !e.companyId || e.companyId === companyId) : allEmployees;
   const sites = Array.from(new Set(employees.map((e) => e.site).filter(Boolean)));
+  const nationalities = Array.from(new Set(employees.map((e) => e.nationality).filter(Boolean))).sort();
 
   const filtered = employees.filter((e) => {
     const q = search.toLowerCase();
@@ -160,12 +168,19 @@ export default function WorkforcePage() {
       e.name.toLowerCase().includes(q) ||
       e.employeeCode.toLowerCase().includes(q) ||
       e.fin.toLowerCase().includes(q) ||
-      e.trade.toLowerCase().includes(q);
+      e.trade.toLowerCase().includes(q) ||
+      (e.phone ?? "").toLowerCase().includes(q) ||
+      (e.email ?? "").toLowerCase().includes(q) ||
+      (e.passportNumber ?? "").toLowerCase().includes(q) ||
+      (e.workPermitNumber ?? "").toLowerCase().includes(q);
     return (
       matchesSearch &&
       (statusFilter === "all" || e.status === statusFilter) &&
       (passFilter === "all" || e.passType === passFilter) &&
-      (siteFilter === "all" || e.site === siteFilter)
+      (siteFilter === "all" || e.site === siteFilter) &&
+      (categoryFilter === "all" || e.workerCategory === categoryFilter) &&
+      (deployFilter === "all" || (e.deploymentStatus ?? "Available") === deployFilter) &&
+      (nationalityFilter === "all" || e.nationality === nationalityFilter)
     );
   });
 
@@ -235,56 +250,18 @@ export default function WorkforcePage() {
   }
 
   function handleCreate(formData: FormData) {
-    const employee = {
-      name: formData.get("name") as string,
-      nationality: formData.get("nationality") as string,
-      fin: formData.get("fin") as string,
-      passType: formData.get("passType") as PassType,
-      passExpiry: formData.get("passExpiry") as string,
-      trade: formData.get("trade") as string,
-      site: formData.get("site") as string | null,
-      status: formData.get("status") as EmployeeStatus,
-      basicSalary: Number(formData.get("basicSalary")),
-      joinedOn: formData.get("joinedOn") as string,
-      phone: formData.get("phone") as string,
-      email: formData.get("email") as string,
-      address: formData.get("address") as string,
-      emergencyContact: formData.get("emergencyContact") as string,
-      emergencyPhone: formData.get("emergencyPhone") as string,
-      levyRate: Number(formData.get("levyRate") || 0),
-      branch: formData.get("branch") as string,
-      remarks: formData.get("remarks") as string,
-      photoUrl: (formData.get("photoUrl") as string) || undefined,
-    };
-    addEmployee(employee);
+    addEmployee({
+      ...employeeFromForm(formData),
+      site: null,
+      companyId: getCurrentCompany() || undefined,
+    } as Omit<Employee, "id" | "employeeCode" | "createdAt" | "updatedAt">);
     setIsCreateOpen(false);
     refresh();
   }
 
   function handleEdit(formData: FormData) {
     if (!editingEmployee) return;
-    const updates = {
-      name: formData.get("name") as string,
-      nationality: formData.get("nationality") as string,
-      fin: formData.get("fin") as string,
-      passType: formData.get("passType") as PassType,
-      passExpiry: formData.get("passExpiry") as string,
-      trade: formData.get("trade") as string,
-      site: formData.get("site") as string | null,
-      status: formData.get("status") as EmployeeStatus,
-      basicSalary: Number(formData.get("basicSalary")),
-      joinedOn: formData.get("joinedOn") as string,
-      phone: formData.get("phone") as string,
-      email: formData.get("email") as string,
-      address: formData.get("address") as string,
-      emergencyContact: formData.get("emergencyContact") as string,
-      emergencyPhone: formData.get("emergencyPhone") as string,
-      levyRate: Number(formData.get("levyRate") || 0),
-      branch: formData.get("branch") as string,
-      remarks: formData.get("remarks") as string,
-      photoUrl: (formData.get("photoUrl") as string) || undefined,
-    };
-    updateEmployee(editingEmployee.id, updates);
+    updateEmployee(editingEmployee.id, employeeFromForm(formData));
     setEditingEmployee(null);
     refresh();
   }
@@ -393,6 +370,39 @@ export default function WorkforcePage() {
                   ))}
                 </SelectContent>
               </Select>
+              <Select value={categoryFilter} onValueChange={(v) => setCategoryFilter(v as WorkerCategory | "all")}>
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="Category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All categories</SelectItem>
+                  {WORKER_CATEGORIES.map((c) => (
+                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={deployFilter} onValueChange={(v) => setDeployFilter(v as DeploymentStatus | "all")}>
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="Deployment" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All deployment</SelectItem>
+                  {DEPLOYMENT_STATUSES.map((d) => (
+                    <SelectItem key={d} value={d}>{d}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={nationalityFilter} onValueChange={setNationalityFilter}>
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="Nationality" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All nationalities</SelectItem>
+                  {nationalities.map((n) => (
+                    <SelectItem key={n} value={n}>{n}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
@@ -406,6 +416,7 @@ export default function WorkforcePage() {
                   <TableHead>FIN</TableHead>
                   <TableHead>Pass</TableHead>
                   <TableHead>Trade</TableHead>
+                  <TableHead>Deployment</TableHead>
                   <TableHead>Site</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Salary</TableHead>
@@ -415,7 +426,7 @@ export default function WorkforcePage() {
               <TableBody>
                 {filtered.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={10} className="h-32 text-center">
+                    <TableCell colSpan={11} className="h-32 text-center">
                       <EmptyState
                         className="bg-transparent border-0"
                         icon={<Users className="h-5 w-5" />}
@@ -452,6 +463,18 @@ export default function WorkforcePage() {
                         </div>
                       </TableCell>
                       <TableCell>{e.trade}</TableCell>
+                      <TableCell>
+                        <StatusBadge
+                          variant={
+                            (e.deploymentStatus ?? "Available") === "Deployed"
+                              ? "info"
+                              : (e.deploymentStatus ?? "Available") === "Blocked" || e.deploymentStatus === "Not Deployable"
+                                ? "destructive"
+                                : "outline"
+                          }
+                          label={e.deploymentStatus ?? "Available"}
+                        />
+                      </TableCell>
                       <TableCell>{e.site || "—"}</TableCell>
                       <TableCell>
                         <StatusBadge
@@ -474,7 +497,13 @@ export default function WorkforcePage() {
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={() => setViewingEmployee(e)}>
                               <Eye className="mr-2 h-4 w-4" />
-                              View details
+                              Quick view
+                            </DropdownMenuItem>
+                            <DropdownMenuItem asChild>
+                              <Link to="/workforce/$id" params={{ id: e.id }}>
+                                <Users className="mr-2 h-4 w-4" />
+                                Open full profile
+                              </Link>
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => setEditingEmployee(e)}>
                               <Pencil className="mr-2 h-4 w-4" />
@@ -540,137 +569,6 @@ export default function WorkforcePage() {
   );
 }
 
-function EmployeeForm({ employee, onSubmit }: { employee?: Employee; onSubmit: (data: FormData) => void }) {
-  return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        onSubmit(new FormData(e.currentTarget));
-      }}
-      className="space-y-4"
-    >
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor="name">Full name</Label>
-          <Input id="name" name="name" defaultValue={employee?.name} required />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="nationality">Nationality</Label>
-          <Input id="nationality" name="nationality" defaultValue={employee?.nationality} required />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="fin">FIN / NRIC</Label>
-          <Input id="fin" name="fin" defaultValue={employee?.fin} required />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="passType">Pass type</Label>
-          <Select name="passType" defaultValue={employee?.passType || "Work Permit"}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {passTypes.map((p) => (
-                <SelectItem key={p} value={p}>
-                  {p}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="passExpiry">Pass expiry</Label>
-          <Input id="passExpiry" name="passExpiry" type="date" defaultValue={employee?.passExpiry !== "-" ? employee?.passExpiry : ""} />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="trade">Trade</Label>
-          <Select name="trade" defaultValue={employee?.trade || trades[0]}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {trades.map((t) => (
-                <SelectItem key={t} value={t}>
-                  {t}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="status">Status</Label>
-          <Select name="status" defaultValue={employee?.status || "Active"}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {statuses.map((s) => (
-                <SelectItem key={s} value={s}>
-                  {s}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="site">Site</Label>
-          <Input id="site" name="site" defaultValue={employee?.site || ""} placeholder="Site name or leave blank" />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="basicSalary">Basic salary (S$)</Label>
-          <Input id="basicSalary" name="basicSalary" type="number" defaultValue={employee?.basicSalary || 0} required />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="levyRate">Levy rate (S$)</Label>
-          <Input id="levyRate" name="levyRate" type="number" defaultValue={employee?.levyRate || 0} />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="joinedOn">Joined on</Label>
-          <Input id="joinedOn" name="joinedOn" type="date" defaultValue={employee?.joinedOn} required />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="branch">Branch</Label>
-          <Input id="branch" name="branch" defaultValue={employee?.branch || "hq"} />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="phone">Phone</Label>
-          <Input id="phone" name="phone" defaultValue={employee?.phone || ""} />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
-          <Input id="email" name="email" type="email" defaultValue={employee?.email || ""} />
-        </div>
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="address">Address</Label>
-        <Input id="address" name="address" defaultValue={employee?.address || ""} />
-      </div>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor="emergencyContact">Emergency contact</Label>
-          <Input id="emergencyContact" name="emergencyContact" defaultValue={employee?.emergencyContact || ""} />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="emergencyPhone">Emergency phone</Label>
-          <Input id="emergencyPhone" name="emergencyPhone" defaultValue={employee?.emergencyPhone || ""} />
-        </div>
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="remarks">Remarks</Label>
-        <Input id="remarks" name="remarks" defaultValue={employee?.remarks || ""} />
-      </div>
-      <FileUpload
-        name="photoUrl"
-        label="Worker photo (stored in Cloudflare R2)"
-        folder="photos"
-        defaultValue={employee?.photoUrl || ""}
-      />
-      <DialogFooter>
-        <Button type="submit">{employee ? "Save changes" : "Register employee"}</Button>
-      </DialogFooter>
-    </form>
-  );
-}
-
 function EmployeeDetail({ employee, onEdit }: { employee: Employee; onEdit: () => void }) {
   const days = daysUntil(employee.passExpiry);
   return (
@@ -720,8 +618,11 @@ function EmployeeDetail({ employee, onEdit }: { employee: Employee; onEdit: () =
         <p className="text-sm text-foreground">{employee.remarks || "—"}</p>
       </div>
 
-      <div className="flex gap-2">
-        <Button onClick={onEdit}>
+      <div className="flex flex-wrap gap-2">
+        <Button asChild>
+          <Link to="/workforce/$id" params={{ id: employee.id }}>Open full profile</Link>
+        </Button>
+        <Button variant="outline" onClick={onEdit}>
           <Pencil className="mr-2 h-4 w-4" />
           Edit
         </Button>

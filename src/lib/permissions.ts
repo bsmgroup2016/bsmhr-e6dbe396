@@ -31,7 +31,14 @@ export const ROUTE_ROLES: Record<string, AppAuthRole[]> = {
 
 export function canAccess(path: string, roles: string[]): boolean {
   if (roles.includes("admin")) return true;
-  const allowed = ROUTE_ROLES[path];
+  // Match the most specific configured route prefix (e.g. /workforce/<id> -> /workforce).
+  const key =
+    ROUTE_ROLES[path] !== undefined
+      ? path
+      : Object.keys(ROUTE_ROLES)
+          .filter((r) => r !== "/" && path.startsWith(`${r}/`))
+          .sort((a, b) => b.length - a.length)[0];
+  const allowed = key ? ROUTE_ROLES[key] : undefined;
   if (!allowed) return true;
   return roles.some((r) => allowed.includes(r as AppAuthRole));
 }

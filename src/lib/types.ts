@@ -11,7 +11,24 @@ export interface User {
 }
 
 export type PassType = "Work Permit" | "S Pass" | "Employment Pass" | "Singaporean/PR";
-export type EmployeeStatus = "Active" | "On Leave" | "Deployed" | "Inactive";
+export type EmployeeStatus =
+  | "Draft"
+  | "Pending Approval"
+  | "Active"
+  | "Inactive"
+  | "On Leave"
+  | "Deployed"
+  | "Suspended"
+  | "Resigned"
+  | "Terminated"
+  | "Repatriated"
+  | "Archived";
+
+export type DeploymentStatus = "Available" | "Deployed" | "On Leave" | "Blocked" | "Not Deployable";
+export type EmploymentType = "Full Time" | "Part Time" | "Contract" | "Casual" | "Project Based";
+export type WorkerCategory = "Skilled" | "Semi-Skilled" | "General Worker" | "Supervisor" | "Office Staff" | "Driver";
+export type PaymentMethod = "Bank Transfer" | "GIRO" | "PayNow" | "Cash" | "Cheque";
+export type PayrollFrequency = "Monthly" | "Bi-Weekly" | "Weekly" | "Daily";
 
 export interface Employee {
   id: string;
@@ -37,6 +54,43 @@ export interface Employee {
   branch?: string;
   companyId?: string;
   remarks?: string;
+  // --- Phase 2: personal information ---
+  preferredName?: string;
+  dateOfBirth?: string;
+  gender?: "Male" | "Female" | "Other";
+  maritalStatus?: "Single" | "Married" | "Divorced" | "Widowed";
+  altPhone?: string;
+  homeCountryAddress?: string;
+  postalCode?: string;
+  emergencyRelation?: string;
+  emergencyEmail?: string;
+  bankName?: string;
+  bankAccount?: string;
+  paymentMethod?: PaymentMethod;
+  // --- Phase 2: employment information ---
+  department?: string;
+  employmentType?: EmploymentType;
+  workerCategory?: WorkerCategory;
+  jobTitle?: string;
+  secondarySkills?: string;
+  applicationDate?: string;
+  confirmationDate?: string;
+  contractStart?: string;
+  contractEnd?: string;
+  deploymentStatus?: DeploymentStatus;
+  reportingManager?: string;
+  siteSupervisor?: string;
+  payrollGroup?: string;
+  payrollFrequency?: PayrollFrequency;
+  lastWorkingDate?: string;
+  exitReason?: string;
+  internalNotes?: string;
+  // --- Phase 2: identity / compensation ---
+  passportNumber?: string;
+  passportExpiry?: string;
+  workPermitNumber?: string;
+  otRate?: number;
+  normalHours?: number;
   createdAt: string;
   updatedAt: string;
 }

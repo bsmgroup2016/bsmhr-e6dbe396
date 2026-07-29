@@ -1,0 +1,40 @@
+-- Phase 2: complete employee master data
+alter table public.employees
+  add column if not exists preferred_name text,
+  add column if not exists date_of_birth date,
+  add column if not exists gender text,
+  add column if not exists marital_status text,
+  add column if not exists alt_phone text,
+  add column if not exists home_country_address text,
+  add column if not exists postal_code text,
+  add column if not exists emergency_relation text,
+  add column if not exists emergency_email text,
+  add column if not exists bank_name text,
+  add column if not exists bank_account text,
+  add column if not exists payment_method text,
+  add column if not exists department text,
+  add column if not exists employment_type text,
+  add column if not exists worker_category text,
+  add column if not exists job_title text,
+  add column if not exists secondary_skills text,
+  add column if not exists application_date date,
+  add column if not exists confirmation_date date,
+  add column if not exists contract_start date,
+  add column if not exists contract_end date,
+  add column if not exists deployment_status text default 'Available',
+  add column if not exists reporting_manager text,
+  add column if not exists site_supervisor text,
+  add column if not exists payroll_group text,
+  add column if not exists payroll_frequency text default 'Monthly',
+  add column if not exists last_working_date date,
+  add column if not exists exit_reason text,
+  add column if not exists internal_notes text,
+  add column if not exists passport_number text,
+  add column if not exists passport_expiry date,
+  add column if not exists work_permit_number text,
+  add column if not exists ot_rate numeric(10,2),
+  add column if not exists normal_hours numeric(4,1) default 8;
+
+create index if not exists employees_deployment_status_idx on public.employees (deployment_status);
+create index if not exists employees_worker_category_idx on public.employees (worker_category);
+create index if not exists employees_passport_expiry_idx on public.employees (passport_expiry);
