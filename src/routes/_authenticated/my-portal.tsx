@@ -5,6 +5,7 @@ import { toast } from "sonner";
 
 import { AppShell } from "@/components/app-shell";
 import { useAuth } from "@/lib/auth";
+import { SelfProfileForm } from "@/components/self-profile-form";
 import { SummaryCard } from "@/components/ui/summary-card";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -78,12 +79,15 @@ function daysUntil(date?: string) {
 function MyPortalPage() {
   const { user } = useAuth();
   const email = user?.email?.toLowerCase() ?? "";
+  const [refresh, setRefresh] = useState(0);
   const employee = useMemo(
-    () => getEmployees().find((e) => (e.email ?? "").toLowerCase() === email),
-    [email],
+    () =>
+      getEmployees().find(
+        (e) => (user?.id && e.userId === user.id) || (!!email && (e.email ?? "").toLowerCase() === email),
+      ),
+    [email, user?.id, refresh],
   );
 
-  const [refresh, setRefresh] = useState(0);
   const [open, setOpen] = useState(false);
   const [type, setType] = useState<LeaveType>("Annual Leave");
   const [startDate, setStartDate] = useState("");
