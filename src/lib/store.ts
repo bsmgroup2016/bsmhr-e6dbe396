@@ -4,12 +4,13 @@
 import type {
   Employee, Client, Project, Site, Assignment, EmployeeDocument,
   Attendance, PayrollEntry, Approval, AuditLog, User, AppBranch, Company,
-  LeaveRequest,
+  LeaveRequest, RateAgreement, Invoice, InvoiceLine,
 } from "@/lib/types";
 import { supabase } from "@/integrations/supabase/client";
 import {
   loadAll, toEmployee, toClient, toProject, toSite, toAssignment,
   toDocument, toAttendance, toPayroll, toApproval, toCompany, toLeave,
+  toRate, toInvoice,
 } from "@/lib/db";
 
 export interface AppState {
@@ -24,6 +25,8 @@ export interface AppState {
   approvals: Approval[];
   auditLogs: AuditLog[];
   leaveRequests: LeaveRequest[];
+  rateAgreements: RateAgreement[];
+  invoices: Invoice[];
   users: User[];
   branches: AppBranch[];
   currentBranch: string;
@@ -40,7 +43,8 @@ const defaultBranches: AppBranch[] = [
 
 const emptyState: AppState = {
   employees: [], clients: [], projects: [], sites: [], assignments: [], documents: [],
-  attendance: [], payroll: [], approvals: [], auditLogs: [], leaveRequests: [], users: [],
+  attendance: [], payroll: [], approvals: [], auditLogs: [], leaveRequests: [],
+  rateAgreements: [], invoices: [], users: [],
   branches: defaultBranches, currentBranch: "hq",
   companies: [], currentCompany: "", currentUser: null,
 };
@@ -524,8 +528,192 @@ export function approveLeaveRequest(id: string): LeaveRequest | undefined {
   return updated;
 }
 
+/* ---------------- billing: rate agreements ---------------- */
+export function getRateAgreements(): RateAgreement[] { return getState().rateAgreements; }
+
+export function addRateAgreement(rate: Omit<RateAgreement, "id" | "createdAt" | "updatedAt">): RateAgreement {
+  const s = getState();
+  const now = new Date().toISOString();
+  const row: RateAgreement = { ...rate, id: newId(), createdAt: now, updatedAt: now };
+  setState({ ...s, rateAgreements: [row, ...s.rateAgreements] });
+  void supabase.from("rate_agreements").insert({ id: row.id, ...toRate(row) })
+    .then(({ error }) => fail("rate_agreements", error));
+  addAuditLog("CREATE", "RateAgreement", row.id, `Rate ${row.trade} @ ${row.normalRate}/${row.unit}`);
+  return row;
+}
+
+export function updateRateAgreement(id: string, updates: Partial<RateAgreement>): RateAgreement | undefined {
+  const s = getState();
+  const existing = s.rateAgreements.find((r) => r.id === id);
+  if (!existing) return undefined;
+  const updated = { ...existing, ...updates, updatedAt: new Date().toISOString() };
+  setState({ ...s, rateAgreements: s.rateAgreements.map((r) => (r.id === id ? updated : r)) });
+  void supabase.from("rate_agreements").update(toRate(updated)).eq("id", id)
+    .then(({ error }) => fail("rate_agreements", error));
+  addAuditLog("UPDATE", "RateAgreement", id, `Updated rate ${updated.trade}`);
+  return updated;
+}
+
+export function deleteRateAgreement(id: string): boolean {
+  const s = getState();
+  if (!s.rateAgreements.some((r) => r.id === id)) return false;
+  setState({ ...s, rateAgreements: s.rateAgreements.filter((r) => r.id !== id) });
+  void supabase.from("rate_agreements").delete().eq("id", id).then(({ error }) => fail("rate_agreements", error));
+  addAuditLog("DELETE", "RateAgreement", id, "Deleted rate agreement");
+  return true;
+}
+
+/** Best matching rate for a trade on a client/project at a given date. */
+export function findRate(
+  clientId: string,
+  trade: string,
+  projectId?: string,
+  onDate = new Date().toISOString().slice(0, 10),
+): RateAgreement | undefined {
+  const active = getState().rateAgreements.filter(
+    (r) =>
+      r.clientId === clientId &&
+      r.status === "Active" &&
+      (!r.effectiveFrom || r.effectiveFrom <= onDate) &&
+      (!r.effectiveTo || r.effectiveTo >= onDate) &&
+      (r.trade === trade || r.trade === "All"),
+  );
+  return (
+    active.find((r) => r.projectId === projectId && r.trade === trade) ??
+    active.find((r) => r.projectId === projectId) ??
+    active.find((r) => !r.projectId && r.trade === trade) ??
+    active.find((r) => !r.projectId)
+  );
+}
+
+/* ---------------- billing: invoices ---------------- */
+export function getInvoices(): Invoice[] { return getState().invoices; }
+export function getInvoice(id: string): Invoice | undefined { return getState().invoices.find((i) => i.id === id); }
+
+function nextInvoiceNo(): string {
+  const year = new Date().getFullYear();
+  const count = getState().invoices.filter((i) => i.invoiceNo.includes(`-${year}-`)).length + 1;
+  return `INV-${year}-${String(count).padStart(4, "0")}`;
+}
+
+export function computeInvoiceTotals(lines: InvoiceLine[], gstRate: number) {
+  const subtotal = lines.reduce((sum, l) => sum + l.amount, 0);
+  const gstAmount = Math.round(subtotal * (gstRate / 100) * 100) / 100;
+  return { subtotal: Math.round(subtotal * 100) / 100, gstAmount, total: Math.round((subtotal + gstAmount) * 100) / 100 };
+}
+
+export function addInvoice(
+  invoice: Omit<Invoice, "id" | "invoiceNo" | "subtotal" | "gstAmount" | "total" | "createdAt" | "updatedAt"> &
+    Partial<Pick<Invoice, "invoiceNo">>,
+): Invoice {
+  const s = getState();
+  const now = new Date().toISOString();
+  const totals = computeInvoiceTotals(invoice.lines, invoice.gstRate);
+  const row: Invoice = {
+    ...invoice,
+    ...totals,
+    invoiceNo: invoice.invoiceNo ?? nextInvoiceNo(),
+    id: newId(),
+    createdAt: now,
+    updatedAt: now,
+  };
+  setState({ ...s, invoices: [row, ...s.invoices] });
+  void supabase.from("invoices").insert({ id: row.id, ...toInvoice(row) })
+    .then(({ error }) => fail("invoices", error));
+  addAuditLog("CREATE", "Invoice", row.id, `Invoice ${row.invoiceNo} — S$${row.total.toFixed(2)}`);
+  return row;
+}
+
+export function updateInvoice(id: string, updates: Partial<Invoice>): Invoice | undefined {
+  const s = getState();
+  const existing = s.invoices.find((i) => i.id === id);
+  if (!existing) return undefined;
+  const merged = { ...existing, ...updates };
+  const totals = computeInvoiceTotals(merged.lines, merged.gstRate);
+  const updated: Invoice = { ...merged, ...totals, updatedAt: new Date().toISOString() };
+  setState({ ...s, invoices: s.invoices.map((i) => (i.id === id ? updated : i)) });
+  void supabase.from("invoices").update(toInvoice(updated)).eq("id", id)
+    .then(({ error }) => fail("invoices", error));
+  addAuditLog("UPDATE", "Invoice", id, `Invoice ${updated.invoiceNo} set to ${updated.status}`);
+  return updated;
+}
+
+export function deleteInvoice(id: string): boolean {
+  const s = getState();
+  if (!s.invoices.some((i) => i.id === id)) return false;
+  setState({ ...s, invoices: s.invoices.filter((i) => i.id !== id) });
+  void supabase.from("invoices").delete().eq("id", id).then(({ error }) => fail("invoices", error));
+  addAuditLog("DELETE", "Invoice", id, "Deleted invoice");
+  return true;
+}
+
+export function recordInvoicePayment(id: string, amount: number): Invoice | undefined {
+  const inv = getInvoice(id);
+  if (!inv) return undefined;
+  const paid = Math.round((inv.amountPaid + amount) * 100) / 100;
+  const status: Invoice["status"] = paid >= inv.total ? "Paid" : paid > 0 ? "Partially Paid" : inv.status;
+  return updateInvoice(id, { amountPaid: paid, status });
+}
+
+/**
+ * Build invoice lines from attendance in a period for workers deployed to a
+ * client's project sites, priced with the matching rate agreements.
+ */
+export function buildInvoiceLines(
+  clientId: string,
+  periodStart: string,
+  periodEnd: string,
+  projectId?: string,
+): InvoiceLine[] {
+  const s = getState();
+  const projects = s.projects.filter((p) => p.clientId === clientId && (!projectId || p.id === projectId));
+  const projectIds = new Set(projects.map((p) => p.id));
+  const siteIds = new Set(s.sites.filter((si) => projectIds.has(si.projectId)).map((si) => si.id));
+
+  const empIds = new Set(
+    s.assignments
+      .filter((a) => siteIds.has(a.siteId) && a.status !== "Rejected" && a.startDate <= periodEnd)
+      .map((a) => a.employeeId),
+  );
+
+  const lines: InvoiceLine[] = [];
+  for (const empId of empIds) {
+    const emp = s.employees.find((e) => e.id === empId);
+    if (!emp) continue;
+    const records = s.attendance.filter(
+      (a) => a.employeeId === empId && a.date >= periodStart && a.date <= periodEnd,
+    );
+    if (records.length === 0) continue;
+    const hours = records.reduce((sum, a) => sum + (a.hoursWorked || 0), 0);
+    const otHours = records.reduce((sum, a) => sum + (a.overtimeHours || 0), 0);
+    const days = records.filter((a) => a.status === "Present" || a.status === "Half Day").length;
+    if (hours === 0 && otHours === 0 && days === 0) continue;
+
+    const rate = findRate(clientId, emp.trade, projectId, periodEnd);
+    const unit = rate?.unit ?? "Hourly";
+    const normalRate = rate?.normalRate ?? 0;
+    const otRate = rate?.otRate ?? 0;
+    const quantity = unit === "Hourly" ? hours : unit === "Daily" ? days : 1;
+    const amount = Math.round((quantity * normalRate + otHours * otRate) * 100) / 100;
+
+    lines.push({
+      description: `${emp.name} (${emp.employeeCode}) — ${emp.trade || "Worker"}`,
+      employeeId: emp.id,
+      trade: emp.trade,
+      unit,
+      quantity: Math.round(quantity * 100) / 100,
+      rate: normalRate,
+      otQuantity: Math.round(otHours * 100) / 100,
+      otRate,
+      amount,
+    });
+  }
+  return lines.sort((a, b) => b.amount - a.amount);
+}
+
 /* ---------------- approvals ---------------- */
 export function getApprovals(): Approval[] { return getState().approvals; }
+
 export function getApproval(id: string): Approval | undefined { return getState().approvals.find((a) => a.id === id); }
 
 export function addApproval(approval: Omit<Approval, "id" | "createdAt" | "updatedAt">): Approval {

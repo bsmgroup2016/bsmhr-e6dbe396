@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type {
   Employee, Client, Project, Site, Assignment, EmployeeDocument,
   Attendance, PayrollEntry, Approval, AuditLog, Company, User,
-  LeaveRequest,
+  LeaveRequest, RateAgreement, Invoice, InvoiceLine,
 } from "@/lib/types";
 
 type Row = Record<string, any>;
@@ -226,12 +226,51 @@ export const toLeave = (l: Partial<LeaveRequest>): Row => ({
   remarks: l.remarks ?? null,
 });
 
+/* ---------- billing ---------- */
+export const fromRate = (r: Row): RateAgreement => ({
+  id: r.id, clientId: r.client_id, projectId: r.project_id ?? undefined,
+  trade: r.trade ?? "", unit: (r.unit ?? "Hourly") as RateAgreement["unit"],
+  normalRate: Number(r.normal_rate ?? 0), otRate: Number(r.ot_rate ?? 0),
+  effectiveFrom: d(r.effective_from) ?? "", effectiveTo: d(r.effective_to),
+  status: (r.status ?? "Active") as RateAgreement["status"], remarks: r.remarks ?? undefined,
+  createdAt: r.created_at, updatedAt: r.updated_at,
+});
+
+export const toRate = (a: Partial<RateAgreement>): Row => ({
+  client_id: a.clientId, project_id: a.projectId || null, trade: a.trade, unit: a.unit,
+  normal_rate: a.normalRate ?? 0, ot_rate: a.otRate ?? 0,
+  effective_from: nullDate(a.effectiveFrom), effective_to: nullDate(a.effectiveTo),
+  status: a.status, remarks: a.remarks ?? null,
+});
+
+export const fromInvoice = (r: Row): Invoice => ({
+  id: r.id, companyId: r.company_id ?? "", clientId: r.client_id,
+  projectId: r.project_id ?? undefined, invoiceNo: r.invoice_no ?? "",
+  periodStart: d(r.period_start) ?? "", periodEnd: d(r.period_end) ?? "",
+  issueDate: d(r.issue_date) ?? "", dueDate: d(r.due_date) ?? "",
+  lines: Array.isArray(r.lines) ? (r.lines as InvoiceLine[]) : [],
+  subtotal: Number(r.subtotal ?? 0), gstRate: Number(r.gst_rate ?? 0),
+  gstAmount: Number(r.gst_amount ?? 0), total: Number(r.total ?? 0),
+  amountPaid: Number(r.amount_paid ?? 0),
+  status: (r.status ?? "Draft") as Invoice["status"], notes: r.notes ?? undefined,
+  createdAt: r.created_at, updatedAt: r.updated_at,
+});
+
+export const toInvoice = (i: Partial<Invoice>): Row => ({
+  company_id: i.companyId || null, client_id: i.clientId, project_id: i.projectId || null,
+  invoice_no: i.invoiceNo, period_start: nullDate(i.periodStart), period_end: nullDate(i.periodEnd),
+  issue_date: nullDate(i.issueDate), due_date: nullDate(i.dueDate), lines: i.lines ?? [],
+  subtotal: i.subtotal ?? 0, gst_rate: i.gstRate ?? 0, gst_amount: i.gstAmount ?? 0,
+  total: i.total ?? 0, amount_paid: i.amountPaid ?? 0, status: i.status, notes: i.notes ?? null,
+});
+
 /* ---------- bulk load ---------- */
 export interface LoadedData {
   companies: Company[]; employees: Employee[]; clients: Client[]; projects: Project[];
   sites: Site[]; assignments: Assignment[]; documents: EmployeeDocument[];
   attendance: Attendance[]; payroll: PayrollEntry[]; approvals: Approval[];
   auditLogs: AuditLog[]; users: User[]; leaveRequests: LeaveRequest[];
+  rateAgreements: RateAgreement[]; invoices: Invoice[];
 }
 
 async function all(table: string, order = "created_at") {
@@ -244,10 +283,12 @@ export async function loadAll(): Promise<LoadedData> {
   const [
     companies, employees, clients, projects, sites, assignments,
     documents, attendance, payroll, approvals, auditLogs, profiles, roles, leaveRequests,
+    rateAgreements, invoices,
   ] = await Promise.all([
     all("companies"), all("employees"), all("clients"), all("projects"), all("sites"),
     all("assignments"), all("employee_documents"), all("attendance"), all("payroll_entries"),
     all("approvals"), all("audit_logs"), all("profiles"), all("user_roles"), all("leave_requests"),
+    all("rate_agreements"), all("invoices"),
   ]);
 
   const roleByUser = new Map<string, string>();
@@ -282,5 +323,7 @@ export async function loadAll(): Promise<LoadedData> {
     auditLogs: auditLogs.map(fromAuditLog),
     users,
     leaveRequests: leaveRequests.map(fromLeave),
+    rateAgreements: rateAgreements.map(fromRate),
+    invoices: invoices.map(fromInvoice),
   };
 }
