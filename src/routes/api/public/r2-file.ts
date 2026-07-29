@@ -1,10 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { r2Client, safeKey } from "@/lib/r2.server";
+import { r2Client, safeKey, verifyUser } from "@/lib/r2.server";
 
 export const Route = createFileRoute("/api/public/r2-file")({
   server: {
     handlers: {
       GET: async ({ request }) => {
+        const userId = await verifyUser(request);
+        if (!userId) return new Response("Unauthorized", { status: 401 });
         const key = safeKey(new URL(request.url).searchParams.get("key") || "");
         if (!key) return new Response("Missing key", { status: 400 });
         try {
