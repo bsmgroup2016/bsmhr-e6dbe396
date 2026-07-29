@@ -160,13 +160,13 @@ export default function CrmPage() {
             disabled={filteredLeads.length === 0}
             onClick={() =>
               exportRows(
-                "crm-leads",
                 filteredLeads.map((l) => ({
                   Company: l.companyName, Contact: l.contactPerson ?? "", Phone: l.phone ?? "",
                   Trade: l.trade ?? "", Headcount: l.headcountNeeded ?? "", MonthlyValue: l.monthlyValue,
                   Source: l.source, Stage: l.stage, Probability: l.probability,
                   ExpectedClose: l.expectedCloseDate ?? "", Owner: l.ownerName ?? "",
                 })),
+                "crm-leads",
               )
             }
           >
