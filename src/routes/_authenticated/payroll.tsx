@@ -122,6 +122,11 @@ export default function PayrollPage() {
 
   const totalNetPay = filtered.reduce((s, p) => s + p.netPay, 0);
   const totalLevies = filtered.reduce((s, p) => s + p.levies, 0);
+  const totalCpf = filtered.reduce((s, p) => s + p.cpfEmployee + p.cpfEmployer, 0);
+  const totalEmployerCost = filtered.reduce(
+    (s, p) => s + (p.employerCost ?? p.basicSalary + p.overtimePay + p.allowances + p.cpfEmployer + (p.sdl ?? 0) + p.levies),
+    0,
+  );
   const paidCount = filtered.filter((p) => p.status === "Paid").length;
   const pendingCount = filtered.filter((p) => p.status === "Pending Approval" || p.status === "Draft").length;
 
@@ -408,8 +413,10 @@ export default function PayrollPage() {
           </div>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
           <SummaryCard title="Net pay" value={`S$${totalNetPay.toLocaleString()}`} icon={<DollarSign className="h-5 w-5" />} variant="primary" caption={month} />
+          <SummaryCard title="CPF total" value={`S$${Math.round(totalCpf).toLocaleString()}`} icon={<Landmark className="h-5 w-5" />} variant="info" caption="Employee + employer" />
+          <SummaryCard title="Employer cost" value={`S$${Math.round(totalEmployerCost).toLocaleString()}`} icon={<Calculator className="h-5 w-5" />} variant="default" caption="Gross + CPF + SDL + levy" />
           <SummaryCard title="Levies" value={`S$${totalLevies.toLocaleString()}`} icon={<DollarSign className="h-5 w-5" />} variant="warning" caption={month} />
           <SummaryCard title="Paid" value={paidCount.toString()} icon={<CheckCircle2 className="h-5 w-5" />} variant="success" caption={month} />
           <SummaryCard title="Pending" value={pendingCount.toString()} icon={<Clock className="h-5 w-5" />} variant="info" caption={month} />
