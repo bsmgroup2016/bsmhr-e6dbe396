@@ -16,6 +16,7 @@ import {
 
 import { AppShell } from "@/components/app-shell";
 import { FileUpload } from "@/components/file-upload";
+import { R2Image } from "@/components/r2-image";
 import { ExportButton, ImportDialog } from "@/components/data-io";
 import { SummaryCard } from "@/components/ui/summary-card";
 import { StatusBadge } from "@/components/ui/status-badge";
