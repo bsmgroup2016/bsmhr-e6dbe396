@@ -165,12 +165,12 @@ export default function InventoryPage() {
             size="sm"
             onClick={() =>
               exportRows(
-                "inventory",
                 filteredItems.map((i) => ({
                   SKU: i.sku, Name: i.name, Category: i.category, Unit: i.unit,
                   OnHand: stockOnHand(i.id), Reorder: i.reorderLevel, UnitCost: i.unitCost,
                   Value: stockOnHand(i.id) * i.unitCost, Location: i.location ?? "", Supplier: i.supplier ?? "",
                 })),
+                "inventory",
               )
             }
           >
@@ -437,7 +437,7 @@ export default function InventoryPage() {
                       <TableRow key={m.id}>
                         <TableCell className="whitespace-nowrap">{m.movementDate}</TableCell>
                         <TableCell className="font-medium">{itemName(m.itemId)}</TableCell>
-                        <TableCell><StatusBadge status={m.movementType} /></TableCell>
+                        <TableCell><StatusBadge label={m.movementType} variant={m.movementType === "Out" || m.movementType === "Damaged" ? "warning" : "success"} /></TableCell>
                         <TableCell className="text-right">{m.quantity}</TableCell>
                         <TableCell>{siteName(m.siteId)}</TableCell>
                         <TableCell>{empName(m.employeeId)}</TableCell>
@@ -559,7 +559,7 @@ export default function InventoryPage() {
                         <TableCell className="text-right">{p.quantity}</TableCell>
                         <TableCell className="text-right">S${(p.quantity * p.unitCost).toFixed(2)}</TableCell>
                         <TableCell>{p.expectedDate || "—"}</TableCell>
-                        <TableCell><StatusBadge status={p.status} /></TableCell>
+                        <TableCell><StatusBadge label={p.status} variant={p.status === "Received" ? "success" : p.status === "Cancelled" ? "destructive" : "info"} /></TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-1">
                             {p.status !== "Received" && p.status !== "Cancelled" && (

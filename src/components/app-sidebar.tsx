@@ -14,6 +14,7 @@ import {
   HardHat,
   Handshake,
   Layers,
+  Package,
   Loader2,
   LogOut,
   Receipt,
