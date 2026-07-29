@@ -270,6 +270,15 @@ function BillingPage() {
             </p>
           </div>
           <div className="mt-2 flex flex-wrap gap-2 sm:mt-0">
+            <Button size="sm" variant="secondary" onClick={handleRunBilling}>
+              <PlayCircle className="mr-1 h-4 w-4" />
+              Run contract billing
+              {dueContracts.length > 0 && (
+                <span className="ml-1 rounded-full bg-primary px-1.5 text-[11px] text-primary-foreground">
+                  {dueContracts.length}
+                </span>
+              )}
+            </Button>
             <Dialog open={isGenOpen} onOpenChange={setIsGenOpen}>
               <DialogTrigger asChild>
                 <Button size="sm">
@@ -301,6 +310,7 @@ function BillingPage() {
         <Tabs defaultValue="invoices">
           <TabsList>
             <TabsTrigger value="invoices">Invoices</TabsTrigger>
+            <TabsTrigger value="contracts">Contracts</TabsTrigger>
             <TabsTrigger value="rates">Rate agreements</TabsTrigger>
           </TabsList>
 
