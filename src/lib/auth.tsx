@@ -9,7 +9,9 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import type { User, Session } from "@supabase/supabase-js";
 
-type AppRole = "admin" | "manager" | "supervisor" | "client_user";
+import type { AppAuthRole } from "@/lib/permissions";
+
+type AppRole = AppAuthRole;
 
 interface AuthContextValue {
   user: User | null;
@@ -110,8 +112,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isLoading,
     isAuthenticated: !!user,
     isAdmin: roles.includes("admin"),
-    isManager: roles.includes("admin") || roles.includes("manager"),
-    isSupervisor: roles.includes("admin") || roles.includes("manager") || roles.includes("supervisor"),
+    isManager: roles.includes("admin") || roles.includes("manager") || roles.includes("hr"),
+    isSupervisor:
+      roles.includes("admin") ||
+      roles.includes("manager") ||
+      roles.includes("hr") ||
+      roles.includes("supervisor"),
     signIn,
     signUp,
     signOut,

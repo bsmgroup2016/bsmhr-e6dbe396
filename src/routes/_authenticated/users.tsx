@@ -26,9 +26,16 @@ import {
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
-import type { AppAuthRole } from "@/lib/permissions";
+import { ROLE_LABELS, type AppAuthRole } from "@/lib/permissions";
 
-const roles: AppAuthRole[] = ["admin", "manager", "supervisor", "client_user"];
+const roles: AppAuthRole[] = [
+  "admin",
+  "manager",
+  "hr",
+  "supervisor",
+  "employee",
+  "client_user",
+];
 
 interface SystemUser {
   id: string;
