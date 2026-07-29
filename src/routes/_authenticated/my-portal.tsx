@@ -260,6 +260,7 @@ function MyPortalPage() {
         <Tabs defaultValue="profile">
           <TabsList>
             <TabsTrigger value="profile">Profile</TabsTrigger>
+            <TabsTrigger value="edit">Edit my profile</TabsTrigger>
             <TabsTrigger value="leave">My leave</TabsTrigger>
             <TabsTrigger value="payslips">Payslips</TabsTrigger>
             <TabsTrigger value="documents">Documents</TabsTrigger>
@@ -290,6 +291,19 @@ function MyPortalPage() {
                 </div>
               ))}
             </div>
+          </TabsContent>
+
+          <TabsContent value="edit" className="mt-4 space-y-3">
+            {employee.status === "Pending Profile Completion" ? (
+              <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-sm">
+                Your profile is incomplete. Fill in the details below and submit for HR verification.
+              </div>
+            ) : employee.status === "Pending Verification" ? (
+              <div className="rounded-lg border border-primary/40 bg-primary/10 p-3 text-sm">
+                Submitted — waiting for HR verification. You can still update your details.
+              </div>
+            ) : null}
+            <SelfProfileForm employee={employee} onSaved={() => setRefresh((n) => n + 1)} />
           </TabsContent>
 
           <TabsContent value="leave" className="mt-4">
