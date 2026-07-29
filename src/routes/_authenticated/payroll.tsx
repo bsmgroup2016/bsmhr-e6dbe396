@@ -4,11 +4,12 @@ import {
   Plus,
   Search,
   DollarSign,
-  FileText,
   CheckCircle2,
   Clock,
-  AlertCircle,
-  Download,
+  Wand2,
+  Printer,
+  Trash2,
+  Building2,
 } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
@@ -43,8 +44,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { getEmployees, getPayroll, addPayroll } from "@/lib/store";
-import type { PayrollEntry, PayrollStatus } from "@/lib/types";
+import {
+  getEmployees,
+  getPayroll,
+  addPayroll,
+  updatePayroll,
+  deletePayroll,
+  generatePayrollForMonth,
+  getCompanies,
+  getCurrentCompany,
+  getCurrentUser,
+} from "@/lib/store";
+import { toast } from "sonner";
+import type { Employee, PayrollEntry, PayrollStatus } from "@/lib/types";
 import { pick, type ImportColumn } from "@/lib/xlsx";
 
 const statuses: PayrollStatus[] = ["Draft", "Pending Approval", "Approved", "Paid", "Rejected"];
@@ -77,15 +89,26 @@ export const Route = createFileRoute("/_authenticated/payroll")({
 export default function PayrollPage() {
   const [payroll, setPayroll] = useState(getPayroll());
   const [employees] = useState(getEmployees());
+  const [companies] = useState(getCompanies());
   const [search, setSearch] = useState("");
-  const [month, setMonth] = useState("2026-07");
+  const [month, setMonth] = useState(() => new Date().toISOString().slice(0, 7));
   const [statusFilter, setStatusFilter] = useState<PayrollStatus | "all">("all");
+  const [companyFilter, setCompanyFilter] = useState<string>(getCurrentCompany() || "all");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [payslipOf, setPayslipOf] = useState<PayrollEntry | null>(null);
 
   const filtered = payroll.filter((p) => {
     const q = search.toLowerCase();
     const emp = employees.find((e) => e.id === p.employeeId);
-    return p.month === month && (emp?.name.toLowerCase().includes(q) || emp?.employeeCode.toLowerCase().includes(q)) && (statusFilter === "all" || p.status === statusFilter);
+    const matchesCompany = companyFilter === "all" || emp?.companyId === companyFilter;
+    const matchesSearch =
+      !q || emp?.name.toLowerCase().includes(q) || emp?.employeeCode.toLowerCase().includes(q);
+    return (
+      p.month === month &&
+      matchesCompany &&
+      matchesSearch &&
+      (statusFilter === "all" || p.status === statusFilter)
+    );
   });
 
   const totalNetPay = filtered.reduce((s, p) => s + p.netPay, 0);
@@ -95,6 +118,35 @@ export default function PayrollPage() {
 
   function refresh() {
     setPayroll(getPayroll());
+  }
+
+  function handleGenerate() {
+    const { created, skipped } = generatePayrollForMonth(
+      month,
+      companyFilter === "all" ? undefined : companyFilter,
+    );
+    refresh();
+    toast.success(`${created} payroll draft created`, {
+      description: skipped ? `${skipped} already existed for ${month}.` : `Month ${month}.`,
+    });
+  }
+
+  function setStatus(entry: PayrollEntry, status: PayrollStatus) {
+    const user = getCurrentUser();
+    updatePayroll(entry.id, {
+      status,
+      approvedBy: status === "Approved" ? user?.id : entry.approvedBy,
+      approvedAt: status === "Approved" ? new Date().toISOString() : entry.approvedAt,
+      paidAt: status === "Paid" ? new Date().toISOString() : entry.paidAt,
+    });
+    refresh();
+    toast.success(`Marked as ${status}`);
+  }
+
+  function handleDelete(entry: PayrollEntry) {
+    deletePayroll(entry.id);
+    refresh();
+    toast.success("Payroll entry deleted");
   }
 
   function payrollRow(entry: PayrollEntry) {
@@ -149,7 +201,7 @@ export default function PayrollPage() {
         cpfEmployee,
         cpfEmployer: num(get("cpfEmployer")),
         levies,
-        netPay: basicSalary + overtimePay + allowances - deductions - cpfEmployee - levies,
+        netPay: basicSalary + overtimePay + allowances - deductions - cpfEmployee,
         status: (statuses.find((s) => s.toLowerCase() === statusValue) ?? "Draft") as PayrollStatus,
       });
       imported += 1;
@@ -165,7 +217,7 @@ export default function PayrollPage() {
     const deductions = Number(formData.get("deductions") || 0);
     const cpfEmployee = Number(formData.get("cpfEmployee") || 0);
     const levies = Number(formData.get("levies") || 0);
-    const netPay = basicSalary + overtimePay + allowances - deductions - cpfEmployee - levies;
+    const netPay = basicSalary + overtimePay + allowances - deductions - cpfEmployee;
     addPayroll({
       employeeId: formData.get("employeeId") as string,
       month: formData.get("month") as string,
@@ -192,6 +244,10 @@ export default function PayrollPage() {
             <p className="text-sm text-muted-foreground">Monthly payroll and payslip management.</p>
           </div>
           <div className="flex gap-2">
+            <Button size="sm" variant="outline" onClick={handleGenerate}>
+              <Wand2 className="mr-1 h-4 w-4" />
+              Generate {month}
+            </Button>
             <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
               <DialogTrigger asChild>
                 <Button size="sm">
@@ -234,6 +290,20 @@ export default function PayrollPage() {
             </div>
             <div className="flex gap-2">
               <Input type="month" value={month} onChange={(e) => setMonth(e.target.value)} className="w-40" />
+              <Select value={companyFilter} onValueChange={setCompanyFilter}>
+                <SelectTrigger className="w-44">
+                  <Building2 className="mr-1 h-4 w-4 text-muted-foreground" />
+                  <SelectValue placeholder="Company" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All companies</SelectItem>
+                  {companies.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as PayrollStatus | "all")}>
                 <SelectTrigger className="w-40">
                   <SelectValue placeholder="Status" />
@@ -263,12 +333,13 @@ export default function PayrollPage() {
                   <TableHead>Levy</TableHead>
                   <TableHead>Net pay</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filtered.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="h-32 text-center">
+                    <TableCell colSpan={10} className="h-32 text-center">
                       <EmptyState className="bg-transparent border-0" icon={<DollarSign className="h-5 w-5" />} title="No payroll entries" description={`No records for ${month}.`} />
                     </TableCell>
                   </TableRow>
@@ -295,6 +366,28 @@ export default function PayrollPage() {
                             dot
                           />
                         </TableCell>
+                        <TableCell>
+                          <div className="flex items-center justify-end gap-1">
+                            <Select value="" onValueChange={(v) => setStatus(p, v as PayrollStatus)}>
+                              <SelectTrigger className="h-8 w-32 text-xs">
+                                <SelectValue placeholder="Set status" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {statuses.map((s) => (
+                                  <SelectItem key={s} value={s}>
+                                    {s}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <Button size="icon" variant="ghost" title="Payslip" onClick={() => setPayslipOf(p)}>
+                              <Printer className="h-4 w-4" />
+                            </Button>
+                            <Button size="icon" variant="ghost" title="Delete" onClick={() => handleDelete(p)}>
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </div>
+                        </TableCell>
                       </TableRow>
                     );
                   })
@@ -303,8 +396,84 @@ export default function PayrollPage() {
             </Table>
           </div>
         </div>
+
+        <PayslipDialog
+          entry={payslipOf}
+          employee={payslipOf ? employees.find((e) => e.id === payslipOf.employeeId) : undefined}
+          companyName={
+            companies.find((c) => c.id === employees.find((e) => e.id === payslipOf?.employeeId)?.companyId)?.name ??
+            "BSM Engineering"
+          }
+          onClose={() => setPayslipOf(null)}
+        />
       </div>
     </AppShell>
+  );
+}
+
+function PayslipDialog({
+  entry,
+  employee,
+  companyName,
+  onClose,
+}: {
+  entry: PayrollEntry | null;
+  employee?: Employee;
+  companyName: string;
+  onClose: () => void;
+}) {
+  if (!entry) return null;
+  const money = (n: number) => `S$ ${n.toLocaleString()}`;
+  const rows: [string, number][] = [
+    ["Basic salary", entry.basicSalary],
+    ["Overtime", entry.overtimePay],
+    ["Allowances", entry.allowances],
+    ["Deductions", -entry.deductions],
+    ["CPF (employee)", -entry.cpfEmployee],
+  ];
+
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Payslip — {entry.month}</DialogTitle>
+          <DialogDescription>{companyName}</DialogDescription>
+        </DialogHeader>
+        <div id="payslip-print" className="space-y-4 rounded-lg border p-4 text-sm">
+          <div>
+            <div className="text-base font-semibold">{employee?.name}</div>
+            <div className="text-xs text-muted-foreground">
+              {employee?.employeeCode} · {employee?.trade} · {employee?.passType}
+            </div>
+          </div>
+          <div className="space-y-1">
+            {rows.map(([label, value]) => (
+              <div key={label} className="flex justify-between">
+                <span className="text-muted-foreground">{label}</span>
+                <span>{money(value)}</span>
+              </div>
+            ))}
+          </div>
+          <div className="flex justify-between border-t pt-2 text-base font-semibold">
+            <span>Net pay</span>
+            <span>{money(entry.netPay)}</span>
+          </div>
+          <div className="flex justify-between text-xs text-muted-foreground">
+            <span>Employer CPF {money(entry.cpfEmployer)}</span>
+            <span>Levy {money(entry.levies)}</span>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>
+            Close
+          </Button>
+          <Button onClick={() => window.print()}>
+            <Printer className="mr-1 h-4 w-4" />
+            Print
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 

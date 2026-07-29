@@ -332,6 +332,76 @@ export function addPayroll(payroll: Omit<PayrollEntry, "id" | "createdAt" | "upd
   return row;
 }
 
+export function updatePayroll(id: string, updates: Partial<PayrollEntry>): PayrollEntry | undefined {
+  const s = getState();
+  const existing = s.payroll.find((p) => p.id === id);
+  if (!existing) return undefined;
+  const updated = { ...existing, ...updates, updatedAt: new Date().toISOString() };
+  setState({ ...s, payroll: s.payroll.map((p) => (p.id === id ? updated : p)) });
+  void supabase.from("payroll_entries").update(toPayroll(updated)).eq("id", id).then(({ error }) => fail("payroll_entries", error));
+  addAuditLog("UPDATE", "Payroll", id, `Payroll ${updated.month} set to ${updated.status}`);
+  return updated;
+}
+
+export function deletePayroll(id: string): boolean {
+  const s = getState();
+  const row = s.payroll.find((p) => p.id === id);
+  if (!row) return false;
+  setState({ ...s, payroll: s.payroll.filter((p) => p.id !== id) });
+  void supabase.from("payroll_entries").delete().eq("id", id).then(({ error }) => fail("payroll_entries", error));
+  addAuditLog("DELETE", "Payroll", id, `Deleted payroll entry ${row.month}`);
+  return true;
+}
+
+/** Singapore CPF: only for Singaporean/PR staff. Foreign pass holders pay levy instead. */
+export function computeCpf(employee: Employee, grossWage: number) {
+  if (employee.passType !== "Singaporean/PR") return { cpfEmployee: 0, cpfEmployer: 0 };
+  const capped = Math.min(grossWage, 7400);
+  return {
+    cpfEmployee: Math.round(capped * 0.2),
+    cpfEmployer: Math.round(capped * 0.17),
+  };
+}
+
+/** Auto-build payroll drafts for a month from employee salary + attendance OT. */
+export function generatePayrollForMonth(month: string, companyId?: string): { created: number; skipped: number } {
+  const s = getState();
+  const staff = s.employees.filter(
+    (e) => e.status !== "Inactive" && (!companyId || e.companyId === companyId),
+  );
+  let created = 0;
+  let skipped = 0;
+
+  for (const emp of staff) {
+    if (s.payroll.some((p) => p.employeeId === emp.id && p.month === month)) {
+      skipped += 1;
+      continue;
+    }
+    const rows = s.attendance.filter((a) => a.employeeId === emp.id && a.date.startsWith(month));
+    const otHours = rows.reduce((sum, a) => sum + (a.overtimeHours || 0), 0);
+    const basicSalary = emp.basicSalary || 0;
+    const hourlyRate = basicSalary / 26 / 8;
+    const overtimePay = Math.round(otHours * hourlyRate * 1.5);
+    const levies = Math.round(emp.levyRate ?? 0);
+    const { cpfEmployee, cpfEmployer } = computeCpf(emp, basicSalary + overtimePay);
+    addPayroll({
+      employeeId: emp.id,
+      month,
+      basicSalary,
+      overtimePay,
+      allowances: 0,
+      deductions: 0,
+      cpfEmployee,
+      cpfEmployer,
+      levies,
+      netPay: basicSalary + overtimePay - cpfEmployee,
+      status: "Draft",
+    });
+    created += 1;
+  }
+  return { created, skipped };
+}
+
 /* ---------------- approvals ---------------- */
 export function getApprovals(): Approval[] { return getState().approvals; }
 export function getApproval(id: string): Approval | undefined { return getState().approvals.find((a) => a.id === id); }
