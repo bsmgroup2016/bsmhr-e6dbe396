@@ -1,34 +1,52 @@
-export type AppAuthRole = "admin" | "manager" | "supervisor" | "client_user";
+export type AppAuthRole =
+  | "admin"
+  | "manager"
+  | "hr"
+  | "supervisor"
+  | "client_user"
+  | "employee";
+
+export const ROLE_LABELS: Record<AppAuthRole, string> = {
+  admin: "Admin — full control",
+  manager: "Manager — operations & finance",
+  hr: "HR — full workforce access",
+  supervisor: "Supervisor — site & workforce",
+  client_user: "Client user — limited view",
+  employee: "Employee — own portal only",
+};
+
+/** Routes any signed-in account can open, even with no role assigned yet. */
+export const OPEN_ROUTES = ["/", "/my-portal"];
 
 /**
  * Route -> roles allowed to open it.
- * A route missing from this map is open to any authenticated user.
- * Admin always passes.
+ * Admin always passes. HR gets everything except account/system administration.
  */
+const STAFF: AppAuthRole[] = ["admin", "manager", "hr", "supervisor"];
+const BACK_OFFICE: AppAuthRole[] = ["admin", "manager", "hr"];
+
 export const ROUTE_ROLES: Record<string, AppAuthRole[]> = {
-  "/": ["admin", "manager", "supervisor", "client_user"],
-  "/my-portal": ["admin", "manager", "supervisor", "client_user"],
-  "/alerts": ["admin", "manager", "supervisor"],
-  "/companies": ["admin", "manager"],
-  "/workforce": ["admin", "manager", "supervisor"],
-  "/documents": ["admin", "manager", "supervisor"],
-  "/compliance": ["admin", "manager", "supervisor"],
-  "/time-management": ["admin", "manager", "supervisor"],
-  "/leave": ["admin", "manager", "supervisor"],
-  "/payroll": ["admin", "manager"],
-  "/clients": ["admin", "manager"],
-  "/projects": ["admin", "manager", "supervisor"],
-  "/operations": ["admin", "manager", "supervisor"],
-  "/recruitment": ["admin", "manager"],
+  "/alerts": STAFF,
+  "/companies": BACK_OFFICE,
+  "/workforce": STAFF,
+  "/documents": STAFF,
+  "/compliance": STAFF,
+  "/time-management": STAFF,
+  "/leave": STAFF,
+  "/payroll": BACK_OFFICE,
+  "/clients": BACK_OFFICE,
+  "/projects": STAFF,
+  "/operations": STAFF,
+  "/recruitment": BACK_OFFICE,
   "/crm": ["admin", "manager"],
   "/billing": ["admin", "manager"],
-  "/finance": ["admin"],
-  "/accommodation": ["admin", "manager"],
-  "/transport": ["admin", "manager"],
-  "/assets": ["admin", "manager", "supervisor"],
-  "/inventory": ["admin", "manager", "supervisor"],
-  "/approvals": ["admin", "manager"],
-  "/reports": ["admin", "manager"],
+  "/finance": ["admin", "manager"],
+  "/accommodation": BACK_OFFICE,
+  "/transport": BACK_OFFICE,
+  "/assets": STAFF,
+  "/inventory": STAFF,
+  "/approvals": BACK_OFFICE,
+  "/reports": BACK_OFFICE,
   "/users": ["admin"],
   "/audit-logs": ["admin"],
   "/settings": ["admin"],
@@ -36,6 +54,7 @@ export const ROUTE_ROLES: Record<string, AppAuthRole[]> = {
 
 export function canAccess(path: string, roles: string[]): boolean {
   if (roles.includes("admin")) return true;
+  if (OPEN_ROUTES.includes(path)) return true;
   // Match the most specific configured route prefix (e.g. /workforce/<id> -> /workforce).
   const key =
     ROUTE_ROLES[path] !== undefined
