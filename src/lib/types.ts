@@ -1,5 +1,6 @@
 export type AppRole = "admin" | "manager" | "supervisor" | "client" | "hr" | "payroll";
-export type EmployeeStatus =
+
+export interface User {
   id: string;
   name: string;
   email: string;
@@ -8,6 +9,7 @@ export type EmployeeStatus =
   branch?: string;
   createdAt: string;
 }
+
 
 export type PassType = "Work Permit" | "S Pass" | "Employment Pass" | "Singaporean/PR";
 export type EmployeeStatus =
