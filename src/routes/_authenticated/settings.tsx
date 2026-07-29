@@ -32,7 +32,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
-import { getBranches, getCurrentBranch, setCurrentBranch, exportState, importState, resetState } from "@/lib/store";
+import { getBranches, getCurrentBranch, setCurrentBranch, exportState, importState, resetState, getAllBranchPrefixes, addBranchPrefix, updateBranchPrefix, deleteBranchPrefix } from "@/lib/store";
 import { checkR2Status } from "@/lib/r2";
 import { SystemHealth } from "@/components/settings/system-health";
 
