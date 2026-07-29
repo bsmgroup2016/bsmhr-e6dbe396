@@ -8,6 +8,7 @@ import type {
   Dormitory, BedAllocation, Vehicle, Trip,
   Asset, AssetIssuance,
 } from "@/lib/types";
+import type { TrainingCourse, TrainingRecord, SafetyIncident } from "@/lib/types";
 import { supabase } from "@/integrations/supabase/client";
 import {
   loadAll, toEmployee, toClient, toProject, toSite, toAssignment,
@@ -16,6 +17,7 @@ import {
   toDormitory, toAllocation, toVehicle, toTrip,
   toAsset, toIssuance,
 } from "@/lib/db";
+import { toCourse, toTraining, toIncident } from "@/lib/db";
 
 export interface AppState {
   employees: Employee[];
@@ -37,6 +39,9 @@ export interface AppState {
   trips: Trip[];
   assets: Asset[];
   issuances: AssetIssuance[];
+  courses: TrainingCourse[];
+  trainings: TrainingRecord[];
+  incidents: SafetyIncident[];
   users: User[];
   branches: AppBranch[];
   currentBranch: string;
@@ -57,6 +62,7 @@ const emptyState: AppState = {
   rateAgreements: [], invoices: [], users: [],
   dormitories: [], allocations: [], vehicles: [], trips: [],
   assets: [], issuances: [],
+  courses: [], trainings: [], incidents: [],
   branches: defaultBranches, currentBranch: "hq",
   companies: [], currentCompany: "", currentUser: null,
 };
