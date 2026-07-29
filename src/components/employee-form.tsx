@@ -465,7 +465,7 @@ export function EmployeeForm({
               <div className="mt-3 overflow-hidden rounded-md border">
                 <iframe src={ipaUrl} title="IPA preview" className="h-[420px] w-full bg-muted" />
                 <p className="border-t px-3 py-1.5 text-xs text-muted-foreground">
-                  Read the document above and type the values into the fields below.
+                  Use “Auto-fill from IPA” to read this document, then check every value below.
                 </p>
               </div>
             ) : null}
