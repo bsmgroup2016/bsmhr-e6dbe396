@@ -144,17 +144,23 @@ function normalizeDate(value: string) {
 }
 
 export default function WorkforcePage() {
-  const [employees, setEmployees] = useState<Employee[]>(getEmployees());
+  const companyId = getCurrentCompany();
+  const [allEmployees, setEmployees] = useState<Employee[]>(getEmployees());
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<EmployeeStatus | "all">("all");
   const [passFilter, setPassFilter] = useState<PassType | "all">("all");
   const [siteFilter, setSiteFilter] = useState<string | "all">("all");
+  const [categoryFilter, setCategoryFilter] = useState<WorkerCategory | "all">("all");
+  const [deployFilter, setDeployFilter] = useState<DeploymentStatus | "all">("all");
+  const [nationalityFilter, setNationalityFilter] = useState<string>("all");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   const [viewingEmployee, setViewingEmployee] = useState<Employee | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Employee | null>(null);
 
+  const employees = companyId ? allEmployees.filter((e) => !e.companyId || e.companyId === companyId) : allEmployees;
   const sites = Array.from(new Set(employees.map((e) => e.site).filter(Boolean)));
+  const nationalities = Array.from(new Set(employees.map((e) => e.nationality).filter(Boolean))).sort();
 
   const filtered = employees.filter((e) => {
     const q = search.toLowerCase();
@@ -162,12 +168,19 @@ export default function WorkforcePage() {
       e.name.toLowerCase().includes(q) ||
       e.employeeCode.toLowerCase().includes(q) ||
       e.fin.toLowerCase().includes(q) ||
-      e.trade.toLowerCase().includes(q);
+      e.trade.toLowerCase().includes(q) ||
+      (e.phone ?? "").toLowerCase().includes(q) ||
+      (e.email ?? "").toLowerCase().includes(q) ||
+      (e.passportNumber ?? "").toLowerCase().includes(q) ||
+      (e.workPermitNumber ?? "").toLowerCase().includes(q);
     return (
       matchesSearch &&
       (statusFilter === "all" || e.status === statusFilter) &&
       (passFilter === "all" || e.passType === passFilter) &&
-      (siteFilter === "all" || e.site === siteFilter)
+      (siteFilter === "all" || e.site === siteFilter) &&
+      (categoryFilter === "all" || e.workerCategory === categoryFilter) &&
+      (deployFilter === "all" || (e.deploymentStatus ?? "Available") === deployFilter) &&
+      (nationalityFilter === "all" || e.nationality === nationalityFilter)
     );
   });
 
