@@ -10,6 +10,8 @@ import {
   Trash2,
   CheckCircle2,
   AlertCircle,
+  ClipboardList,
+  FileSpreadsheet,
 } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
@@ -50,9 +52,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { getEmployees, getSites, getAttendance, addAttendance } from "@/lib/store";
+import { getEmployees, getSites, getAttendance, addAttendance, saveDailySheet, getCurrentCompany } from "@/lib/store";
 import type { Attendance, AttendanceStatus } from "@/lib/types";
 import { pick, type ImportColumn } from "@/lib/xlsx";
+import { monthlyAttendanceSummary } from "@/lib/ops";
+import { exportRows, timestampedName } from "@/lib/xlsx";
+import { toast } from "sonner";
 
 const statuses: AttendanceStatus[] = ["Present", "Absent", "On Leave", "MC", "Half Day", "Off", "Public Holiday", "Pending"];
 
@@ -87,6 +92,39 @@ export default function TimeManagementPage() {
   const [search, setSearch] = useState("");
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [summaryMonth, setSummaryMonth] = useState(() => new Date().toISOString().slice(0, 7));
+  const companyId = getCurrentCompany();
+  const companyEmployees = employees.filter(
+    (e) => (!companyId || e.companyId === companyId) && e.status !== "Inactive",
+  );
+
+  async function exportMonthlySummary() {
+    const rows = monthlyAttendanceSummary(
+      attendance,
+      summaryMonth,
+      companyEmployees.map((e) => e.id),
+    ).map((r) => {
+      const emp = employees.find((e) => e.id === r.employeeId);
+      return {
+        "Employee Code": emp?.employeeCode ?? "",
+        Name: emp?.name ?? "",
+        Month: summaryMonth,
+        "Present Days": r.presentDays,
+        "Absent / MC": r.absentDays,
+        "Leave / Off": r.leaveDays,
+        "Normal Hours": r.normalHours,
+        "OT Hours": r.otHours,
+        "Total Hours": r.totalHours,
+      };
+    });
+    if (!rows.length) {
+      toast.error(`No attendance records for ${summaryMonth}`);
+      return;
+    }
+    await exportRows(rows, timestampedName(`timesheet_summary_${summaryMonth}`, "xlsx"), "Summary");
+    toast.success("Monthly summary exported");
+  }
 
   const filtered = attendance.filter((a) => {
     const q = search.toLowerCase();
@@ -203,6 +241,43 @@ export default function TimeManagementPage() {
             </DialogContent>
           </Dialog>
           <div className="mt-2 flex flex-wrap gap-2 sm:mt-0">
+            <Dialog open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm" variant="secondary">
+                  <ClipboardList className="mr-1 h-4 w-4" />
+                  Daily sheet
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
+                <DialogHeader>
+                  <DialogTitle>Daily attendance sheet</DialogTitle>
+                  <DialogDescription>Mark every worker for a site in one go.</DialogDescription>
+                </DialogHeader>
+                <DailySheet
+                  employees={companyEmployees}
+                  sites={sites}
+                  existing={attendance}
+                  defaultDate={date}
+                  onSaved={(d) => {
+                    setDate(d);
+                    setIsSheetOpen(false);
+                    refresh();
+                  }}
+                />
+              </DialogContent>
+            </Dialog>
+            <div className="flex items-center gap-1">
+              <Input
+                type="month"
+                value={summaryMonth}
+                onChange={(e) => setSummaryMonth(e.target.value)}
+                className="h-9 w-36"
+              />
+              <Button size="sm" variant="outline" onClick={exportMonthlySummary}>
+                <FileSpreadsheet className="mr-1 h-4 w-4" />
+                Monthly summary
+              </Button>
+            </div>
             <ImportDialog
               title="Import timesheet"
               description="Upload daily attendance from Excel or CSV. Employees are matched by employee code or FIN."
@@ -290,6 +365,168 @@ export default function TimeManagementPage() {
         </div>
       </div>
     </AppShell>
+  );
+}
+
+type SheetRow = { status: AttendanceStatus; hours: number; ot: number };
+
+function DailySheet({
+  employees,
+  sites,
+  existing,
+  defaultDate,
+  onSaved,
+}: {
+  employees: ReturnType<typeof getEmployees>;
+  sites: ReturnType<typeof getSites>;
+  existing: Attendance[];
+  defaultDate: string;
+  onSaved: (date: string) => void;
+}) {
+  const [sheetDate, setSheetDate] = useState(defaultDate);
+  const [siteId, setSiteId] = useState<string>(sites[0]?.id ?? "");
+  const [rows, setRows] = useState<Record<string, SheetRow>>({});
+
+  const current = (id: string): SheetRow => {
+    if (rows[id]) return rows[id];
+    const prev = existing.find((a) => a.employeeId === id && a.date === sheetDate);
+    return prev
+      ? { status: prev.status, hours: prev.hoursWorked, ot: prev.overtimeHours }
+      : { status: "Present", hours: 8, ot: 0 };
+  };
+
+  const setRow = (id: string, patch: Partial<SheetRow>) =>
+    setRows((r) => ({ ...r, [id]: { ...current(id), ...patch } }));
+
+  function markAll(status: AttendanceStatus) {
+    const next: Record<string, SheetRow> = {};
+    employees.forEach((e) => {
+      next[e.id] = { ...current(e.id), status, hours: status === "Present" ? 8 : 0 };
+    });
+    setRows(next);
+  }
+
+  function save() {
+    const payload = employees.map((e) => {
+      const row = current(e.id);
+      return {
+        employeeId: e.id,
+        date: sheetDate,
+        siteId: siteId || undefined,
+        status: row.status,
+        hoursWorked: Number(row.hours) || 0,
+        overtimeHours: Number(row.ot) || 0,
+      };
+    });
+    const { saved } = saveDailySheet(payload);
+    toast.success(`${saved} attendance records saved for ${sheetDate}`);
+    onSaved(sheetDate);
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-end gap-3">
+        <div className="space-y-1">
+          <Label>Date</Label>
+          <Input type="date" value={sheetDate} onChange={(e) => setSheetDate(e.target.value)} className="w-40" />
+        </div>
+        <div className="space-y-1">
+          <Label>Site</Label>
+          <Select value={siteId} onValueChange={setSiteId}>
+            <SelectTrigger className="w-52">
+              <SelectValue placeholder="Select site" />
+            </SelectTrigger>
+            <SelectContent>
+              {sites.map((s) => (
+                <SelectItem key={s.id} value={s.id}>
+                  {s.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex gap-2">
+          <Button type="button" size="sm" variant="secondary" onClick={() => markAll("Present")}>
+            All present
+          </Button>
+          <Button type="button" size="sm" variant="outline" onClick={() => markAll("Off")}>
+            All off
+          </Button>
+        </div>
+      </div>
+
+      <div className="max-h-[50vh] overflow-y-auto rounded-lg border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Employee</TableHead>
+              <TableHead className="w-40">Status</TableHead>
+              <TableHead className="w-24">Hours</TableHead>
+              <TableHead className="w-24">OT</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {employees.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={4} className="h-24 text-center text-sm text-muted-foreground">
+                  No active employees in this company.
+                </TableCell>
+              </TableRow>
+            ) : (
+              employees.map((e) => {
+                const row = current(e.id);
+                return (
+                  <TableRow key={e.id}>
+                    <TableCell>
+                      <div className="font-medium">{e.name}</div>
+                      <div className="text-xs text-muted-foreground">{e.employeeCode}</div>
+                    </TableCell>
+                    <TableCell>
+                      <Select value={row.status} onValueChange={(v) => setRow(e.id, { status: v as AttendanceStatus })}>
+                        <SelectTrigger className="h-8">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {statuses.map((s) => (
+                            <SelectItem key={s} value={s}>
+                              {s}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
+                    <TableCell>
+                      <Input
+                        type="number"
+                        step="0.5"
+                        className="h-8"
+                        value={row.hours}
+                        onChange={(ev) => setRow(e.id, { hours: Number(ev.target.value) })}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Input
+                        type="number"
+                        step="0.5"
+                        className="h-8"
+                        value={row.ot}
+                        onChange={(ev) => setRow(e.id, { ot: Number(ev.target.value) })}
+                      />
+                    </TableCell>
+                  </TableRow>
+                );
+              })
+            )}
+          </TableBody>
+        </Table>
+      </div>
+
+      <DialogFooter>
+        <Button type="button" onClick={save} disabled={!employees.length}>
+          Save sheet
+        </Button>
+      </DialogFooter>
+    </div>
   );
 }
 

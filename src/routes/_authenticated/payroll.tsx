@@ -10,6 +10,9 @@ import {
   Printer,
   Trash2,
   Building2,
+  Landmark,
+  Send,
+  BadgeCheck,
 } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
@@ -58,6 +61,8 @@ import {
 import { toast } from "sonner";
 import type { Employee, PayrollEntry, PayrollStatus } from "@/lib/types";
 import { pick, type ImportColumn } from "@/lib/xlsx";
+import { exportCsv, timestampedName } from "@/lib/xlsx";
+import { bankFileRows } from "@/lib/ops";
 
 const statuses: PayrollStatus[] = ["Draft", "Pending Approval", "Approved", "Paid", "Rejected"];
 
@@ -211,6 +216,40 @@ export default function PayrollPage() {
   }
 
   function handleCreate(formData: FormData) {
+    /* create single entry */
+    void 0;
+    return handleCreateEntry(formData);
+  }
+
+  function bulkStatus(next: PayrollStatus, from: PayrollStatus[]) {
+    const targets = filtered.filter((p) => from.includes(p.status));
+    if (!targets.length) {
+      toast.error(`No entries to move to ${next}`);
+      return;
+    }
+    targets.forEach((p) =>
+      updatePayroll(p.id, {
+        status: next,
+        ...(next === "Approved"
+          ? { approvedBy: getCurrentUser()?.id, approvedAt: new Date().toISOString() }
+          : {}),
+      }),
+    );
+    setPayroll(getPayroll());
+    toast.success(`${targets.length} payroll entries → ${next}`);
+  }
+
+  async function exportBankFile() {
+    const payable = filtered.filter((p) => p.status === "Approved" || p.status === "Paid");
+    if (!payable.length) {
+      toast.error("No approved payroll entries to export");
+      return;
+    }
+    await exportCsv(bankFileRows(payable, employees), timestampedName(`bank_giro_${month}`, "csv"));
+    toast.success(`Bank file created for ${payable.length} workers`);
+  }
+
+  function handleCreateEntry(formData: FormData) {
     const basicSalary = Number(formData.get("basicSalary") || 0);
     const overtimePay = Number(formData.get("overtimePay") || 0);
     const allowances = Number(formData.get("allowances") || 0);
@@ -247,6 +286,22 @@ export default function PayrollPage() {
             <Button size="sm" variant="outline" onClick={handleGenerate}>
               <Wand2 className="mr-1 h-4 w-4" />
               Generate {month}
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => bulkStatus("Pending Approval", ["Draft"])}>
+              <Send className="mr-1 h-4 w-4" />
+              Submit all
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => bulkStatus("Approved", ["Pending Approval", "Draft"])}>
+              <BadgeCheck className="mr-1 h-4 w-4" />
+              Approve all
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => bulkStatus("Paid", ["Approved"])}>
+              <CheckCircle2 className="mr-1 h-4 w-4" />
+              Mark paid
+            </Button>
+            <Button size="sm" variant="outline" onClick={exportBankFile}>
+              <Landmark className="mr-1 h-4 w-4" />
+              Bank file
             </Button>
             <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
               <DialogTrigger asChild>
