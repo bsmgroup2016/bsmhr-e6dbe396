@@ -81,11 +81,7 @@ function EmployeeProfilePage() {
           <EmptyState
             title="Employee not found"
             description="This record may have been deleted."
-            action={
-              <Button asChild>
-                <Link to="/workforce">Back to employees</Link>
-              </Button>
-            }
+            action={{ label: "Back to employees", onClick: () => navigate({ to: "/workforce" }) }}
           />
         </div>
       </AppShell>
