@@ -61,7 +61,7 @@ function DashboardPage() {
   const today = new Date();
   const todayKey = today.toISOString().slice(0, 10);
   const presentToday = getAttendance().filter(
-    (a) => a.date === todayKey && (a.status === "Present" || a.status === "Overtime"),
+    (a) => a.date === todayKey && (a.status === "Present" || a.status === "Half Day"),
   ).length;
 
   const daysLeft = (iso: string) =>
