@@ -14,6 +14,7 @@ import type { Lead, CrmActivity } from "@/lib/types";
 import type { Expense, PaymentReceipt } from "@/lib/types";
 import type { InventoryItem, StockMovement, PurchaseOrder } from "@/lib/types";
 import type { BranchPrefix, EmployeeCertification, TimeCard, ClaimSheet } from "@/lib/types";
+import type { ClientContract } from "@/lib/types";
 import { supabase } from "@/integrations/supabase/client";
 import { computeStatutory, round2 } from "@/lib/sg-payroll";
 import {
@@ -29,6 +30,7 @@ import { toLead, toActivity } from "@/lib/db";
 import { toExpense, toPaymentReceipt } from "@/lib/db";
 import { toItem, toMovement, toPurchaseOrder } from "@/lib/db";
 import { toBranchPrefix, toCertification, toTimeCard, toClaimSheet } from "@/lib/db";
+import { toContract } from "@/lib/db";
 
 export interface AppState {
   employees: Employee[];
@@ -67,6 +69,7 @@ export interface AppState {
   certifications: EmployeeCertification[];
   timeCards: TimeCard[];
   claimSheets: ClaimSheet[];
+  contracts: ClientContract[];
   branches: AppBranch[];
   currentBranch: string;
   companies: Company[];
@@ -92,6 +95,7 @@ const emptyState: AppState = {
   expenses: [], receipts: [],
   inventory: [], movements: [], purchaseOrders: [],
   branchPrefixes: [], certifications: [], timeCards: [], claimSheets: [],
+  contracts: [],
   branches: defaultBranches, currentBranch: "hq",
   companies: [], currentCompany: "", currentUser: null,
 };
