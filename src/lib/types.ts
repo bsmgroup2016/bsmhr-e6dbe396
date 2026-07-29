@@ -323,3 +323,59 @@ export interface Company {
   createdAt: string;
   updatedAt: string;
 }
+
+/* ---------------- Phase 6: Billing & Invoicing ---------------- */
+
+export type RateUnit = "Hourly" | "Daily" | "Monthly";
+
+export interface RateAgreement {
+  id: string;
+  clientId: string;
+  projectId?: string;
+  trade: string;
+  unit: RateUnit;
+  normalRate: number;
+  otRate: number;
+  effectiveFrom: string;
+  effectiveTo?: string;
+  status: "Active" | "Inactive";
+  remarks?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface InvoiceLine {
+  description: string;
+  employeeId?: string;
+  trade?: string;
+  unit: RateUnit;
+  quantity: number;
+  rate: number;
+  otQuantity: number;
+  otRate: number;
+  amount: number;
+}
+
+export type InvoiceStatus = "Draft" | "Sent" | "Partially Paid" | "Paid" | "Overdue" | "Cancelled";
+
+export interface Invoice {
+  id: string;
+  companyId: string;
+  clientId: string;
+  projectId?: string;
+  invoiceNo: string;
+  periodStart: string;
+  periodEnd: string;
+  issueDate: string;
+  dueDate: string;
+  lines: InvoiceLine[];
+  subtotal: number;
+  gstRate: number;
+  gstAmount: number;
+  total: number;
+  amountPaid: number;
+  status: InvoiceStatus;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
