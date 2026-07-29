@@ -190,6 +190,8 @@ export function EmployeeForm({
     employee?.employeeCode ?? nextEmployeeCode(employee?.branch ?? prefixes[0]?.name),
   );
   const [ipaUrl, setIpaUrl] = useState(employee?.ipaDocumentUrl ?? "");
+  const [scanning, setScanning] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
 
   const taken = code.trim() ? isEmployeeCodeTaken(code, employee?.id) : false;
   const expectedPrefix = prefixForBranch(branch);
@@ -202,8 +204,47 @@ export function EmployeeForm({
     if (!employee) setCode(nextEmployeeCode(nextBranch));
   }
 
+  /** Write a value into an uncontrolled input without clobbering user edits. */
+  function fill(field: string, value?: string) {
+    if (!value) return 0;
+    const el = formRef.current?.elements.namedItem(field) as HTMLInputElement | null;
+    if (!el || el.value) return 0;
+    const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+    setter?.call(el, value);
+    el.dispatchEvent(new Event("input", { bubbles: true }));
+    return 1;
+  }
+
+  async function autoFillFromIpa() {
+    if (!ipaUrl) {
+      toast.error("Upload the IPA copy first");
+      return;
+    }
+    setScanning(true);
+    const result = await extractIpaData(ipaUrl);
+    setScanning(false);
+    if (!result.ok) {
+      toast.error(result.reason || OCR_NOT_CONFIGURED);
+      return;
+    }
+    const d = result.data;
+    let filled = 0;
+    filled += fill("name", d.name);
+    filled += fill("fin", d.fin);
+    filled += fill("passportNumber", d.passportNumber);
+    filled += fill("workPermitNumber", d.workPermitNumber);
+    filled += fill("nationality", d.nationality);
+    filled += fill("dateOfBirth", d.dateOfBirth);
+    filled += fill("workPermitIssueDate", d.issueDate);
+    filled += fill("workPermitExpiryDate", d.expiryDate);
+    filled += fill("passExpiry", d.expiryDate);
+    if (filled === 0) toast.info("Nothing new to fill — check the values against the document");
+    else toast.success(`${filled} field(s) filled from the IPA — verify before saving`);
+  }
+
   return (
     <form
+      ref={formRef}
       onSubmit={(e) => {
         e.preventDefault();
         onSubmit(new FormData(e.currentTarget));
