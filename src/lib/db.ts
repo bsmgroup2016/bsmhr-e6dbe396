@@ -63,6 +63,7 @@ export const fromEmployee = (r: Row): Employee => ({
   workPermitExpiryDate: d(r.work_permit_expiry_date),
   dormitoryAddress: r.dormitory_address ?? undefined,
   accountHolderName: r.account_holder_name ?? undefined,
+  ipaDocumentUrl: r.ipa_document_url ?? undefined,
   createdAt: r.created_at, updatedAt: r.updated_at,
 });
 
@@ -177,6 +178,7 @@ export const toEmployee = (e: Partial<Employee>): Row => ({
   work_permit_expiry_date: nullDate(e.workPermitExpiryDate),
   dormitory_address: e.dormitoryAddress ?? null,
   account_holder_name: e.accountHolderName ?? null,
+  ipa_document_url: e.ipaDocumentUrl ?? null,
 });
 
 export const toClient = (c: Partial<Client>): Row => ({
