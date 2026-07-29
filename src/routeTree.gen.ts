@@ -43,6 +43,7 @@ import { Route as ApiPublicR2StatusRouteImport } from './routes/api/public/r2-st
 import { Route as ApiPublicR2SignedRouteImport } from './routes/api/public/r2-signed'
 import { Route as ApiPublicR2FileRouteImport } from './routes/api/public/r2-file'
 import { Route as ApiPublicR2DeleteRouteImport } from './routes/api/public/r2-delete'
+import { Route as ApiPublicProvisionEmployeeRouteImport } from './routes/api/public/provision-employee'
 import { Route as AuthenticatedWorkforceIdRouteImport } from './routes/_authenticated/workforce.$id'
 
 const AuthRoute = AuthRouteImport.update({
@@ -217,6 +218,12 @@ const ApiPublicR2DeleteRoute = ApiPublicR2DeleteRouteImport.update({
   path: '/api/public/r2-delete',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicProvisionEmployeeRoute =
+  ApiPublicProvisionEmployeeRouteImport.update({
+    id: '/api/public/provision-employee',
+    path: '/api/public/provision-employee',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AuthenticatedWorkforceIdRoute =
   AuthenticatedWorkforceIdRouteImport.update({
     id: '/$id',
@@ -254,6 +261,7 @@ export interface FileRoutesByFullPath {
   '/users': typeof AuthenticatedUsersRoute
   '/workforce': typeof AuthenticatedWorkforceRouteWithChildren
   '/workforce/$id': typeof AuthenticatedWorkforceIdRoute
+  '/api/public/provision-employee': typeof ApiPublicProvisionEmployeeRoute
   '/api/public/r2-delete': typeof ApiPublicR2DeleteRoute
   '/api/public/r2-file': typeof ApiPublicR2FileRoute
   '/api/public/r2-signed': typeof ApiPublicR2SignedRoute
@@ -290,6 +298,7 @@ export interface FileRoutesByTo {
   '/workforce': typeof AuthenticatedWorkforceRouteWithChildren
   '/': typeof AuthenticatedIndexRoute
   '/workforce/$id': typeof AuthenticatedWorkforceIdRoute
+  '/api/public/provision-employee': typeof ApiPublicProvisionEmployeeRoute
   '/api/public/r2-delete': typeof ApiPublicR2DeleteRoute
   '/api/public/r2-file': typeof ApiPublicR2FileRoute
   '/api/public/r2-signed': typeof ApiPublicR2SignedRoute
@@ -328,6 +337,7 @@ export interface FileRoutesById {
   '/_authenticated/workforce': typeof AuthenticatedWorkforceRouteWithChildren
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/workforce/$id': typeof AuthenticatedWorkforceIdRoute
+  '/api/public/provision-employee': typeof ApiPublicProvisionEmployeeRoute
   '/api/public/r2-delete': typeof ApiPublicR2DeleteRoute
   '/api/public/r2-file': typeof ApiPublicR2FileRoute
   '/api/public/r2-signed': typeof ApiPublicR2SignedRoute
@@ -366,6 +376,7 @@ export interface FileRouteTypes {
     | '/users'
     | '/workforce'
     | '/workforce/$id'
+    | '/api/public/provision-employee'
     | '/api/public/r2-delete'
     | '/api/public/r2-file'
     | '/api/public/r2-signed'
@@ -402,6 +413,7 @@ export interface FileRouteTypes {
     | '/workforce'
     | '/'
     | '/workforce/$id'
+    | '/api/public/provision-employee'
     | '/api/public/r2-delete'
     | '/api/public/r2-file'
     | '/api/public/r2-signed'
@@ -439,6 +451,7 @@ export interface FileRouteTypes {
     | '/_authenticated/workforce'
     | '/_authenticated/'
     | '/_authenticated/workforce/$id'
+    | '/api/public/provision-employee'
     | '/api/public/r2-delete'
     | '/api/public/r2-file'
     | '/api/public/r2-signed'
@@ -449,6 +462,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ApiPublicProvisionEmployeeRoute: typeof ApiPublicProvisionEmployeeRoute
   ApiPublicR2DeleteRoute: typeof ApiPublicR2DeleteRoute
   ApiPublicR2FileRoute: typeof ApiPublicR2FileRoute
   ApiPublicR2SignedRoute: typeof ApiPublicR2SignedRoute
@@ -696,6 +710,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicR2DeleteRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/provision-employee': {
+      id: '/api/public/provision-employee'
+      path: '/api/public/provision-employee'
+      fullPath: '/api/public/provision-employee'
+      preLoaderRoute: typeof ApiPublicProvisionEmployeeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/workforce/$id': {
       id: '/_authenticated/workforce/$id'
       path: '/$id'
@@ -786,6 +807,7 @@ const AuthenticatedRouteRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  ApiPublicProvisionEmployeeRoute: ApiPublicProvisionEmployeeRoute,
   ApiPublicR2DeleteRoute: ApiPublicR2DeleteRoute,
   ApiPublicR2FileRoute: ApiPublicR2FileRoute,
   ApiPublicR2SignedRoute: ApiPublicR2SignedRoute,
@@ -795,13 +817,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
