@@ -4,6 +4,7 @@ import type {
   Employee, Client, Project, Site, Assignment, EmployeeDocument,
   Attendance, PayrollEntry, Approval, AuditLog, Company, User,
   LeaveRequest, RateAgreement, Invoice, InvoiceLine,
+  Dormitory, BedAllocation, Vehicle, Trip,
 } from "@/lib/types";
 
 type Row = Record<string, any>;
@@ -265,12 +266,81 @@ export const toInvoice = (i: Partial<Invoice>): Row => ({
 });
 
 /* ---------- bulk load ---------- */
+/* ---------- accommodation & transport ---------- */
+export const fromDormitory = (r: Row): Dormitory => ({
+  id: r.id, companyId: r.company_id ?? undefined, name: r.name, address: r.address ?? "",
+  operator: r.operator ?? undefined, contactPerson: r.contact_person ?? undefined,
+  contactPhone: r.contact_phone ?? undefined, capacity: Number(r.capacity ?? 0),
+  monthlyRent: Number(r.monthly_rent ?? 0), licenseNo: r.license_no ?? undefined,
+  licenseExpiry: d(r.license_expiry), lastInspection: d(r.last_inspection),
+  status: (r.status ?? "Active") as Dormitory["status"], remarks: r.remarks ?? undefined,
+  createdAt: r.created_at, updatedAt: r.updated_at,
+});
+
+export const toDormitory = (x: Partial<Dormitory>): Row => ({
+  company_id: x.companyId || null, name: x.name, address: x.address ?? "",
+  operator: x.operator ?? null, contact_person: x.contactPerson ?? null,
+  contact_phone: x.contactPhone ?? null, capacity: x.capacity ?? 0,
+  monthly_rent: x.monthlyRent ?? 0, license_no: x.licenseNo ?? null,
+  license_expiry: nullDate(x.licenseExpiry), last_inspection: nullDate(x.lastInspection),
+  status: x.status, remarks: x.remarks ?? null,
+});
+
+export const fromAllocation = (r: Row): BedAllocation => ({
+  id: r.id, dormitoryId: r.dormitory_id, employeeId: r.employee_id, roomNo: r.room_no ?? "",
+  bedNo: r.bed_no ?? undefined, checkInDate: d(r.check_in_date) ?? "",
+  checkOutDate: d(r.check_out_date), monthlyRent: Number(r.monthly_rent ?? 0),
+  status: (r.status ?? "Occupied") as BedAllocation["status"], remarks: r.remarks ?? undefined,
+  createdAt: r.created_at, updatedAt: r.updated_at,
+});
+
+export const toAllocation = (x: Partial<BedAllocation>): Row => ({
+  dormitory_id: x.dormitoryId, employee_id: x.employeeId, room_no: x.roomNo ?? "",
+  bed_no: x.bedNo ?? null, check_in_date: nullDate(x.checkInDate),
+  check_out_date: nullDate(x.checkOutDate), monthly_rent: x.monthlyRent ?? 0,
+  status: x.status, remarks: x.remarks ?? null,
+});
+
+export const fromVehicle = (r: Row): Vehicle => ({
+  id: r.id, companyId: r.company_id ?? undefined, plateNo: r.plate_no,
+  type: (r.vehicle_type ?? "Lorry") as Vehicle["type"], makeModel: r.make_model ?? undefined,
+  capacity: Number(r.capacity ?? 0), driverEmployeeId: r.driver_employee_id ?? undefined,
+  roadTaxExpiry: d(r.road_tax_expiry), insuranceExpiry: d(r.insurance_expiry),
+  inspectionDue: d(r.inspection_due), status: (r.status ?? "Active") as Vehicle["status"],
+  remarks: r.remarks ?? undefined, createdAt: r.created_at, updatedAt: r.updated_at,
+});
+
+export const toVehicle = (x: Partial<Vehicle>): Row => ({
+  company_id: x.companyId || null, plate_no: x.plateNo, vehicle_type: x.type,
+  make_model: x.makeModel ?? null, capacity: x.capacity ?? 0,
+  driver_employee_id: x.driverEmployeeId || null, road_tax_expiry: nullDate(x.roadTaxExpiry),
+  insurance_expiry: nullDate(x.insuranceExpiry), inspection_due: nullDate(x.inspectionDue),
+  status: x.status, remarks: x.remarks ?? null,
+});
+
+export const fromTrip = (r: Row): Trip => ({
+  id: r.id, vehicleId: r.vehicle_id, driverEmployeeId: r.driver_employee_id ?? undefined,
+  siteId: r.site_id ?? undefined, date: d(r.date) ?? "", departureTime: r.departure_time ?? undefined,
+  returnTime: r.return_time ?? undefined, route: r.route ?? undefined,
+  passengers: Number(r.passengers ?? 0), status: (r.status ?? "Scheduled") as Trip["status"],
+  notes: r.notes ?? undefined, createdAt: r.created_at, updatedAt: r.updated_at,
+});
+
+export const toTrip = (x: Partial<Trip>): Row => ({
+  vehicle_id: x.vehicleId, driver_employee_id: x.driverEmployeeId || null,
+  site_id: x.siteId || null, date: nullDate(x.date), departure_time: x.departureTime || null,
+  return_time: x.returnTime || null, route: x.route ?? null, passengers: x.passengers ?? 0,
+  status: x.status, notes: x.notes ?? null,
+});
+
+/* ---------- bulk load ---------- */
 export interface LoadedData {
   companies: Company[]; employees: Employee[]; clients: Client[]; projects: Project[];
   sites: Site[]; assignments: Assignment[]; documents: EmployeeDocument[];
   attendance: Attendance[]; payroll: PayrollEntry[]; approvals: Approval[];
   auditLogs: AuditLog[]; users: User[]; leaveRequests: LeaveRequest[];
   rateAgreements: RateAgreement[]; invoices: Invoice[];
+  dormitories: Dormitory[]; allocations: BedAllocation[]; vehicles: Vehicle[]; trips: Trip[];
 }
 
 async function all(table: string, order = "created_at") {
@@ -283,12 +353,13 @@ export async function loadAll(): Promise<LoadedData> {
   const [
     companies, employees, clients, projects, sites, assignments,
     documents, attendance, payroll, approvals, auditLogs, profiles, roles, leaveRequests,
-    rateAgreements, invoices,
+    rateAgreements, invoices, dormitories, allocations, vehicles, trips,
   ] = await Promise.all([
     all("companies"), all("employees"), all("clients"), all("projects"), all("sites"),
     all("assignments"), all("employee_documents"), all("attendance"), all("payroll_entries"),
     all("approvals"), all("audit_logs"), all("profiles"), all("user_roles"), all("leave_requests"),
-    all("rate_agreements"), all("invoices"),
+    all("rate_agreements"), all("invoices"), all("dormitories"), all("bed_allocations"),
+    all("vehicles"), all("trips"),
   ]);
 
   const roleByUser = new Map<string, string>();
@@ -325,5 +396,9 @@ export async function loadAll(): Promise<LoadedData> {
     leaveRequests: leaveRequests.map(fromLeave),
     rateAgreements: rateAgreements.map(fromRate),
     invoices: invoices.map(fromInvoice),
+    dormitories: dormitories.map(fromDormitory),
+    allocations: allocations.map(fromAllocation),
+    vehicles: vehicles.map(fromVehicle),
+    trips: trips.map(fromTrip),
   };
 }
