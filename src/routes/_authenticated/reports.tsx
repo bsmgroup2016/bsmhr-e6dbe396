@@ -1,6 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useState, useMemo } from "react";
-import { createFileRoute } from "tanstack/react-router";
 import {
   BarChart,
   Bar,
