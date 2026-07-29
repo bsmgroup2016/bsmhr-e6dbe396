@@ -11,7 +11,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 import { AlertTriangle, Sparkles, Wand2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -21,7 +22,7 @@ import {
   nextEmployeeCode,
   prefixForBranch,
 } from "@/lib/store";
-import { OCR_NOT_CONFIGURED, isOcrConfigured } from "@/lib/ocr";
+import { OCR_NOT_CONFIGURED, extractIpaData, isOcrConfigured } from "@/lib/ocr";
 import type {
   DeploymentStatus,
   Employee,
