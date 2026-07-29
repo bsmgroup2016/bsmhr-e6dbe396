@@ -416,6 +416,7 @@ export default function WorkforcePage() {
                   <TableHead>FIN</TableHead>
                   <TableHead>Pass</TableHead>
                   <TableHead>Trade</TableHead>
+                  <TableHead>Deployment</TableHead>
                   <TableHead>Site</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Salary</TableHead>
@@ -425,7 +426,7 @@ export default function WorkforcePage() {
               <TableBody>
                 {filtered.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={10} className="h-32 text-center">
+                    <TableCell colSpan={11} className="h-32 text-center">
                       <EmptyState
                         className="bg-transparent border-0"
                         icon={<Users className="h-5 w-5" />}
@@ -462,6 +463,18 @@ export default function WorkforcePage() {
                         </div>
                       </TableCell>
                       <TableCell>{e.trade}</TableCell>
+                      <TableCell>
+                        <StatusBadge
+                          variant={
+                            (e.deploymentStatus ?? "Available") === "Deployed"
+                              ? "info"
+                              : (e.deploymentStatus ?? "Available") === "Blocked" || e.deploymentStatus === "Not Deployable"
+                                ? "destructive"
+                                : "outline"
+                          }
+                          label={e.deploymentStatus ?? "Available"}
+                        />
+                      </TableCell>
                       <TableCell>{e.site || "—"}</TableCell>
                       <TableCell>
                         <StatusBadge
@@ -484,7 +497,13 @@ export default function WorkforcePage() {
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={() => setViewingEmployee(e)}>
                               <Eye className="mr-2 h-4 w-4" />
-                              View details
+                              Quick view
+                            </DropdownMenuItem>
+                            <DropdownMenuItem asChild>
+                              <Link to="/workforce/$id" params={{ id: e.id }}>
+                                <Users className="mr-2 h-4 w-4" />
+                                Open full profile
+                              </Link>
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => setEditingEmployee(e)}>
                               <Pencil className="mr-2 h-4 w-4" />
