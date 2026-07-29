@@ -106,6 +106,7 @@ export default function ProjectsPage() {
   const activeProjects = projects.filter((p) => p.status === "Active").length;
   const totalRequired = projects.reduce((s, p) => s + p.requiredWorkers, 0);
   const totalSites = sites.length;
+  const assignments = getAssignments();
 
   function refresh() {
     setClients(getClients());
@@ -246,7 +247,7 @@ export default function ProjectsPage() {
                   <TableHead>Project / Client</TableHead>
                   <TableHead>Location</TableHead>
                   <TableHead>Duration</TableHead>
-                  <TableHead>Workers</TableHead>
+                  <TableHead>Manpower</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="w-12"></TableHead>
                 </TableRow>
@@ -291,7 +292,27 @@ export default function ProjectsPage() {
                           <TableCell>
                             {p.startDate ? new Date(p.startDate).toLocaleDateString() : "—"} - {p.endDate ? new Date(p.endDate).toLocaleDateString() : "—"}
                           </TableCell>
-                          <TableCell>{p.requiredWorkers}</TableCell>
+                          <TableCell>
+                            {(() => {
+                              const f = projectFulfilment(p, sites, assignments);
+                              return (
+                                <div className="min-w-24">
+                                  <div className="text-sm font-medium">
+                                    {f.deployed}/{f.required}
+                                  </div>
+                                  <div className="mt-1 h-1.5 w-20 overflow-hidden rounded-full bg-muted">
+                                    <div
+                                      className={`h-full rounded-full ${f.gap > 0 ? "bg-amber-500" : "bg-emerald-500"}`}
+                                      style={{ width: `${f.percent}%` }}
+                                    />
+                                  </div>
+                                  <div className="mt-0.5 text-[11px] text-muted-foreground">
+                                    {f.gap > 0 ? `${f.gap} short` : "Fulfilled"}
+                                  </div>
+                                </div>
+                              );
+                            })()}
+                          </TableCell>
                           <TableCell>
                             <StatusBadge
                               variant={p.status === "Active" ? "success" : p.status === "Planning" ? "warning" : p.status === "On Hold" ? "warning" : "ghost"}
