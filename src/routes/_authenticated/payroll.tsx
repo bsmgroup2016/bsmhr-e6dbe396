@@ -217,6 +217,7 @@ export default function PayrollPage() {
 
   function handleCreate(formData: FormData) {
     /* create single entry */
+    void 0;
     const basicSalary = Number(formData.get("basicSalary") || 0);
     const overtimePay = Number(formData.get("overtimePay") || 0);
     const allowances = Number(formData.get("allowances") || 0);
