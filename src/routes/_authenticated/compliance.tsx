@@ -131,6 +131,7 @@ export default function CompliancePage() {
                   <SelectItem value="Work Pass">Work Pass</SelectItem>
                   <SelectItem value="Passport">Passport</SelectItem>
                   <SelectItem value="Document">Document</SelectItem>
+                  <SelectItem value="Medical">Medical</SelectItem>
                 </SelectContent>
               </Select>
               <Select value={severityFilter} onValueChange={(v) => setSeverityFilter(v as ComplianceSeverity | "all")}>
