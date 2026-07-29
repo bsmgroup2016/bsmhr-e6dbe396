@@ -35,7 +35,7 @@ import { Separator } from "@/components/ui/separator";
 const mainNav = [
   { title: "Dashboard", url: "/", icon: Gauge },
   { title: "Companies", url: "/companies", icon: Building2 },
-  { title: "Workforce", url: "/workforce", icon: Users },
+  { title: "Employees", url: "/workforce", icon: Users },
   { title: "Clients", url: "/clients", icon: Building2 },
   { title: "Projects & Sites", url: "/projects", icon: FolderKanban },
   { title: "Operations", url: "/operations", icon: Layers },
