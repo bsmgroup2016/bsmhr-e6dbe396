@@ -85,6 +85,8 @@ function TimeCardsPage() {
   const [employeeId, setEmployeeId] = useState(scoped[0]?.id ?? "");
   const [month, setMonth] = useState(() => new Date().toISOString().slice(0, 7));
   const [uploading, setUploading] = useState(false);
+  const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
+  const [rescanId, setRescanId] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const selected = cards.find((c) => c.id === selectedId) ?? null;
@@ -98,39 +100,92 @@ function TimeCardsPage() {
     setSheets(getClaimSheets());
   }
 
-  async function handleUpload(file: File | undefined) {
-    if (!file) return;
+  function mergeEntries(existing: TimeCardEntry[], incoming: TimeCardEntry[]) {
+    const map = new Map(existing.map((e) => [e.date, e]));
+    for (const row of incoming) map.set(row.date, { ...map.get(row.date), ...row });
+    return [...map.values()].sort((a, b) => a.date.localeCompare(b.date));
+  }
+
+  async function scanOne(file: File) {
+    const { start, end } = monthRange(month);
+    const uploaded = await uploadToR2(file, "time-cards", undefined, employeeId);
+    let entries: TimeCardEntry[] = [];
+    const ocr = await extractTimeCardData(uploaded.url);
+    if (ocr.ok) {
+      entries = ocr.data.map((r) => ({ date: r.date, checkIn: r.checkIn, checkOut: r.checkOut }));
+    }
+    const card = addTimeCard({
+      employeeId,
+      periodStart: start,
+      periodEnd: end,
+      fileUrl: uploaded.url,
+      fileName: file.name,
+      status: "Draft",
+      entries,
+    });
+    return { card, rows: entries.length, reason: ocr.ok ? null : ocr.reason || OCR_NOT_CONFIGURED };
+  }
+
+  async function handleUpload(fileList: FileList | null) {
+    const files = fileList ? Array.from(fileList) : [];
+    if (files.length === 0) return;
     if (!employeeId) {
       toast.error("Select an employee first");
       return;
     }
     setUploading(true);
+    setProgress({ done: 0, total: files.length });
     try {
-      const { start, end } = monthRange(month);
-      const uploaded = await uploadToR2(file, "time-cards", undefined, employeeId);
-      let entries: TimeCardEntry[] = [];
-      const ocr = await extractTimeCardData(uploaded.url);
-      if (ocr.ok) {
-        entries = ocr.data.map((r) => ({ date: r.date, checkIn: r.checkIn, checkOut: r.checkOut }));
-        toast.success(`Scanned ${entries.length} rows from the card`);
-      } else {
-        toast.message(ocr.reason || OCR_NOT_CONFIGURED);
+      let lastId: string | null = null;
+      let totalRows = 0;
+      const failed: string[] = [];
+      for (const [i, file] of files.entries()) {
+        try {
+          const res = await scanOne(file);
+          lastId = res.card.id;
+          totalRows += res.rows;
+          if (res.reason) failed.push(`${file.name}: ${res.reason}`);
+        } catch (e) {
+          failed.push(`${file.name}: ${e instanceof Error ? e.message : "upload failed"}`);
+        }
+        setProgress({ done: i + 1, total: files.length });
       }
-      const card = addTimeCard({
-        employeeId,
-        periodStart: start,
-        periodEnd: end,
-        fileUrl: uploaded.url,
-        fileName: file.name,
-        status: "Draft",
-        entries,
-      });
       refresh();
-      setSelectedId(card.id);
+      if (lastId) setSelectedId(lastId);
+      if (totalRows > 0) {
+        toast.success(`Scanned ${totalRows} row(s) from ${files.length} card(s)`);
+      }
+      if (failed.length) toast.message(failed.join(" · "));
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Upload failed");
     } finally {
       setUploading(false);
+      setProgress(null);
+    }
+  }
+
+  async function rescan(card: TimeCard) {
+    if (!card.fileUrl) {
+      toast.error("This card has no scanned file");
+      return;
+    }
+    setRescanId(card.id);
+    try {
+      const ocr = await extractTimeCardData(card.fileUrl);
+      if (!ocr.ok) {
+        toast.message(ocr.reason || OCR_NOT_CONFIGURED);
+        return;
+      }
+      const entries = mergeEntries(
+        card.entries,
+        ocr.data.map((r) => ({ date: r.date, checkIn: r.checkIn, checkOut: r.checkOut })),
+      );
+      updateTimeCard(card.id, { entries });
+      refresh();
+      setSelectedId(card.id);
+      toast.success(`Auto-filled ${ocr.data.length} row(s)`);
+    } finally {
+      setRescanId(null);
     }
   }
 
@@ -242,9 +297,13 @@ function TimeCardsPage() {
             <Input
               id="tc-file"
               type="file"
+              multiple
               accept="image/*,application/pdf"
               disabled={uploading}
-              onChange={(e) => void handleUpload(e.target.files?.[0])}
+              onChange={(e) => {
+                void handleUpload(e.target.files);
+                e.target.value = "";
+              }}
             />
           </div>
           <div className="flex items-end gap-2">
@@ -256,10 +315,13 @@ function TimeCardsPage() {
           <p className="text-xs text-muted-foreground sm:col-span-2 lg:col-span-4">
             {uploading ? (
               <span className="inline-flex items-center gap-1">
-                <Upload className="h-3 w-3 animate-pulse" /> Uploading…
+                <Upload className="h-3 w-3 animate-pulse" />
+                {progress
+                  ? `Scanning ${progress.done}/${progress.total} card(s)…`
+                  : "Uploading…"}
               </span>
             ) : isOcrConfigured() ? (
-              "Uploaded cards are scanned automatically; check every row before verifying."
+              "Select one or more scanned cards — each is uploaded and auto-filled by OCR. Check every row before verifying."
             ) : (
               `${OCR_NOT_CONFIGURED}. Type the card times into the grid below — verification works the same way.`
             )}
@@ -331,6 +393,15 @@ function TimeCardsPage() {
                         <TableCell className="space-x-1 text-right">
                           <Button size="sm" variant="ghost" onClick={() => setSelectedId(c.id)}>
                             Verify
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            disabled={!c.fileUrl || rescanId === c.id}
+                            onClick={() => void rescan(c)}
+                          >
+                            <ScanLine className="mr-1 h-4 w-4" />
+                            {rescanId === c.id ? "Scanning…" : "Auto-fill"}
                           </Button>
                           <Button
                             size="sm"
