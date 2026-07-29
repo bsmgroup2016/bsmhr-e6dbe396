@@ -54,24 +54,24 @@ alter table public.candidates enable row level security;
 drop policy if exists "staff read requisitions" on public.job_requisitions;
 create policy "staff read requisitions" on public.job_requisitions
   for select to authenticated
-  using (public.has_role(auth.uid(), 'admin') or public.has_role(auth.uid(), 'manager') or public.has_role(auth.uid(), 'hr'));
+  using (public.has_role(auth.uid(), 'admin') or public.has_role(auth.uid(), 'manager'));
 
 drop policy if exists "staff write requisitions" on public.job_requisitions;
 create policy "staff write requisitions" on public.job_requisitions
   for all to authenticated
-  using (public.has_role(auth.uid(), 'admin') or public.has_role(auth.uid(), 'manager') or public.has_role(auth.uid(), 'hr'))
-  with check (public.has_role(auth.uid(), 'admin') or public.has_role(auth.uid(), 'manager') or public.has_role(auth.uid(), 'hr'));
+  using (public.has_role(auth.uid(), 'admin') or public.has_role(auth.uid(), 'manager'))
+  with check (public.has_role(auth.uid(), 'admin') or public.has_role(auth.uid(), 'manager'));
 
 drop policy if exists "staff read candidates" on public.candidates;
 create policy "staff read candidates" on public.candidates
   for select to authenticated
-  using (public.has_role(auth.uid(), 'admin') or public.has_role(auth.uid(), 'manager') or public.has_role(auth.uid(), 'hr'));
+  using (public.has_role(auth.uid(), 'admin') or public.has_role(auth.uid(), 'manager'));
 
 drop policy if exists "staff write candidates" on public.candidates;
 create policy "staff write candidates" on public.candidates
   for all to authenticated
-  using (public.has_role(auth.uid(), 'admin') or public.has_role(auth.uid(), 'manager') or public.has_role(auth.uid(), 'hr'))
-  with check (public.has_role(auth.uid(), 'admin') or public.has_role(auth.uid(), 'manager') or public.has_role(auth.uid(), 'hr'));
+  using (public.has_role(auth.uid(), 'admin') or public.has_role(auth.uid(), 'manager'))
+  with check (public.has_role(auth.uid(), 'admin') or public.has_role(auth.uid(), 'manager'));
 
 create index if not exists idx_candidates_requisition on public.candidates(requisition_id);
 create index if not exists idx_candidates_stage on public.candidates(stage);
