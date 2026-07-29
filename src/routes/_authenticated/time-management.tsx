@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   Plus,
   Search,
@@ -242,9 +242,13 @@ export default function TimeManagementPage() {
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">Time Management</h1>
             <p className="text-sm text-muted-foreground">Daily attendance and timesheet records.</p>
           </div>
+          <div className="mt-2 flex gap-2 sm:mt-0">
+          <Button size="sm" variant="outline" asChild>
+            <Link to="/time-cards">Generate claim sheet</Link>
+          </Button>
           <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
             <DialogTrigger asChild>
-              <Button size="sm" className="mt-2 sm:mt-0">
+              <Button size="sm">
                 <Plus className="mr-1 h-4 w-4" />
                 Mark attendance
               </Button>
