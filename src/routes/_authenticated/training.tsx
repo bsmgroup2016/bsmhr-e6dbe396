@@ -69,6 +69,21 @@ const emptyIncident = {
   status: "Open" as SafetyIncident["status"],
 };
 
+/** MOM/WSH standard course catalogue for Singapore construction & marine work. */
+const WSH_STANDARD_COURSES: Array<Omit<TrainingCourse, "id" | "createdAt" | "updatedAt" | "companyId">> = [
+  { code: "SOC", name: "Construction Safety Orientation Course (CSOC)", category: "Statutory", provider: "MOM ATP", validityMonths: 24, mandatory: true, cost: 0, remarks: "Required for all construction workers" },
+  { code: "MSOC", name: "Marine Safety Orientation Course (MSOC)", category: "Statutory", provider: "MOM ATP", validityMonths: 24, mandatory: false, cost: 0, remarks: "Shipyard / marine sector" },
+  { code: "SSIC", name: "Shipyard Safety Instruction Course (SSIC)", category: "Statutory", provider: "MOM ATP", validityMonths: 24, mandatory: false, cost: 0, remarks: "Shipyard entry pass" },
+  { code: "WAH", name: "Work at Height Course for Workers", category: "Safety", provider: "MOM ATP", validityMonths: 24, mandatory: true, cost: 0, remarks: "WSH (WAH) Regulations" },
+  { code: "WAH-S", name: "Work at Height Course for Supervisors", category: "Safety", provider: "MOM ATP", validityMonths: 24, mandatory: false, cost: 0, remarks: "Supervisors only" },
+  { code: "CSE", name: "Confined Space Entry / Safety Assessor", category: "Safety", provider: "MOM ATP", validityMonths: 24, mandatory: false, cost: 0, remarks: "Confined space works" },
+  { code: "MSE", name: "Metal Scaffold Erector Course", category: "Skill", provider: "MOM ATP", validityMonths: 24, mandatory: false, cost: 0, remarks: "Scaffold erection" },
+  { code: "SSLO", name: "Supervise Safe Lifting Operations", category: "Safety", provider: "MOM ATP", validityMonths: 24, mandatory: false, cost: 0, remarks: "Lifting supervisor" },
+  { code: "RSS", name: "Rigger & Signalman Course", category: "Skill", provider: "MOM ATP", validityMonths: 24, mandatory: false, cost: 0, remarks: "Lifting crew" },
+  { code: "FIRSTAID", name: "Occupational First Aid Course", category: "Safety", provider: "MOM ATP", validityMonths: 36, mandatory: false, cost: 0, remarks: "1 first-aider per 100 workers" },
+  { code: "SITE-IND", name: "Site Induction & Toolbox Briefing", category: "Induction", provider: "In-house", validityMonths: 12, mandatory: true, cost: 0, remarks: "Before deployment" },
+];
+
 export default function TrainingPage() {
   const companyId = getCurrentCompany();
   const [courses, setCourses] = useState(getCourses());
@@ -125,6 +140,15 @@ export default function TrainingPage() {
     setCourseOpen(false);
     refresh();
     toast.success("Course added");
+  }
+
+  function seedWshCourses() {
+    const existing = new Set(courses.map((c) => c.code.toUpperCase()));
+    const missing = WSH_STANDARD_COURSES.filter((c) => !existing.has(c.code.toUpperCase()));
+    if (!missing.length) return toast.info("All WSH standard courses already exist");
+    for (const c of missing) addCourse({ ...c, companyId: companyId || undefined });
+    refresh();
+    toast.success(`${missing.length} WSH standard courses added`);
   }
 
   function saveRecord() {
@@ -336,7 +360,10 @@ export default function TrainingPage() {
 
           <TabsContent value="courses" className="mt-4">
             <div className="rounded-xl border bg-card p-4 shadow-sm">
-              <div className="flex justify-end">
+              <div className="flex flex-wrap justify-end gap-2">
+                <Button size="sm" variant="outline" onClick={seedWshCourses}>
+                  <ShieldCheck className="mr-1 h-4 w-4" /> Add WSH standard courses
+                </Button>
                 <Dialog open={courseOpen} onOpenChange={setCourseOpen}>
                   <DialogTrigger asChild>
                     <Button size="sm"><Plus className="mr-1 h-4 w-4" /> Add course</Button>
