@@ -13,6 +13,8 @@ import {
   Download,
   FileUp,
   User,
+  RefreshCw,
+  BadgeCheck,
 } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
@@ -59,14 +61,16 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { getDocuments, getEmployees, addDocument, updateDocument, deleteDocument } from "@/lib/store";
+import { getDocuments, getEmployees, addDocument, updateDocument, deleteDocument, getCurrentCompany } from "@/lib/store";
+import { computeDocumentStatus, daysUntil, DEFAULT_REMINDER_DAYS } from "@/lib/compliance";
+import { openR2File } from "@/lib/r2";
 import { FileUpload } from "@/components/file-upload";
 import type { EmployeeDocument, DocumentType, DocumentStatus } from "@/lib/types";
 
 const documentTypes: DocumentType[] = [
   "Passport", "Work Permit", "S Pass", "Employment Pass", "IC", "Safety Certificate", "P-File", "Medical Report", "Insurance", "Other",
 ];
-const documentStatuses: DocumentStatus[] = ["Valid", "Expiring Soon", "Expired", "Pending"];
+const documentStatuses: DocumentStatus[] = ["Valid", "Expiring Soon", "Expired", "Pending", "Superseded"];
 
 export const Route = createFileRoute("/_authenticated/documents")({
   head: () => ({
@@ -80,9 +84,31 @@ export const Route = createFileRoute("/_authenticated/documents")({
   component: DocumentsPage,
 });
 
+function readDocForm(formData: FormData) {
+  const expiryDate = (formData.get("expiryDate") as string) || undefined;
+  const reminderDays = Number(formData.get("reminderDays") || DEFAULT_REMINDER_DAYS);
+  return {
+    employeeId: formData.get("employeeId") as string,
+    type: formData.get("type") as DocumentType,
+    name: formData.get("name") as string,
+    fileUrl: (formData.get("fileUrl") as string) || undefined,
+    issueDate: (formData.get("issueDate") as string) || undefined,
+    expiryDate,
+    docNumber: (formData.get("docNumber") as string) || undefined,
+    issuingAuthority: (formData.get("issuingAuthority") as string) || undefined,
+    remarks: (formData.get("remarks") as string) || undefined,
+    reminderDays,
+    status: computeDocumentStatus(expiryDate, reminderDays, (formData.get("status") as DocumentStatus) || "Valid"),
+  };
+}
+
 export default function DocumentsPage() {
-  const [documents, setDocuments] = useState(getDocuments());
-  const [employees] = useState(getEmployees());
+  const companyId = getCurrentCompany();
+  const [allDocuments, setDocuments] = useState(getDocuments());
+  const [allEmployees] = useState(getEmployees());
+  const employees = companyId ? allEmployees.filter((e) => !e.companyId || e.companyId === companyId) : allEmployees;
+  const employeeIds = new Set(employees.map((e) => e.id));
+  const documents = allDocuments.filter((d) => employeeIds.has(d.employeeId));
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<DocumentType | "all">("all");
   const [statusFilter, setStatusFilter] = useState<DocumentStatus | "all">("all");
@@ -90,6 +116,8 @@ export default function DocumentsPage() {
   const [editingDoc, setEditingDoc] = useState<EmployeeDocument | null>(null);
   const [viewingDoc, setViewingDoc] = useState<EmployeeDocument | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<EmployeeDocument | null>(null);
+  const [renewSource, setRenewSource] = useState<EmployeeDocument | null>(null);
+  const [showSuperseded, setShowSuperseded] = useState(false);
 
   const filtered = documents.filter((d) => {
     const q = search.toLowerCase();
@@ -99,6 +127,7 @@ export default function DocumentsPage() {
       d.type.toLowerCase().includes(q) ||
       emp?.name.toLowerCase().includes(q) ||
       emp?.employeeCode.toLowerCase().includes(q);
+    if (!showSuperseded && d.status === "Superseded" && statusFilter !== "Superseded") return false;
     return matchesSearch && (typeFilter === "all" || d.type === typeFilter) && (statusFilter === "all" || d.status === statusFilter);
   });
 
@@ -111,31 +140,40 @@ export default function DocumentsPage() {
   }
 
   function handleCreate(formData: FormData) {
-    addDocument({
-      employeeId: formData.get("employeeId") as string,
-      type: formData.get("type") as DocumentType,
-      name: formData.get("name") as string,
-      fileUrl: (formData.get("fileUrl") as string) || undefined,
-      issueDate: (formData.get("issueDate") as string) || undefined,
-      expiryDate: (formData.get("expiryDate") as string) || undefined,
-      status: formData.get("status") as DocumentStatus,
-    });
+    addDocument({ ...readDocForm(formData), version: 1, verified: false });
     setIsCreateOpen(false);
     refresh();
   }
 
   function handleEdit(formData: FormData) {
     if (!editingDoc) return;
-    updateDocument(editingDoc.id, {
-      employeeId: formData.get("employeeId") as string,
-      type: formData.get("type") as DocumentType,
-      name: formData.get("name") as string,
-      fileUrl: (formData.get("fileUrl") as string) || undefined,
-      issueDate: (formData.get("issueDate") as string) || undefined,
-      expiryDate: (formData.get("expiryDate") as string) || undefined,
-      status: formData.get("status") as DocumentStatus,
-    });
+    updateDocument(editingDoc.id, readDocForm(formData));
     setEditingDoc(null);
+    refresh();
+  }
+
+  function handleVerify(doc: EmployeeDocument) {
+    updateDocument(doc.id, {
+      verified: !doc.verified,
+      verifiedAt: doc.verified ? undefined : new Date().toISOString(),
+    });
+    refresh();
+  }
+
+  function handleRenew(doc: EmployeeDocument) {
+    updateDocument(doc.id, { status: "Superseded" });
+    setRenewSource(doc);
+  }
+
+  function handleRenewSubmit(formData: FormData) {
+    if (!renewSource) return;
+    addDocument({
+      ...readDocForm(formData),
+      version: (renewSource.version ?? 1) + 1,
+      replacesId: renewSource.id,
+      verified: false,
+    });
+    setRenewSource(null);
     refresh();
   }
 
@@ -211,6 +249,9 @@ export default function DocumentsPage() {
                   ))}
                 </SelectContent>
               </Select>
+              <Button variant={showSuperseded ? "secondary" : "outline"} size="sm" onClick={() => setShowSuperseded((v) => !v)}>
+                {showSuperseded ? "Hide old versions" : "Show old versions"}
+              </Button>
             </div>
           </div>
 
@@ -221,15 +262,17 @@ export default function DocumentsPage() {
                   <TableHead>Employee</TableHead>
                   <TableHead>Document</TableHead>
                   <TableHead>Type</TableHead>
+                  <TableHead>Number</TableHead>
                   <TableHead>Expiry</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Verification</TableHead>
                   <TableHead className="w-12"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filtered.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="h-32 text-center">
+                    <TableCell colSpan={8} className="h-32 text-center">
                       <EmptyState className="bg-transparent border-0" icon={<FileText className="h-5 w-5" />} title="No documents found" description="Add a document to track expiry." />
                     </TableCell>
                   </TableRow>
@@ -244,18 +287,35 @@ export default function DocumentsPage() {
                         </TableCell>
                         <TableCell>{d.name}</TableCell>
                         <TableCell>{d.type}</TableCell>
+                        <TableCell className="font-mono text-xs">{d.docNumber || "—"}</TableCell>
                         <TableCell>
                           <div className="flex items-center gap-1.5">
                             <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
                             {d.expiryDate || "—"}
+                            {(() => {
+                              const left = daysUntil(d.expiryDate);
+                              if (left === null) return null;
+                              return (
+                                <span className={left < 0 ? "text-xs text-destructive" : "text-xs text-muted-foreground"}>
+                                  ({left < 0 ? `${Math.abs(left)}d ago` : `${left}d`})
+                                </span>
+                              );
+                            })()}
                           </div>
                         </TableCell>
                         <TableCell>
                           <StatusBadge
-                            variant={d.status === "Valid" ? "success" : d.status === "Expiring Soon" ? "warning" : d.status === "Expired" ? "destructive" : "info"}
+                            variant={d.status === "Valid" ? "success" : d.status === "Expiring Soon" ? "warning" : d.status === "Expired" ? "destructive" : d.status === "Superseded" ? "outline" : "info"}
                             label={d.status}
                             dot
                           />
+                        </TableCell>
+                        <TableCell>
+                          {d.verified ? (
+                            <StatusBadge variant="success" label="Verified" />
+                          ) : (
+                            <span className="text-xs text-muted-foreground">Unverified</span>
+                          )}
                         </TableCell>
                         <TableCell>
                           <DropdownMenu>
@@ -272,6 +332,20 @@ export default function DocumentsPage() {
                               <DropdownMenuItem onClick={() => setEditingDoc(d)}>
                                 <Pencil className="mr-2 h-4 w-4" />
                                 Edit
+                              </DropdownMenuItem>
+                              {d.fileUrl && (
+                                <DropdownMenuItem onClick={() => void openR2File(d.fileUrl!)}>
+                                  <Download className="mr-2 h-4 w-4" />
+                                  Open file
+                                </DropdownMenuItem>
+                              )}
+                              <DropdownMenuItem onClick={() => handleVerify(d)}>
+                                <BadgeCheck className="mr-2 h-4 w-4" />
+                                {d.verified ? "Remove verification" : "Mark as verified"}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleRenew(d)}>
+                                <RefreshCw className="mr-2 h-4 w-4" />
+                                Renew / new version
                               </DropdownMenuItem>
                               <DropdownMenuItem className="text-destructive" onClick={() => setDeleteTarget(d)}>
                                 <Trash2 className="mr-2 h-4 w-4" />
@@ -296,6 +370,25 @@ export default function DocumentsPage() {
               <DialogDescription>Update document details.</DialogDescription>
             </DialogHeader>
             {editingDoc && <DocumentForm employees={employees} document={editingDoc} onSubmit={handleEdit} />}
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={!!renewSource} onOpenChange={(open) => !open && setRenewSource(null)}>
+          <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
+            <DialogHeader>
+              <DialogTitle>Renew document</DialogTitle>
+              <DialogDescription>
+                The old record is kept as version {renewSource?.version ?? 1} (marked superseded). Upload the renewed copy below.
+              </DialogDescription>
+            </DialogHeader>
+            {renewSource && (
+              <DocumentForm
+                employees={employees}
+                document={{ ...renewSource, fileUrl: undefined, issueDate: undefined, expiryDate: undefined, status: "Valid" }}
+                submitLabel="Save renewal"
+                onSubmit={handleRenewSubmit}
+              />
+            )}
           </DialogContent>
         </Dialog>
 
@@ -348,7 +441,7 @@ export default function DocumentsPage() {
   );
 }
 
-function DocumentForm({ employees, document, onSubmit }: { employees: ReturnType<typeof getEmployees>; document?: EmployeeDocument; onSubmit: (data: FormData) => void }) {
+function DocumentForm({ employees, document, onSubmit, submitLabel }: { employees: ReturnType<typeof getEmployees>; document?: EmployeeDocument; onSubmit: (data: FormData) => void; submitLabel?: string }) {
   return (
     <form
       onSubmit={(e) => {
@@ -415,6 +508,22 @@ function DocumentForm({ employees, document, onSubmit }: { employees: ReturnType
           <Label htmlFor="expiryDate">Expiry date</Label>
           <Input id="expiryDate" name="expiryDate" type="date" defaultValue={document?.expiryDate} />
         </div>
+        <div className="space-y-2">
+          <Label htmlFor="docNumber">Document / reference number</Label>
+          <Input id="docNumber" name="docNumber" defaultValue={document?.docNumber} placeholder="e.g. WP No." />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="issuingAuthority">Issuing authority</Label>
+          <Input id="issuingAuthority" name="issuingAuthority" defaultValue={document?.issuingAuthority} placeholder="e.g. MOM" />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="reminderDays">Reminder before expiry (days)</Label>
+          <Input id="reminderDays" name="reminderDays" type="number" min={1} max={365} defaultValue={document?.reminderDays ?? DEFAULT_REMINDER_DAYS} />
+        </div>
+        <div className="space-y-2 sm:col-span-2">
+          <Label htmlFor="remarks">Remarks</Label>
+          <Input id="remarks" name="remarks" defaultValue={document?.remarks} />
+        </div>
       </div>
       <FileUpload
         name="fileUrl"
@@ -423,7 +532,7 @@ function DocumentForm({ employees, document, onSubmit }: { employees: ReturnType
         defaultValue={document?.fileUrl}
       />
       <DialogFooter>
-        <Button type="submit">{document ? "Save changes" : "Add document"}</Button>
+        <Button type="submit">{submitLabel ?? (document ? "Save changes" : "Add document")}</Button>
       </DialogFooter>
     </form>
   );
