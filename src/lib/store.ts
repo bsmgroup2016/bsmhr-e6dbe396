@@ -854,6 +854,151 @@ export function buildInvoiceLines(
   return lines.sort((a, b) => b.amount - a.amount);
 }
 
+/* ---------------- billing: client contracts (recurring auto-invoicing) ---------------- */
+export function getContracts(): ClientContract[] { return getState().contracts; }
+
+const iso = (d: Date) => d.toISOString().slice(0, 10);
+const addDays = (date: string, n: number) => {
+  const d = new Date(date);
+  d.setDate(d.getDate() + n);
+  return iso(d);
+};
+
+/** First invoice date on/after `from` for a contract's cycle. */
+export function firstRunDate(contract: Pick<ClientContract, "billingCycle" | "billingDay">, from: string): string {
+  if (contract.billingCycle !== "Monthly") return from;
+  const d = new Date(from);
+  const day = Math.min(Math.max(contract.billingDay || 1, 1), 28);
+  d.setDate(day);
+  if (iso(d) < from) d.setMonth(d.getMonth() + 1);
+  return iso(d);
+}
+
+function nextRunDate(contract: ClientContract, afterRun: string): string {
+  if (contract.billingCycle === "Weekly") return addDays(afterRun, 7);
+  if (contract.billingCycle === "Fortnightly") return addDays(afterRun, 14);
+  const d = new Date(afterRun);
+  d.setMonth(d.getMonth() + 1);
+  return iso(d);
+}
+
+/** Billing period that a run on `runDate` covers (the cycle just finished). */
+function periodFor(contract: ClientContract, runDate: string): { start: string; end: string } {
+  const end = addDays(runDate, -1);
+  if (contract.billingCycle === "Weekly") return { start: addDays(end, -6), end };
+  if (contract.billingCycle === "Fortnightly") return { start: addDays(end, -13), end };
+  const d = new Date(runDate);
+  d.setMonth(d.getMonth() - 1);
+  return { start: iso(d), end };
+}
+
+export function addContract(
+  contract: Omit<ClientContract, "id" | "createdAt" | "updatedAt">,
+): ClientContract {
+  const s = getState();
+  const now = new Date().toISOString();
+  const row: ClientContract = { ...contract, id: newId(), createdAt: now, updatedAt: now };
+  setState({ ...s, contracts: [row, ...s.contracts] });
+  void supabase.from("client_contracts").insert({ id: row.id, ...toContract(row) })
+    .then(({ error }) => fail("client_contracts", error));
+  addAuditLog("CREATE", "ClientContract", row.id, `Contract ${row.contractNo}`);
+  return row;
+}
+
+export function updateContract(id: string, updates: Partial<ClientContract>): ClientContract | undefined {
+  const s = getState();
+  const existing = s.contracts.find((c) => c.id === id);
+  if (!existing) return undefined;
+  const updated: ClientContract = { ...existing, ...updates, updatedAt: new Date().toISOString() };
+  setState({ ...s, contracts: s.contracts.map((c) => (c.id === id ? updated : c)) });
+  void supabase.from("client_contracts").update(toContract(updated)).eq("id", id)
+    .then(({ error }) => fail("client_contracts", error));
+  addAuditLog("UPDATE", "ClientContract", id, `Contract ${updated.contractNo} updated`);
+  return updated;
+}
+
+export function deleteContract(id: string): boolean {
+  const s = getState();
+  if (!s.contracts.some((c) => c.id === id)) return false;
+  setState({ ...s, contracts: s.contracts.filter((c) => c.id !== id) });
+  void supabase.from("client_contracts").delete().eq("id", id)
+    .then(({ error }) => fail("client_contracts", error));
+  addAuditLog("DELETE", "ClientContract", id, "Deleted contract");
+  return true;
+}
+
+/** Contracts whose next invoice date has arrived. */
+export function contractsDue(onDate = iso(new Date())): ClientContract[] {
+  return getState().contracts.filter(
+    (c) =>
+      c.status === "Active" &&
+      c.autoInvoice &&
+      !!c.nextInvoiceOn &&
+      c.nextInvoiceOn <= onDate &&
+      (!c.endDate || c.endDate >= c.nextInvoiceOn),
+  );
+}
+
+export interface ContractRunResult {
+  created: Invoice[];
+  skipped: { contract: ClientContract; reason: string }[];
+}
+
+/** Generate invoices for every contract that is due, then roll their schedule forward. */
+export function runContractBilling(onDate = iso(new Date())): ContractRunResult {
+  const created: Invoice[] = [];
+  const skipped: ContractRunResult["skipped"] = [];
+
+  for (const contract of contractsDue(onDate)) {
+    const runDate = contract.nextInvoiceOn!;
+    const { start, end } = periodFor(contract, runDate);
+
+    let lines: InvoiceLine[];
+    if (contract.billingSource === "Fixed") {
+      lines = [{
+        description: `${contract.title || contract.contractNo} — ${contract.billingCycle.toLowerCase()} service charge`,
+        unit: "Monthly",
+        quantity: 1,
+        rate: contract.fixedAmount,
+        otQuantity: 0,
+        otRate: 0,
+        amount: contract.fixedAmount,
+      }];
+    } else {
+      lines = buildInvoiceLines(contract.clientId, start, end, contract.projectId);
+    }
+
+    if (lines.length === 0) {
+      skipped.push({ contract, reason: `No billable data for ${start} → ${end}` });
+      continue;
+    }
+
+    const invoice = addInvoice({
+      companyId: contract.companyId ?? getCurrentCompany(),
+      clientId: contract.clientId,
+      projectId: contract.projectId,
+      periodStart: start,
+      periodEnd: end,
+      issueDate: onDate,
+      dueDate: addDays(onDate, contract.paymentTermsDays || 30),
+      lines,
+      gstRate: contract.gstRate,
+      amountPaid: 0,
+      status: "Draft",
+      notes: `Auto-generated from contract ${contract.contractNo}`,
+    });
+    created.push(invoice);
+
+    updateContract(contract.id, {
+      lastInvoicedOn: runDate,
+      nextInvoiceOn: nextRunDate(contract, runDate),
+      status: contract.endDate && contract.endDate < nextRunDate(contract, runDate) ? "Expired" : contract.status,
+    });
+  }
+
+  return { created, skipped };
+}
+
 /* ---------------- approvals ---------------- */
 export function getApprovals(): Approval[] { return getState().approvals; }
 
