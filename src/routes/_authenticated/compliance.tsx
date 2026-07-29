@@ -16,8 +16,8 @@ import {
 } from "@/components/ui/select";
 import { getEmployees, getDocuments, getCurrentCompany } from "@/lib/store";
 import { buildComplianceItems, severityLabel, severityVariant, type ComplianceSeverity } from "@/lib/compliance";
-import { openSignedFile } from "@/lib/r2";
-import { exportToXlsx } from "@/lib/xlsx";
+import { openR2File } from "@/lib/r2";
+import { exportRows } from "@/lib/xlsx";
 
 export const Route = createFileRoute("/_authenticated/compliance")({
   head: () => ({
@@ -73,7 +73,7 @@ export default function CompliancePage() {
   });
 
   function handleExport() {
-    exportToXlsx(
+    void exportRows(
       filtered.map((i) => ({
         "Employee code": i.employeeCode,
         Employee: i.employeeName,
@@ -84,7 +84,7 @@ export default function CompliancePage() {
         "Days left": i.daysLeft,
         Status: severityLabel[i.severity],
       })),
-      "compliance-expiry",
+      "compliance-expiry", "Expiry",
     );
   }
 
@@ -187,7 +187,7 @@ export default function CompliancePage() {
                       <TableCell>
                         <div className="flex justify-end gap-1">
                           {i.fileUrl && (
-                            <Button size="icon" variant="ghost" title="Open file" onClick={() => void openSignedFile(i.fileUrl!)}>
+                            <Button size="icon" variant="ghost" title="Open file" onClick={() => void openR2File(i.fileUrl!)}>
                               <FileText className="h-4 w-4" />
                             </Button>
                           )}
