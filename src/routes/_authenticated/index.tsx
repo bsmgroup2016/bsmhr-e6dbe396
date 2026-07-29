@@ -12,8 +12,19 @@ import {
   CalendarClock,
   AlertCircle,
   FileText,
+  ShieldAlert,
 } from "lucide-react";
-import { getEmployees, getSites, getProjects, getApprovals, getDocuments, getAuditLogs } from "@/lib/store";
+import {
+  getEmployees,
+  getSites,
+  getProjects,
+  getApprovals,
+  getDocuments,
+  getAuditLogs,
+  getAttendance,
+  getCompanies,
+  getCurrentCompany,
+} from "@/lib/store";
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
@@ -28,7 +39,12 @@ export const Route = createFileRoute("/_authenticated/")({
 });
 
 function DashboardPage() {
-  const employees = getEmployees();
+  const companyId = getCurrentCompany();
+  const company = getCompanies().find((c) => c.id === companyId);
+  const allEmployees = getEmployees();
+  const employees = companyId
+    ? allEmployees.filter((e) => !e.companyId || e.companyId === companyId)
+    : allEmployees;
   const sites = getSites();
   const projects = getProjects();
   const approvals = getApprovals();
@@ -41,6 +57,21 @@ function DashboardPage() {
   const activeProjects = projects.filter((p) => p.status === "Active").length;
   const pendingApprovals = approvals.filter((a) => a.status === "Pending").length;
   const expiringDocs = documents.filter((d) => d.status === "Expiring Soon" || d.status === "Expired").length;
+
+  const today = new Date();
+  const todayKey = today.toISOString().slice(0, 10);
+  const presentToday = getAttendance().filter(
+    (a) => a.date === todayKey && (a.status === "Present" || a.status === "Half Day"),
+  ).length;
+
+  const daysLeft = (iso: string) =>
+    Math.ceil((new Date(iso).getTime() - today.getTime()) / 86_400_000);
+
+  const expiringPasses = employees
+    .filter((e) => e.passExpiry && e.passExpiry !== "-" && daysLeft(e.passExpiry) <= 60)
+    .map((e) => ({ ...e, days: daysLeft(e.passExpiry) }))
+    .sort((a, b) => a.days - b.days)
+    .slice(0, 8);
 
   const quickActions = [
     { to: "/workforce", icon: Users, label: "Register employee", desc: "Add a new worker to the system.", color: "primary" },
@@ -59,7 +90,9 @@ function DashboardPage() {
             <span className="w-fit rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-white/90 backdrop-blur">
               BSM Engineering · Singapore
             </span>
-            <h1 className="text-3xl font-semibold tracking-tight text-white">Dashboard</h1>
+            <h1 className="text-3xl font-semibold tracking-tight text-white">
+              {company ? company.name : "Dashboard"}
+            </h1>
             <p className="max-w-xl text-sm text-white/75">
               Overview of workforce, sites, and operations across all active projects.
             </p>
@@ -93,8 +126,50 @@ function DashboardPage() {
             value={pendingApprovals.toString()}
             icon={<Clock className="h-5 w-5" />}
             variant="warning"
-            caption={`${expiringDocs} docs need attention`}
+            caption={`${expiringDocs} docs · ${presentToday} present today`}
           />
+        </div>
+
+        <div className="rounded-xl border bg-gradient-surface p-5 shadow-sm">
+          <div className="flex items-center gap-2">
+            <ShieldAlert className="h-4 w-4 text-warning" />
+            <h2 className="text-base font-semibold text-foreground">Pass expiry alerts</h2>
+            <span className="ml-auto text-xs text-muted-foreground">Next 60 days</span>
+          </div>
+          {expiringPasses.length === 0 ? (
+            <EmptyState
+              className="mt-4 border-0 bg-transparent"
+              icon={<AlertCircle className="h-5 w-5" />}
+              title="No passes expiring soon"
+              description="All work permits and passes are valid for more than 60 days."
+            />
+          ) : (
+            <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {expiringPasses.map((e) => (
+                <Link
+                  key={e.id}
+                  to="/workforce"
+                  className="rounded-lg border bg-card/60 p-3 transition-all duration-300 hover:-translate-y-0.5 hover:border-warning/40 hover:shadow-elegant"
+                >
+                  <p className="truncate text-sm font-medium text-foreground">{e.name}</p>
+                  <p className="truncate text-xs text-muted-foreground">
+                    {e.passType} · {e.employeeCode}
+                  </p>
+                  <div className="mt-2">
+                    <StatusBadge
+                      variant={e.days < 0 ? "destructive" : e.days <= 30 ? "warning" : "info"}
+                      label={
+                        e.days < 0
+                          ? `Expired ${Math.abs(e.days)}d ago`
+                          : `${e.days}d left · ${e.passExpiry}`
+                      }
+                      dot
+                    />
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="grid gap-4 lg:grid-cols-3">
