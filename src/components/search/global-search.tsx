@@ -84,7 +84,7 @@ function useSearchIndex(): SearchHit[] {
       hits.push({
         id: `inv-${i.id}`,
         group: "Invoices",
-        label: i.invoiceNumber,
+        label: i.invoiceNo,
         hint: `${i.status} · S$${Number(i.total ?? 0).toLocaleString()}`,
         to: "/billing",
         icon: <FileText className="h-4 w-4" />,
@@ -94,8 +94,8 @@ function useSearchIndex(): SearchHit[] {
       hits.push({
         id: `veh-${v.id}`,
         group: "Vehicles",
-        label: v.plateNumber,
-        hint: [v.make, v.model].filter(Boolean).join(" "),
+        label: v.plateNo,
+        hint: [v.type, v.makeModel].filter(Boolean).join(" · "),
         to: "/transport",
         icon: <Truck className="h-4 w-4" />,
       });
