@@ -872,6 +872,158 @@ function GenerateForm({
   );
 }
 
+function ContractForm({
+  clients,
+  projects,
+  onSubmit,
+}: {
+  clients: ReturnType<typeof getClients>;
+  projects: ReturnType<typeof getProjects>;
+  onSubmit: (data: FormData) => void;
+}) {
+  const [clientId, setClientId] = useState(clients[0]?.id ?? "");
+  const [projectId, setProjectId] = useState("all");
+  const [billingCycle, setBillingCycle] = useState<BillingCycle>("Monthly");
+  const [billingSource, setBillingSource] = useState<BillingSource>("Timesheet");
+
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        onSubmit(new FormData(e.currentTarget));
+      }}
+      className="space-y-4"
+    >
+      <input type="hidden" name="clientId" value={clientId} />
+      <input type="hidden" name="projectId" value={projectId} />
+      <input type="hidden" name="billingCycle" value={billingCycle} />
+      <input type="hidden" name="billingSource" value={billingSource} />
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="space-y-1">
+          <Label htmlFor="contractNo">Contract no</Label>
+          <Input id="contractNo" name="contractNo" placeholder="CT-2026-001" required />
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor="title">Title</Label>
+          <Input id="title" name="title" placeholder="Manpower supply — Tuas site" />
+        </div>
+      </div>
+
+      <div className="space-y-1">
+        <Label>Client</Label>
+        <Select value={clientId} onValueChange={setClientId}>
+          <SelectTrigger>
+            <SelectValue placeholder="Select client" />
+          </SelectTrigger>
+          <SelectContent>
+            {clients.map((c) => (
+              <SelectItem key={c.id} value={c.id}>
+                {c.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="space-y-1">
+        <Label>Project</Label>
+        <Select value={projectId} onValueChange={setProjectId}>
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All projects</SelectItem>
+            {projects
+              .filter((p) => p.clientId === clientId)
+              .map((p) => (
+                <SelectItem key={p.id} value={p.id}>
+                  {p.name}
+                </SelectItem>
+              ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="space-y-1">
+          <Label htmlFor="startDate">Start date</Label>
+          <Input
+            id="startDate"
+            name="startDate"
+            type="date"
+            defaultValue={new Date().toISOString().slice(0, 10)}
+            required
+          />
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor="endDate">End date</Label>
+          <Input id="endDate" name="endDate" type="date" />
+        </div>
+        <div className="space-y-1">
+          <Label>Billing cycle</Label>
+          <Select value={billingCycle} onValueChange={(v) => setBillingCycle(v as BillingCycle)}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {cycles.map((c) => (
+                <SelectItem key={c} value={c}>
+                  {c}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor="billingDay">Invoice day of month</Label>
+          <Input id="billingDay" name="billingDay" type="number" min={1} max={28} defaultValue={1} />
+        </div>
+        <div className="space-y-1">
+          <Label>Billing source</Label>
+          <Select value={billingSource} onValueChange={(v) => setBillingSource(v as BillingSource)}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Timesheet">Timesheet + rate agreements</SelectItem>
+              <SelectItem value="Fixed">Fixed amount per cycle</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor="fixedAmount">Fixed amount (S$)</Label>
+          <Input
+            id="fixedAmount"
+            name="fixedAmount"
+            type="number"
+            step="0.01"
+            defaultValue={0}
+            disabled={billingSource !== "Fixed"}
+          />
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor="gstRate">GST %</Label>
+          <Input id="gstRate" name="gstRate" type="number" step="0.1" defaultValue={GST_DEFAULT} />
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor="paymentTermsDays">Payment terms (days)</Label>
+          <Input id="paymentTermsDays" name="paymentTermsDays" type="number" defaultValue={30} />
+        </div>
+      </div>
+
+      <div className="space-y-1">
+        <Label htmlFor="remarks">Remarks</Label>
+        <Textarea id="remarks" name="remarks" rows={2} placeholder="Optional" />
+      </div>
+
+      <DialogFooter>
+        <Button type="submit">Save contract</Button>
+      </DialogFooter>
+    </form>
+  );
+}
+
 function RateForm({
   clients,
   projects,
