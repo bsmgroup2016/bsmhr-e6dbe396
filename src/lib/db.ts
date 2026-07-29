@@ -26,6 +26,7 @@ export const fromCompany = (r: Row): Company => ({
   id: r.id, code: r.code, name: r.name, legalName: r.legal_name ?? "", uen: r.uen ?? "",
   industry: r.industry ?? "", address: r.address ?? "", phone: r.phone ?? "", email: r.email ?? "",
   status: (r.status ?? "Active") as Company["status"], accent: (r.accent ?? "primary") as Company["accent"],
+  sector: r.sector ?? undefined,
   createdAt: r.created_at, updatedAt: r.updated_at,
 });
 
@@ -67,6 +68,9 @@ export const fromEmployee = (r: Row): Employee => ({
   ethnicGroup: r.ethnic_group ?? undefined,
   religion: r.religion ?? undefined,
   prStatus: r.pr_status ?? undefined,
+  levyTier: r.levy_tier ?? undefined,
+  medicalInsuranceExpiry: d(r.medical_insurance_expiry),
+  medicalCheckupDue: d(r.medical_checkup_due),
   createdAt: r.created_at, updatedAt: r.updated_at,
 });
 
@@ -187,6 +191,9 @@ export const toEmployee = (e: Partial<Employee>): Row => ({
   ethnic_group: e.ethnicGroup ?? null,
   religion: e.religion ?? null,
   pr_status: e.prStatus ?? null,
+  levy_tier: e.levyTier ?? null,
+  medical_insurance_expiry: nullDate(e.medicalInsuranceExpiry),
+  medical_checkup_due: nullDate(e.medicalCheckupDue),
 });
 
 export const toClient = (c: Partial<Client>): Row => ({
@@ -251,6 +258,7 @@ export const toApproval = (a: Partial<Approval>): Row => ({
 export const toCompany = (c: Partial<Company>): Row => ({
   code: c.code, name: c.name, legal_name: c.legalName, uen: c.uen, industry: c.industry,
   address: c.address, phone: c.phone, email: c.email, status: c.status, accent: c.accent,
+  sector: c.sector ?? null,
 });
 
 export const fromLeave = (r: Row): LeaveRequest => ({
