@@ -13,6 +13,8 @@ import {
   Download,
   FileUp,
   User,
+  RefreshCw,
+  BadgeCheck,
 } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
@@ -59,7 +61,9 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { getDocuments, getEmployees, addDocument, updateDocument, deleteDocument } from "@/lib/store";
+import { getDocuments, getEmployees, addDocument, updateDocument, deleteDocument, getCurrentCompany } from "@/lib/store";
+import { computeDocumentStatus, daysUntil, DEFAULT_REMINDER_DAYS } from "@/lib/compliance";
+import { openR2File } from "@/lib/r2";
 import { FileUpload } from "@/components/file-upload";
 import type { EmployeeDocument, DocumentType, DocumentStatus } from "@/lib/types";
 
@@ -80,9 +84,31 @@ export const Route = createFileRoute("/_authenticated/documents")({
   component: DocumentsPage,
 });
 
+function readDocForm(formData: FormData) {
+  const expiryDate = (formData.get("expiryDate") as string) || undefined;
+  const reminderDays = Number(formData.get("reminderDays") || DEFAULT_REMINDER_DAYS);
+  return {
+    employeeId: formData.get("employeeId") as string,
+    type: formData.get("type") as DocumentType,
+    name: formData.get("name") as string,
+    fileUrl: (formData.get("fileUrl") as string) || undefined,
+    issueDate: (formData.get("issueDate") as string) || undefined,
+    expiryDate,
+    docNumber: (formData.get("docNumber") as string) || undefined,
+    issuingAuthority: (formData.get("issuingAuthority") as string) || undefined,
+    remarks: (formData.get("remarks") as string) || undefined,
+    reminderDays,
+    status: computeDocumentStatus(expiryDate, reminderDays, (formData.get("status") as DocumentStatus) || "Valid"),
+  };
+}
+
 export default function DocumentsPage() {
-  const [documents, setDocuments] = useState(getDocuments());
-  const [employees] = useState(getEmployees());
+  const companyId = getCurrentCompany();
+  const [allDocuments, setDocuments] = useState(getDocuments());
+  const [allEmployees] = useState(getEmployees());
+  const employees = companyId ? allEmployees.filter((e) => !e.companyId || e.companyId === companyId) : allEmployees;
+  const employeeIds = new Set(employees.map((e) => e.id));
+  const documents = allDocuments.filter((d) => employeeIds.has(d.employeeId));
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<DocumentType | "all">("all");
   const [statusFilter, setStatusFilter] = useState<DocumentStatus | "all">("all");
@@ -90,6 +116,8 @@ export default function DocumentsPage() {
   const [editingDoc, setEditingDoc] = useState<EmployeeDocument | null>(null);
   const [viewingDoc, setViewingDoc] = useState<EmployeeDocument | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<EmployeeDocument | null>(null);
+  const [renewSource, setRenewSource] = useState<EmployeeDocument | null>(null);
+  const [showSuperseded, setShowSuperseded] = useState(false);
 
   const filtered = documents.filter((d) => {
     const q = search.toLowerCase();
@@ -99,6 +127,7 @@ export default function DocumentsPage() {
       d.type.toLowerCase().includes(q) ||
       emp?.name.toLowerCase().includes(q) ||
       emp?.employeeCode.toLowerCase().includes(q);
+    if (!showSuperseded && d.status === "Superseded" && statusFilter !== "Superseded") return false;
     return matchesSearch && (typeFilter === "all" || d.type === typeFilter) && (statusFilter === "all" || d.status === statusFilter);
   });
 
@@ -111,31 +140,40 @@ export default function DocumentsPage() {
   }
 
   function handleCreate(formData: FormData) {
-    addDocument({
-      employeeId: formData.get("employeeId") as string,
-      type: formData.get("type") as DocumentType,
-      name: formData.get("name") as string,
-      fileUrl: (formData.get("fileUrl") as string) || undefined,
-      issueDate: (formData.get("issueDate") as string) || undefined,
-      expiryDate: (formData.get("expiryDate") as string) || undefined,
-      status: formData.get("status") as DocumentStatus,
-    });
+    addDocument({ ...readDocForm(formData), version: 1, verified: false });
     setIsCreateOpen(false);
     refresh();
   }
 
   function handleEdit(formData: FormData) {
     if (!editingDoc) return;
-    updateDocument(editingDoc.id, {
-      employeeId: formData.get("employeeId") as string,
-      type: formData.get("type") as DocumentType,
-      name: formData.get("name") as string,
-      fileUrl: (formData.get("fileUrl") as string) || undefined,
-      issueDate: (formData.get("issueDate") as string) || undefined,
-      expiryDate: (formData.get("expiryDate") as string) || undefined,
-      status: formData.get("status") as DocumentStatus,
-    });
+    updateDocument(editingDoc.id, readDocForm(formData));
     setEditingDoc(null);
+    refresh();
+  }
+
+  function handleVerify(doc: EmployeeDocument) {
+    updateDocument(doc.id, {
+      verified: !doc.verified,
+      verifiedAt: doc.verified ? undefined : new Date().toISOString(),
+    });
+    refresh();
+  }
+
+  function handleRenew(doc: EmployeeDocument) {
+    updateDocument(doc.id, { status: "Superseded" });
+    setRenewSource(doc);
+  }
+
+  function handleRenewSubmit(formData: FormData) {
+    if (!renewSource) return;
+    addDocument({
+      ...readDocForm(formData),
+      version: (renewSource.version ?? 1) + 1,
+      replacesId: renewSource.id,
+      verified: false,
+    });
+    setRenewSource(null);
     refresh();
   }
 
@@ -272,6 +310,20 @@ export default function DocumentsPage() {
                               <DropdownMenuItem onClick={() => setEditingDoc(d)}>
                                 <Pencil className="mr-2 h-4 w-4" />
                                 Edit
+                              </DropdownMenuItem>
+                              {d.fileUrl && (
+                                <DropdownMenuItem onClick={() => void openR2File(d.fileUrl!)}>
+                                  <Download className="mr-2 h-4 w-4" />
+                                  Open file
+                                </DropdownMenuItem>
+                              )}
+                              <DropdownMenuItem onClick={() => handleVerify(d)}>
+                                <BadgeCheck className="mr-2 h-4 w-4" />
+                                {d.verified ? "Remove verification" : "Mark as verified"}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleRenew(d)}>
+                                <RefreshCw className="mr-2 h-4 w-4" />
+                                Renew / new version
                               </DropdownMenuItem>
                               <DropdownMenuItem className="text-destructive" onClick={() => setDeleteTarget(d)}>
                                 <Trash2 className="mr-2 h-4 w-4" />
