@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
   BadgeDollarSign,
@@ -8,6 +9,7 @@ import {
   CalendarClock,
   ScanLine,
   BellRing,
+  ChevronRight,
   ClipboardList,
   FileText,
   FolderKanban,
@@ -42,6 +44,9 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
@@ -97,16 +102,14 @@ const navGroups: { label: string; items: NavItem[] }[] = [
       { title: "Inventory", url: "/inventory", icon: Package },
     ],
   },
-  {
-    label: "Administration",
-    items: [
-      { title: "Approvals", url: "/approvals", icon: ClipboardList },
-      { title: "Reports", url: "/reports", icon: ClipboardList },
-      { title: "Users & Permissions", url: "/users", icon: ShieldCheck },
-      { title: "Audit Logs", url: "/audit-logs", icon: HardHat },
-      { title: "Settings", url: "/settings", icon: Settings },
-    ],
-  },
+];
+
+const adminItems: NavItem[] = [
+  { title: "Approvals", url: "/approvals", icon: ClipboardList },
+  { title: "Reports", url: "/reports", icon: ClipboardList },
+  { title: "Users & Permissions", url: "/users", icon: ShieldCheck },
+  { title: "Audit Logs", url: "/audit-logs", icon: HardHat },
+  { title: "General Settings", url: "/settings", icon: Settings },
 ];
 
 export function AppSidebar() {
