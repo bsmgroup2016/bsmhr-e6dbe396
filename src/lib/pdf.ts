@@ -142,16 +142,20 @@ export async function downloadPayslipPdf(
     40,
     y + 24,
   );
+  const bodyRows: string[][] = [
+    ["Basic salary", money(entry.basicSalary)],
+    ["Overtime", money(entry.overtimePay)],
+    ["Allowances", money(entry.allowances)],
+    ["Deductions", `- ${money(entry.deductions)}`],
+    ["CPF (employee)", `- ${money(entry.cpfEmployee)}`],
+  ];
+  if (entry.shgAmount) {
+    bodyRows.push([`${entry.shgFund ?? "SHG"} fund`, `- ${money(entry.shgAmount)}`]);
+  }
   autoTable(doc, {
     startY: y + 40,
     head: [["Item", "Amount"]],
-    body: [
-      ["Basic salary", money(entry.basicSalary)],
-      ["Overtime", money(entry.overtimePay)],
-      ["Allowances", money(entry.allowances)],
-      ["Deductions", `- ${money(entry.deductions)}`],
-      ["CPF (employee)", `- ${money(entry.cpfEmployee)}`],
-    ],
+    body: bodyRows,
     styles: { fontSize: 10, cellPadding: 7 },
     headStyles: { fillColor: BRAND, textColor: 255 },
     columnStyles: { 1: { halign: "right" } },
@@ -160,6 +164,7 @@ export async function downloadPayslipPdf(
   const end = totals(doc, after, [
     ["Net pay", money(entry.netPay), true],
     ["Employer CPF", money(entry.cpfEmployer)],
+    ["SDL", money(entry.sdl ?? 0)],
     ["Levy", money(entry.levies)],
   ]);
   doc.setFontSize(8);

@@ -64,6 +64,9 @@ export const fromEmployee = (r: Row): Employee => ({
   dormitoryAddress: r.dormitory_address ?? undefined,
   accountHolderName: r.account_holder_name ?? undefined,
   ipaDocumentUrl: r.ipa_document_url ?? undefined,
+  ethnicGroup: r.ethnic_group ?? undefined,
+  religion: r.religion ?? undefined,
+  prStatus: r.pr_status ?? undefined,
   createdAt: r.created_at, updatedAt: r.updated_at,
 });
 
@@ -125,6 +128,8 @@ export const fromPayroll = (r: Row): PayrollEntry => ({
   overtimePay: Number(r.overtime_pay ?? 0), allowances: Number(r.allowances ?? 0),
   deductions: Number(r.deductions ?? 0), cpfEmployee: Number(r.cpf_employee ?? 0),
   cpfEmployer: Number(r.cpf_employer ?? 0), levies: Number(r.levies ?? 0), netPay: Number(r.net_pay ?? 0),
+  sdl: Number(r.sdl ?? 0), shgFund: (r.shg_fund ?? "None") as PayrollEntry["shgFund"],
+  shgAmount: Number(r.shg_amount ?? 0), employerCost: Number(r.employer_cost ?? 0),
   status: (r.status ?? "Draft") as PayrollEntry["status"], approvedBy: r.approved_by ?? undefined,
   approvedAt: r.approved_at ?? undefined, paidAt: r.paid_at ?? undefined,
   createdAt: r.created_at, updatedAt: r.updated_at,
@@ -179,6 +184,9 @@ export const toEmployee = (e: Partial<Employee>): Row => ({
   dormitory_address: e.dormitoryAddress ?? null,
   account_holder_name: e.accountHolderName ?? null,
   ipa_document_url: e.ipaDocumentUrl ?? null,
+  ethnic_group: e.ethnicGroup ?? null,
+  religion: e.religion ?? null,
+  pr_status: e.prStatus ?? null,
 });
 
 export const toClient = (c: Partial<Client>): Row => ({
@@ -227,6 +235,8 @@ export const toPayroll = (p: Partial<PayrollEntry>): Row => ({
   employee_id: p.employeeId, month: p.month, basic_salary: p.basicSalary ?? 0,
   overtime_pay: p.overtimePay ?? 0, allowances: p.allowances ?? 0, deductions: p.deductions ?? 0,
   cpf_employee: p.cpfEmployee ?? 0, cpf_employer: p.cpfEmployer ?? 0, levies: p.levies ?? 0,
+  sdl: p.sdl ?? 0, shg_fund: p.shgFund ?? "None", shg_amount: p.shgAmount ?? 0,
+  employer_cost: p.employerCost ?? 0,
   net_pay: p.netPay ?? 0, status: p.status, approved_by: p.approvedBy || null,
   approved_at: p.approvedAt || null, paid_at: p.paidAt || null,
 });

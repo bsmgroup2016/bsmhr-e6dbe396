@@ -14,6 +14,7 @@ import {
   Landmark,
   Send,
   BadgeCheck,
+  Calculator,
 } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
@@ -65,6 +66,7 @@ import type { Employee, PayrollEntry, PayrollStatus } from "@/lib/types";
 import { pick, type ImportColumn } from "@/lib/xlsx";
 import { exportCsv, timestampedName } from "@/lib/xlsx";
 import { bankFileRows } from "@/lib/ops";
+import { computeStatutory, round2 } from "@/lib/sg-payroll";
 
 const statuses: PayrollStatus[] = ["Draft", "Pending Approval", "Approved", "Paid", "Rejected"];
 
@@ -120,6 +122,11 @@ export default function PayrollPage() {
 
   const totalNetPay = filtered.reduce((s, p) => s + p.netPay, 0);
   const totalLevies = filtered.reduce((s, p) => s + p.levies, 0);
+  const totalCpf = filtered.reduce((s, p) => s + p.cpfEmployee + p.cpfEmployer, 0);
+  const totalEmployerCost = filtered.reduce(
+    (s, p) => s + (p.employerCost ?? p.basicSalary + p.overtimePay + p.allowances + p.cpfEmployer + (p.sdl ?? 0) + p.levies),
+    0,
+  );
   const paidCount = filtered.filter((p) => p.status === "Paid").length;
   const pendingCount = filtered.filter((p) => p.status === "Pending Approval" || p.status === "Draft").length;
 
@@ -169,10 +176,73 @@ export default function PayrollPage() {
       Deductions: entry.deductions,
       "CPF Employee": entry.cpfEmployee,
       "CPF Employer": entry.cpfEmployer,
+      SDL: entry.sdl ?? 0,
+      "SHG Fund": entry.shgFund ?? "None",
+      "SHG Amount": entry.shgAmount ?? 0,
       Levies: entry.levies,
       "Net Pay": entry.netPay,
+      "Employer Cost": entry.employerCost ?? 0,
       Status: entry.status,
     };
+  }
+
+  /** CPF / SDL / SHG submission sheet for the selected month. */
+  async function exportCpfReport() {
+    if (!filtered.length) {
+      toast.error("No payroll entries for this month");
+      return;
+    }
+    const rows = filtered.map((p) => {
+      const emp = employees.find((e) => e.id === p.employeeId);
+      const gross = p.basicSalary + p.overtimePay + p.allowances;
+      return {
+        Month: p.month,
+        "Employee Code": emp?.employeeCode ?? "",
+        Name: emp?.name ?? "",
+        "NRIC / FIN": emp?.fin ?? "",
+        "Pass Type": emp?.passType ?? "",
+        "PR Status": emp?.prStatus ?? "Citizen",
+        "Ordinary Wage": gross,
+        "CPF Employee": p.cpfEmployee,
+        "CPF Employer": p.cpfEmployer,
+        "CPF Total": round2(p.cpfEmployee + p.cpfEmployer),
+        SDL: p.sdl ?? 0,
+        "SHG Fund": p.shgFund ?? "None",
+        "SHG Amount": p.shgAmount ?? 0,
+        "Foreign Worker Levy": p.levies,
+        "Employer Cost": p.employerCost ?? 0,
+      };
+    });
+    await exportCsv(rows, timestampedName(`cpf_statutory_${month}`, "csv"));
+    toast.success(`CPF submission sheet exported (${rows.length} workers)`);
+  }
+
+  /** Recalculate CPF/SDL/SHG for every entry of the month from current profiles. */
+  function recalcStatutory() {
+    if (!filtered.length) {
+      toast.error("No payroll entries for this month");
+      return;
+    }
+    let updated = 0;
+    filtered.forEach((p) => {
+      const emp = employees.find((e) => e.id === p.employeeId);
+      if (!emp) return;
+      const gross = p.basicSalary + p.overtimePay + p.allowances;
+      const stat = computeStatutory(emp, gross);
+      updatePayroll(p.id, {
+        cpfEmployee: stat.cpfEmployee,
+        cpfEmployer: stat.cpfEmployer,
+        sdl: stat.sdl,
+        shgFund: stat.shgFund,
+        shgAmount: stat.shgAmount,
+        levies: stat.levy,
+        employerCost: round2(stat.employerCost - p.deductions),
+        netPay: round2(gross - p.deductions - stat.cpfEmployee - stat.shgAmount),
+      });
+      updated += 1;
+    });
+    refresh();
+    toast.success(`Statutory contributions recalculated for ${updated} workers`);
   }
 
   function handleImport(rows: Record<string, string>[]) {
@@ -197,6 +267,9 @@ export default function PayrollPage() {
       const cpfEmployee = num(get("cpfEmployee"));
       const levies = num(get("levies"));
       const statusValue = get("status").toLowerCase();
+      const gross = basicSalary + overtimePay + allowances;
+      const stat = computeStatutory(emp, gross);
+      const cpfEmp = cpfEmployee || stat.cpfEmployee;
 
       addPayroll({
         employeeId: emp.id,
@@ -205,10 +278,14 @@ export default function PayrollPage() {
         overtimePay,
         allowances,
         deductions,
-        cpfEmployee,
-        cpfEmployer: num(get("cpfEmployer")),
-        levies,
-        netPay: basicSalary + overtimePay + allowances - deductions - cpfEmployee,
+        cpfEmployee: cpfEmp,
+        cpfEmployer: num(get("cpfEmployer")) || stat.cpfEmployer,
+        levies: levies || stat.levy,
+        sdl: stat.sdl,
+        shgFund: stat.shgFund,
+        shgAmount: stat.shgAmount,
+        employerCost: round2(stat.employerCost - deductions),
+        netPay: round2(gross - deductions - cpfEmp - stat.shgAmount),
         status: (statuses.find((s) => s.toLowerCase() === statusValue) ?? "Draft") as PayrollStatus,
       });
       imported += 1;
@@ -252,23 +329,33 @@ export default function PayrollPage() {
   }
 
   function handleCreateEntry(formData: FormData) {
+    const employeeId = formData.get("employeeId") as string;
+    const emp = employees.find((e) => e.id === employeeId);
     const basicSalary = Number(formData.get("basicSalary") || 0);
     const overtimePay = Number(formData.get("overtimePay") || 0);
     const allowances = Number(formData.get("allowances") || 0);
     const deductions = Number(formData.get("deductions") || 0);
-    const cpfEmployee = Number(formData.get("cpfEmployee") || 0);
-    const levies = Number(formData.get("levies") || 0);
-    const netPay = basicSalary + overtimePay + allowances - deductions - cpfEmployee;
+    const gross = basicSalary + overtimePay + allowances;
+    const stat = emp
+      ? computeStatutory(emp, gross)
+      : { cpfEmployee: 0, cpfEmployer: 0, sdl: 0, shgFund: "None" as const, shgAmount: 0, levy: 0, employerCost: gross, age: 0 };
+    const cpfEmployee = Number(formData.get("cpfEmployee") || 0) || stat.cpfEmployee;
+    const levies = Number(formData.get("levies") || 0) || stat.levy;
+    const netPay = round2(gross - deductions - cpfEmployee - stat.shgAmount);
     addPayroll({
-      employeeId: formData.get("employeeId") as string,
+      employeeId,
       month: formData.get("month") as string,
       basicSalary,
       overtimePay,
       allowances,
       deductions,
       cpfEmployee,
-      cpfEmployer: Number(formData.get("cpfEmployer") || 0),
+      cpfEmployer: Number(formData.get("cpfEmployer") || 0) || stat.cpfEmployer,
       levies,
+      sdl: stat.sdl,
+      shgFund: stat.shgFund,
+      shgAmount: stat.shgAmount,
+      employerCost: round2(stat.employerCost - deductions),
       netPay,
       status: formData.get("status") as PayrollStatus,
     });
@@ -308,6 +395,14 @@ export default function PayrollPage() {
               <Landmark className="mr-1 h-4 w-4" />
               Bank file
             </Button>
+            <Button size="sm" variant="outline" onClick={recalcStatutory}>
+              <Calculator className="mr-1 h-4 w-4" />
+              Recalc CPF
+            </Button>
+            <Button size="sm" variant="outline" onClick={exportCpfReport}>
+              <FileDown className="mr-1 h-4 w-4" />
+              CPF sheet
+            </Button>
             <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
               <DialogTrigger asChild>
                 <Button size="sm">
@@ -335,8 +430,10 @@ export default function PayrollPage() {
           </div>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
           <SummaryCard title="Net pay" value={`S$${totalNetPay.toLocaleString()}`} icon={<DollarSign className="h-5 w-5" />} variant="primary" caption={month} />
+          <SummaryCard title="CPF total" value={`S$${Math.round(totalCpf).toLocaleString()}`} icon={<Landmark className="h-5 w-5" />} variant="info" caption="Employee + employer" />
+          <SummaryCard title="Employer cost" value={`S$${Math.round(totalEmployerCost).toLocaleString()}`} icon={<Calculator className="h-5 w-5" />} variant="default" caption="Gross + CPF + SDL + levy" />
           <SummaryCard title="Levies" value={`S$${totalLevies.toLocaleString()}`} icon={<DollarSign className="h-5 w-5" />} variant="warning" caption={month} />
           <SummaryCard title="Paid" value={paidCount.toString()} icon={<CheckCircle2 className="h-5 w-5" />} variant="success" caption={month} />
           <SummaryCard title="Pending" value={pendingCount.toString()} icon={<Clock className="h-5 w-5" />} variant="info" caption={month} />
@@ -505,6 +602,7 @@ function PayslipDialog({
     ["Deductions", -entry.deductions],
     ["CPF (employee)", -entry.cpfEmployee],
   ];
+  if (entry.shgAmount) rows.push([`${entry.shgFund} fund`, -entry.shgAmount]);
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
@@ -535,6 +633,10 @@ function PayslipDialog({
           <div className="flex justify-between text-xs text-muted-foreground">
             <span>Employer CPF {money(entry.cpfEmployer)}</span>
             <span>Levy {money(entry.levies)}</span>
+          </div>
+          <div className="flex justify-between text-xs text-muted-foreground">
+            <span>SDL {money(entry.sdl ?? 0)}</span>
+            <span>Employer cost {money(entry.employerCost ?? 0)}</span>
           </div>
         </div>
         <DialogFooter>

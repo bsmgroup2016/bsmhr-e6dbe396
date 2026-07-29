@@ -15,6 +15,7 @@ import type { Expense, PaymentReceipt } from "@/lib/types";
 import type { InventoryItem, StockMovement, PurchaseOrder } from "@/lib/types";
 import type { BranchPrefix, EmployeeCertification, TimeCard, ClaimSheet } from "@/lib/types";
 import { supabase } from "@/integrations/supabase/client";
+import { computeStatutory, round2 } from "@/lib/sg-payroll";
 import {
   loadAll, toEmployee, toClient, toProject, toSite, toAssignment,
   toDocument, toAttendance, toPayroll, toApproval, toCompany, toLeave,
@@ -529,13 +530,11 @@ export function deletePayroll(id: string): boolean {
 
 /** Singapore CPF: only for Singaporean/PR staff. Foreign pass holders pay levy instead. */
 export function computeCpf(employee: Employee, grossWage: number) {
-  if (employee.passType !== "Singaporean/PR") return { cpfEmployee: 0, cpfEmployer: 0 };
-  const capped = Math.min(grossWage, 7400);
-  return {
-    cpfEmployee: Math.round(capped * 0.2),
-    cpfEmployer: Math.round(capped * 0.17),
-  };
+  const { cpfEmployee, cpfEmployer } = computeStatutory(employee, grossWage);
+  return { cpfEmployee, cpfEmployer };
 }
+
+export { computeStatutory };
 
 /** Auto-build payroll drafts for a month from employee salary + attendance OT. */
 export function generatePayrollForMonth(month: string, companyId?: string): { created: number; skipped: number } {
@@ -556,8 +555,8 @@ export function generatePayrollForMonth(month: string, companyId?: string): { cr
     const basicSalary = emp.basicSalary || 0;
     const hourlyRate = basicSalary / 26 / 8;
     const overtimePay = Math.round(otHours * hourlyRate * 1.5);
-    const levies = Math.round(emp.levyRate ?? 0);
-    const { cpfEmployee, cpfEmployer } = computeCpf(emp, basicSalary + overtimePay);
+    const gross = basicSalary + overtimePay;
+    const stat = computeStatutory(emp, gross);
     addPayroll({
       employeeId: emp.id,
       month,
@@ -565,10 +564,14 @@ export function generatePayrollForMonth(month: string, companyId?: string): { cr
       overtimePay,
       allowances: 0,
       deductions: 0,
-      cpfEmployee,
-      cpfEmployer,
-      levies,
-      netPay: basicSalary + overtimePay - cpfEmployee,
+      cpfEmployee: stat.cpfEmployee,
+      cpfEmployer: stat.cpfEmployer,
+      levies: stat.levy,
+      sdl: stat.sdl,
+      shgFund: stat.shgFund,
+      shgAmount: stat.shgAmount,
+      employerCost: stat.employerCost,
+      netPay: round2(gross - stat.cpfEmployee - stat.shgAmount),
       status: "Draft",
     });
     created += 1;
