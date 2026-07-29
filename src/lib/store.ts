@@ -317,6 +317,34 @@ export function addAttendance(attendance: Omit<Attendance, "id" | "createdAt" | 
   return row;
 }
 
+export function updateAttendance(id: string, updates: Partial<Attendance>): Attendance | undefined {
+  const s = getState();
+  const existing = s.attendance.find((a) => a.id === id);
+  if (!existing) return undefined;
+  const updated = { ...existing, ...updates, updatedAt: new Date().toISOString() };
+  setState({ ...s, attendance: s.attendance.map((a) => (a.id === id ? updated : a)) });
+  void supabase.from("attendance").update(toAttendance(updated)).eq("id", id)
+    .then(({ error }) => fail("attendance", error));
+  return updated;
+}
+
+/** Insert or update the single attendance record for an employee on a date. */
+export function upsertAttendance(record: Omit<Attendance, "id" | "createdAt" | "updatedAt">): Attendance {
+  const existing = getState().attendance.find(
+    (a) => a.employeeId === record.employeeId && a.date === record.date,
+  );
+  if (existing) return updateAttendance(existing.id, record) ?? existing;
+  return addAttendance(record);
+}
+
+/** Bulk daily marking from the site attendance sheet. */
+export function saveDailySheet(
+  rows: Omit<Attendance, "id" | "createdAt" | "updatedAt">[],
+): { saved: number } {
+  rows.forEach((row) => upsertAttendance(row));
+  return { saved: rows.length };
+}
+
 /* ---------------- payroll ---------------- */
 export function getPayroll(): PayrollEntry[] { return getState().payroll; }
 export function getPayrollByEmployee(employeeId: string): PayrollEntry[] { return getState().payroll.filter((p) => p.employeeId === employeeId); }
