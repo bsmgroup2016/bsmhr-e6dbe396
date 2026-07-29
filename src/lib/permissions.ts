@@ -7,6 +7,7 @@ export type AppAuthRole = "admin" | "manager" | "supervisor" | "client_user";
  */
 export const ROUTE_ROLES: Record<string, AppAuthRole[]> = {
   "/": ["admin", "manager", "supervisor", "client_user"],
+  "/my-portal": ["admin", "manager", "supervisor", "client_user"],
   "/alerts": ["admin", "manager", "supervisor"],
   "/companies": ["admin", "manager"],
   "/workforce": ["admin", "manager", "supervisor"],
