@@ -8,6 +8,7 @@ import {
   Clock,
   Wand2,
   Printer,
+  FileDown,
   Trash2,
   Building2,
   Landmark,
@@ -17,6 +18,7 @@ import {
 
 import { AppShell } from "@/components/app-shell";
 import { ExportButton, ImportDialog } from "@/components/data-io";
+import { downloadPayslipPdf } from "@/lib/pdf";
 import { SummaryCard } from "@/components/ui/summary-card";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -438,6 +440,20 @@ export default function PayrollPage() {
                             <Button size="icon" variant="ghost" title="Payslip" onClick={() => setPayslipOf(p)}>
                               <Printer className="h-4 w-4" />
                             </Button>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              title="Payslip PDF"
+                              onClick={() =>
+                                void downloadPayslipPdf(p, {
+                                  employee: emp,
+                                  companyName:
+                                    companies.find((c) => c.id === emp?.companyId)?.name ?? "BSM Engineering",
+                                }).then(() => toast.success("Payslip PDF downloaded"))
+                              }
+                            >
+                              <FileDown className="h-4 w-4" />
+                            </Button>
                             <Button size="icon" variant="ghost" title="Delete" onClick={() => handleDelete(p)}>
                               <Trash2 className="h-4 w-4 text-destructive" />
                             </Button>
@@ -525,6 +541,10 @@ function PayslipDialog({
           <Button onClick={() => window.print()}>
             <Printer className="mr-1 h-4 w-4" />
             Print
+          </Button>
+          <Button onClick={() => void downloadPayslipPdf(entry, { employee, companyName })}>
+            <FileDown className="mr-1 h-4 w-4" />
+            Download PDF
           </Button>
         </DialogFooter>
       </DialogContent>
