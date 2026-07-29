@@ -30,9 +30,9 @@ const severityStyle: Record<AlertSeverity, string> = {
   info: "border-border bg-muted/30",
 };
 
-const severityBadge: Record<AlertSeverity, "destructive" | "warning" | "secondary"> = {
+const severityBadge: Record<AlertSeverity, "destructive" | "secondary" | "outline"> = {
   critical: "destructive",
-  warning: "warning",
+  warning: "outline",
   info: "secondary",
 };
 
@@ -60,10 +60,10 @@ function AlertsPage() {
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <SummaryCard title="Total alerts" value={String(counts.total)} icon={BellRing} />
-          <SummaryCard title="Critical" value={String(counts.critical)} icon={ShieldAlert} />
-          <SummaryCard title="Warning" value={String(counts.warning)} icon={AlertTriangle} />
-          <SummaryCard title="For review" value={String(counts.info)} icon={Info} />
+          <SummaryCard title="Total alerts" value={String(counts.total)} icon={<BellRing className="h-5 w-5" />} />
+          <SummaryCard title="Critical" value={String(counts.critical)} icon={<ShieldAlert className="h-5 w-5" />} />
+          <SummaryCard title="Warning" value={String(counts.warning)} icon={<AlertTriangle className="h-5 w-5" />} />
+          <SummaryCard title="For review" value={String(counts.info)} icon={<Info className="h-5 w-5" />} />
         </div>
 
         <div className="flex flex-wrap gap-2">
@@ -98,7 +98,7 @@ function AlertsPage() {
           <CardContent className="space-y-2">
             {filtered.length === 0 ? (
               <EmptyState
-                icon={BellRing}
+                icon={<BellRing className="h-5 w-5" />}
                 title="Nothing needs attention"
                 description="No alerts match the current filters."
               />
