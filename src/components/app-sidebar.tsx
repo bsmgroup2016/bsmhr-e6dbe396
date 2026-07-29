@@ -84,7 +84,7 @@ const navGroups: { label: string; items: NavItem[] }[] = [
     items: [
       { title: "Accommodation", url: "/accommodation", icon: BedDouble },
       { title: "Transport & Drivers", url: "/transport", icon: Truck },
-      { title: "Assets & PPE", url: "/assets", icon: Boxes, soon: true },
+      { title: "Assets & PPE", url: "/assets", icon: Boxes },
     ],
   },
   {
