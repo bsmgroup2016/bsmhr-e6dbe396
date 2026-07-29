@@ -86,14 +86,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error };
   }, []);
 
-  const signUp = useCallback(async (email: string, password: string, fullName: string) => {
-    const { error } = await supabase.auth.signUp({
+  const signUp = useCallback(async (email: string, password: string, fullName: string, phone?: string) => {
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: { full_name: fullName },
+        data: { full_name: fullName, phone: phone ?? "" },
       },
     });
+    // If the session is immediately available (email confirmation off),
+    // provision the employee record right away. Otherwise it happens on first sign-in.
+    if (!error && data.session?.access_token) {
+      await provisionEmployeeRecord(data.session.access_token, phone ?? "");
+    }
     return { error };
   }, []);
 
