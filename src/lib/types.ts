@@ -100,6 +100,12 @@ export interface Employee {
   dormitoryAddress?: string;
   accountHolderName?: string;
   ipaDocumentUrl?: string;
+  // --- Singapore statutory payroll ---
+  /** Ethnic group drives the Self-Help Group fund (CDAC/MBMF/SINDA/ECF). */
+  ethnicGroup?: "Chinese" | "Malay" | "Indian" | "Eurasian" | "Others";
+  religion?: "Muslim" | "Non-Muslim";
+  /** PR year determines graduated CPF rates. */
+  prStatus?: "Citizen" | "PR Year 1" | "PR Year 2" | "PR Year 3+";
   createdAt: string;
   updatedAt: string;
 }
@@ -344,6 +350,13 @@ export interface PayrollEntry {
   cpfEmployee: number;
   cpfEmployer: number;
   levies: number;
+  /** Skills Development Levy (employer). */
+  sdl?: number;
+  /** Self-Help Group fund name and employee contribution. */
+  shgFund?: "CDAC" | "MBMF" | "SINDA" | "ECF" | "None";
+  shgAmount?: number;
+  /** Gross + employer CPF + SDL + FWL. */
+  employerCost?: number;
   netPay: number;
   status: PayrollStatus;
   approvedBy?: string;
