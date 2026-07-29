@@ -228,8 +228,52 @@ export default function SettingsPage() {
             </div>
           </TabsContent>
 
+          <TabsContent value="storage" className="mt-4 space-y-4">
+            <div className="rounded-xl border bg-card p-5 shadow-sm">
+              <div className="mb-4 flex items-center gap-2">
+                <HardDrive className="h-5 w-5 text-muted-foreground" />
+                <h2 className="text-lg font-semibold">Cloudflare R2 file storage</h2>
+              </div>
+              <p className="mb-4 text-sm text-muted-foreground">
+                All uploaded files (work permits, ICs, certificates, time cards) are stored in your
+                Cloudflare R2 bucket through a Worker. Only the file link is saved in the database.
+                Deployment steps are in the <code className="rounded bg-muted px-1">worker/</code> folder.
+              </p>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2 sm:col-span-2">
+                  <Label htmlFor="workerUrl">Worker URL</Label>
+                  <Input
+                    id="workerUrl"
+                    value={r2.workerUrl}
+                    onChange={(e) => setR2({ ...r2, workerUrl: e.target.value })}
+                    placeholder="https://bsm-storage.your-subdomain.workers.dev"
+                  />
+                </div>
+                <div className="space-y-2 sm:col-span-2">
+                  <Label htmlFor="uploadToken">Upload token</Label>
+                  <Input
+                    id="uploadToken"
+                    type="password"
+                    value={r2.uploadToken}
+                    onChange={(e) => setR2({ ...r2, uploadToken: e.target.value })}
+                    placeholder="Same value as UPLOAD_TOKEN in the Worker"
+                  />
+                </div>
+              </div>
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                <Button onClick={handleSaveR2}>
+                  <Save className="mr-2 h-4 w-4" />
+                  {r2Saved ? "Saved!" : "Save storage settings"}
+                </Button>
+                <Button variant="outline" onClick={handleTestR2} disabled={!r2.workerUrl}>
+                  Test connection
+                </Button>
+                {r2Test && <span className="text-sm text-muted-foreground">{r2Test}</span>}
+              </div>
+            </div>
+          </TabsContent>
+
           <TabsContent value="data" className="mt-4 space-y-4">
-            {null}
             <div className="rounded-xl border bg-card p-5 shadow-sm">
               <div className="flex items-center gap-2 mb-4">
                 <Database className="h-5 w-5 text-muted-foreground" />
