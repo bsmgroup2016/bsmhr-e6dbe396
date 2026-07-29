@@ -125,6 +125,7 @@ export function employeeFromForm(fd: FormData): Partial<Employee> {
     remarks: s("remarks") || undefined,
     internalNotes: s("internalNotes") || undefined,
     photoUrl: s("photoUrl") || undefined,
+    ipaDocumentUrl: s("ipaDocumentUrl") || undefined,
   };
 }
 
