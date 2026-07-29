@@ -11,6 +11,7 @@ import type {
 import type { TrainingCourse, TrainingRecord, SafetyIncident } from "@/lib/types";
 import type { JobRequisition, Candidate } from "@/lib/types";
 import type { Lead, CrmActivity } from "@/lib/types";
+import type { Expense, PaymentReceipt } from "@/lib/types";
 import { supabase } from "@/integrations/supabase/client";
 import {
   loadAll, toEmployee, toClient, toProject, toSite, toAssignment,
@@ -22,6 +23,7 @@ import {
 import { toCourse, toTraining, toIncident } from "@/lib/db";
 import { toRequisition, toCandidate } from "@/lib/db";
 import { toLead, toActivity } from "@/lib/db";
+import { toExpense, toPaymentReceipt } from "@/lib/db";
 
 export interface AppState {
   employees: Employee[];
@@ -50,6 +52,8 @@ export interface AppState {
   candidates: Candidate[];
   leads: Lead[];
   activities: CrmActivity[];
+  expenses: Expense[];
+  receipts: PaymentReceipt[];
   users: User[];
   branches: AppBranch[];
   currentBranch: string;
@@ -73,6 +77,7 @@ const emptyState: AppState = {
   courses: [], trainings: [], incidents: [],
   requisitions: [], candidates: [],
   leads: [], activities: [],
+  expenses: [], receipts: [],
   branches: defaultBranches, currentBranch: "hq",
   companies: [], currentCompany: "", currentUser: null,
 };
