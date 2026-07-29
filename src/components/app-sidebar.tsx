@@ -78,7 +78,7 @@ const navGroups: { label: string; items: NavItem[] }[] = [
       { title: "Recruitment", url: "/recruitment", icon: UserPlus },
       { title: "Client CRM", url: "/crm", icon: BadgeDollarSign },
       { title: "Billing & Invoicing", url: "/billing", icon: Receipt },
-      { title: "Finance", url: "/finance", icon: Wallet, soon: true },
+      { title: "Finance", url: "/finance", icon: Wallet },
     ],
   },
   {

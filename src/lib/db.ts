@@ -10,6 +10,7 @@ import type {
 import type { TrainingCourse, TrainingRecord, SafetyIncident } from "@/lib/types";
 import type { JobRequisition, Candidate } from "@/lib/types";
 import type { Lead, CrmActivity } from "@/lib/types";
+import type { Expense, PaymentReceipt } from "@/lib/types";
 
 type Row = Record<string, any>;
 
@@ -522,6 +523,7 @@ export interface LoadedData {
   courses: TrainingCourse[]; trainings: TrainingRecord[]; incidents: SafetyIncident[];
   requisitions: JobRequisition[]; candidates: Candidate[];
   leads: Lead[]; activities: CrmActivity[];
+  expenses: Expense[]; receipts: PaymentReceipt[];
 }
 
 async function all(table: string, order = "created_at") {
@@ -536,7 +538,7 @@ export async function loadAll(): Promise<LoadedData> {
     documents, attendance, payroll, approvals, auditLogs, profiles, roles, leaveRequests,
     rateAgreements, invoices, dormitories, allocations, vehicles, trips,
     assets, issuances, courses, trainings, incidents,
-    requisitions, candidates, leads, activities,
+    requisitions, candidates, leads, activities, expenses, receipts,
   ] = await Promise.all([
     all("companies"), all("employees"), all("clients"), all("projects"), all("sites"),
     all("assignments"), all("employee_documents"), all("attendance"), all("payroll_entries"),
@@ -546,6 +548,7 @@ export async function loadAll(): Promise<LoadedData> {
     all("assets"), all("asset_issuances"),
     all("training_courses"), all("training_records"), all("safety_incidents"),
     all("job_requisitions"), all("candidates"), all("leads"), all("crm_activities"),
+    all("expenses"), all("payment_receipts"),
   ]);
 
   const roleByUser = new Map<string, string>();
@@ -595,5 +598,46 @@ export async function loadAll(): Promise<LoadedData> {
     candidates: candidates.map(fromCandidate),
     leads: leads.map(fromLead),
     activities: activities.map(fromActivity),
+    expenses: expenses.map(fromExpense),
+    receipts: receipts.map(fromPaymentReceipt),
   };
 }
+
+/* ---------- Phase 12: finance ---------- */
+export const fromExpense = (r: Row): Expense => ({
+  id: r.id, companyId: r.company_id ?? undefined, expenseDate: d(r.expense_date) ?? "",
+  category: (r.category ?? "Other") as Expense["category"], description: r.description ?? "",
+  vendor: r.vendor ?? undefined, projectId: r.project_id ?? undefined,
+  employeeId: r.employee_id ?? undefined, amount: Number(r.amount ?? 0),
+  gstAmount: Number(r.gst_amount ?? 0),
+  paymentMode: (r.payment_mode ?? undefined) as Expense["paymentMode"],
+  referenceNo: r.reference_no ?? undefined,
+  status: (r.status ?? "Pending") as Expense["status"], paidOn: d(r.paid_on),
+  documentUrl: r.document_url ?? undefined, remarks: r.remarks ?? undefined,
+  createdAt: r.created_at, updatedAt: r.updated_at,
+});
+
+export const toExpense = (x: Partial<Expense>): Row => ({
+  company_id: x.companyId || null, expense_date: nullDate(x.expenseDate),
+  category: x.category, description: x.description ?? "", vendor: x.vendor ?? null,
+  project_id: x.projectId || null, employee_id: x.employeeId || null,
+  amount: x.amount ?? 0, gst_amount: x.gstAmount ?? 0,
+  payment_mode: x.paymentMode ?? null, reference_no: x.referenceNo ?? null,
+  status: x.status, paid_on: nullDate(x.paidOn), document_url: x.documentUrl ?? null,
+  remarks: x.remarks ?? null,
+});
+
+export const fromPaymentReceipt = (r: Row): PaymentReceipt => ({
+  id: r.id, companyId: r.company_id ?? undefined, invoiceId: r.invoice_id ?? undefined,
+  clientId: r.client_id ?? undefined, receiptNo: r.receipt_no ?? "",
+  receivedOn: d(r.received_on) ?? "", amount: Number(r.amount ?? 0),
+  paymentMode: (r.payment_mode ?? "Bank Transfer") as PaymentReceipt["paymentMode"],
+  referenceNo: r.reference_no ?? undefined, remarks: r.remarks ?? undefined,
+  createdAt: r.created_at, updatedAt: r.updated_at,
+});
+
+export const toPaymentReceipt = (x: Partial<PaymentReceipt>): Row => ({
+  company_id: x.companyId || null, invoice_id: x.invoiceId || null, client_id: x.clientId || null,
+  receipt_no: x.receiptNo ?? "", received_on: nullDate(x.receivedOn), amount: x.amount ?? 0,
+  payment_mode: x.paymentMode, reference_no: x.referenceNo ?? null, remarks: x.remarks ?? null,
+});
