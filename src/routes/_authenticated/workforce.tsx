@@ -356,6 +356,51 @@ export default function WorkforcePage() {
           <SummaryCard title="Expired passes" value={expiredCount.toString()} icon={<AlertTriangle className="h-5 w-5" />} variant="destructive" caption="Immediate action" />
         </div>
 
+        {pendingProfiles.length > 0 ? (
+          <div className="rounded-xl border bg-card p-4 shadow-sm">
+            <div className="mb-3 flex items-center justify-between">
+              <div>
+                <h2 className="text-sm font-semibold">Self-signup profiles to review</h2>
+                <p className="text-xs text-muted-foreground">
+                  Accounts created by workers themselves. Check the details, then verify to activate.
+                </p>
+              </div>
+              <span className="rounded-full bg-amber-500/15 px-2.5 py-1 text-xs font-medium text-amber-600">
+                {pendingProfiles.length} pending
+              </span>
+            </div>
+            <div className="space-y-2">
+              {pendingProfiles.map((e) => (
+                <div
+                  key={e.id}
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-lg border bg-background/60 p-3"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium">
+                      {e.name} · {e.employeeCode}
+                    </p>
+                    <p className="truncate text-xs text-muted-foreground">
+                      {e.email ?? "no email"} · {e.phone ?? "no phone"} · {e.status}
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" onClick={() => setSelected(e)}>
+                      Open
+                    </Button>
+                    <Button
+                      size="sm"
+                      disabled={e.status === "Pending Profile Completion"}
+                      onClick={() => verifyProfile(e.id)}
+                    >
+                      Verify & activate
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
         <div className="rounded-xl border bg-card p-4 shadow-sm">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div className="relative w-full max-w-sm">
