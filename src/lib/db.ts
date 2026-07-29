@@ -5,6 +5,7 @@ import type {
   Attendance, PayrollEntry, Approval, AuditLog, Company, User,
   LeaveRequest, RateAgreement, Invoice, InvoiceLine,
   Dormitory, BedAllocation, Vehicle, Trip,
+  Asset, AssetIssuance,
 } from "@/lib/types";
 
 type Row = Record<string, any>;
@@ -333,6 +334,43 @@ export const toTrip = (x: Partial<Trip>): Row => ({
   status: x.status, notes: x.notes ?? null,
 });
 
+/* ---------- assets & PPE ---------- */
+export const fromAsset = (r: Row): Asset => ({
+  id: r.id, companyId: r.company_id ?? undefined, assetCode: r.asset_code ?? "",
+  name: r.name, category: (r.category ?? "Tool") as Asset["category"],
+  serialNo: r.serial_no ?? undefined, brand: r.brand ?? undefined,
+  quantity: Number(r.quantity ?? 0), unitCost: Number(r.unit_cost ?? 0),
+  purchaseDate: d(r.purchase_date), warrantyExpiry: d(r.warranty_expiry),
+  calibrationDue: d(r.calibration_due), location: r.location ?? undefined,
+  status: (r.status ?? "Available") as Asset["status"], remarks: r.remarks ?? undefined,
+  createdAt: r.created_at, updatedAt: r.updated_at,
+});
+
+export const toAsset = (x: Partial<Asset>): Row => ({
+  company_id: x.companyId || null, asset_code: x.assetCode ?? "", name: x.name,
+  category: x.category, serial_no: x.serialNo ?? null, brand: x.brand ?? null,
+  quantity: x.quantity ?? 0, unit_cost: x.unitCost ?? 0,
+  purchase_date: nullDate(x.purchaseDate), warranty_expiry: nullDate(x.warrantyExpiry),
+  calibration_due: nullDate(x.calibrationDue), location: x.location ?? null,
+  status: x.status, remarks: x.remarks ?? null,
+});
+
+export const fromIssuance = (r: Row): AssetIssuance => ({
+  id: r.id, assetId: r.asset_id, employeeId: r.employee_id, siteId: r.site_id ?? undefined,
+  quantity: Number(r.quantity ?? 1), issueDate: d(r.issue_date) ?? "", dueDate: d(r.due_date),
+  returnDate: d(r.return_date), conditionOut: (r.condition_out ?? "Good") as AssetIssuance["conditionOut"],
+  conditionIn: (r.condition_in ?? undefined) as AssetIssuance["conditionIn"],
+  status: (r.status ?? "Issued") as AssetIssuance["status"], remarks: r.remarks ?? undefined,
+  createdAt: r.created_at, updatedAt: r.updated_at,
+});
+
+export const toIssuance = (x: Partial<AssetIssuance>): Row => ({
+  asset_id: x.assetId, employee_id: x.employeeId, site_id: x.siteId || null,
+  quantity: x.quantity ?? 1, issue_date: nullDate(x.issueDate), due_date: nullDate(x.dueDate),
+  return_date: nullDate(x.returnDate), condition_out: x.conditionOut ?? "Good",
+  condition_in: x.conditionIn ?? null, status: x.status, remarks: x.remarks ?? null,
+});
+
 /* ---------- bulk load ---------- */
 export interface LoadedData {
   companies: Company[]; employees: Employee[]; clients: Client[]; projects: Project[];
@@ -341,6 +379,7 @@ export interface LoadedData {
   auditLogs: AuditLog[]; users: User[]; leaveRequests: LeaveRequest[];
   rateAgreements: RateAgreement[]; invoices: Invoice[];
   dormitories: Dormitory[]; allocations: BedAllocation[]; vehicles: Vehicle[]; trips: Trip[];
+  assets: Asset[]; issuances: AssetIssuance[];
 }
 
 async function all(table: string, order = "created_at") {
@@ -354,12 +393,14 @@ export async function loadAll(): Promise<LoadedData> {
     companies, employees, clients, projects, sites, assignments,
     documents, attendance, payroll, approvals, auditLogs, profiles, roles, leaveRequests,
     rateAgreements, invoices, dormitories, allocations, vehicles, trips,
+    assets, issuances,
   ] = await Promise.all([
     all("companies"), all("employees"), all("clients"), all("projects"), all("sites"),
     all("assignments"), all("employee_documents"), all("attendance"), all("payroll_entries"),
     all("approvals"), all("audit_logs"), all("profiles"), all("user_roles"), all("leave_requests"),
     all("rate_agreements"), all("invoices"), all("dormitories"), all("bed_allocations"),
     all("vehicles"), all("trips"),
+    all("assets"), all("asset_issuances"),
   ]);
 
   const roleByUser = new Map<string, string>();
@@ -400,5 +441,7 @@ export async function loadAll(): Promise<LoadedData> {
     allocations: allocations.map(fromAllocation),
     vehicles: vehicles.map(fromVehicle),
     trips: trips.map(fromTrip),
+    assets: assets.map(fromAsset),
+    issuances: issuances.map(fromIssuance),
   };
 }
