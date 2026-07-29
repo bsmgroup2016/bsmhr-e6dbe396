@@ -453,8 +453,132 @@ function BillingPage() {
             </div>
           </TabsContent>
 
+          <TabsContent value="contracts" className="mt-4">
+            <div className="rounded-xl border bg-card p-4 shadow-sm">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h2 className="font-medium">Client contracts</h2>
+                  <p className="text-sm text-muted-foreground">
+                    Recurring service agreements. Due contracts are invoiced automatically when you run billing.
+                  </p>
+                </div>
+                <Dialog open={isContractOpen} onOpenChange={setIsContractOpen}>
+                  <DialogTrigger asChild>
+                    <Button size="sm">
+                      <Plus className="mr-1 h-4 w-4" />
+                      Add contract
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+                    <DialogHeader>
+                      <DialogTitle>Add client contract</DialogTitle>
+                      <DialogDescription>
+                        Sets the billing cycle, GST and payment terms used for auto-generated invoices.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <ContractForm clients={clients} projects={projects} onSubmit={handleAddContract} />
+                  </DialogContent>
+                </Dialog>
+              </div>
+
+              <div className="mt-4 overflow-hidden rounded-lg border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Contract</TableHead>
+                      <TableHead>Client</TableHead>
+                      <TableHead>Cycle</TableHead>
+                      <TableHead>Source</TableHead>
+                      <TableHead>Next invoice</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="w-40 text-right">Action</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {visibleContracts.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={7} className="h-28 text-center">
+                          <EmptyState
+                            className="border-0 bg-transparent"
+                            icon={<Repeat className="h-5 w-5" />}
+                            title="No contracts yet"
+                            description="Add a client contract to schedule recurring invoices."
+                          />
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      visibleContracts.map((c) => {
+                        const due = !!c.nextInvoiceOn && c.nextInvoiceOn <= new Date().toISOString().slice(0, 10);
+                        return (
+                          <TableRow key={c.id}>
+                            <TableCell>
+                              <div className="font-medium">{c.contractNo}</div>
+                              <div className="text-xs text-muted-foreground">{c.title || "—"}</div>
+                            </TableCell>
+                            <TableCell>{clients.find((cl) => cl.id === c.clientId)?.name ?? "—"}</TableCell>
+                            <TableCell>
+                              <div>{c.billingCycle}</div>
+                              <div className="text-xs text-muted-foreground">
+                                {c.startDate || "—"} → {c.endDate || "open"}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              {c.billingSource === "Fixed" ? `Fixed ${money(c.fixedAmount)}` : "Timesheet"}
+                            </TableCell>
+                            <TableCell>
+                              <div className={due ? "font-medium text-destructive" : ""}>
+                                {c.nextInvoiceOn || "—"}
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                {c.lastInvoicedOn ? `Last ${c.lastInvoicedOn}` : "Not invoiced yet"}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <StatusBadge
+                                variant={
+                                  c.status === "Active" ? "success" : c.status === "Draft" ? "info" : "destructive"
+                                }
+                                label={c.autoInvoice ? c.status : `${c.status} (manual)`}
+                                dot
+                              />
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex justify-end gap-1">
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => {
+                                    updateContract(c.id, { autoInvoice: !c.autoInvoice });
+                                    refresh();
+                                    toast.success(c.autoInvoice ? "Auto-invoicing paused" : "Auto-invoicing resumed");
+                                  }}
+                                >
+                                  {c.autoInvoice ? "Pause" : "Resume"}
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => {
+                                    deleteContract(c.id);
+                                    refresh();
+                                    toast.success("Contract deleted");
+                                  }}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          </TabsContent>
+
           <TabsContent value="rates" className="mt-4">
-            {null}
             <div className="rounded-xl border bg-card p-4 shadow-sm">
               <div className="flex items-center justify-between">
                 <div>
