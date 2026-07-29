@@ -237,56 +237,18 @@ export default function WorkforcePage() {
   }
 
   function handleCreate(formData: FormData) {
-    const employee = {
-      name: formData.get("name") as string,
-      nationality: formData.get("nationality") as string,
-      fin: formData.get("fin") as string,
-      passType: formData.get("passType") as PassType,
-      passExpiry: formData.get("passExpiry") as string,
-      trade: formData.get("trade") as string,
-      site: formData.get("site") as string | null,
-      status: formData.get("status") as EmployeeStatus,
-      basicSalary: Number(formData.get("basicSalary")),
-      joinedOn: formData.get("joinedOn") as string,
-      phone: formData.get("phone") as string,
-      email: formData.get("email") as string,
-      address: formData.get("address") as string,
-      emergencyContact: formData.get("emergencyContact") as string,
-      emergencyPhone: formData.get("emergencyPhone") as string,
-      levyRate: Number(formData.get("levyRate") || 0),
-      branch: formData.get("branch") as string,
-      remarks: formData.get("remarks") as string,
-      photoUrl: (formData.get("photoUrl") as string) || undefined,
-    };
-    addEmployee(employee);
+    addEmployee({
+      ...employeeFromForm(formData),
+      site: null,
+      companyId: getCurrentCompany() || undefined,
+    } as Omit<Employee, "id" | "employeeCode" | "createdAt" | "updatedAt">);
     setIsCreateOpen(false);
     refresh();
   }
 
   function handleEdit(formData: FormData) {
     if (!editingEmployee) return;
-    const updates = {
-      name: formData.get("name") as string,
-      nationality: formData.get("nationality") as string,
-      fin: formData.get("fin") as string,
-      passType: formData.get("passType") as PassType,
-      passExpiry: formData.get("passExpiry") as string,
-      trade: formData.get("trade") as string,
-      site: formData.get("site") as string | null,
-      status: formData.get("status") as EmployeeStatus,
-      basicSalary: Number(formData.get("basicSalary")),
-      joinedOn: formData.get("joinedOn") as string,
-      phone: formData.get("phone") as string,
-      email: formData.get("email") as string,
-      address: formData.get("address") as string,
-      emergencyContact: formData.get("emergencyContact") as string,
-      emergencyPhone: formData.get("emergencyPhone") as string,
-      levyRate: Number(formData.get("levyRate") || 0),
-      branch: formData.get("branch") as string,
-      remarks: formData.get("remarks") as string,
-      photoUrl: (formData.get("photoUrl") as string) || undefined,
-    };
-    updateEmployee(editingEmployee.id, updates);
+    updateEmployee(editingEmployee.id, employeeFromForm(formData));
     setEditingEmployee(null);
     refresh();
   }
