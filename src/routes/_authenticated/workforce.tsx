@@ -252,6 +252,7 @@ export default function WorkforcePage() {
       levyRate: Number(formData.get("levyRate") || 0),
       branch: formData.get("branch") as string,
       remarks: formData.get("remarks") as string,
+      photoUrl: (formData.get("photoUrl") as string) || undefined,
     };
     addEmployee(employee);
     setIsCreateOpen(false);
@@ -279,6 +280,7 @@ export default function WorkforcePage() {
       levyRate: Number(formData.get("levyRate") || 0),
       branch: formData.get("branch") as string,
       remarks: formData.get("remarks") as string,
+      photoUrl: (formData.get("photoUrl") as string) || undefined,
     };
     updateEmployee(editingEmployee.id, updates);
     setEditingEmployee(null);
@@ -640,6 +642,12 @@ function EmployeeForm({ employee, onSubmit }: { employee?: Employee; onSubmit: (
         <Label htmlFor="remarks">Remarks</Label>
         <Input id="remarks" name="remarks" defaultValue={employee?.remarks || ""} />
       </div>
+      <FileUpload
+        name="photoUrl"
+        label="Worker photo (stored in Cloudflare R2)"
+        folder="photos"
+        defaultValue={employee?.photoUrl || ""}
+      />
       <DialogFooter>
         <Button type="submit">{employee ? "Save changes" : "Register employee"}</Button>
       </DialogFooter>
