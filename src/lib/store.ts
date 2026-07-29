@@ -530,6 +530,7 @@ export function approveLeaveRequest(id: string): LeaveRequest | undefined {
 
 /* ---------------- approvals ---------------- */
 export function getApprovals(): Approval[] { return getState().approvals; }
+
 export function getApproval(id: string): Approval | undefined { return getState().approvals.find((a) => a.id === id); }
 
 export function addApproval(approval: Omit<Approval, "id" | "createdAt" | "updatedAt">): Approval {
