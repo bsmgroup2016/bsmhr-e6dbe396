@@ -194,7 +194,6 @@ function DashboardPage() {
   const onNormalLeave = leaves.filter(
     (l) => l.type !== "Medical Leave" && l.type !== "Hospitalisation Leave",
   );
-  const onLeaveIds = new Set(leaves.map((l) => l.employeeId));
 
   const csocValid = getCertifications().filter((c) => {
     if (!empIds.has(c.employeeId)) return false;
