@@ -38,12 +38,9 @@ const quickCreateItems = [
 export function AppHeader() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
-  const [companies] = useState(() => getCompanies());
-  const [companyId, setCompanyId] = useState(() => getCurrentCompany());
-  const activeCompany = companies.find((c) => c.id === companyId) ?? companies[0];
   const { user, signOut } = useAuth();
   const initials = user?.email?.slice(0, 2).toUpperCase() ?? "BS";
-  const alerts = buildAlerts(companyId);
+  const alerts = buildAlerts();
   const counts = alertCounts(alerts);
   const [searchOpen, setSearchOpen] = useState(false);
   useGlobalSearchHotkey(useCallback(() => setSearchOpen(true), []));
