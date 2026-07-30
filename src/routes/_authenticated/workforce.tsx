@@ -13,6 +13,7 @@ import {
   Clock,
   HardHat,
 } from "lucide-react";
+import { ArrowRight, ChevronLeft, ChevronRight, Mail, Phone } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
 import { R2Image } from "@/components/r2-image";
@@ -25,6 +26,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table,
   TableBody,
@@ -62,7 +64,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { getEmployees, addEmployee, updateEmployee, deleteEmployee, getCurrentCompany } from "@/lib/store";
+import { getEmployees, addEmployee, updateEmployee, deleteEmployee, getCurrentCompany, getCompanies } from "@/lib/store";
 import type { Employee, PassType, EmployeeStatus, DeploymentStatus, WorkerCategory } from "@/lib/types";
 import { pick, type ImportColumn } from "@/lib/xlsx";
 
