@@ -170,7 +170,10 @@ export default function WorkforcePage() {
   const [tradeFilter, setTradeFilter] = useState<string>("all");
   const companies = getCompanies();
 
-  const employees = companyId ? allEmployees.filter((e) => !e.companyId || e.companyId === companyId) : allEmployees;
+  // Only real employees: records must belong to a company (admin/staff accounts
+  // without a company are excluded from this page).
+  const staffOnly = allEmployees.filter((e) => !!e.companyId);
+  const employees = companyId ? staffOnly.filter((e) => e.companyId === companyId) : staffOnly;
   const sites = Array.from(new Set(employees.map((e) => e.site).filter(Boolean)));
   const nationalities = Array.from(new Set(employees.map((e) => e.nationality).filter(Boolean))).sort();
   const trades = Array.from(new Set(employees.map((e) => e.trade).filter(Boolean))).sort();
