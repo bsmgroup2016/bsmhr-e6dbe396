@@ -142,6 +142,8 @@
   --gradient-surface: linear-gradient(160deg, oklch(1 0 0) 0%, oklch(0.972 0.014 280) 100%);
 
   --shadow-elegant: 0 12px 32px -14px color-mix(in oklab, var(--primary) 30%, transparent);
+  --shadow-card: 0 20px 40px -20px color-mix(in oklab, var(--primary) 22%, transparent),
+    0 1px 3px -1px color-mix(in oklab, var(--foreground) 8%, transparent);
   --shadow-glow: 0 0 0 1px color-mix(in oklab, var(--primary) 22%, transparent),
     0 18px 44px -22px color-mix(in oklab, var(--primary-glow) 45%, transparent);
 }
@@ -207,6 +209,10 @@
 
 @utility shadow-elegant {
   box-shadow: var(--shadow-elegant);
+}
+
+@utility shadow-card {
+  box-shadow: var(--shadow-card);
 }
 
 @utility shadow-glow {
