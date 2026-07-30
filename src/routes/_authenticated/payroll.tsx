@@ -132,6 +132,39 @@ export default function PayrollPage() {
   const paidCount = filtered.filter((p) => p.status === "Paid").length;
   const pendingCount = filtered.filter((p) => p.status === "Pending Approval" || p.status === "Draft").length;
 
+  // ---- Annual wages (calendar year of the selected month) ----
+  const year = month.slice(0, 4);
+  const yearEntries = payroll.filter((p) => {
+    const emp = employees.find((e) => e.id === p.employeeId);
+    const matchesCompany = companyFilter === "all" || emp?.companyId === companyFilter;
+    return p.month.startsWith(year) && matchesCompany;
+  });
+  const annualGross = yearEntries.reduce(
+    (s, p) => s + p.basicSalary + p.overtimePay + p.allowances,
+    0,
+  );
+  const annualOrdinary = yearEntries.reduce((s, p) => s + p.basicSalary, 0);
+  const annualOvertime = yearEntries.reduce((s, p) => s + p.overtimePay, 0);
+  const annualAllowances = yearEntries.reduce((s, p) => s + p.allowances, 0);
+  const annualNet = yearEntries.reduce((s, p) => s + p.netPay, 0);
+  const annualCpf = yearEntries.reduce((s, p) => s + p.cpfEmployee + p.cpfEmployer, 0);
+  const annualPaid = yearEntries
+    .filter((p) => p.status === "Paid")
+    .reduce((s, p) => s + p.netPay, 0);
+  const annualHeadcount = new Set(yearEntries.map((p) => p.employeeId)).size;
+  const annualAveragePerWorker = annualHeadcount ? annualGross / annualHeadcount : 0;
+  const annualByMonth = Array.from({ length: 12 }, (_, i) => {
+    const key = `${year}-${String(i + 1).padStart(2, "0")}`;
+    const rows = yearEntries.filter((p) => p.month === key);
+    return {
+      key,
+      label: new Date(`${key}-01T00:00:00`).toLocaleString("en-SG", { month: "short" }),
+      gross: rows.reduce((s, p) => s + p.basicSalary + p.overtimePay + p.allowances, 0),
+    };
+  });
+  const annualMaxMonth = Math.max(1, ...annualByMonth.map((m) => m.gross));
+  const money = (n: number) => `S$${Math.round(n).toLocaleString("en-SG")}`;
+
   function refresh() {
     setPayroll(getPayroll());
   }
@@ -477,6 +510,41 @@ export default function PayrollPage() {
           <SummaryCard title="Levies" value={`S$${totalLevies.toLocaleString()}`} icon={<DollarSign className="h-5 w-5" />} variant="warning" caption={month} />
           <SummaryCard title="Paid" value={paidCount.toString()} icon={<CheckCircle2 className="h-5 w-5" />} variant="success" caption={month} />
           <SummaryCard title="Pending" value={pendingCount.toString()} icon={<Clock className="h-5 w-5" />} variant="info" caption={month} />
+        </div>
+
+        <div className="rounded-xl border bg-card p-5 shadow-sm">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <p className="text-sm font-semibold text-foreground">Annual wages · {year}</p>
+              <p className="text-xs text-muted-foreground">
+                Total gross wages (ordinary + overtime + allowances) for the calendar year, used for IR8A and AW ceiling checks.
+              </p>
+            </div>
+            <Button size="sm" variant="outline" onClick={exportIrasAis}>
+              <FileDown className="mr-1 h-4 w-4" />
+              IR8A ({year})
+            </Button>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <SummaryCard title="Annual gross wages" value={money(annualGross)} icon={<Landmark className="h-5 w-5" />} variant="primary" caption={`${annualHeadcount} workers paid`} />
+            <SummaryCard title="Annual net paid" value={money(annualPaid)} icon={<DollarSign className="h-5 w-5" />} variant="success" caption={`${money(annualNet)} net total`} />
+            <SummaryCard title="Annual CPF" value={money(annualCpf)} icon={<Calculator className="h-5 w-5" />} variant="info" caption="Employee + employer" />
+            <SummaryCard title="Average per worker" value={money(annualAveragePerWorker)} icon={<BadgeCheck className="h-5 w-5" />} variant="default" caption={`OW ${money(annualOrdinary)} · OT ${money(annualOvertime)} · Allw ${money(annualAllowances)}`} />
+          </div>
+          <div className="mt-5 space-y-2">
+            {annualByMonth.map((m) => (
+              <div key={m.key} className="flex items-center gap-3">
+                <span className="w-10 shrink-0 text-xs text-muted-foreground">{m.label}</span>
+                <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-muted">
+                  <div
+                    className="h-full rounded-full bg-gradient-primary transition-all duration-500"
+                    style={{ width: `${(m.gross / annualMaxMonth) * 100}%` }}
+                  />
+                </div>
+                <span className="w-24 shrink-0 text-right text-xs text-muted-foreground">{money(m.gross)}</span>
+              </div>
+            ))}
+          </div>
         </div>
 
         <div className="rounded-xl border bg-card p-4 shadow-sm">
