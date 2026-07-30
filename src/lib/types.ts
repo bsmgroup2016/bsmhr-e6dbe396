@@ -25,6 +25,16 @@ export type WpStage =
   | "Repatriated";
 
 export type SecurityBondStatus = "Not Required" | "Active" | "Discharged" | "Forfeited";
+
+/** Construction/Process WP skill classification (MOM). */
+export type SkillLevel = "Basic Skilled" | "Higher Skilled";
+/** Certificate that supports a Higher Skilled upgrade. */
+export type SkillCertType = "TCTO" | "SETO" | "Multi-Skilling (MSC)" | "Skills Evaluation (SEC(K))" | "Other";
+/** IR21 tax clearance state for departing foreign employees. */
+export type Ir21Status = "Not Required" | "Pending" | "Filed" | "Cleared";
+/** Sectors covered by the Progressive Wage Model. */
+export type PwmSector = "None" | "Cleaning" | "Security" | "Landscape" | "Lift & Escalator" | "Waste Management" | "Retail" | "Food Services" | "Administration" | "Drivers";
+
 export type EmployeeStatus =
   | "Draft"
   | "Pending Approval"
