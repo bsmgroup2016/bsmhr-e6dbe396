@@ -351,7 +351,7 @@ function DashboardPage() {
 
   return (
     <AppShell>
-      <div className="mx-auto max-w-7xl space-y-8">
+      <div className="w-full space-y-8">
         <div className="relative overflow-hidden rounded-2xl border border-border/60 bg-gradient-hero p-7 shadow-elegant sm:p-9">
           <div className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-primary-foreground/10 blur-3xl" />
           <div className="pointer-events-none absolute -bottom-24 left-1/3 h-48 w-48 rounded-full bg-primary-foreground/5 blur-3xl" />
