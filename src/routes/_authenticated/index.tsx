@@ -15,6 +15,18 @@ import {
   FileText,
   ShieldAlert,
 } from "lucide-react";
+import {
+  BadgeCheck,
+  BookUser,
+  CalendarX2,
+  DollarSign,
+  HeartPulse,
+  Landmark,
+  Palmtree,
+  UserCheck,
+  Briefcase,
+  CheckCircle2,
+} from "lucide-react";
 import { Target, PhoneCall, TrendingUp } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { canAccess } from "@/lib/permissions";
@@ -33,6 +45,9 @@ import {
   getClients,
   crmPipeline,
   dueFollowUps,
+  getLeaveRequests,
+  getCertifications,
+  getPayroll,
 } from "@/lib/store";
 
 export const Route = createFileRoute("/_authenticated/")({
