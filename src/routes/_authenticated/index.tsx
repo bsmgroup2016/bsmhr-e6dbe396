@@ -255,7 +255,7 @@ function DashboardPage() {
   const keyMetrics = [
     {
       to: "/documents" as const,
-      title: "Work Permit Expiring",
+      title: "WorkPermit Expiring",
       value: wpExpiring.length.toString(),
       caption: `${wpExpiring30} within 30 days · next 60 days`,
       icon: <WorkPermitIdIcon className="h-7 w-7" />,
@@ -268,6 +268,14 @@ function DashboardPage() {
       caption: `${passportExpiring30} within 30 days · next 90 days`,
       icon: <PassportIcon className="h-7 w-7" />,
       variant: (passportExpiring.length ? "warning" : "success") as "warning" | "success",
+    },
+    {
+      to: "/workforce" as const,
+      title: "Available Workers",
+      value: availableWorkers.toString(),
+      caption: `of ${employees.length} total workers`,
+      icon: <UserCheck className="h-5 w-5" />,
+      variant: "success" as const,
     },
     {
       to: "/leave" as const,
@@ -284,14 +292,6 @@ function DashboardPage() {
       caption: `${Math.max(0, employees.length - csocWorkers)} without valid CSOC`,
       icon: <BadgeCheck className="h-5 w-5" />,
       variant: "primary" as const,
-    },
-    {
-      to: "/workforce" as const,
-      title: "Available Workers",
-      value: availableWorkers.toString(),
-      caption: `of ${employees.length} total workers`,
-      icon: <UserCheck className="h-5 w-5" />,
-      variant: "success" as const,
     },
     {
       to: "/leave" as const,
