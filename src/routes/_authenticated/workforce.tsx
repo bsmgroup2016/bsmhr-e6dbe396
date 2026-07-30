@@ -12,6 +12,7 @@ import {
   HardHat,
   SlidersHorizontal,
   ChevronDown,
+  UserCheck,
 } from "lucide-react";
 import { ChevronLeft, ChevronRight, Mail, Phone } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -58,7 +59,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { getEmployees, addEmployee, updateEmployee, deleteEmployee, getCurrentCompany, getCompanies } from "@/lib/store";
+import { getEmployees, addEmployee, updateEmployee, deleteEmployee, getCurrentCompany, getCompanies, getAssignments } from "@/lib/store";
 import { employeeSlugById } from "@/lib/employee-slug";
 import type { Employee, PassType, EmployeeStatus, DeploymentStatus, WorkerCategory } from "@/lib/types";
 import { pick, type ImportColumn } from "@/lib/xlsx";
@@ -170,6 +171,7 @@ export default function WorkforcePage() {
   const [companyFilter, setCompanyFilter] = useState<string>("all");
   const [tradeFilter, setTradeFilter] = useState<string>("all");
   const [showFilters, setShowFilters] = useState(false);
+  const [availableOnly, setAvailableOnly] = useState(false);
   const activeFilterCount = [
     companyFilter,
     tradeFilter,
@@ -181,6 +183,20 @@ export default function WorkforcePage() {
     nationalityFilter,
   ].filter((v) => v !== "all").length;
   const companies = getCompanies();
+  const assignments = getAssignments();
+  const assignedIds = new Set(
+    assignments.filter((a) => a.status === "Active" || a.status === "Approved").map((a) => a.employeeId),
+  );
+  function isAvailable(e: Employee) {
+    const deploy = e.deploymentStatus ?? "Available";
+    return (
+      !assignedIds.has(e.id) &&
+      deploy !== "Blocked" &&
+      deploy !== "Not Deployable" &&
+      deploy !== "Deployed" &&
+      (e.status === "Active" || e.status === "On Leave")
+    );
+  }
 
   // Only real employees: records must belong to a company (admin/staff accounts
   // without a company are excluded from this page).
@@ -209,9 +225,12 @@ export default function WorkforcePage() {
       (deployFilter === "all" || (e.deploymentStatus ?? "Available") === deployFilter) &&
       (nationalityFilter === "all" || e.nationality === nationalityFilter) &&
       (companyFilter === "all" || e.companyId === companyFilter) &&
-      (tradeFilter === "all" || e.trade === tradeFilter)
+      (tradeFilter === "all" || e.trade === tradeFilter) &&
+      (!availableOnly || isAvailable(e))
     );
   });
+
+  const availableCount = employees.filter(isAvailable).length;
 
   const pageSize = Number(perPage);
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
@@ -469,6 +488,29 @@ export default function WorkforcePage() {
                   </span>
                 ) : null}
                 <ChevronDown className={cn("h-4 w-4 transition-transform", showFilters && "rotate-180")} />
+              </Button>
+              <Button
+                size="sm"
+                variant={availableOnly ? "default" : "outline"}
+                className="gap-1.5"
+                aria-pressed={availableOnly}
+                onClick={() => {
+                  setAvailableOnly((v) => !v);
+                  setPage(1);
+                }}
+              >
+                <UserCheck className="h-4 w-4" />
+                Available workers
+                <span
+                  className={cn(
+                    "ml-1 rounded-full px-1.5 text-[11px] font-semibold",
+                    availableOnly
+                      ? "bg-primary-foreground/20 text-primary-foreground"
+                      : "bg-muted text-muted-foreground",
+                  )}
+                >
+                  {availableCount}
+                </span>
               </Button>
             </div>
             <div className="flex flex-wrap items-center gap-2">
