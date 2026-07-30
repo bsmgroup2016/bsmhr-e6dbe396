@@ -55,6 +55,7 @@ import {
 } from "@/components/ui/select";
 import { getEmployees, getSites, getAttendance, addAttendance, saveDailySheet, getCurrentCompany } from "@/lib/store";
 import { GeoCapture } from "@/components/geo-capture";
+import { QrAttendancePanel } from "@/components/qr-attendance-panel";
 import { LocationMap } from "@/components/location-map";
 import type { Attendance, AttendanceStatus } from "@/lib/types";
 import { pick, type ImportColumn } from "@/lib/xlsx";
@@ -319,6 +320,16 @@ export default function TimeManagementPage() {
           <SummaryCard title="Absent / MC" value={absent.toString()} icon={<AlertCircle className="h-5 w-5" />} variant="destructive" caption={date} />
           <SummaryCard title="Leave / Off" value={leave.toString()} icon={<Clock className="h-5 w-5" />} variant="warning" caption={date} />
           <SummaryCard title="Total hours" value={totalHours.toFixed(1)} icon={<Clock className="h-5 w-5" />} variant="info" caption={date} />
+        </div>
+
+        <div className="rounded-xl border bg-card p-4 shadow-sm">
+          <div className="mb-3">
+            <h2 className="text-base font-semibold">QR site attendance</h2>
+            <p className="text-sm text-muted-foreground">
+              Print a per-site QR poster — workers scan it to clock in and out with GPS evidence.
+            </p>
+          </div>
+          <QrAttendancePanel />
         </div>
 
         <div className="rounded-xl border bg-card p-4 shadow-sm">
