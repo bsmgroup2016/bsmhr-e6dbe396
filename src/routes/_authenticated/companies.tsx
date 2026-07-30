@@ -34,8 +34,6 @@ import {
 } from "@/lib/store";
 import type { Company } from "@/lib/types";
 import { MOM_SECTORS } from "@/lib/mom";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { DepartmentsPanel, DesignationsPanel } from "@/components/org/org-structure";
 
 export const Route = createFileRoute("/_authenticated/companies")({
   head: () => ({
