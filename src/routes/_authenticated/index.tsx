@@ -122,9 +122,11 @@ function DashboardPage() {
   const showCrm = canAccess("/clients", roles);
   const company = getCompanies().find((c) => c.id === companyId);
   const allEmployees = getEmployees();
-  const employees = companyId
-    ? allEmployees.filter((e) => !e.companyId || e.companyId === companyId)
-    : allEmployees;
+  // Only real worker records (same rule as the Workforce page), scoped to the
+  // selected company when a branch is active.
+  const employees = allEmployees.filter(
+    (e) => !!e.companyId && (!companyId || e.companyId === companyId),
+  );
   const sites = getSites();
   const projects = getProjects();
   const approvals = getApprovals();
