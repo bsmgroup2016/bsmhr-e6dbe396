@@ -4,7 +4,7 @@
  * designation is the fallback when department is missing or unexpected.
  */
 
-export const STAFF_DEPARTMENTS = ["HR", "Accounts", "QS", "IT", "Admin"];
+export const STAFF_DEPARTMENTS = ["HR", "Accounts", "QS", "IT", "Admin", "Others"];
 
 export const SITE_DEPARTMENTS = ["Construction"];
 
@@ -46,13 +46,16 @@ const has = (list: string[], v?: string | null) =>
 type Person = { department?: string | null; trade?: string | null };
 
 /**
- * Designation is authoritative (an Engineer sitting in the Construction
- * department is still office staff); department is the fallback.
+ * Department is authoritative (Construction always belongs to the worker
+ * roster, HR / Accounts / QS / IT / Admin / Others to office staff);
+ * designation is the fallback when the department is missing or unknown.
  */
 export function isSiteWorker(p: Person): boolean {
+  if (has(SITE_DEPARTMENTS, p.department)) return true;
+  if (has(STAFF_DEPARTMENTS, p.department)) return false;
   if (has(SITE_DESIGNATIONS, p.trade)) return true;
   if (has(STAFF_DESIGNATIONS, p.trade)) return false;
-  return has(SITE_DEPARTMENTS, p.department);
+  return false;
 }
 
 /** True for office / administrative staff (everyone not on site). */
