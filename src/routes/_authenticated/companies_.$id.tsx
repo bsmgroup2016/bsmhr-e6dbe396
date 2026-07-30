@@ -21,9 +21,10 @@ import {
 } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
-  getCompany, updateCompany, setCurrentCompany, getCurrentCompany,
+  getCompanies, updateCompany, setCurrentCompany, getCurrentCompany,
   getEmployees, getProjects, getClients, getSites, getAssignments, getLeaveRequests,
 } from "@/lib/store";
+import { findCompanyByParam } from "@/lib/company-slug";
 import { MOM_SECTORS } from "@/lib/mom";
 import { uploadToR2 } from "@/lib/r2";
 import type { Company, Employee } from "@/lib/types";
@@ -62,9 +63,12 @@ function daysUntil(iso?: string): number | null {
 const money = (n: number) => `$${Math.round(n).toLocaleString("en-SG")}`;
 
 function CompanyDashboardPage() {
-  const { id } = Route.useParams();
+  const { id: param } = Route.useParams();
   const navigate = useNavigate();
-  const [company, setCompany] = useState<Company | undefined>(() => getCompany(id));
+  const [company, setCompany] = useState<Company | undefined>(() =>
+    findCompanyByParam(getCompanies(), param),
+  );
+  const id = company?.id ?? param;
   const [editing, setEditing] = useState(false);
   const [current, setCurrent] = useState(getCurrentCompany());
 
