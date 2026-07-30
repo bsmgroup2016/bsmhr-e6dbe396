@@ -321,7 +321,10 @@ export default function WorkforcePage() {
     addEmployee({
       ...employeeFromForm(formData),
       site: null,
-      companyId: getCurrentCompany() || undefined,
+      companyId:
+        (companyFilter !== "all" ? companyFilter : undefined) ??
+        getCurrentCompany() ??
+        companies[0]?.id,
     } as Omit<Employee, "id" | "employeeCode" | "createdAt" | "updatedAt">);
     setIsCreateOpen(false);
     refresh();
