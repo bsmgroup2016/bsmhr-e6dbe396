@@ -52,8 +52,7 @@ type Person = { department?: string | null; trade?: string | null };
 export function isSiteWorker(p: Person): boolean {
   if (has(SITE_DESIGNATIONS, p.trade)) return true;
   if (has(STAFF_DESIGNATIONS, p.trade)) return false;
-  if (has(SITE_DEPARTMENTS, p.department)) return true;
-  return !has(STAFF_DEPARTMENTS, p.department) && false;
+  return has(SITE_DEPARTMENTS, p.department);
 }
 
 /** True for office / administrative staff (everyone not on site). */
