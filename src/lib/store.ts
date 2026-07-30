@@ -15,6 +15,7 @@ import type { Expense, PaymentReceipt } from "@/lib/types";
 import type { InventoryItem, StockMovement, PurchaseOrder } from "@/lib/types";
 import type { BranchPrefix, EmployeeCertification, TimeCard, ClaimSheet } from "@/lib/types";
 import type { ClientContract } from "@/lib/types";
+import type { MedicalClaim } from "@/lib/types";
 import { supabase } from "@/integrations/supabase/client";
 import { computeStatutory, round2 } from "@/lib/sg-payroll";
 import {
@@ -31,6 +32,7 @@ import { toExpense, toPaymentReceipt } from "@/lib/db";
 import { toItem, toMovement, toPurchaseOrder } from "@/lib/db";
 import { toBranchPrefix, toCertification, toTimeCard, toClaimSheet } from "@/lib/db";
 import { toContract } from "@/lib/db";
+import { toMedicalClaim } from "@/lib/db";
 
 export interface AppState {
   employees: Employee[];
@@ -70,6 +72,7 @@ export interface AppState {
   timeCards: TimeCard[];
   claimSheets: ClaimSheet[];
   contracts: ClientContract[];
+  medicalClaims: MedicalClaim[];
   branches: AppBranch[];
   currentBranch: string;
   companies: Company[];
@@ -96,6 +99,7 @@ const emptyState: AppState = {
   inventory: [], movements: [], purchaseOrders: [],
   branchPrefixes: [], certifications: [], timeCards: [], claimSheets: [],
   contracts: [],
+  medicalClaims: [],
   branches: defaultBranches, currentBranch: "hq",
   companies: [], currentCompany: "", currentUser: null,
 };
@@ -860,6 +864,45 @@ export function buildInvoiceLines(
 
 /* ---------------- billing: client contracts (recurring auto-invoicing) ---------------- */
 export function getContracts(): ClientContract[] { return getState().contracts; }
+
+/* ---------------- medical claims (FWMI / WICA) ---------------- */
+export function getMedicalClaims(): MedicalClaim[] { return getState().medicalClaims; }
+
+export function addMedicalClaim(
+  claim: Omit<MedicalClaim, "id" | "claimNo" | "createdAt" | "updatedAt"> & { claimNo?: string },
+): MedicalClaim {
+  const s = getState();
+  const now = new Date().toISOString();
+  const claimNo = claim.claimNo?.trim() || `MC-${String(s.medicalClaims.length + 1).padStart(4, "0")}`;
+  const row: MedicalClaim = { ...claim, claimNo, id: newId(), createdAt: now, updatedAt: now };
+  setState({ ...s, medicalClaims: [row, ...s.medicalClaims] });
+  void supabase.from("medical_claims").insert({ id: row.id, ...toMedicalClaim(row) })
+    .then(({ error }) => fail("medical_claims", error));
+  addAuditLog("CREATE", "MedicalClaim", row.id, `Medical claim ${claimNo} — S$${row.totalAmount}`);
+  return row;
+}
+
+export function updateMedicalClaim(id: string, updates: Partial<MedicalClaim>): MedicalClaim | undefined {
+  const s = getState();
+  const existing = s.medicalClaims.find((c) => c.id === id);
+  if (!existing) return undefined;
+  const updated: MedicalClaim = { ...existing, ...updates, updatedAt: new Date().toISOString() };
+  setState({ ...s, medicalClaims: s.medicalClaims.map((c) => (c.id === id ? updated : c)) });
+  void supabase.from("medical_claims").update(toMedicalClaim(updated)).eq("id", id)
+    .then(({ error }) => fail("medical_claims", error));
+  addAuditLog("UPDATE", "MedicalClaim", id, `Medical claim ${updated.claimNo} updated`);
+  return updated;
+}
+
+export function deleteMedicalClaim(id: string): boolean {
+  const s = getState();
+  if (!s.medicalClaims.some((c) => c.id === id)) return false;
+  setState({ ...s, medicalClaims: s.medicalClaims.filter((c) => c.id !== id) });
+  void supabase.from("medical_claims").delete().eq("id", id)
+    .then(({ error }) => fail("medical_claims", error));
+  addAuditLog("DELETE", "MedicalClaim", id, "Deleted medical claim");
+  return true;
+}
 
 const iso = (d: Date) => d.toISOString().slice(0, 10);
 const addDays = (date: string, n: number) => {

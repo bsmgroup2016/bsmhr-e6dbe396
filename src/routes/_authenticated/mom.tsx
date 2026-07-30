@@ -25,6 +25,7 @@ import { WpLifecyclePanel } from "@/components/wp-lifecycle-panel";
 import { SalaryCompliancePanel } from "@/components/salary-compliance-panel";
 import { DeductionCompliancePanel } from "@/components/deduction-compliance-panel";
 import { SgStandardsPanel } from "@/components/sg-standards-panel";
+import { MedicalClaimsPanel } from "@/components/medical-claims-panel";
 
 export const Route = createFileRoute("/_authenticated/mom")({
   head: () => ({
@@ -135,6 +136,7 @@ function MomPage() {
             <TabsTrigger value="salary">Salary compliance</TabsTrigger>
             <TabsTrigger value="deductions">Deductions</TabsTrigger>
             <TabsTrigger value="fwmi">FWMI insurance</TabsTrigger>
+            <TabsTrigger value="claims">Medical claims</TabsTrigger>
             <TabsTrigger value="mye">MYE & skills</TabsTrigger>
             <TabsTrigger value="ir21">IR21 clearance</TabsTrigger>
             <TabsTrigger value="pwm">Progressive Wage</TabsTrigger>
@@ -156,6 +158,10 @@ function MomPage() {
 
           <TabsContent value="fwmi" className="mt-4">
             <SgStandardsPanel employees={employees} section="fwmi" />
+          </TabsContent>
+
+          <TabsContent value="claims" className="mt-4">
+            <MedicalClaimsPanel employees={employees} />
           </TabsContent>
 
           <TabsContent value="mye" className="mt-4">

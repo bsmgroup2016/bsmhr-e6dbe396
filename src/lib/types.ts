@@ -596,6 +596,38 @@ export interface ClientContract {
 
 export type DormStatus = "Active" | "Inactive" | "Full";
 
+export type MedicalClaimType =
+  | "Inpatient" | "Day Surgery" | "Outpatient" | "Specialist" | "Dental" | "Work Injury" | "Other";
+export type MedicalClaimStatus = "Draft" | "Submitted" | "Approved" | "Rejected" | "Paid";
+
+/** Hospital bill / medical claim raised against a worker's FWMI or WICA cover. */
+export interface MedicalClaim {
+  id: string;
+  companyId?: string;
+  employeeId: string;
+  claimNo: string;
+  claimType: MedicalClaimType;
+  treatmentDate?: string;
+  provider?: string;
+  diagnosis?: string;
+  totalAmount: number;
+  insurer?: string;
+  policyNo?: string;
+  insurerPaid: number;
+  employerPaid: number;
+  employeePaid: number;
+  /** WICA work-injury claim (employer bears the cost, MOM reporting applies). */
+  workInjury: boolean;
+  momReported: boolean;
+  status: MedicalClaimStatus;
+  submittedOn?: string;
+  settledOn?: string;
+  documentUrl?: string;
+  remarks?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Dormitory {
   id: string;
   companyId?: string;
