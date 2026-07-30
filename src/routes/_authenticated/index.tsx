@@ -495,7 +495,7 @@ function DashboardPage() {
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <span className="inline-flex items-center gap-1.5 rounded-full border border-success/25 bg-success/10 px-3 py-1.5 text-sm font-medium text-success">
-              <UserCheck className="h-4 w-4" /> {availableWorkers} available today
+              <UserCheck className="h-4 w-4" /> {availableWorkers} available now
             </span>
             <span className="inline-flex items-center gap-1.5 rounded-full border border-warning/25 bg-warning/10 px-3 py-1.5 text-sm font-medium text-warning">
               <AlertCircle className="h-4 w-4" /> {pendingApprovals} pending approvals
