@@ -598,36 +598,36 @@ function DashboardPage() {
               caption="Lead pipeline & recent client activity"
               icon={<Target className="h-4 w-4 text-primary" />}
             />
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <SummaryCard
-                title="Open Leads"
-                value={openLeads.length.toString()}
-                icon={<Target className="h-5 w-5" />}
-                variant="primary"
-                caption={`${wonLeads.length} won · ${leads.length} total`}
-              />
-              <SummaryCard
-                title="Pipeline Value"
-                value={money(pipelineValue)}
-                icon={<TrendingUp className="h-5 w-5" />}
-                variant="info"
-                caption={`${money(weightedValue)} weighted / month`}
-              />
-              <SummaryCard
-                title="Active Clients"
-                value={activeClients.toString()}
-                icon={<Building2 className="h-5 w-5" />}
-                variant="success"
-                caption="Currently engaged accounts"
-              />
-              <SummaryCard
-                title="Follow-ups Due"
-                value={followUpsDue.toString()}
-                icon={<PhoneCall className="h-5 w-5" />}
-                variant="warning"
-                caption={`${overdueCount} overdue · today or earlier`}
-              />
-            </div>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <SummaryCard
+              title="Open Leads"
+              value={openLeads.length.toString()}
+              icon={<Target className="h-6 w-6" />}
+              variant="primary"
+              caption={`${wonLeads.length} won · ${leads.length} total`}
+            />
+            <SummaryCard
+              title="Pipeline Value"
+              value={money(pipelineValue)}
+              icon={<TrendingUp className="h-6 w-6" />}
+              variant="info"
+              caption={`${money(weightedValue)} weighted / month`}
+            />
+            <SummaryCard
+              title="Active Clients"
+              value={activeClients.toString()}
+              icon={<Building2 className="h-6 w-6" />}
+              variant="success"
+              caption="Currently engaged accounts"
+            />
+            <SummaryCard
+              title="Follow-ups Due"
+              value={followUpsDue.toString()}
+              icon={<PhoneCall className="h-6 w-6" />}
+              variant="warning"
+              caption={`${overdueCount} overdue · today or earlier`}
+            />
+          </div>
 
             {followUpCards.length > 0 ? (
               <div className="space-y-3">
