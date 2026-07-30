@@ -103,6 +103,8 @@ function EmployeeProfilePage() {
   const activeSite = sites.find((s) => s.id === active?.siteId);
   const activeProject = projects.find((p) => p.id === active?.projectId);
   const activeClient = clients.find((c) => c.id === activeProject?.clientId);
+  /** Staff carry an Employee ID and a fixed monthly salary — no hourly/site data. */
+  const staff = isOfficeStaff(employee!);
 
   function patch(updates: Partial<Employee>) {
     updateEmployee(employee!.id, updates);
@@ -134,11 +136,14 @@ function EmployeeProfilePage() {
               <div className="min-w-0">
                 <h1 className="text-xl font-semibold tracking-tight text-foreground">{employee.name}</h1>
                 <p className="text-sm text-muted-foreground">
-                  {employee.employeeCode} • {employee.workerCategory ?? "Worker"} • {employee.trade}
+                  {staff ? "Employee ID" : "P-File"} {employee.employeeCode} •{" "}
+                  {employee.department ?? (staff ? "Office" : "Construction")} • {employee.trade}
                 </p>
                 <div className="mt-2 flex flex-wrap gap-2">
                   <StatusBadge variant={statusVariant(employee.status)} dot label={employee.status} />
-                  <StatusBadge variant="outline" label={employee.deploymentStatus ?? "Available"} />
+                  {!staff ? (
+                    <StatusBadge variant="outline" label={employee.deploymentStatus ?? "Available"} />
+                  ) : null}
                   <ExpiryBadge date={employee.passExpiry} label="Pass" />
                   <ExpiryBadge date={employee.passportExpiry} label="Passport" />
                 </div>
@@ -150,9 +155,14 @@ function EmployeeProfilePage() {
               </div>
             </div>
             <div className="text-right text-sm">
-              <p className="text-muted-foreground">Basic</p>
-              <p className="text-lg font-semibold">${employee.basicSalary.toLocaleString()}</p>
-              <p className="text-xs text-muted-foreground">OT rate ${(employee.otRate ?? 0).toFixed(2)}/hr</p>
+              <p className="text-muted-foreground">{staff ? "Fixed Salary" : "Basic"}</p>
+              <p className="text-lg font-semibold">
+                ${employee.basicSalary.toLocaleString()}
+                {staff ? <span className="text-xs font-normal text-muted-foreground">/month</span> : null}
+              </p>
+              {!staff ? (
+                <p className="text-xs text-muted-foreground">OT rate ${(employee.otRate ?? 0).toFixed(2)}/hr</p>
+              ) : null}
               <p className="text-xs text-muted-foreground">Joined {employee.joinedOn || "—"}</p>
             </div>
           </div>
@@ -162,28 +172,38 @@ function EmployeeProfilePage() {
             <Button size="sm" onClick={() => setEditing(true)}>
               <Pencil className="mr-1 h-4 w-4" /> Edit employee
             </Button>
-            <Button size="sm" variant="outline" asChild>
-              <Link to="/operations"><Briefcase className="mr-1 h-4 w-4" /> Assign to project</Link>
-            </Button>
-            <Button size="sm" variant="outline" asChild>
-              <Link to="/time-management"><CalendarCheck className="mr-1 h-4 w-4" /> Record attendance</Link>
-            </Button>
+            {!staff ? (
+              <>
+                <Button size="sm" variant="outline" asChild>
+                  <Link to="/operations"><Briefcase className="mr-1 h-4 w-4" /> Assign to project</Link>
+                </Button>
+                <Button size="sm" variant="outline" asChild>
+                  <Link to="/time-management"><CalendarCheck className="mr-1 h-4 w-4" /> Record attendance</Link>
+                </Button>
+              </>
+            ) : (
+              <Button size="sm" variant="outline" asChild>
+                <Link to="/leave"><CalendarCheck className="mr-1 h-4 w-4" /> Leave records</Link>
+              </Button>
+            )}
             <Button size="sm" variant="outline" asChild>
               <Link to="/documents" search={{ employee: employee.id }}><Upload className="mr-1 h-4 w-4" /> Upload document</Link>
             </Button>
             <Button size="sm" variant="outline" asChild>
               <Link to="/payroll"><Wallet className="mr-1 h-4 w-4" /> View payroll</Link>
             </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() =>
-                patch({ deploymentStatus: employee.deploymentStatus === "Blocked" ? "Available" : "Blocked" })
-              }
-            >
-              <Ban className="mr-1 h-4 w-4" />
-              {employee.deploymentStatus === "Blocked" ? "Unblock deployment" : "Block deployment"}
-            </Button>
+            {!staff ? (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() =>
+                  patch({ deploymentStatus: employee.deploymentStatus === "Blocked" ? "Available" : "Blocked" })
+                }
+              >
+                <Ban className="mr-1 h-4 w-4" />
+                {employee.deploymentStatus === "Blocked" ? "Unblock deployment" : "Block deployment"}
+              </Button>
+            ) : null}
             <Button
               size="sm"
               variant="outline"
@@ -210,8 +230,8 @@ function EmployeeProfilePage() {
             <TabsTrigger value="employment">Employment</TabsTrigger>
             <TabsTrigger value="pass">Work pass</TabsTrigger>
             <TabsTrigger value="pay">Compensation</TabsTrigger>
-            <TabsTrigger value="assignments">Assignments</TabsTrigger>
-            <TabsTrigger value="attendance">Attendance</TabsTrigger>
+            {!staff ? <TabsTrigger value="assignments">Assignments</TabsTrigger> : null}
+            {!staff ? <TabsTrigger value="attendance">Attendance</TabsTrigger> : null}
             <TabsTrigger value="payroll">Payroll</TabsTrigger>
             <TabsTrigger value="documents">Documents</TabsTrigger>
             <TabsTrigger value="notes">Notes</TabsTrigger>
@@ -220,17 +240,35 @@ function EmployeeProfilePage() {
 
           <TabsContent value="overview" className="mt-4">
             <Grid>
-              <Item label="P-File Number" value={employee.employeeCode} />
-              <Item label="Worker category" value={employee.workerCategory} />
+              <Item
+                label={staff ? "Employee ID" : "P-File Number"}
+                value={employee.employeeCode}
+              />
+              <Item label="Department" value={employee.department} />
               <Item label="Designation" value={employee.trade} />
               <Item label="Employment status" value={employee.status} />
-              <Item label="Deployment status" value={employee.deploymentStatus ?? "Available"} />
-              <Item label="Current client" value={activeClient?.name} />
-              <Item label="Current project" value={activeProject?.name} />
-              <Item label="Current site" value={activeSite?.name} />
-              <Item label="Supervisor" value={employee.siteSupervisor} />
+              {staff ? (
+                <>
+                  <Item
+                    label="Fixed salary / month"
+                    value={`$${employee.basicSalary.toLocaleString()}`}
+                  />
+                  <Item label="Payroll frequency" value={employee.payrollFrequency ?? "Monthly"} />
+                  <Item label="Reporting manager" value={employee.reportingManager} />
+                  <Item label="Work Permit number" value={employee.workPermitNumber} />
+                </>
+              ) : (
+                <>
+                  <Item label="Worker category" value={employee.workerCategory} />
+                  <Item label="Deployment status" value={employee.deploymentStatus ?? "Available"} />
+                  <Item label="Current client" value={activeClient?.name} />
+                  <Item label="Current project" value={activeProject?.name} />
+                  <Item label="Current site" value={activeSite?.name} />
+                  <Item label="Supervisor" value={employee.siteSupervisor} />
+                </>
+              )}
               <Item label="Joining date" value={employee.joinedOn} />
-              <Item label="Pass expiry" value={employee.passExpiry} />
+              <Item label="Pass expiry" value={employee.workPermitExpiryDate ?? employee.passExpiry} />
               <Item label="Passport expiry" value={employee.passportExpiry} />
             </Grid>
           </TabsContent>
@@ -298,10 +336,17 @@ function EmployeeProfilePage() {
 
           <TabsContent value="pay" className="mt-4">
             <Grid>
-              <Item label="Basic salary" value={`$${employee.basicSalary.toLocaleString()}`} />
-              <Item label="OT rate / hour" value={employee.otRate ? `$${employee.otRate}` : undefined} />
-              <Item label="Normal hours / day" value={employee.normalHours} />
-              <Item label="Monthly levy" value={employee.levyRate ? `$${employee.levyRate}` : undefined} />
+              <Item
+                label={staff ? "Fixed salary / month" : "Basic rate"}
+                value={`$${employee.basicSalary.toLocaleString()}`}
+              />
+              {!staff ? (
+                <>
+                  <Item label="OT rate / hour" value={employee.otRate ? `$${employee.otRate}` : undefined} />
+                  <Item label="Normal hours / day" value={employee.normalHours} />
+                  <Item label="Monthly levy" value={employee.levyRate ? `$${employee.levyRate}` : undefined} />
+                </>
+              ) : null}
               <Item label="Payroll group" value={employee.payrollGroup} />
               <Item label="Payroll frequency" value={employee.payrollFrequency} />
               <Item label="Bank name" value={employee.bankName} />
