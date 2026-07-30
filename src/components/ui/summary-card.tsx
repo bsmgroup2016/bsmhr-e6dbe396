@@ -84,6 +84,7 @@ interface SummaryCardProps
     positive: boolean;
   };
   loading?: boolean;
+  compact?: boolean;
 }
 
 export function SummaryCard({
