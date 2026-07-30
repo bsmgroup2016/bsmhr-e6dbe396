@@ -322,6 +322,16 @@ export default function TimeManagementPage() {
         </div>
 
         <div className="rounded-xl border bg-card p-4 shadow-sm">
+          <div className="mb-3">
+            <h2 className="text-base font-semibold">QR site attendance</h2>
+            <p className="text-sm text-muted-foreground">
+              Print a per-site QR poster — workers scan it to clock in and out with GPS evidence.
+            </p>
+          </div>
+          <QrAttendancePanel />
+        </div>
+
+        <div className="rounded-xl border bg-card p-4 shadow-sm">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div className="relative w-full max-w-sm">
               <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
