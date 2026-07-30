@@ -169,10 +169,24 @@ export default function WorkforcePage() {
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   const [viewingEmployee, setViewingEmployee] = useState<Employee | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Employee | null>(null);
+  const [showFilters, setShowFilters] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [perPage, setPerPage] = useState("10");
+  const [page, setPage] = useState(1);
+  // Draft filter values — only applied when the user presses GET.
+  const [draftCompany, setDraftCompany] = useState<string>("all");
+  const [draftTrade, setDraftTrade] = useState<string>("all");
+  const [draftSite, setDraftSite] = useState<string>("all");
+  const [draftStatus, setDraftStatus] = useState<string>("all");
+  const [companyFilter, setCompanyFilter] = useState<string>("all");
+  const [tradeFilter, setTradeFilter] = useState<string>("all");
+  const companies = getCompanies();
 
   const employees = companyId ? allEmployees.filter((e) => !e.companyId || e.companyId === companyId) : allEmployees;
   const sites = Array.from(new Set(employees.map((e) => e.site).filter(Boolean)));
   const nationalities = Array.from(new Set(employees.map((e) => e.nationality).filter(Boolean))).sort();
+  const trades = Array.from(new Set(employees.map((e) => e.trade).filter(Boolean))).sort();
 
   const filtered = employees.filter((e) => {
     const q = search.toLowerCase();
@@ -192,9 +206,45 @@ export default function WorkforcePage() {
       (siteFilter === "all" || e.site === siteFilter) &&
       (categoryFilter === "all" || e.workerCategory === categoryFilter) &&
       (deployFilter === "all" || (e.deploymentStatus ?? "Available") === deployFilter) &&
-      (nationalityFilter === "all" || e.nationality === nationalityFilter)
+      (nationalityFilter === "all" || e.nationality === nationalityFilter) &&
+      (companyFilter === "all" || e.companyId === companyFilter) &&
+      (tradeFilter === "all" || e.trade === tradeFilter)
     );
   });
+
+  const pageSize = Number(perPage);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const paged = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const allOnPageSelected =
+    paged.length > 0 && paged.every((e) => selectedIds.includes(e.id));
+
+  function applyFilters() {
+    setCompanyFilter(draftCompany);
+    setTradeFilter(draftTrade);
+    setSiteFilter(draftSite as string);
+    setStatusFilter(draftStatus as EmployeeStatus | "all");
+    setPage(1);
+  }
+
+  function resetFilters() {
+    setDraftCompany("all");
+    setDraftTrade("all");
+    setDraftSite("all");
+    setDraftStatus("all");
+    setCompanyFilter("all");
+    setTradeFilter("all");
+    setSiteFilter("all");
+    setStatusFilter("all");
+    setPage(1);
+  }
+
+  function bulkDelete() {
+    selectedIds.forEach((id) => deleteEmployee(id));
+    setSelectedIds([]);
+    setBulkDeleteOpen(false);
+    refresh();
+  }
 
   const activeCount = employees.filter((e) => e.status === "Active" || e.status === "Deployed").length;
   const deployedCount = employees.filter((e) => e.status === "Deployed").length;
