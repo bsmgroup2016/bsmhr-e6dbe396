@@ -73,6 +73,8 @@ export interface AppState {
   claimSheets: ClaimSheet[];
   contracts: ClientContract[];
   medicalClaims: MedicalClaim[];
+  loans: EmployeeLoan[];
+  loanRepayments: LoanRepayment[];
   branches: AppBranch[];
   currentBranch: string;
   companies: Company[];
@@ -100,6 +102,7 @@ const emptyState: AppState = {
   branchPrefixes: [], certifications: [], timeCards: [], claimSheets: [],
   contracts: [],
   medicalClaims: [],
+  loans: [], loanRepayments: [],
   branches: defaultBranches, currentBranch: "hq",
   companies: [], currentCompany: "", currentUser: null,
 };
