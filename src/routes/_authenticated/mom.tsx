@@ -160,6 +160,10 @@ function MomPage() {
             <SgStandardsPanel employees={employees} section="fwmi" />
           </TabsContent>
 
+          <TabsContent value="claims" className="mt-4">
+            <MedicalClaimsPanel employees={employees} />
+          </TabsContent>
+
           <TabsContent value="mye" className="mt-4">
             <SgStandardsPanel employees={employees} section="mye" />
           </TabsContent>
