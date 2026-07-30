@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Building2, CheckCircle2, Mail, MapPin, Pencil, Phone, Plus, Trash2, Users } from "lucide-react";
+import { Building2, CalendarClock, CheckCircle2, Mail, MapPin, Pencil, Phone, Plus, Trash2, Users, Wallet } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
 import { R2Image } from "@/components/r2-image";
@@ -80,6 +80,16 @@ function CompaniesPage() {
     return employees.filter((e) => (e.companyId ?? "bsm") === id).length;
   }
 
+  const money = (n: number) => `$${Math.round(n).toLocaleString("en-SG")}`;
+
+  function monthlyWage(id: string) {
+    return employees
+      .filter((e) => (e.companyId ?? "bsm") === id)
+      .reduce((s, e) => s + (e.basicSalary || 0), 0);
+  }
+
+  const groupMonthlyWage = employees.reduce((s, e) => s + (e.basicSalary || 0), 0);
+
   function readForm(fd: FormData) {
     return {
       code: (fd.get("code") as string).toUpperCase(),
@@ -120,7 +130,7 @@ function CompaniesPage() {
           </Button>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
           <SummaryCard title="Total companies" value={String(companies.length)} icon={<Building2 className="h-5 w-5" />} variant="primary" compact />
           <SummaryCard
             title="Active entities"
@@ -130,6 +140,8 @@ function CompaniesPage() {
             compact
           />
           <SummaryCard title="Total workforce" value={String(employees.length)} icon={<Users className="h-5 w-5" />} variant="info" compact />
+          <SummaryCard title="Monthly wages" value={money(groupMonthlyWage)} icon={<Wallet className="h-5 w-5" />} variant="primary" compact />
+          <SummaryCard title="Annual wages" value={money(groupMonthlyWage * 12)} icon={<CalendarClock className="h-5 w-5" />} variant="success" compact />
         </div>
 
         <div className="grid gap-4 lg:grid-cols-3">
@@ -170,6 +182,8 @@ function CompaniesPage() {
                 <div className="flex items-center gap-2"><Phone className="h-3.5 w-3.5" /> {c.phone}</div>
                 <div className="flex items-center gap-2"><Mail className="h-3.5 w-3.5" /> {c.email}</div>
                 <div className="flex items-center gap-2"><Users className="h-3.5 w-3.5" /> {headcount(c.id)} employees</div>
+                <div className="flex items-center gap-2"><Wallet className="h-3.5 w-3.5" /> {money(monthlyWage(c.id))} / month</div>
+                <div className="flex items-center gap-2"><CalendarClock className="h-3.5 w-3.5" /> {money(monthlyWage(c.id) * 12)} / year</div>
               </dl>
 
               <div className="mt-4 flex flex-wrap gap-2" onClick={(e) => e.stopPropagation()}>
