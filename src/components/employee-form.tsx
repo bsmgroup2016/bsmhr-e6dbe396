@@ -252,7 +252,7 @@ export function EmployeeForm({
       className="space-y-4"
     >
       <div className="grid grid-cols-1 gap-4 rounded-lg border bg-muted/30 p-3 sm:grid-cols-2">
-        <Field label="Employee ID (primary identifier)">
+        <Field label="P-File Number (primary identifier)">
           <Input
             name="employeeCode"
             value={code}
@@ -277,13 +277,13 @@ export function EmployeeForm({
         {taken ? (
           <Alert variant="destructive" className="sm:col-span-2">
             <AlertTriangle className="h-4 w-4" />
-            <AlertDescription>Employee ID {code} is already in use. Choose another.</AlertDescription>
+            <AlertDescription>P-File Number {code} is already in use. Choose another.</AlertDescription>
           </Alert>
         ) : prefixMismatch ? (
           <Alert className="sm:col-span-2">
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription>
-              This ID does not match the {branch} prefix ({expectedPrefix}). Allowed, but please confirm
+              This P-File Number does not match the {branch} prefix ({expectedPrefix}). Allowed, but please confirm
               it is intentional. Suggested: {nextEmployeeCode(branch)}
             </AlertDescription>
           </Alert>

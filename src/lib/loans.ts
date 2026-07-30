@@ -102,7 +102,7 @@ export function loanExportRows(rows: LoanLedgerRow[]) {
   return rows.map((r) => ({
     "Loan No": r.loan.loanNo,
     "Employee": r.employee?.name ?? "",
-    "Employee Code": r.employee?.employeeCode ?? "",
+    "P-File Number": r.employee?.employeeCode ?? "",
     "Type": r.loan.loanType,
     "Issued On": r.loan.issuedOn ?? "",
     "Principal": r.loan.principal,
