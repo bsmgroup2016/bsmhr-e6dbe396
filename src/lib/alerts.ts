@@ -98,6 +98,7 @@ export function buildAlerts(companyId?: string): AppAlert[] {
   }
 
   for (const leave of getLeaveRequests().filter((l) => l.status === "Pending")) {
+    // (salary compliance alerts are appended below)
     const emp = employees.find((e) => e.id === leave.employeeId);
     if (companyId && !emp) continue;
     out.push({
