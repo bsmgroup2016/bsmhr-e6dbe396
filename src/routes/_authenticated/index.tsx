@@ -82,8 +82,8 @@ function SectionHeading({
   return (
     <div className="flex items-center gap-2">
       {icon}
-      <h2 className="text-base font-semibold tracking-tight text-foreground">{title}</h2>
-      {caption ? <span className="ml-auto text-xs text-muted-foreground">{caption}</span> : null}
+      <h2 className="text-lg font-semibold tracking-tight text-foreground">{title}</h2>
+      {caption ? <span className="ml-auto text-sm text-muted-foreground">{caption}</span> : null}
     </div>
   );
 }
