@@ -645,19 +645,19 @@ function DashboardPage() {
                         to="/clients"
                         className="rounded-xl border bg-gradient-surface p-4 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-warning/40 hover:shadow-elegant"
                       >
-                        <p className="truncate text-sm font-medium text-foreground">{f.subject}</p>
-                        <p className="truncate text-xs text-muted-foreground">
-                          {f.activityType} ·{" "}
-                          {(f.clientId && clientNames.get(f.clientId)) ||
-                            (f.leadId && leadNames.get(f.leadId)) ||
-                            "—"}
-                        </p>
-                        <div className="mt-3 flex items-center justify-between gap-2">
-                          <StatusBadge variant={badge.variant} label={badge.label} dot />
-                          <span className="shrink-0 text-xs text-muted-foreground">
-                            {f.followUpDate}
-                          </span>
-                        </div>
+                    <p className="truncate text-base font-medium text-foreground">{f.subject}</p>
+                    <p className="truncate text-sm text-muted-foreground">
+                      {f.activityType} ·{" "}
+                      {(f.clientId && clientNames.get(f.clientId)) ||
+                        (f.leadId && leadNames.get(f.leadId)) ||
+                        "—"}
+                    </p>
+                    <div className="mt-3 flex items-center justify-between gap-2">
+                      <StatusBadge variant={badge.variant} label={badge.label} dot />
+                      <span className="shrink-0 text-sm text-muted-foreground">
+                        {f.followUpDate}
+                      </span>
+                    </div>
                       </Link>
                     );
                   })}
