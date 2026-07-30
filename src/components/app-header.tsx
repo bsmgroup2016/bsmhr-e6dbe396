@@ -51,8 +51,8 @@ export function AppHeader() {
   useGlobalSearchHotkey(useCallback(() => setSearchOpen(true), []));
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 flex-col border-b bg-gradient-surface backdrop-blur supports-[backdrop-filter]:bg-card/80">
-      <div className="flex flex-1 items-center gap-2 px-4">
+    <header className="sticky top-0 z-30 flex h-16 flex-col border-b border-border/70 bg-gradient-surface backdrop-blur supports-[backdrop-filter]:bg-card/70">
+      <div className="flex flex-1 items-center gap-2 px-5">
         <SidebarTrigger className="h-8 w-8 shrink-0">
           <SidebarIcon className="h-4 w-4" />
           <span className="sr-only">Toggle sidebar</span>
