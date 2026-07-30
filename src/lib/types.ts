@@ -158,6 +158,27 @@ export interface Employee {
   securityBondInsurer?: string;
   securityBondExpiry?: string;
   securityBondStatus?: SecurityBondStatus;
+  // --- MYE & skills upgrade (construction / process sector) ---
+  skillLevel?: SkillLevel;
+  skillCertType?: SkillCertType;
+  skillCertNo?: string;
+  skillCertExpiry?: string;
+  /** MYE (Man-Year Entitlement) allocation reference from the prior project. */
+  myeRef?: string;
+  /** Man-years consumed by this worker under the MYE allocation. */
+  myeManYears?: number;
+  // --- Foreign Worker Medical Insurance (FWMI) ---
+  insuranceCoverage?: number;
+  insuranceInsurer?: string;
+  insurancePolicyNo?: string;
+  // --- IR21 tax clearance ---
+  ir21Required?: boolean;
+  ir21FiledOn?: string;
+  ir21Status?: Ir21Status;
+  ir21AmountWithheld?: number;
+  // --- Progressive Wage Model ---
+  pwmSector?: PwmSector;
+  pwmLevel?: string;
   createdAt: string;
   updatedAt: string;
 }
