@@ -738,6 +738,17 @@ function PayrollForm({ employees, onSubmit }: { employees: ReturnType<typeof get
         <div className="space-y-2">
           <Label htmlFor="overtimePay">Overtime pay</Label>
           <Input id="overtimePay" name="overtimePay" type="number" defaultValue={0} />
+          <p className="text-xs text-muted-foreground">Leave at 0 to auto-calculate from OT hours at 1.5x the hourly basic rate.</p>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="overtimeHours">Overtime hours</Label>
+          <Input id="overtimeHours" name="overtimeHours" type="number" step="0.5" defaultValue={0} />
+          <p className="text-xs text-muted-foreground">MOM cap: {OT_HOURS_CAP} hours a month.</p>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="bonus">Bonus / Additional Wage</Label>
+          <Input id="bonus" name="bonus" type="number" defaultValue={0} />
+          <p className="text-xs text-muted-foreground">CPF applies only up to the annual Additional Wage ceiling.</p>
         </div>
         <div className="space-y-2">
           <Label htmlFor="allowances">Allowances</Label>
