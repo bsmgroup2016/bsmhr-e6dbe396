@@ -1,10 +1,20 @@
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
-  Briefcase, Building2, CalendarOff, IdCard, Plane, Search, Users, Wallet,
+  Briefcase, Building2, CalendarOff, IdCard, Pencil, Plane, Search, Trash2, Users, Wallet,
 } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { EmployeeForm, employeeFromForm } from "@/components/employee-form";
+import type { Employee } from "@/lib/types";
 import { SummaryCard } from "@/components/ui/summary-card";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -25,7 +35,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { getEmployees, getCompanies, getLeaveRequests } from "@/lib/store";
+import {
+  getEmployees,
+  getCompanies,
+  getLeaveRequests,
+  updateEmployee,
+  deleteEmployee,
+} from "@/lib/store";
 import { employeeSlugById } from "@/lib/employee-slug";
 import { isOfficeStaff } from "@/lib/workforce-split";
 
@@ -70,7 +86,28 @@ export const Route = createFileRoute("/_authenticated/staff-management")({
 
 function StaffManagementPage() {
   const companies = getCompanies();
-  const staff = getEmployees().filter(isOfficeStaff);
+  const [allEmployees, setEmployees] = useState<Employee[]>(getEmployees());
+  const [editingStaff, setEditingStaff] = useState<Employee | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Employee | null>(null);
+  const staff = allEmployees.filter(isOfficeStaff);
+
+  function refresh() {
+    setEmployees(getEmployees());
+  }
+
+  function handleEdit(formData: FormData) {
+    if (!editingStaff) return;
+    updateEmployee(editingStaff.id, employeeFromForm(formData));
+    setEditingStaff(null);
+    refresh();
+  }
+
+  function handleDelete() {
+    if (!deleteTarget) return;
+    deleteEmployee(deleteTarget.id);
+    setDeleteTarget(null);
+    refresh();
+  }
   const leave = getLeaveRequests();
   const today = new Date().toISOString().slice(0, 10);
   const staffIds = new Set(staff.map((e) => e.id));
@@ -300,10 +337,10 @@ function StaffManagementPage() {
                   <TableHead>Department</TableHead>
                   <TableHead>Designation</TableHead>
                   <TableHead className="text-right">Fixed Salary</TableHead>
-                  <TableHead>Work permit</TableHead>
                   <TableHead>Passport</TableHead>
                   <TableHead>Leave</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -321,7 +358,7 @@ function StaffManagementPage() {
                 ) : (
                   rows.map((e) => (
                     <TableRow key={e.id}>
-                      <TableCell>
+                      <TableCell className="whitespace-nowrap">
                         <Link
                           to="/workforce/$slug"
                           params={{ slug: employeeSlugById(e.id) }}
@@ -333,17 +370,14 @@ function StaffManagementPage() {
                           Employee ID: {e.employeeCode}
                         </div>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="whitespace-nowrap">
                         {companies.find((c) => c.id === e.companyId)?.name ?? "—"}
                       </TableCell>
-                      <TableCell>{e.department ?? "—"}</TableCell>
-                      <TableCell>{e.trade ?? "—"}</TableCell>
-                      <TableCell className="text-right font-medium">
+                      <TableCell className="whitespace-nowrap">{e.department ?? "—"}</TableCell>
+                      <TableCell className="whitespace-nowrap">{e.trade ?? "—"}</TableCell>
+                      <TableCell className="whitespace-nowrap text-right font-medium">
                         ${(e.basicSalary || 0).toLocaleString()}
                         <span className="ml-1 text-xs text-muted-foreground">/mo</span>
-                      </TableCell>
-                      <TableCell>
-                        <ExpiryCell date={e.workPermitExpiryDate ?? e.passExpiry} />
                       </TableCell>
                       <TableCell>
                         <ExpiryCell date={e.passportExpiry} />
@@ -358,6 +392,28 @@ function StaffManagementPage() {
                       <TableCell>
                         <StatusBadge variant="success" label={e.status} dot />
                       </TableCell>
+                      <TableCell>
+                        <div className="flex items-center justify-end gap-1.5">
+                          <Button
+                            size="icon"
+                            variant="outline"
+                            className="h-8 w-8 border-primary/30 text-primary hover:bg-primary/10"
+                            aria-label={`Edit ${e.name}`}
+                            onClick={() => setEditingStaff(e)}
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="outline"
+                            className="h-8 w-8 border-destructive/30 text-destructive hover:bg-destructive/10"
+                            aria-label={`Delete ${e.name}`}
+                            onClick={() => setDeleteTarget(e)}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      </TableCell>
                     </TableRow>
                   ))
                 )}
@@ -365,6 +421,38 @@ function StaffManagementPage() {
             </Table>
           </div>
         </div>
+
+        <Dialog open={!!editingStaff} onOpenChange={(open) => !open && setEditingStaff(null)}>
+          <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
+            <DialogHeader>
+              <DialogTitle>Edit staff</DialogTitle>
+              <DialogDescription>
+                Update details for Employee ID {editingStaff?.employeeCode}.
+              </DialogDescription>
+            </DialogHeader>
+            {editingStaff && <EmployeeForm employee={editingStaff} onSubmit={handleEdit} />}
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Delete staff?</DialogTitle>
+              <DialogDescription>
+                This will permanently remove {deleteTarget?.name} (Employee ID{" "}
+                {deleteTarget?.employeeCode}). This action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setDeleteTarget(null)}>
+                Cancel
+              </Button>
+              <Button variant="destructive" onClick={handleDelete}>
+                Delete
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </AppShell>
   );
