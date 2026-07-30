@@ -132,6 +132,39 @@ export default function PayrollPage() {
   const paidCount = filtered.filter((p) => p.status === "Paid").length;
   const pendingCount = filtered.filter((p) => p.status === "Pending Approval" || p.status === "Draft").length;
 
+  // ---- Annual wages (calendar year of the selected month) ----
+  const year = month.slice(0, 4);
+  const yearEntries = payroll.filter((p) => {
+    const emp = employees.find((e) => e.id === p.employeeId);
+    const matchesCompany = companyFilter === "all" || emp?.companyId === companyFilter;
+    return p.month.startsWith(year) && matchesCompany;
+  });
+  const annualGross = yearEntries.reduce(
+    (s, p) => s + p.basicSalary + p.overtimePay + p.allowances,
+    0,
+  );
+  const annualOrdinary = yearEntries.reduce((s, p) => s + p.basicSalary, 0);
+  const annualOvertime = yearEntries.reduce((s, p) => s + p.overtimePay, 0);
+  const annualAllowances = yearEntries.reduce((s, p) => s + p.allowances, 0);
+  const annualNet = yearEntries.reduce((s, p) => s + p.netPay, 0);
+  const annualCpf = yearEntries.reduce((s, p) => s + p.cpfEmployee + p.cpfEmployer, 0);
+  const annualPaid = yearEntries
+    .filter((p) => p.status === "Paid")
+    .reduce((s, p) => s + p.netPay, 0);
+  const annualHeadcount = new Set(yearEntries.map((p) => p.employeeId)).size;
+  const annualAveragePerWorker = annualHeadcount ? annualGross / annualHeadcount : 0;
+  const annualByMonth = Array.from({ length: 12 }, (_, i) => {
+    const key = `${year}-${String(i + 1).padStart(2, "0")}`;
+    const rows = yearEntries.filter((p) => p.month === key);
+    return {
+      key,
+      label: new Date(`${key}-01T00:00:00`).toLocaleString("en-SG", { month: "short" }),
+      gross: rows.reduce((s, p) => s + p.basicSalary + p.overtimePay + p.allowances, 0),
+    };
+  });
+  const annualMaxMonth = Math.max(1, ...annualByMonth.map((m) => m.gross));
+  const money = (n: number) => `S$${Math.round(n).toLocaleString("en-SG")}`;
+
   function refresh() {
     setPayroll(getPayroll());
   }
