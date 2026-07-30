@@ -304,7 +304,7 @@ export default function TimeManagementPage() {
             </div>
             <ImportDialog
               title="Import timesheet"
-              description="Upload daily attendance from Excel or CSV. Employees are matched by employee code or FIN."
+              description="Upload daily attendance from Excel or CSV. Employees are matched by P-File number or FIN."
               templateName="attendance"
               columns={ATTENDANCE_IMPORT_COLUMNS}
               onImport={handleImport}

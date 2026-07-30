@@ -67,7 +67,7 @@ function MomPage() {
   function exportLevy() {
     void exportRows(
       levy.perWorker.map((r) => ({
-        "Employee code": r.employee.employeeCode,
+        "P-File No": r.employee.employeeCode,
         Name: r.employee.name,
         FIN: r.employee.fin,
         "Pass type": r.employee.passType,
@@ -82,7 +82,7 @@ function MomPage() {
   function exportInsurance() {
     void exportRows(
       insurance.map((i) => ({
-        "Employee code": i.employee.employeeCode,
+        "P-File No": i.employee.employeeCode,
         Name: i.employee.name,
         "Pass type": i.employee.passType,
         Requirement: i.kind,

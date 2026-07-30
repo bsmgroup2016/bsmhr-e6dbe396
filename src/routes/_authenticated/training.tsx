@@ -184,7 +184,7 @@ export default function TrainingPage() {
     void exportRows(
       filteredRecords.map((r) => ({
         Worker: empName(r.employeeId),
-        "Employee code": empCode(r.employeeId),
+        "P-File No": empCode(r.employeeId),
         Course: courseName(r.courseId),
         "Certificate no": r.certificateNo ?? "",
         Completed: r.completionDate ?? "",

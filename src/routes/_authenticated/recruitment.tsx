@@ -286,7 +286,7 @@ export default function RecruitmentPage() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Candidate</TableHead>
-                      <TableHead>Trade</TableHead>
+                      <TableHead>Designation</TableHead>
                       <TableHead>Requisition</TableHead>
                       <TableHead>Source</TableHead>
                       <TableHead>Interview</TableHead>

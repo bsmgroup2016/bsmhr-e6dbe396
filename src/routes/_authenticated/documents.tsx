@@ -402,7 +402,7 @@ export default function DocumentsPage() {
               <div className="mt-6 space-y-5">
                 <div className="grid gap-3 sm:grid-cols-2">
                   <DetailItem label="Employee" value={employees.find((e) => e.id === viewingDoc.employeeId)?.name || "—"} />
-                  <DetailItem label="Employee code" value={employees.find((e) => e.id === viewingDoc.employeeId)?.employeeCode || "—"} />
+                  <DetailItem label="P-File No" value={employees.find((e) => e.id === viewingDoc.employeeId)?.employeeCode || "—"} />
                   <DetailItem label="Issue date" value={viewingDoc.issueDate || "—"} />
                   <DetailItem label="Expiry date" value={viewingDoc.expiryDate || "—"} />
                 </div>

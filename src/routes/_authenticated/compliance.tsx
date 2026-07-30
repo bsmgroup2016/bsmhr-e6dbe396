@@ -76,7 +76,7 @@ export default function CompliancePage() {
   function handleExport() {
     void exportRows(
       filtered.map((i) => ({
-        "Employee code": i.employeeCode,
+        "P-File No": i.employeeCode,
         Employee: i.employeeName,
         Category: i.category,
         Item: i.label,

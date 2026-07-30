@@ -243,7 +243,7 @@ export default function CrmPage() {
                     <Input value={leadForm.industry} onChange={(e) => setLeadForm({ ...leadForm, industry: e.target.value })} />
                   </div>
                   <div className="space-y-2">
-                    <Label>Trade required</Label>
+                    <Label>Designation required</Label>
                     <Input value={leadForm.trade} onChange={(e) => setLeadForm({ ...leadForm, trade: e.target.value })} />
                   </div>
                   <div className="space-y-2">
@@ -298,7 +298,7 @@ export default function CrmPage() {
                   <TableRow>
                     <TableHead>Company</TableHead>
                     <TableHead>Contact</TableHead>
-                    <TableHead>Trade / HC</TableHead>
+                    <TableHead>Designation / HC</TableHead>
                     <TableHead className="text-right">Monthly value</TableHead>
                     <TableHead>Stage</TableHead>
                     <TableHead className="text-right">Prob.</TableHead>
