@@ -36,8 +36,6 @@ const quickCreateItems = [
 ] as const;
 
 export function AppHeader() {
-  const { state } = useSidebar();
-  const collapsed = state === "collapsed";
   const { user, signOut } = useAuth();
   const initials = user?.email?.slice(0, 2).toUpperCase() ?? "BS";
   const alerts = buildAlerts();
