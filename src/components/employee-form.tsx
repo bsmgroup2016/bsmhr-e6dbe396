@@ -195,7 +195,10 @@ export function EmployeeForm({
 
   const taken = code.trim() ? isEmployeeCodeTaken(code, employee?.id) : false;
   const expectedPrefix = prefixForBranch(branch);
+  const staff = isOfficeStaff({ department: employee?.department, trade: employee?.trade });
+  const idFieldLabel = staff ? "Employee ID" : "P-File Number (primary identifier)";
   const prefixMismatch =
+    !staff &&
     code.trim().length > 0 &&
     !new RegExp(`^${expectedPrefix}\\d+$`, "i").test(code.trim());
 
@@ -252,7 +255,7 @@ export function EmployeeForm({
       className="space-y-4"
     >
       <div className="grid grid-cols-1 gap-4 rounded-lg border bg-muted/30 p-3 sm:grid-cols-2">
-        <Field label="P-File Number (primary identifier)">
+        <Field label={idFieldLabel}>
           <Input
             name="employeeCode"
             value={code}
@@ -277,7 +280,9 @@ export function EmployeeForm({
         {taken ? (
           <Alert variant="destructive" className="sm:col-span-2">
             <AlertTriangle className="h-4 w-4" />
-            <AlertDescription>P-File Number {code} is already in use. Choose another.</AlertDescription>
+            <AlertDescription>
+              {staff ? "Employee ID" : "P-File Number"} {code} is already in use. Choose another.
+            </AlertDescription>
           </Alert>
         ) : prefixMismatch ? (
           <Alert className="sm:col-span-2">
