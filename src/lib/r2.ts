@@ -139,3 +139,45 @@ export async function openR2File(ref: string): Promise<void> {
   const url = await getSignedUrl(ref);
   window.open(url, "_blank", "noopener");
 }
+
+/** Best-effort file name from a stored reference or signed URL. */
+export function r2FileName(ref: string): string {
+  const raw = ref.split("?")[0].split("/").pop() ?? "download";
+  try {
+    return decodeURIComponent(raw) || "download";
+  } catch {
+    return raw || "download";
+  }
+}
+
+/**
+ * Download a stored file through a short-lived signed link. The blob is
+ * fetched first so the browser saves it instead of navigating; if the object
+ * store blocks cross-origin reads we fall back to a direct signed download.
+ */
+export async function downloadR2File(ref: string, fileName?: string): Promise<void> {
+  const url = await getSignedUrl(ref);
+  const name = fileName || r2FileName(ref);
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`Download failed (${res.status})`);
+    const blob = await res.blob();
+    const objectUrl = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = objectUrl;
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(objectUrl), 10_000);
+  } catch {
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = name;
+    a.rel = "noopener";
+    a.target = "_blank";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
+}
