@@ -49,10 +49,14 @@ export function HousingNotificationPanel() {
   return (
     <div className="space-y-4">
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <SummaryCard title="Notifiable workers" value={summary.total} icon={MapPinned} />
-        <SummaryCard title="Address in sync" value={summary.synced} icon={CheckCircle2} />
-        <SummaryCard title="Pending submission" value={summary.pending} icon={RefreshCw} />
-        <SummaryCard title={`Overdue (> ${ADDRESS_NOTICE_DAYS} days)`} value={summary.overdue} icon={AlertTriangle} />
+        <SummaryCard title="Notifiable workers" value={summary.total} icon={<MapPinned className="h-5 w-5" />} />
+        <SummaryCard title="Address in sync" value={summary.synced} icon={<CheckCircle2 className="h-5 w-5" />} />
+        <SummaryCard title="Pending submission" value={summary.pending} icon={<RefreshCw className="h-5 w-5" />} />
+        <SummaryCard
+          title={`Overdue (> ${ADDRESS_NOTICE_DAYS} days)`}
+          value={summary.overdue}
+          icon={<AlertTriangle className="h-5 w-5" />}
+        />
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/60 bg-muted/30 p-3">
@@ -72,7 +76,7 @@ export function HousingNotificationPanel() {
 
       {rows.length === 0 ? (
         <EmptyState
-          icon={MapPinned}
+          icon={<MapPinned className="h-6 w-6" />}
           title="No notifiable workers"
           description="Active Work Permit / S Pass / EP holders will appear here once registered."
         />
