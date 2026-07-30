@@ -688,7 +688,9 @@ export const toMedicalClaim = (x: Partial<MedicalClaim>): Row => ({
   insurer_paid: x.insurerPaid ?? 0, employer_paid: x.employerPaid ?? 0,
   employee_paid: x.employeePaid ?? 0, work_injury: !!x.workInjury, mom_reported: !!x.momReported,
   status: x.status, submitted_on: nullDate(x.submittedOn), settled_on: nullDate(x.settledOn),
-  document_url: x.documentUrl ?? null, remarks: x.remarks ?? null,
+  document_url: x.documentUrls?.[0] ?? x.documentUrl ?? null,
+  document_urls: x.documentUrls ?? (x.documentUrl ? [x.documentUrl] : []),
+  remarks: x.remarks ?? null,
 });
 
 /* ---------- client contracts (recurring auto-invoicing) ---------- */
