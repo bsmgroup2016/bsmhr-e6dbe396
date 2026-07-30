@@ -15,7 +15,7 @@ import type { Expense, PaymentReceipt } from "@/lib/types";
 import type { InventoryItem, StockMovement, PurchaseOrder } from "@/lib/types";
 import type { BranchPrefix, EmployeeCertification, TimeCard, ClaimSheet } from "@/lib/types";
 import type { ClientContract } from "@/lib/types";
-import type { MedicalClaim } from "@/lib/types";
+import type { MedicalClaim, EmployeeLoan, LoanRepayment } from "@/lib/types";
 import { supabase } from "@/integrations/supabase/client";
 import { computeStatutory, round2 } from "@/lib/sg-payroll";
 import {
@@ -32,7 +32,7 @@ import { toExpense, toPaymentReceipt } from "@/lib/db";
 import { toItem, toMovement, toPurchaseOrder } from "@/lib/db";
 import { toBranchPrefix, toCertification, toTimeCard, toClaimSheet } from "@/lib/db";
 import { toContract } from "@/lib/db";
-import { toMedicalClaim } from "@/lib/db";
+import { toMedicalClaim, toLoan, toLoanRepayment } from "@/lib/db";
 
 export interface AppState {
   employees: Employee[];
@@ -2450,3 +2450,79 @@ export function deleteClaimSheet(id: string): boolean {
 }
 
 
+
+/* ---------------- loan / salary advance ledger ---------------- */
+export function getLoans(): EmployeeLoan[] { return getState().loans; }
+export function getLoanRepayments(): LoanRepayment[] { return getState().loanRepayments; }
+
+export function addLoan(
+  loan: Omit<EmployeeLoan, "id" | "loanNo" | "createdAt" | "updatedAt"> & { loanNo?: string },
+): EmployeeLoan {
+  const s = getState();
+  const now = new Date().toISOString();
+  const loanNo = loan.loanNo?.trim() || `LN-${String(s.loans.length + 1).padStart(4, "0")}`;
+  const row: EmployeeLoan = { ...loan, loanNo, id: newId(), createdAt: now, updatedAt: now };
+  setState({ ...s, loans: [row, ...s.loans] });
+  void supabase.from("employee_loans").insert({ id: row.id, ...toLoan(row) })
+    .then(({ error }) => fail("employee_loans", error));
+  addAuditLog("CREATE", "EmployeeLoan", row.id, `Loan ${loanNo} — S$${row.principal}`);
+  return row;
+}
+
+export function updateLoan(id: string, updates: Partial<EmployeeLoan>): EmployeeLoan | undefined {
+  const s = getState();
+  const existing = s.loans.find((l) => l.id === id);
+  if (!existing) return undefined;
+  const updated: EmployeeLoan = { ...existing, ...updates, updatedAt: new Date().toISOString() };
+  setState({ ...s, loans: s.loans.map((l) => (l.id === id ? updated : l)) });
+  void supabase.from("employee_loans").update(toLoan(updated)).eq("id", id)
+    .then(({ error }) => fail("employee_loans", error));
+  addAuditLog("UPDATE", "EmployeeLoan", id, `Loan ${updated.loanNo} updated`);
+  return updated;
+}
+
+export function deleteLoan(id: string): boolean {
+  const s = getState();
+  if (!s.loans.some((l) => l.id === id)) return false;
+  setState({
+    ...s,
+    loans: s.loans.filter((l) => l.id !== id),
+    loanRepayments: s.loanRepayments.filter((p) => p.loanId !== id),
+  });
+  void supabase.from("employee_loans").delete().eq("id", id)
+    .then(({ error }) => fail("employee_loans", error));
+  addAuditLog("DELETE", "EmployeeLoan", id, "Deleted loan");
+  return true;
+}
+
+export function addLoanRepayment(
+  payment: Omit<LoanRepayment, "id" | "createdAt" | "updatedAt">,
+): LoanRepayment {
+  const s = getState();
+  const now = new Date().toISOString();
+  const row: LoanRepayment = { ...payment, id: newId(), createdAt: now, updatedAt: now };
+  setState({ ...s, loanRepayments: [row, ...s.loanRepayments] });
+  void supabase.from("loan_repayments").insert({ id: row.id, ...toLoanRepayment(row) })
+    .then(({ error }) => fail("loan_repayments", error));
+  addAuditLog("CREATE", "LoanRepayment", row.id, `Repayment S$${row.amount} (${row.source})`);
+
+  // Auto-settle the loan once fully recovered.
+  const loan = getState().loans.find((l) => l.id === row.loanId);
+  if (loan && loan.status === "Active") {
+    const paid = getState().loanRepayments
+      .filter((p) => p.loanId === loan.id)
+      .reduce((sum, p) => sum + (p.amount || 0), 0);
+    if (paid >= loan.principal - 0.01) updateLoan(loan.id, { status: "Settled" });
+  }
+  return row;
+}
+
+export function deleteLoanRepayment(id: string): boolean {
+  const s = getState();
+  if (!s.loanRepayments.some((p) => p.id === id)) return false;
+  setState({ ...s, loanRepayments: s.loanRepayments.filter((p) => p.id !== id) });
+  void supabase.from("loan_repayments").delete().eq("id", id)
+    .then(({ error }) => fail("loan_repayments", error));
+  addAuditLog("DELETE", "LoanRepayment", id, "Deleted loan repayment");
+  return true;
+}
