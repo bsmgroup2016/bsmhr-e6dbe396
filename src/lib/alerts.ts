@@ -239,6 +239,7 @@ export function alertCounts(alerts: AppAlert[]) {
 export const ALERT_CATEGORIES: AlertCategory[] = [
   "Compliance",
   "Work Pass",
+  "Salary",
   "Leave",
   "Billing",
   "Transport",
