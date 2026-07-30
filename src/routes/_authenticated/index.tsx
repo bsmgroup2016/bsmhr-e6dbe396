@@ -13,6 +13,7 @@ import {
   CalendarClock,
   AlertCircle,
   FileText,
+  ShieldAlert,
 } from "lucide-react";
 import {
   BadgeCheck,
