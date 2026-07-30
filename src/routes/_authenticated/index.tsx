@@ -577,12 +577,12 @@ function DashboardPage() {
                   search={action.search as never}
                   className="flex items-center gap-3 rounded-xl border bg-gradient-surface p-4 text-left shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-elegant"
                 >
-                  <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg shadow-sm ${colorClass}`}>
-                    <action.icon className="h-4 w-4" />
+                  <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-lg shadow-sm ${colorClass}`}>
+                    <action.icon className="h-5 w-5" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-foreground">{action.label}</p>
-                    <p className="truncate text-xs text-muted-foreground">{action.desc}</p>
+                    <p className="text-base font-medium text-foreground">{action.label}</p>
+                    <p className="truncate text-sm text-muted-foreground">{action.desc}</p>
                   </div>
                 </Link>
               );
