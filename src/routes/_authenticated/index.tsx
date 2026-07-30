@@ -229,7 +229,7 @@ function DashboardPage() {
     .filter((p) => p.month.startsWith(yearKey))
     .reduce((s, p) => s + p.basicSalary + p.overtimePay + p.allowances, 0);
 
-  const sgd = (n: number) => `S$${Math.round(n).toLocaleString("en-SG")}`;
+  const sgd = (n: number) => `$${Math.round(n).toLocaleString("en-SG")}`;
 
   // ---- Chart data ----
   const allAttendance = getAttendance().filter((a) => empIds.has(a.employeeId));
@@ -458,7 +458,7 @@ function DashboardPage() {
     .sort((a, b) => (a.activityDate < b.activityDate ? 1 : -1))
     .slice(0, 6);
   const money = (n: number) =>
-    `S$${Math.round(n).toLocaleString("en-SG")}`;
+    `$${Math.round(n).toLocaleString("en-SG")}`;
 
   const expiringPasses = employees
     .filter((e) => e.passExpiry && e.passExpiry !== "-" && daysLeft(e.passExpiry) <= 60)
