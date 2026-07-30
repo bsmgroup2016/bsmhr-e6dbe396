@@ -12,6 +12,7 @@ import {
   HardHat,
   SlidersHorizontal,
   ChevronDown,
+  UserCheck,
 } from "lucide-react";
 import { ChevronLeft, ChevronRight, Mail, Phone } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -58,7 +59,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { getEmployees, addEmployee, updateEmployee, deleteEmployee, getCurrentCompany, getCompanies } from "@/lib/store";
+import { getEmployees, addEmployee, updateEmployee, deleteEmployee, getCurrentCompany, getCompanies, getAssignments } from "@/lib/store";
 import { employeeSlugById } from "@/lib/employee-slug";
 import type { Employee, PassType, EmployeeStatus, DeploymentStatus, WorkerCategory } from "@/lib/types";
 import { pick, type ImportColumn } from "@/lib/xlsx";
