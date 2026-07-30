@@ -662,6 +662,33 @@ export interface LoadedData {
   contracts: ClientContract[];
 }
 
+/* ---------- medical claims (FWMI / WICA) ---------- */
+export const fromMedicalClaim = (r: Row): MedicalClaim => ({
+  id: r.id, companyId: r.company_id ?? undefined, employeeId: r.employee_id,
+  claimNo: r.claim_no ?? "", claimType: (r.claim_type ?? "Inpatient") as MedicalClaim["claimType"],
+  treatmentDate: d(r.treatment_date), provider: r.provider ?? undefined,
+  diagnosis: r.diagnosis ?? undefined, totalAmount: Number(r.total_amount ?? 0),
+  insurer: r.insurer ?? undefined, policyNo: r.policy_no ?? undefined,
+  insurerPaid: Number(r.insurer_paid ?? 0), employerPaid: Number(r.employer_paid ?? 0),
+  employeePaid: Number(r.employee_paid ?? 0), workInjury: !!r.work_injury,
+  momReported: !!r.mom_reported,
+  status: (r.status ?? "Draft") as MedicalClaim["status"],
+  submittedOn: d(r.submitted_on), settledOn: d(r.settled_on),
+  documentUrl: r.document_url ?? undefined, remarks: r.remarks ?? undefined,
+  createdAt: r.created_at, updatedAt: r.updated_at,
+});
+
+export const toMedicalClaim = (x: Partial<MedicalClaim>): Row => ({
+  company_id: x.companyId || null, employee_id: x.employeeId, claim_no: x.claimNo ?? "",
+  claim_type: x.claimType, treatment_date: nullDate(x.treatmentDate),
+  provider: x.provider ?? null, diagnosis: x.diagnosis ?? null,
+  total_amount: x.totalAmount ?? 0, insurer: x.insurer ?? null, policy_no: x.policyNo ?? null,
+  insurer_paid: x.insurerPaid ?? 0, employer_paid: x.employerPaid ?? 0,
+  employee_paid: x.employeePaid ?? 0, work_injury: !!x.workInjury, mom_reported: !!x.momReported,
+  status: x.status, submitted_on: nullDate(x.submittedOn), settled_on: nullDate(x.settledOn),
+  document_url: x.documentUrl ?? null, remarks: x.remarks ?? null,
+});
+
 /* ---------- client contracts (recurring auto-invoicing) ---------- */
 export const fromContract = (r: Row): ClientContract => ({
   id: r.id, companyId: r.company_id ?? undefined, clientId: r.client_id,
