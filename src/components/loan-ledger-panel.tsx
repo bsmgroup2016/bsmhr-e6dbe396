@@ -87,7 +87,7 @@ export function LoanLedgerPanel() {
         <SummaryCard title="Active loans" value={summary.activeLoans} icon={<HandCoins className="h-5 w-5" />} />
         <SummaryCard title="Total disbursed" value={money(summary.totalPrincipal)} icon={<Wallet className="h-5 w-5" />} />
         <SummaryCard title="Outstanding" value={money(summary.totalOutstanding)} icon={<Wallet className="h-5 w-5" />} variant="warning" />
-        <SummaryCard title="Compliance flags" value={summary.flagged} icon={<AlertTriangle className="h-5 w-5" />} variant={summary.flagged ? "danger" : "default"} />
+        <SummaryCard title="Compliance flags" value={summary.flagged} icon={<AlertTriangle className="h-5 w-5" />} variant={summary.flagged ? "destructive" : "default"} />
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/60 bg-muted/30 p-3">
