@@ -365,7 +365,29 @@ function DashboardPage() {
 
         {/* 1. Key numbers */}
         <section className="space-y-3">
-          <SectionHeading title="Overview" caption="Live figures for the selected company" />
+          <SectionHeading
+            title="Overview"
+            caption="Click any card to open the related page"
+            icon={<CheckCircle2 className="h-4 w-4 text-primary" />}
+          />
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {keyMetrics.map((m) => (
+              <Link key={m.title} to={m.to} className="block focus-visible:outline-none">
+                <SummaryCard
+                  title={m.title}
+                  value={m.value}
+                  caption={m.caption}
+                  icon={m.icon}
+                  variant={m.variant}
+                  className="h-full cursor-pointer hover:border-primary/40"
+                />
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        <section className="space-y-3">
+          <SectionHeading title="Company snapshot" caption="Live figures across sites and approvals" />
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <SummaryCard
               title="Total Employees"
