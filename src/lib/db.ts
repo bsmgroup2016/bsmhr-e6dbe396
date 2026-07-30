@@ -665,6 +665,8 @@ export interface LoadedData {
   medicalClaims: MedicalClaim[];
   loans: EmployeeLoan[];
   loanRepayments: LoanRepayment[];
+  departments: Department[];
+  designations: Designation[];
 }
 
 /* ---------- organisation: departments & designations ---------- */
@@ -909,6 +911,8 @@ export async function loadAll(): Promise<LoadedData> {
     medicalClaims: medicalClaims.map(fromMedicalClaim),
     loans: loanRows.map(fromLoan),
     loanRepayments: repaymentRows.map(fromLoanRepayment),
+    departments: departmentRows.map(fromDepartment),
+    designations: designationRows.map(fromDesignation),
   };
 }
 
