@@ -128,10 +128,13 @@ export function GlobalSearchDialog({
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
+    const qc = q.replace(/[^a-z0-9]/g, "");
     const pool = q
       ? index.filter(
           (h) =>
-            h.label.toLowerCase().includes(q) || h.hint.toLowerCase().includes(q),
+            h.label.toLowerCase().includes(q) ||
+            h.hint.toLowerCase().includes(q) ||
+            (qc.length > 1 && h.hint.toLowerCase().replace(/[^a-z0-9]/g, "").includes(qc)),
         )
       : index;
     const grouped = new Map<string, SearchHit[]>();
