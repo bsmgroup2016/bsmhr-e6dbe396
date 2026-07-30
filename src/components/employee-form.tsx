@@ -546,12 +546,14 @@ export function EmployeeForm({
 
         <TabsContent value="pay" className="mt-4 space-y-4">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Field label="Basic salary ($)">
+            <Field label={staff ? "Monthly salary ($)" : "Basic rate / hour ($)"}>
               <Input name="basicSalary" type="number" step="0.01" defaultValue={employee?.basicSalary ?? 0} required />
             </Field>
-            <Field label="OT rate per hour ($)">
-              <Input name="otRate" type="number" step="0.01" defaultValue={employee?.otRate ?? 0} />
-            </Field>
+            {staff ? null : (
+              <Field label="OT rate per hour ($)">
+                <Input name="otRate" type="number" step="0.01" defaultValue={employee?.otRate ?? 0} />
+              </Field>
+            )}
             <Field label="Normal working hours / day">
               <Input name="normalHours" type="number" step="0.5" defaultValue={employee?.normalHours ?? 8} />
             </Field>
