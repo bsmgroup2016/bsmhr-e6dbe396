@@ -660,6 +660,7 @@ export interface LoadedData {
   branchPrefixes: BranchPrefix[]; certifications: EmployeeCertification[];
   timeCards: TimeCard[]; claimSheets: ClaimSheet[];
   contracts: ClientContract[];
+  medicalClaims: MedicalClaim[];
 }
 
 
@@ -783,6 +784,7 @@ export async function loadAll(): Promise<LoadedData> {
     requisitions, candidates, leads, activities, expenses, receipts,
     inventory, movements, purchaseOrders,
     branchPrefixes, certifications, timeCards, claimSheets, contracts,
+    medicalClaims,
   ] = await Promise.all([
     all("companies"), all("employees"), all("clients"), all("projects"), all("sites"),
     all("assignments"), all("employee_documents"), all("attendance"), all("payroll_entries"),
@@ -796,6 +798,7 @@ export async function loadAll(): Promise<LoadedData> {
     all("inventory_items"), all("stock_movements"), all("purchase_orders"),
     all("branch_prefixes"), all("employee_certifications"), all("time_cards"), all("claim_sheets"),
     all("client_contracts"),
+    all("medical_claims"),
   ]);
 
   const roleByUser = new Map<string, string>();
@@ -855,6 +858,7 @@ export async function loadAll(): Promise<LoadedData> {
     timeCards: timeCards.map(fromTimeCard),
     claimSheets: claimSheets.map(fromClaimSheet),
     contracts: contracts.map(fromContract),
+    medicalClaims: medicalClaims.map(fromMedicalClaim),
   };
 }
 
