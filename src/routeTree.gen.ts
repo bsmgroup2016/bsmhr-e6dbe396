@@ -48,6 +48,7 @@ import { Route as ApiPublicR2SignedRouteImport } from './routes/api/public/r2-si
 import { Route as ApiPublicR2FileRouteImport } from './routes/api/public/r2-file'
 import { Route as ApiPublicR2DeleteRouteImport } from './routes/api/public/r2-delete'
 import { Route as ApiPublicProvisionEmployeeRouteImport } from './routes/api/public/provision-employee'
+import { Route as ApiPublicOcrRouteImport } from './routes/api/public/ocr'
 import { Route as ApiPublicNotifyLeaveRouteImport } from './routes/api/public/notify-leave'
 import { Route as AuthenticatedWorkforceIdRouteImport } from './routes/_authenticated/workforce.$id'
 
@@ -249,6 +250,11 @@ const ApiPublicProvisionEmployeeRoute =
     path: '/api/public/provision-employee',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicOcrRoute = ApiPublicOcrRouteImport.update({
+  id: '/api/public/ocr',
+  path: '/api/public/ocr',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicNotifyLeaveRoute = ApiPublicNotifyLeaveRouteImport.update({
   id: '/api/public/notify-leave',
   path: '/api/public/notify-leave',
@@ -295,6 +301,7 @@ export interface FileRoutesByFullPath {
   '/workforce': typeof AuthenticatedWorkforceRouteWithChildren
   '/workforce/$id': typeof AuthenticatedWorkforceIdRoute
   '/api/public/notify-leave': typeof ApiPublicNotifyLeaveRoute
+  '/api/public/ocr': typeof ApiPublicOcrRoute
   '/api/public/provision-employee': typeof ApiPublicProvisionEmployeeRoute
   '/api/public/r2-delete': typeof ApiPublicR2DeleteRoute
   '/api/public/r2-file': typeof ApiPublicR2FileRoute
@@ -337,6 +344,7 @@ export interface FileRoutesByTo {
   '/': typeof AuthenticatedIndexRoute
   '/workforce/$id': typeof AuthenticatedWorkforceIdRoute
   '/api/public/notify-leave': typeof ApiPublicNotifyLeaveRoute
+  '/api/public/ocr': typeof ApiPublicOcrRoute
   '/api/public/provision-employee': typeof ApiPublicProvisionEmployeeRoute
   '/api/public/r2-delete': typeof ApiPublicR2DeleteRoute
   '/api/public/r2-file': typeof ApiPublicR2FileRoute
@@ -381,6 +389,7 @@ export interface FileRoutesById {
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/workforce/$id': typeof AuthenticatedWorkforceIdRoute
   '/api/public/notify-leave': typeof ApiPublicNotifyLeaveRoute
+  '/api/public/ocr': typeof ApiPublicOcrRoute
   '/api/public/provision-employee': typeof ApiPublicProvisionEmployeeRoute
   '/api/public/r2-delete': typeof ApiPublicR2DeleteRoute
   '/api/public/r2-file': typeof ApiPublicR2FileRoute
@@ -425,6 +434,7 @@ export interface FileRouteTypes {
     | '/workforce'
     | '/workforce/$id'
     | '/api/public/notify-leave'
+    | '/api/public/ocr'
     | '/api/public/provision-employee'
     | '/api/public/r2-delete'
     | '/api/public/r2-file'
@@ -467,6 +477,7 @@ export interface FileRouteTypes {
     | '/'
     | '/workforce/$id'
     | '/api/public/notify-leave'
+    | '/api/public/ocr'
     | '/api/public/provision-employee'
     | '/api/public/r2-delete'
     | '/api/public/r2-file'
@@ -510,6 +521,7 @@ export interface FileRouteTypes {
     | '/_authenticated/'
     | '/_authenticated/workforce/$id'
     | '/api/public/notify-leave'
+    | '/api/public/ocr'
     | '/api/public/provision-employee'
     | '/api/public/r2-delete'
     | '/api/public/r2-file'
@@ -523,6 +535,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   ApiPublicNotifyLeaveRoute: typeof ApiPublicNotifyLeaveRoute
+  ApiPublicOcrRoute: typeof ApiPublicOcrRoute
   ApiPublicProvisionEmployeeRoute: typeof ApiPublicProvisionEmployeeRoute
   ApiPublicR2DeleteRoute: typeof ApiPublicR2DeleteRoute
   ApiPublicR2FileRoute: typeof ApiPublicR2FileRoute
@@ -807,6 +820,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicProvisionEmployeeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/ocr': {
+      id: '/api/public/ocr'
+      path: '/api/public/ocr'
+      fullPath: '/api/public/ocr'
+      preLoaderRoute: typeof ApiPublicOcrRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/notify-leave': {
       id: '/api/public/notify-leave'
       path: '/api/public/notify-leave'
@@ -911,6 +931,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   ApiPublicNotifyLeaveRoute: ApiPublicNotifyLeaveRoute,
+  ApiPublicOcrRoute: ApiPublicOcrRoute,
   ApiPublicProvisionEmployeeRoute: ApiPublicProvisionEmployeeRoute,
   ApiPublicR2DeleteRoute: ApiPublicR2DeleteRoute,
   ApiPublicR2FileRoute: ApiPublicR2FileRoute,
@@ -922,3 +943,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
