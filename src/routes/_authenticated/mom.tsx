@@ -23,6 +23,7 @@ import {
 import { exportRows } from "@/lib/xlsx";
 import { WpLifecyclePanel } from "@/components/wp-lifecycle-panel";
 import { SalaryCompliancePanel } from "@/components/salary-compliance-panel";
+import { DeductionCompliancePanel } from "@/components/deduction-compliance-panel";
 
 export const Route = createFileRoute("/_authenticated/mom")({
   head: () => ({
@@ -131,6 +132,7 @@ function MomPage() {
             <TabsTrigger value="quota">Quota (DRC)</TabsTrigger>
             <TabsTrigger value="lifecycle">Work Permit lifecycle</TabsTrigger>
             <TabsTrigger value="salary">Salary compliance</TabsTrigger>
+            <TabsTrigger value="deductions">Deductions</TabsTrigger>
             <TabsTrigger value="levy">Levy bill</TabsTrigger>
             <TabsTrigger value="insurance">Medical & insurance</TabsTrigger>
           </TabsList>
@@ -141,6 +143,10 @@ function MomPage() {
 
           <TabsContent value="salary" className="mt-4">
             <SalaryCompliancePanel employees={employees} />
+          </TabsContent>
+
+          <TabsContent value="deductions" className="mt-4">
+            <DeductionCompliancePanel employees={employees} />
           </TabsContent>
 
           <TabsContent value="quota" className="mt-4 space-y-4">
