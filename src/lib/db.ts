@@ -676,7 +676,11 @@ export const fromMedicalClaim = (r: Row): MedicalClaim => ({
   momReported: !!r.mom_reported,
   status: (r.status ?? "Draft") as MedicalClaim["status"],
   submittedOn: d(r.submitted_on), settledOn: d(r.settled_on),
-  documentUrl: r.document_url ?? undefined, remarks: r.remarks ?? undefined,
+  documentUrl: r.document_url ?? undefined,
+  documentUrls: Array.isArray(r.document_urls)
+    ? (r.document_urls as string[]).filter(Boolean)
+    : r.document_url ? [r.document_url] : [],
+  remarks: r.remarks ?? undefined,
   createdAt: r.created_at, updatedAt: r.updated_at,
 });
 
@@ -688,7 +692,9 @@ export const toMedicalClaim = (x: Partial<MedicalClaim>): Row => ({
   insurer_paid: x.insurerPaid ?? 0, employer_paid: x.employerPaid ?? 0,
   employee_paid: x.employeePaid ?? 0, work_injury: !!x.workInjury, mom_reported: !!x.momReported,
   status: x.status, submitted_on: nullDate(x.submittedOn), settled_on: nullDate(x.settledOn),
-  document_url: x.documentUrl ?? null, remarks: x.remarks ?? null,
+  document_url: x.documentUrls?.[0] ?? x.documentUrl ?? null,
+  document_urls: x.documentUrls ?? (x.documentUrl ? [x.documentUrl] : []),
+  remarks: x.remarks ?? null,
 });
 
 /* ---------- client contracts (recurring auto-invoicing) ---------- */
