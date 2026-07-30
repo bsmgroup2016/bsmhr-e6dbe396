@@ -181,3 +181,56 @@ export async function downloadR2File(ref: string, fileName?: string): Promise<vo
     a.remove();
   }
 }
+
+/**
+ * Download several stored files as a single ZIP. Each file is fetched through
+ * a short-lived signed link; anything that cannot be read is reported back so
+ * the caller can fall back to individual downloads.
+ */
+export async function downloadR2FilesAsZip(
+  refs: string[],
+  zipName = "files.zip",
+): Promise<{ added: number; failed: string[] }> {
+  const { default: JSZip } = await import("jszip");
+  const zip = new JSZip();
+  const failed: string[] = [];
+  const used = new Set<string>();
+  let added = 0;
+
+  for (const ref of refs) {
+    try {
+      const url = await getSignedUrl(ref);
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(String(res.status));
+      const blob = await res.blob();
+      let name = r2FileName(ref);
+      if (used.has(name)) {
+        const dot = name.lastIndexOf(".");
+        const base = dot > 0 ? name.slice(0, dot) : name;
+        const ext = dot > 0 ? name.slice(dot) : "";
+        let i = 2;
+        while (used.has(`${base}-${i}${ext}`)) i += 1;
+        name = `${base}-${i}${ext}`;
+      }
+      used.add(name);
+      zip.file(name, blob);
+      added += 1;
+    } catch {
+      failed.push(ref);
+    }
+  }
+
+  if (added > 0) {
+    const blob = await zip.generateAsync({ type: "blob" });
+    const objectUrl = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = objectUrl;
+    a.download = zipName.endsWith(".zip") ? zipName : `${zipName}.zip`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(objectUrl), 10_000);
+  }
+
+  return { added, failed };
+}
