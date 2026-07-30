@@ -15,6 +15,7 @@ import type { Expense, PaymentReceipt } from "@/lib/types";
 import type { InventoryItem, StockMovement, PurchaseOrder } from "@/lib/types";
 import type { BranchPrefix, EmployeeCertification, TimeCard, ClaimSheet } from "@/lib/types";
 import type { ClientContract } from "@/lib/types";
+import type { MedicalClaim } from "@/lib/types";
 import { supabase } from "@/integrations/supabase/client";
 import { computeStatutory, round2 } from "@/lib/sg-payroll";
 import {
@@ -31,6 +32,7 @@ import { toExpense, toPaymentReceipt } from "@/lib/db";
 import { toItem, toMovement, toPurchaseOrder } from "@/lib/db";
 import { toBranchPrefix, toCertification, toTimeCard, toClaimSheet } from "@/lib/db";
 import { toContract } from "@/lib/db";
+import { toMedicalClaim } from "@/lib/db";
 
 export interface AppState {
   employees: Employee[];
@@ -70,6 +72,7 @@ export interface AppState {
   timeCards: TimeCard[];
   claimSheets: ClaimSheet[];
   contracts: ClientContract[];
+  medicalClaims: MedicalClaim[];
   branches: AppBranch[];
   currentBranch: string;
   companies: Company[];
@@ -96,6 +99,7 @@ const emptyState: AppState = {
   inventory: [], movements: [], purchaseOrders: [],
   branchPrefixes: [], certifications: [], timeCards: [], claimSheets: [],
   contracts: [],
+  medicalClaims: [],
   branches: defaultBranches, currentBranch: "hq",
   companies: [], currentCompany: "", currentUser: null,
 };
