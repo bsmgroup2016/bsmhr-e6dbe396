@@ -467,10 +467,10 @@ function DashboardPage() {
     .slice(0, 8);
 
   const quickActions = [
-    { to: "/workforce", icon: Users, label: "Register employee", desc: "Add a new worker to the system.", color: "primary" },
-    { to: "/time-management", icon: CalendarClock, label: "Site attendance", desc: "Record daily attendance by site.", color: "success" },
-    { to: "/operations", icon: FolderKanban, label: "Create assignment", desc: "Deploy workers to a project site.", color: "info" },
-    { to: "/documents", icon: FileText, label: "Expiring documents", desc: "Review work permits and passes.", color: "warning" },
+    { to: "/workforce", search: { new: true }, icon: Users, label: "Register employee", desc: "Add a new worker to the system.", color: "primary" },
+    { to: "/time-management", search: { new: true }, icon: CalendarClock, label: "Site attendance", desc: "Record daily attendance by site.", color: "success" },
+    { to: "/operations", search: { new: true }, icon: FolderKanban, label: "Create assignment", desc: "Deploy workers to a project site.", color: "info" },
+    { to: "/documents", search: undefined, icon: FileText, label: "Expiring documents", desc: "Review work permits and passes.", color: "warning" },
   ] as const;
 
   return (
@@ -574,6 +574,7 @@ function DashboardPage() {
                 <Link
                   key={action.to}
                   to={action.to}
+                  search={action.search as never}
                   className="flex items-center gap-3 rounded-xl border bg-gradient-surface p-4 text-left shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-elegant"
                 >
                   <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg shadow-sm ${colorClass}`}>
