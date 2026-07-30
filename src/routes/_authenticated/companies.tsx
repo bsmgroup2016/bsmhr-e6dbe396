@@ -34,6 +34,7 @@ import {
   getEmployees,
 } from "@/lib/store";
 import type { Company } from "@/lib/types";
+import { companySlug } from "@/lib/company-slug";
 import { MOM_SECTORS } from "@/lib/mom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DepartmentsPanel, DesignationsPanel } from "@/components/org/org-structure";
@@ -150,9 +151,9 @@ function CompaniesPage() {
               key={c.id}
               role="link"
               tabIndex={0}
-              onClick={() => navigate({ to: "/companies/$id", params: { id: c.id } })}
+              onClick={() => navigate({ to: "/companies/$id", params: { id: companySlug(c) } })}
               onKeyDown={(e) => {
-                if (e.key === "Enter") navigate({ to: "/companies/$id", params: { id: c.id } });
+                if (e.key === "Enter") navigate({ to: "/companies/$id", params: { id: companySlug(c) } });
               }}
               className={`relative cursor-pointer overflow-hidden rounded-xl border bg-gradient-surface p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-elegant ${
                 active === c.id ? "ring-2 ring-primary/60" : ""
@@ -188,7 +189,7 @@ function CompaniesPage() {
 
               <div className="mt-4 flex flex-wrap gap-2" onClick={(e) => e.stopPropagation()}>
                 <Button asChild size="sm" variant="default" className="gap-1">
-                  <Link to="/companies/$id" params={{ id: c.id }}>Open dashboard</Link>
+                  <Link to="/companies/$id" params={{ id: companySlug(c) }}>Open dashboard</Link>
                 </Button>
                 <Button
                   size="sm"
