@@ -1041,3 +1041,30 @@ export interface LoanRepayment {
   createdAt: string;
   updatedAt: string;
 }
+
+/* ---------------- Organisation: departments & designations ---------------- */
+
+export interface Department {
+  id: string;
+  companyId?: string;
+  code: string;
+  name: string;
+  description?: string;
+  headEmployeeId?: string;
+  status: "Active" | "Inactive";
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Designation {
+  id: string;
+  companyId?: string;
+  departmentId?: string;
+  code: string;
+  title: string;
+  level?: string;
+  description?: string;
+  status: "Active" | "Inactive";
+  createdAt: string;
+  updatedAt: string;
+}

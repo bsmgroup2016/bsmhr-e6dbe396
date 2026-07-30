@@ -33,6 +33,8 @@ import { toItem, toMovement, toPurchaseOrder } from "@/lib/db";
 import { toBranchPrefix, toCertification, toTimeCard, toClaimSheet } from "@/lib/db";
 import { toContract } from "@/lib/db";
 import { toMedicalClaim, toLoan, toLoanRepayment } from "@/lib/db";
+import { toDepartment, toDesignation } from "@/lib/db";
+import type { Department, Designation } from "@/lib/types";
 
 export interface AppState {
   employees: Employee[];
@@ -75,6 +77,8 @@ export interface AppState {
   medicalClaims: MedicalClaim[];
   loans: EmployeeLoan[];
   loanRepayments: LoanRepayment[];
+  departments: Department[];
+  designations: Designation[];
   branches: AppBranch[];
   currentBranch: string;
   companies: Company[];
@@ -103,6 +107,7 @@ const emptyState: AppState = {
   contracts: [],
   medicalClaims: [],
   loans: [], loanRepayments: [],
+  departments: [], designations: [],
   branches: defaultBranches, currentBranch: "hq",
   companies: [], currentCompany: "", currentUser: null,
 };
@@ -2525,4 +2530,82 @@ export function deleteLoanRepayment(id: string): boolean {
     .then(({ error }) => fail("loan_repayments", error));
   addAuditLog("DELETE", "LoanRepayment", id, "Deleted loan repayment");
   return true;
+}
+
+/* ---------------- organisation: departments & designations ---------------- */
+export function getDepartments(): Department[] { return getState().departments; }
+export function getDesignations(): Designation[] { return getState().designations; }
+
+export function addDepartment(x: Omit<Department, "id" | "createdAt" | "updatedAt">): Department {
+  const s = getState();
+  const now = new Date().toISOString();
+  const row: Department = { ...x, code: (x.code ?? "").toUpperCase(), id: newId(), createdAt: now, updatedAt: now };
+  setState({ ...s, departments: [row, ...s.departments] });
+  void supabase.from("departments").insert({ id: row.id, ...toDepartment(row) })
+    .then(({ error }) => fail("departments", error));
+  addAuditLog("CREATE", "Department", row.id, `Added department ${row.name}`);
+  return row;
+}
+
+export function updateDepartment(id: string, updates: Partial<Department>): Department | undefined {
+  const s = getState();
+  const existing = s.departments.find((d) => d.id === id);
+  if (!existing) return undefined;
+  const updated: Department = {
+    ...existing, ...updates,
+    code: (updates.code ?? existing.code).toUpperCase(),
+    updatedAt: new Date().toISOString(),
+  };
+  setState({ ...s, departments: s.departments.map((d) => (d.id === id ? updated : d)) });
+  void supabase.from("departments").update(toDepartment(updated)).eq("id", id)
+    .then(({ error }) => fail("departments", error));
+  addAuditLog("UPDATE", "Department", id, `Updated department ${updated.name}`);
+  return updated;
+}
+
+export function deleteDepartment(id: string) {
+  const s = getState();
+  const target = s.departments.find((d) => d.id === id);
+  setState({
+    ...s,
+    departments: s.departments.filter((d) => d.id !== id),
+    designations: s.designations.map((g) => (g.departmentId === id ? { ...g, departmentId: undefined } : g)),
+  });
+  void supabase.from("departments").delete().eq("id", id).then(({ error }) => fail("departments", error));
+  if (target) addAuditLog("DELETE", "Department", id, `Deleted department ${target.name}`);
+}
+
+export function addDesignation(x: Omit<Designation, "id" | "createdAt" | "updatedAt">): Designation {
+  const s = getState();
+  const now = new Date().toISOString();
+  const row: Designation = { ...x, code: (x.code ?? "").toUpperCase(), id: newId(), createdAt: now, updatedAt: now };
+  setState({ ...s, designations: [row, ...s.designations] });
+  void supabase.from("designations").insert({ id: row.id, ...toDesignation(row) })
+    .then(({ error }) => fail("designations", error));
+  addAuditLog("CREATE", "Designation", row.id, `Added designation ${row.title}`);
+  return row;
+}
+
+export function updateDesignation(id: string, updates: Partial<Designation>): Designation | undefined {
+  const s = getState();
+  const existing = s.designations.find((d) => d.id === id);
+  if (!existing) return undefined;
+  const updated: Designation = {
+    ...existing, ...updates,
+    code: (updates.code ?? existing.code).toUpperCase(),
+    updatedAt: new Date().toISOString(),
+  };
+  setState({ ...s, designations: s.designations.map((d) => (d.id === id ? updated : d)) });
+  void supabase.from("designations").update(toDesignation(updated)).eq("id", id)
+    .then(({ error }) => fail("designations", error));
+  addAuditLog("UPDATE", "Designation", id, `Updated designation ${updated.title}`);
+  return updated;
+}
+
+export function deleteDesignation(id: string) {
+  const s = getState();
+  const target = s.designations.find((d) => d.id === id);
+  setState({ ...s, designations: s.designations.filter((d) => d.id !== id) });
+  void supabase.from("designations").delete().eq("id", id).then(({ error }) => fail("designations", error));
+  if (target) addAuditLog("DELETE", "Designation", id, `Deleted designation ${target.title}`);
 }

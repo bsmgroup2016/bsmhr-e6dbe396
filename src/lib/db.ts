@@ -19,6 +19,7 @@ import type {
 import type { ClientContract } from "@/lib/types";
 import type { MedicalClaim } from "@/lib/types";
 import type { EmployeeLoan, LoanRepayment } from "@/lib/types";
+import type { Department, Designation } from "@/lib/types";
 
 type Row = Record<string, any>;
 
@@ -664,7 +665,37 @@ export interface LoadedData {
   medicalClaims: MedicalClaim[];
   loans: EmployeeLoan[];
   loanRepayments: LoanRepayment[];
+  departments: Department[];
+  designations: Designation[];
 }
+
+/* ---------- organisation: departments & designations ---------- */
+export const fromDepartment = (r: Row): Department => ({
+  id: r.id, companyId: r.company_id ?? undefined, code: r.code ?? "", name: r.name ?? "",
+  description: r.description ?? undefined, headEmployeeId: r.head_employee_id ?? undefined,
+  status: (r.status ?? "Active") as Department["status"],
+  createdAt: r.created_at, updatedAt: r.updated_at,
+});
+
+export const toDepartment = (x: Partial<Department>): Row => ({
+  company_id: x.companyId || null, code: x.code ?? "", name: x.name ?? "",
+  description: x.description ?? null, head_employee_id: x.headEmployeeId || null,
+  status: x.status ?? "Active",
+});
+
+export const fromDesignation = (r: Row): Designation => ({
+  id: r.id, companyId: r.company_id ?? undefined, departmentId: r.department_id ?? undefined,
+  code: r.code ?? "", title: r.title ?? "", level: r.level ?? undefined,
+  description: r.description ?? undefined,
+  status: (r.status ?? "Active") as Designation["status"],
+  createdAt: r.created_at, updatedAt: r.updated_at,
+});
+
+export const toDesignation = (x: Partial<Designation>): Row => ({
+  company_id: x.companyId || null, department_id: x.departmentId || null,
+  code: x.code ?? "", title: x.title ?? "", level: x.level ?? null,
+  description: x.description ?? null, status: x.status ?? "Active",
+});
 
 
 /* ---------- medical claims (FWMI / WICA) ---------- */
@@ -815,6 +846,11 @@ export async function loadAll(): Promise<LoadedData> {
     all("loan_repayments"),
   ]);
 
+  const [departmentRows, designationRows] = await Promise.all([
+    all("departments"),
+    all("designations"),
+  ]);
+
   const roleByUser = new Map<string, string>();
   for (const r of roles) if (!roleByUser.has(r.user_id)) roleByUser.set(r.user_id, r.role);
 
@@ -875,6 +911,8 @@ export async function loadAll(): Promise<LoadedData> {
     medicalClaims: medicalClaims.map(fromMedicalClaim),
     loans: loanRows.map(fromLoan),
     loanRepayments: repaymentRows.map(fromLoanRepayment),
+    departments: departmentRows.map(fromDepartment),
+    designations: designationRows.map(fromDesignation),
   };
 }
 
