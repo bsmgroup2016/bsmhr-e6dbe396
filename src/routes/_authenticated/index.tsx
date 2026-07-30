@@ -478,10 +478,10 @@ function DashboardPage() {
       <div className="w-full space-y-8">
         <div className="flex flex-col gap-4 border-b border-border/60 pb-5 sm:flex-row sm:items-end sm:justify-between">
           <div className="space-y-1">
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+            <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
               Dashboard
             </h1>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-base text-muted-foreground">
               Workforce, compliance and operations at a glance ·{" "}
               {today.toLocaleDateString("en-SG", {
                 weekday: "long",
@@ -492,11 +492,11 @@ function DashboardPage() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-success/25 bg-success/10 px-3 py-1.5 text-xs font-medium text-success">
-              <UserCheck className="h-3.5 w-3.5" /> {availableWorkers} available today
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-success/25 bg-success/10 px-3 py-1.5 text-sm font-medium text-success">
+              <UserCheck className="h-4 w-4" /> {availableWorkers} available today
             </span>
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-warning/25 bg-warning/10 px-3 py-1.5 text-xs font-medium text-warning">
-              <AlertCircle className="h-3.5 w-3.5" /> {pendingApprovals} pending approvals
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-warning/25 bg-warning/10 px-3 py-1.5 text-sm font-medium text-warning">
+              <AlertCircle className="h-4 w-4" /> {pendingApprovals} pending approvals
             </span>
           </div>
         </div>
