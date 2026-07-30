@@ -28,7 +28,16 @@ export function createUser(input: {
   return call({ action: "create", ...input });
 }
 
-export function updateUser(input: { id: string; fullName?: string; phone?: string }) {
+export function updateUser(input: {
+  id: string;
+  fullName?: string;
+  phone?: string;
+  username?: string | null;
+  email?: string;
+  password?: string;
+  isActive?: boolean;
+  avatarKey?: string | null;
+}) {
   return call({ action: "update", ...input });
 }
 
