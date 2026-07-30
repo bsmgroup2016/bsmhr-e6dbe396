@@ -668,7 +668,6 @@ export interface LoadedData {
 }
 
 /* ---------- organisation: departments & designations ---------- */
-/* eslint-disable-next-line */
 export const fromDepartment = (r: Row): Department => ({
   id: r.id, companyId: r.company_id ?? undefined, code: r.code ?? "", name: r.name ?? "",
   description: r.description ?? undefined, headEmployeeId: r.head_employee_id ?? undefined,
