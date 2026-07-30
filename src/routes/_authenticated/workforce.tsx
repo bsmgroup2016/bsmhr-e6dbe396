@@ -12,7 +12,7 @@ import {
   Clock,
   HardHat,
 } from "lucide-react";
-import { ArrowRight, ChevronLeft, ChevronRight, Mail, Phone } from "lucide-react";
+import { ChevronLeft, ChevronRight, Mail, Phone } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
 import { R2Image } from "@/components/r2-image";
@@ -166,11 +166,6 @@ export default function WorkforcePage() {
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [perPage, setPerPage] = useState("10");
   const [page, setPage] = useState(1);
-  // Draft filter values — only applied when the user presses GET.
-  const [draftCompany, setDraftCompany] = useState<string>("all");
-  const [draftTrade, setDraftTrade] = useState<string>("all");
-  const [draftSite, setDraftSite] = useState<string>("all");
-  const [draftStatus, setDraftStatus] = useState<string>("all");
   const [companyFilter, setCompanyFilter] = useState<string>("all");
   const [tradeFilter, setTradeFilter] = useState<string>("all");
   const companies = getCompanies();
@@ -211,19 +206,7 @@ export default function WorkforcePage() {
   const allOnPageSelected =
     paged.length > 0 && paged.every((e) => selectedIds.includes(e.id));
 
-  function applyFilters() {
-    setCompanyFilter(draftCompany);
-    setTradeFilter(draftTrade);
-    setSiteFilter(draftSite as string);
-    setStatusFilter(draftStatus as EmployeeStatus | "all");
-    setPage(1);
-  }
-
   function resetFilters() {
-    setDraftCompany("all");
-    setDraftTrade("all");
-    setDraftSite("all");
-    setDraftStatus("all");
     setCompanyFilter("all");
     setTradeFilter("all");
     setSiteFilter("all");
@@ -483,7 +466,7 @@ export default function WorkforcePage() {
               <div className="grid gap-4 lg:grid-cols-5">
                 <div className="space-y-1.5">
                   <Label className="text-xs font-semibold">Company</Label>
-                  <Select value={draftCompany} onValueChange={setDraftCompany}>
+                  <Select value={companyFilter} onValueChange={(v) => { setCompanyFilter(v); setPage(1); }}>
                     <SelectTrigger><SelectValue placeholder="Select Company…" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All companies</SelectItem>
@@ -495,7 +478,7 @@ export default function WorkforcePage() {
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs font-semibold">Department / Trade</Label>
-                  <Select value={draftTrade} onValueChange={setDraftTrade}>
+                  <Select value={tradeFilter} onValueChange={(v) => { setTradeFilter(v); setPage(1); }}>
                     <SelectTrigger><SelectValue placeholder="Select Department…" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All trades</SelectItem>
@@ -507,7 +490,7 @@ export default function WorkforcePage() {
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs font-semibold">Site</Label>
-                  <Select value={draftSite} onValueChange={setDraftSite}>
+                  <Select value={siteFilter} onValueChange={(v) => { setSiteFilter(v); setPage(1); }}>
                     <SelectTrigger><SelectValue placeholder="Select Site…" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All sites</SelectItem>
@@ -519,7 +502,7 @@ export default function WorkforcePage() {
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs font-semibold">Status</Label>
-                  <Select value={draftStatus} onValueChange={setDraftStatus}>
+                  <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v as EmployeeStatus | "all"); setPage(1); }}>
                     <SelectTrigger><SelectValue placeholder="Select Status…" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All status</SelectItem>
@@ -530,10 +513,6 @@ export default function WorkforcePage() {
                   </Select>
                 </div>
                 <div className="flex items-end gap-2">
-                  <Button className="gap-1.5" onClick={applyFilters}>
-                    <ArrowRight className="h-4 w-4" />
-                    GET
-                  </Button>
                   <Button variant="outline" onClick={resetFilters}>Reset</Button>
                 </div>
               </div>
