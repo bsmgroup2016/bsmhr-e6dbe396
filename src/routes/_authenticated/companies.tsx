@@ -34,8 +34,6 @@ import {
 } from "@/lib/store";
 import type { Company } from "@/lib/types";
 import { MOM_SECTORS } from "@/lib/mom";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { DepartmentsPanel, DesignationsPanel } from "@/components/org/org-structure";
 
 export const Route = createFileRoute("/_authenticated/companies")({
   head: () => ({
@@ -100,19 +98,8 @@ function CompaniesPage() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-2xl font-semibold tracking-tight">Companies</h1>
-            <p className="text-sm text-muted-foreground">Group entities, departments and designations in one place.</p>
+            <p className="text-sm text-muted-foreground">Manage group entities and active workforce.</p>
           </div>
-        </div>
-
-        <Tabs defaultValue="companies" className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="companies">Companies</TabsTrigger>
-            <TabsTrigger value="departments">Departments</TabsTrigger>
-            <TabsTrigger value="designations">Designations</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="companies" className="space-y-6">
-        <div className="flex justify-end">
           <Button onClick={() => setIsCreateOpen(true)} className="gap-1">
             <Plus className="h-4 w-4" /> Add company
           </Button>
@@ -184,16 +171,6 @@ function CompaniesPage() {
             </div>
           ))}
         </div>
-          </TabsContent>
-
-          <TabsContent value="departments">
-            <DepartmentsPanel companyId={active} />
-          </TabsContent>
-
-          <TabsContent value="designations">
-            <DesignationsPanel companyId={active} />
-          </TabsContent>
-        </Tabs>
       </div>
 
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
