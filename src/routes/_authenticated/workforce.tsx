@@ -190,8 +190,18 @@ export default function WorkforcePage() {
     nationalityFilter,
   ].filter((v) => v !== "all").length;
   const companies = getCompanies();
+  const projects = getProjects();
   const assignments = getAssignments();
   const assignedIds = activeAssignedEmployeeIds(assignments);
+  const employeeProjectMap = useMemo(() => {
+    const map = new Map<string, string>();
+    const active = assignments.filter((a) => a.status === "Active" || a.status === "Approved");
+    for (const a of active) {
+      const p = projects.find((proj) => proj.id === a.projectId);
+      if (p) map.set(a.employeeId, p.name);
+    }
+    return map;
+  }, [assignments, projects]);
   function isAvailable(e: Employee) {
     return isEmployeeAvailable(e, assignedIds);
   }
