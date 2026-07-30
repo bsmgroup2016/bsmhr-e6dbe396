@@ -162,9 +162,8 @@ export default function WorkforcePage() {
   const [categoryFilter, setCategoryFilter] = useState<WorkerCategory | "all">("all");
   const [deployFilter, setDeployFilter] = useState<DeploymentStatus | "all">("all");
   const [nationalityFilter, setNationalityFilter] = useState<string>("all");
-  const [isCreateOpen, setIsCreateOpen] = useState(
-    () => Route.useSearch().new === true,
-  );
+  const openCreateFromUrl = Route.useSearch().new === true;
+  const [isCreateOpen, setIsCreateOpen] = useState(openCreateFromUrl);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   const [viewingEmployee, setViewingEmployee] = useState<Employee | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Employee | null>(null);
