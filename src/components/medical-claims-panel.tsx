@@ -288,6 +288,19 @@ export function MedicalClaimsPanel({ employees, onChanged }: Props) {
                             </Button>
                           </div>
                         ))}
+                        {(r.claim.documentUrls?.length ?? 0) > 1 && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={zipping === r.claim.id}
+                            onClick={() =>
+                              void downloadAllBills(r.claim.id, r.claim.claimNo, r.claim.documentUrls ?? [])
+                            }
+                          >
+                            <Download className="mr-1 h-4 w-4" />
+                            ZIP ({r.claim.documentUrls!.length})
+                          </Button>
+                        )}
                       </div>
                     ) : r.claim.documentUrl ? (
                       <div className="flex items-center">
