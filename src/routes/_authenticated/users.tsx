@@ -155,6 +155,18 @@ export default function UsersPage() {
     return matchesQuery && (roleFilter === "all" || u.role === roleFilter);
   });
 
+  const pageSize = Number(perPage);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const paged = useMemo(
+    () => filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize),
+    [filtered, currentPage, pageSize],
+  );
+
+  useEffect(() => {
+    setPage(1);
+  }, [search, roleFilter, perPage]);
+
   const activeCount = users.filter((u) => u.isActive).length;
   const adminCount = users.filter((u) => u.role === "admin").length;
   const unassigned = users.filter((u) => !u.role).length;
@@ -183,54 +195,72 @@ export default function UsersPage() {
           <SummaryCard title="No role" value={unassigned.toString()} icon={<Shield className="h-5 w-5" />} variant="info" caption="Awaiting assignment" />
         </div>
 
-        <div className="rounded-xl border bg-card p-4 shadow-sm">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-            <div className="relative w-full max-w-sm">
-              <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder="Search users..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-9"
-              />
+        <div className="rounded-xl border bg-card shadow-sm">
+          <div className="flex flex-col gap-3 border-b p-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex items-center gap-2">
+              <Select value={perPage} onValueChange={setPerPage}>
+                <SelectTrigger className="h-9 w-20">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {["10", "25", "50", "100"].map((n) => (
+                    <SelectItem key={n} value={n}>
+                      {n}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <span className="text-sm text-muted-foreground">records per page</span>
             </div>
-            <Select value={roleFilter} onValueChange={(v) => setRoleFilter(v as AppAuthRole | "all")}>
-              <SelectTrigger className="w-44">
-                <SelectValue placeholder="Role" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All roles</SelectItem>
-                {roles.map((r) => (
-                  <SelectItem key={r} value={r} className="capitalize">
-                    {r.replace("_", " ")}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <Select value={roleFilter} onValueChange={(v) => setRoleFilter(v as AppAuthRole | "all")}>
+                <SelectTrigger className="h-9 w-44">
+                  <SelectValue placeholder="Role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All roles</SelectItem>
+                  {roles.map((r) => (
+                    <SelectItem key={r} value={r} className="capitalize">
+                      {r.replace("_", " ")}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <div className="relative w-full sm:w-72">
+                <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  type="search"
+                  placeholder="Search…"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="h-9 pl-9"
+                />
+              </div>
+            </div>
           </div>
 
-          <div className="mt-4 overflow-hidden rounded-lg border">
+          <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead className="w-44">Role</TableHead>
-                  <TableHead>Status</TableHead>
+                <TableRow className="bg-muted/50 hover:bg-muted/50">
+                  <TableHead className="min-w-[240px]">User</TableHead>
+                  <TableHead className="min-w-[220px]">Contact</TableHead>
+                  <TableHead className="min-w-[200px]">Account info</TableHead>
+                  <TableHead className="w-56">Role</TableHead>
+                  <TableHead className="w-28">Status</TableHead>
                   <TableHead className="w-28 text-right">Action</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="h-32 text-center">
+                    <TableCell colSpan={6} className="h-32 text-center">
                       <Loader2 className="mx-auto h-5 w-5 animate-spin text-muted-foreground" />
                     </TableCell>
                   </TableRow>
-                ) : filtered.length === 0 ? (
+                ) : paged.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="h-32 text-center">
+                    <TableCell colSpan={6} className="h-32 text-center">
                       <EmptyState
                         className="border-0 bg-transparent"
                         icon={<UserIcon className="h-5 w-5" />}
@@ -240,15 +270,52 @@ export default function UsersPage() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filtered.map((u) => (
-                    <TableRow key={u.id}>
-                      <TableCell className="font-medium">
-                        {u.fullName}
-                        {u.id === currentUser?.id && (
-                          <span className="ml-2 text-xs text-muted-foreground">(you)</span>
-                        )}
+                  paged.map((u) => (
+                    <TableRow key={u.id} className="align-top">
+                      <TableCell>
+                        <div className="flex items-start gap-3">
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-primary text-xs font-semibold text-primary-foreground">
+                            {(u.fullName !== "—" ? u.fullName : u.email)
+                              .slice(0, 2)
+                              .toUpperCase()}
+                          </div>
+                          <div className="space-y-0.5">
+                            <div className="text-sm font-semibold text-primary">
+                              {u.fullName}
+                              {u.id === currentUser?.id && (
+                                <span className="ml-2 text-xs font-normal text-muted-foreground">
+                                  (you)
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              <span className="font-medium text-foreground">Role : </span>
+                              {u.role ? ROLE_LABELS[u.role] : "Normal user"}
+                            </div>
+                          </div>
+                        </div>
                       </TableCell>
-                      <TableCell>{u.email}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2 text-sm">
+                          <Mail className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                          <span className="truncate">{u.email || "—"}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <CalendarDays className="h-3.5 w-3.5 shrink-0" />
+                          <span>
+                            Joined :{" "}
+                            {u.createdAt
+                              ? new Date(u.createdAt).toLocaleDateString("en-SG", {
+                                  day: "2-digit",
+                                  month: "short",
+                                  year: "numeric",
+                                })
+                              : "—"}
+                          </span>
+                        </div>
+                      </TableCell>
                       <TableCell>
                         <Select
                           value={u.role ?? ""}
@@ -278,11 +345,14 @@ export default function UsersPage() {
                       <TableCell className="text-right">
                         <Button
                           size="sm"
-                          variant="ghost"
+                          variant={u.isActive ? "outline" : "default"}
+                          className="gap-1.5"
+                          aria-label={u.isActive ? "Deactivate user" : "Activate user"}
                           disabled={savingId === u.id || u.id === currentUser?.id}
                           onClick={() => void toggleActive(u)}
                         >
-                          {u.isActive ? "Deactivate" : "Activate"}
+                          <Power className="h-3.5 w-3.5" />
+                          {u.isActive ? "Disable" : "Enable"}
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -290,6 +360,36 @@ export default function UsersPage() {
                 )}
               </TableBody>
             </Table>
+          </div>
+
+          <div className="flex flex-col items-center justify-between gap-3 border-t p-4 sm:flex-row">
+            <p className="text-xs text-muted-foreground">
+              Showing {filtered.length === 0 ? 0 : (currentPage - 1) * pageSize + 1}–
+              {Math.min(currentPage * pageSize, filtered.length)} of {filtered.length} users
+            </p>
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={currentPage <= 1}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+              >
+                <ChevronLeft className="h-4 w-4" />
+                Prev
+              </Button>
+              <span className="text-xs text-muted-foreground">
+                Page {currentPage} / {totalPages}
+              </span>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={currentPage >= totalPages}
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              >
+                Next
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
       </div>
