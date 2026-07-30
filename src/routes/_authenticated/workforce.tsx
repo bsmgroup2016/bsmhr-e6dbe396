@@ -799,9 +799,8 @@ export default function WorkforcePage() {
                           <div className="text-sm font-semibold text-foreground">
                             {companies.find((c) => c.id === e.companyId)?.name ?? e.branch ?? "—"}
                           </div>
-                          <div>Department : {e.trade || "—"}</div>
-                          <div>Designation : {e.workerCategory ?? e.passType}</div>
-                          <div>Site : {e.site || "Unassigned"}</div>
+                          <div>Department : {e.department || "—"}</div>
+                          <div>Designation : {e.trade || "—"}</div>
                         </div>
                       </TableCell>
                       <TableCell>
