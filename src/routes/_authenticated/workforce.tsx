@@ -215,6 +215,7 @@ export default function WorkforcePage() {
 
   const filtered = employees.filter((e) => {
     const q = search.toLowerCase();
+    const assignedProject = employeeProjectMap.get(e.id) ?? "";
     const matchesSearch =
       e.name.toLowerCase().includes(q) ||
       e.employeeCode.toLowerCase().includes(q) ||
@@ -224,7 +225,8 @@ export default function WorkforcePage() {
       (e.phone ?? "").toLowerCase().includes(q) ||
       (e.email ?? "").toLowerCase().includes(q) ||
       (e.passportNumber ?? "").toLowerCase().includes(q) ||
-      (e.workPermitNumber ?? "").toLowerCase().includes(q);
+      (e.workPermitNumber ?? "").toLowerCase().includes(q) ||
+      assignedProject.toLowerCase().includes(q);
     return (
       matchesSearch &&
       (statusFilter === "all" || e.status === statusFilter) &&
