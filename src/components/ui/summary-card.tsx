@@ -116,7 +116,7 @@ export function SummaryCard({
               </p>
             )}
           </div>
-          <div className={cn(iconVariants({ variant }))}>{icon}</div>
+          <div className={cn(iconVariants({ variant, compact }))}>{icon}</div>
         </div>
 
         {badges && badges.length > 0 && !loading && (
