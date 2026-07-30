@@ -40,13 +40,14 @@ const norm = (v?: string | null) => (v ?? "").trim().toLowerCase();
 const has = (list: string[], v?: string | null) =>
   list.some((x) => x.toLowerCase() === norm(v));
 
-type Person = { department?: string | null; designation?: string | null };
+/** `trade` is the employee designation column. */
+type Person = { department?: string | null; trade?: string | null };
 
 /** True for Construction / site trades. */
 export function isSiteWorker(p: Person): boolean {
   if (has(SITE_DEPARTMENTS, p.department)) return true;
   if (has(STAFF_DEPARTMENTS, p.department)) return false;
-  return has(SITE_DESIGNATIONS, p.designation);
+  return has(SITE_DESIGNATIONS, p.trade);
 }
 
 /** True for office / administrative staff (everyone not on site). */

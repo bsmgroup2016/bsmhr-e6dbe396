@@ -24,9 +24,9 @@ import {
 } from "@/components/ui/select";
 import { getEmployees, getCompanies } from "@/lib/store";
 import { employeeSlugById } from "@/lib/employee-slug";
+import { isOfficeStaff } from "@/lib/workforce-split";
 
-/** Office / administrative departments — everyone else is site workforce. */
-const STAFF_DEPARTMENTS = ["HR", "Accounts", "IT", "Admin", "QS"];
+
 
 export const Route = createFileRoute("/_authenticated/staff-management")({
   head: () => ({
@@ -48,9 +48,7 @@ export const Route = createFileRoute("/_authenticated/staff-management")({
 
 function StaffManagementPage() {
   const companies = getCompanies();
-  const staff = getEmployees().filter((e) =>
-    STAFF_DEPARTMENTS.includes((e.department ?? "").trim()),
-  );
+  const staff = getEmployees().filter(isOfficeStaff);
 
   const [search, setSearch] = useState("");
   const [department, setDepartment] = useState("all");
