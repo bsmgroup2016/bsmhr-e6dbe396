@@ -17,7 +17,7 @@ import { SummaryCard } from "@/components/ui/summary-card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Progress } from "@/components/ui/progress";
 import { FileUpload } from "@/components/file-upload";
-import { openR2File } from "@/lib/r2";
+import { downloadR2File, openR2File, r2FileName } from "@/lib/r2";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
@@ -242,20 +242,35 @@ export function MedicalClaimsPanel({ employees, onChanged }: Props) {
                     {(r.claim.documentUrls?.length ?? 0) > 0 ? (
                       <div className="flex flex-wrap gap-1">
                         {r.claim.documentUrls!.map((u, i) => (
-                          <Button
-                            key={`${u}-${i}`}
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => void openR2File(u)}
-                          >
-                            <FileText className="mr-1 h-4 w-4" />{i + 1}
-                          </Button>
+                          <div key={`${u}-${i}`} className="flex items-center">
+                            <Button size="sm" variant="ghost" onClick={() => void openR2File(u)}>
+                              <FileText className="mr-1 h-4 w-4" />{i + 1}
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              aria-label={`Download bill ${i + 1}`}
+                              onClick={() => downloadBill(u)}
+                            >
+                              <Download className="h-4 w-4" />
+                            </Button>
+                          </div>
                         ))}
                       </div>
                     ) : r.claim.documentUrl ? (
-                      <Button size="sm" variant="ghost" onClick={() => void openR2File(r.claim.documentUrl!)}>
-                        <FileText className="mr-1 h-4 w-4" />View
-                      </Button>
+                      <div className="flex items-center">
+                        <Button size="sm" variant="ghost" onClick={() => void openR2File(r.claim.documentUrl!)}>
+                          <FileText className="mr-1 h-4 w-4" />View
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          aria-label="Download bill"
+                          onClick={() => downloadBill(r.claim.documentUrl!)}
+                        >
+                          <Download className="h-4 w-4" />
+                        </Button>
+                      </div>
                     ) : (
                       <span className="text-xs text-muted-foreground">—</span>
                     )}
@@ -424,8 +439,17 @@ export function MedicalClaimsPanel({ employees, onChanged }: Props) {
                         onClick={() => void openR2File(u)}
                       >
                         <FileText className="h-4 w-4 shrink-0" />
-                        <span className="truncate">{decodeURIComponent(u.split("/").pop()?.split("?")[0] ?? `Bill ${i + 1}`)}</span>
+                        <span className="truncate">{r2FileName(u) || `Bill ${i + 1}`}</span>
                       </button>
+                      <div className="flex items-center">
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        aria-label={`Download ${r2FileName(u)}`}
+                        onClick={() => downloadBill(u)}
+                      >
+                        <Download className="h-4 w-4" />
+                      </Button>
                       <Button
                         size="icon"
                         variant="ghost"
@@ -438,6 +462,7 @@ export function MedicalClaimsPanel({ employees, onChanged }: Props) {
                       >
                         <X className="h-4 w-4" />
                       </Button>
+                      </div>
                     </div>
                   ))}
                 </div>
