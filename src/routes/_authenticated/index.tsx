@@ -5,6 +5,7 @@ import { AppShell } from "@/components/app-shell";
 import { SummaryCard } from "@/components/ui/summary-card";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { EmptyState } from "@/components/ui/empty-state";
+import { DashboardCharts } from "@/components/dashboard/dashboard-charts";
 import {
   Users,
   Building2,
@@ -211,6 +212,45 @@ function DashboardPage() {
     .reduce((s, p) => s + p.basicSalary + p.overtimePay + p.allowances, 0);
 
   const sgd = (n: number) => `S$${Math.round(n).toLocaleString("en-SG")}`;
+
+  // ---- Chart data ----
+  const allAttendance = getAttendance().filter((a) => empIds.has(a.employeeId));
+  const wageTrend = Array.from({ length: 6 }, (_, i) => {
+    const d = new Date(today.getFullYear(), today.getMonth() - (5 - i), 1);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    const rows = payrollAll.filter((p) => p.month === key);
+    return {
+      month: d.toLocaleDateString("en-SG", { month: "short" }),
+      gross: rows.reduce((s, p) => s + p.basicSalary + p.overtimePay + p.allowances, 0),
+      paid: rows.filter((p) => p.status === "Paid").reduce((s, p) => s + p.netPay, 0),
+    };
+  });
+
+  const attendanceTrend = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(today.getTime() - (6 - i) * 86_400_000);
+    const key = d.toISOString().slice(0, 10);
+    const rows = allAttendance.filter((a) => a.date === key);
+    return {
+      day: d.toLocaleDateString("en-SG", { weekday: "short" }),
+      Present: rows.filter((a) => a.status === "Present" || a.status === "Half Day").length,
+      Leave: rows.filter((a) => a.status === "On Leave" || a.status === "MC").length,
+      Absent: rows.filter((a) => a.status === "Absent").length,
+    };
+  });
+
+  const passMix = Object.entries(
+    employees.reduce<Record<string, number>>((acc, e) => {
+      const k = e.passType || "Unknown";
+      acc[k] = (acc[k] ?? 0) + 1;
+      return acc;
+    }, {}),
+  )
+    .map(([name, value]) => ({ name, value }))
+    .sort((a, b) => b.value - a.value);
+
+  const projectMix = (["Active", "Planning", "On Hold", "Completed", "Cancelled"] as const)
+    .map((s) => ({ name: s, value: projects.filter((p) => p.status === s).length }))
+    .filter((r) => r.value > 0);
 
   const keyMetrics = [
     {
@@ -673,7 +713,24 @@ function DashboardPage() {
           )}
         </section>
 
-        {/* 4. History + system status */}
+        {/* 4. Charts */}
+        <section className="space-y-3">
+          <SectionHeading
+            title="Analytics"
+            caption="Wages, attendance and workforce distribution"
+            icon={<TrendingUp className="h-4 w-4 text-primary" />}
+          />
+          <DashboardCharts
+            data={{
+              wageTrend,
+              attendance: attendanceTrend,
+              passMix,
+              projectMix,
+            }}
+          />
+        </section>
+
+        {/* 5. History + system status */}
         <section className="grid gap-4 lg:grid-cols-3">
           <div className="space-y-3 lg:col-span-2">
             <SectionHeading title="Recent activity" caption="Latest 10 actions" />
