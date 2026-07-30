@@ -336,8 +336,8 @@ function StaffManagementPage() {
                   <TableHead>Company</TableHead>
                   <TableHead>Department</TableHead>
                   <TableHead>Designation</TableHead>
-                  <TableHead className="text-right">Fixed Salary</TableHead>
-                  <TableHead>Passport</TableHead>
+                <TableHead className="!pr-6 text-right">Fixed Salary</TableHead>
+                <TableHead className="!pl-6">Passport</TableHead>
                   <TableHead>Leave</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
