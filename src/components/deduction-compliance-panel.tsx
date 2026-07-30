@@ -105,20 +105,20 @@ export function DeductionCompliancePanel({ employees, onChanged }: Props) {
   return (
     <div className="space-y-6">
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <SummaryCard title="Payroll records" value={String(summary.records)} icon={Receipt} />
+        <SummaryCard title="Payroll records" value={String(summary.records)} icon={<Receipt className="h-5 w-5" />} />
         <SummaryCard
           title="Cap breaches"
           value={String(summary.breaches)}
-          icon={AlertTriangle}
-          tone={summary.breaches > 0 ? "danger" : "success"}
+          icon={<AlertTriangle className="h-5 w-5" />}
+          variant={summary.breaches > 0 ? "destructive" : "success"}
         />
         <SummaryCard
           title="Consent missing"
           value={String(summary.missingConsent)}
-          icon={ShieldCheck}
-          tone={summary.missingConsent > 0 ? "warning" : "success"}
+          icon={<ShieldCheck className="h-5 w-5" />}
+          variant={summary.missingConsent > 0 ? "warning" : "success"}
         />
-        <SummaryCard title="Total deducted" value={sgd(summary.totalDeducted)} icon={Receipt} />
+        <SummaryCard title="Total deducted" value={sgd(summary.totalDeducted)} icon={<Receipt className="h-5 w-5" />} />
       </div>
 
       <p className="text-sm text-muted-foreground">
@@ -142,7 +142,7 @@ export function DeductionCompliancePanel({ employees, onChanged }: Props) {
 
       {rows.length === 0 ? (
         <EmptyState
-          icon={Receipt}
+          icon={<Receipt className="h-8 w-8" />}
           title="No payroll records"
           description="Generate payroll to review deduction compliance."
         />
@@ -180,8 +180,8 @@ export function DeductionCompliancePanel({ employees, onChanged }: Props) {
                   </TableCell>
                   <TableCell>
                     <StatusBadge
-                      status={r.severity === "ok" ? "Compliant" : r.issues[0]}
-                      variant={r.severity === "ok" ? "success" : r.severity === "warning" ? "warning" : "danger"}
+                      label={r.severity === "ok" ? "Compliant" : r.issues[0]}
+                      variant={r.severity === "ok" ? "success" : r.severity === "warning" ? "warning" : "destructive"}
                     />
                   </TableCell>
                   <TableCell className="text-right">
