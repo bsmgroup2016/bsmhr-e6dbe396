@@ -409,10 +409,21 @@ export default function WorkforcePage() {
           {/* Action bar */}
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex flex-wrap items-center gap-2">
-              <Button size="sm" onClick={() => setIsCreateOpen(true)} className="gap-1.5">
-                <Plus className="h-4 w-4" />
-                Add Employee
-              </Button>
+              <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+                <DialogTrigger asChild>
+                  <Button size="sm" className="gap-1.5">
+                    <Plus className="h-4 w-4" />
+                    Add Employee
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
+                  <DialogHeader>
+                    <DialogTitle>Register new employee</DialogTitle>
+                    <DialogDescription>Enter worker details. A unique employee code will be generated automatically.</DialogDescription>
+                  </DialogHeader>
+                  <EmployeeForm onSubmit={handleCreate} />
+                </DialogContent>
+              </Dialog>
               <Button
                 size="sm"
                 variant="destructive"
