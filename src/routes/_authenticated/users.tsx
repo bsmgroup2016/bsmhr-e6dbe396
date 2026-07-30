@@ -5,11 +5,16 @@ import {
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
+  Globe,
   Loader2,
   Mail,
+  Pencil,
+  Phone,
+  Plus,
   Power,
   Search,
   Shield,
+  Trash2,
   User as UserIcon,
 } from "lucide-react";
 
@@ -19,6 +24,26 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   Table,
   TableBody,
@@ -38,6 +63,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { ROLE_LABELS, type AppAuthRole } from "@/lib/permissions";
+import { createUser, deleteUsers, updateUser } from "@/lib/user-admin";
 
 const roles: AppAuthRole[] = [
   "admin",
@@ -51,10 +77,33 @@ const roles: AppAuthRole[] = [
 interface SystemUser {
   id: string;
   email: string;
+  phone: string;
   fullName: string;
   isActive: boolean;
   role: AppAuthRole | null;
   createdAt: string;
+  lastLoginAt: string | null;
+  lastLoginIp: string | null;
+}
+
+function fmtDate(value?: string | null) {
+  if (!value) return "—";
+  return new Date(value).toLocaleDateString("en-SG", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+function fmtDateTime(value?: string | null) {
+  if (!value) return "Never";
+  return new Date(value).toLocaleString("en-SG", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 export const Route = createFileRoute("/_authenticated/users")({
@@ -78,11 +127,18 @@ export default function UsersPage() {
   const [roleFilter, setRoleFilter] = useState<AppAuthRole | "all">("all");
   const [perPage, setPerPage] = useState("10");
   const [page, setPage] = useState(1);
+  const [selected, setSelected] = useState<string[]>([]);
+  const [addOpen, setAddOpen] = useState(false);
+  const [editUser, setEditUser] = useState<SystemUser | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<string[] | null>(null);
+  const [busy, setBusy] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
     const [{ data: profiles, error: pErr }, { data: roleRows, error: rErr }] = await Promise.all([
-      supabase.from("profiles").select("id, email, full_name, is_active, created_at"),
+      supabase
+        .from("profiles")
+        .select("id, email, full_name, phone, is_active, created_at, last_login_at, last_login_ip"),
       supabase.from("user_roles").select("user_id, role"),
     ]);
     if (pErr || rErr) {
@@ -96,12 +152,16 @@ export default function UsersPage() {
       (profiles ?? []).map((p) => ({
         id: p.id as string,
         email: (p.email as string) ?? "",
+        phone: (p.phone as string) ?? "",
         fullName: (p.full_name as string) ?? "—",
         isActive: p.is_active !== false,
         role: roleMap.get(p.id as string) ?? null,
         createdAt: (p.created_at as string) ?? "",
+        lastLoginAt: (p.last_login_at as string) ?? null,
+        lastLoginIp: (p.last_login_ip as string) ?? null,
       })),
     );
+    setSelected([]);
     setLoading(false);
   }, []);
 
@@ -148,10 +208,26 @@ export default function UsersPage() {
     toast.success(u.isActive ? "User deactivated" : "User activated");
   }
 
+  async function runDelete(ids: string[]) {
+    setBusy(true);
+    try {
+      await deleteUsers(ids);
+      toast.success(`${ids.length} user(s) deleted`);
+      setConfirmDelete(null);
+      await load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Delete failed");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   const filtered = users.filter((u) => {
     const q = search.toLowerCase();
     const matchesQuery =
-      u.fullName.toLowerCase().includes(q) || u.email.toLowerCase().includes(q);
+      u.fullName.toLowerCase().includes(q) ||
+      u.email.toLowerCase().includes(q) ||
+      u.phone.toLowerCase().includes(q);
     return matchesQuery && (roleFilter === "all" || u.role === roleFilter);
   });
 
@@ -167,6 +243,9 @@ export default function UsersPage() {
     setPage(1);
   }, [search, roleFilter, perPage]);
 
+  const selectableIds = paged.filter((u) => u.id !== currentUser?.id).map((u) => u.id);
+  const allSelected = selectableIds.length > 0 && selectableIds.every((id) => selected.includes(id));
+
   const activeCount = users.filter((u) => u.isActive).length;
   const adminCount = users.filter((u) => u.role === "admin").length;
   const unassigned = users.filter((u) => !u.role).length;
@@ -180,7 +259,7 @@ export default function UsersPage() {
               Users & Permissions
             </h1>
             <p className="text-sm text-muted-foreground">
-              Accounts registered in Supabase. Assign a role to control what each user can open.
+              Accounts registered in the system. Assign a role to control what each user can open.
             </p>
           </div>
           <Button size="sm" variant="outline" className="mt-2 sm:mt-0" onClick={() => void load()}>
@@ -197,7 +276,21 @@ export default function UsersPage() {
 
         <div className="rounded-xl border bg-card shadow-sm">
           <div className="flex flex-col gap-3 border-b p-4 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <Button size="sm" className="gap-1.5" onClick={() => setAddOpen(true)}>
+                <Plus className="h-4 w-4" />
+                Add User
+              </Button>
+              <Button
+                size="sm"
+                variant="destructive"
+                className="gap-1.5"
+                disabled={selected.length === 0}
+                onClick={() => setConfirmDelete(selected)}
+              >
+                <Trash2 className="h-4 w-4" />
+                Bulk Delete{selected.length > 0 ? ` (${selected.length})` : ""}
+              </Button>
               <Select value={perPage} onValueChange={setPerPage}>
                 <SelectTrigger className="h-9 w-20">
                   <SelectValue />
@@ -243,24 +336,33 @@ export default function UsersPage() {
             <Table>
               <TableHeader>
                 <TableRow className="bg-muted/50 hover:bg-muted/50">
+                  <TableHead className="w-10">
+                    <Checkbox
+                      checked={allSelected}
+                      aria-label="Select all users on this page"
+                      onCheckedChange={(v) =>
+                        setSelected(v === true ? selectableIds : [])
+                      }
+                    />
+                  </TableHead>
                   <TableHead className="min-w-[240px]">User</TableHead>
                   <TableHead className="min-w-[220px]">Contact</TableHead>
-                  <TableHead className="min-w-[200px]">Account info</TableHead>
+                  <TableHead className="min-w-[230px]">Login info</TableHead>
                   <TableHead className="w-56">Role</TableHead>
                   <TableHead className="w-28">Status</TableHead>
-                  <TableHead className="w-28 text-right">Action</TableHead>
+                  <TableHead className="w-40 text-right">Action</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="h-32 text-center">
+                    <TableCell colSpan={7} className="h-32 text-center">
                       <Loader2 className="mx-auto h-5 w-5 animate-spin text-muted-foreground" />
                     </TableCell>
                   </TableRow>
                 ) : paged.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="h-32 text-center">
+                    <TableCell colSpan={7} className="h-32 text-center">
                       <EmptyState
                         className="border-0 bg-transparent"
                         icon={<UserIcon className="h-5 w-5" />}
@@ -272,6 +374,18 @@ export default function UsersPage() {
                 ) : (
                   paged.map((u) => (
                     <TableRow key={u.id} className="align-top">
+                      <TableCell>
+                        <Checkbox
+                          checked={selected.includes(u.id)}
+                          disabled={u.id === currentUser?.id}
+                          aria-label={`Select ${u.fullName}`}
+                          onCheckedChange={(v) =>
+                            setSelected((prev) =>
+                              v === true ? [...prev, u.id] : prev.filter((x) => x !== u.id),
+                            )
+                          }
+                        />
+                      </TableCell>
                       <TableCell>
                         <div className="flex items-start gap-3">
                           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-primary text-xs font-semibold text-primary-foreground">
@@ -292,28 +406,41 @@ export default function UsersPage() {
                               <span className="font-medium text-foreground">Role : </span>
                               {u.role ? ROLE_LABELS[u.role] : "Normal user"}
                             </div>
+                            <div className="text-xs text-muted-foreground">
+                              <span className="font-medium text-foreground">Joined : </span>
+                              {fmtDate(u.createdAt)}
+                            </div>
                           </div>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-2 text-sm">
-                          <Mail className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                          <span className="truncate">{u.email || "—"}</span>
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2 text-sm">
+                            <Mail className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                            <span className="truncate">{u.email || "—"}</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Phone className="h-3.5 w-3.5 shrink-0" />
+                            <span className="truncate">{u.phone || "—"}</span>
+                          </div>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <CalendarDays className="h-3.5 w-3.5 shrink-0" />
-                          <span>
-                            Joined :{" "}
-                            {u.createdAt
-                              ? new Date(u.createdAt).toLocaleDateString("en-SG", {
-                                  day: "2-digit",
-                                  month: "short",
-                                  year: "numeric",
-                                })
-                              : "—"}
-                          </span>
+                        <div className="space-y-1 text-xs text-muted-foreground">
+                          <div className="flex items-center gap-2">
+                            <CalendarDays className="h-3.5 w-3.5 shrink-0" />
+                            <span>
+                              <span className="font-medium text-foreground">Last login : </span>
+                              {fmtDateTime(u.lastLoginAt)}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Globe className="h-3.5 w-3.5 shrink-0" />
+                            <span>
+                              <span className="font-medium text-foreground">IP : </span>
+                              {u.lastLoginIp ?? "—"}
+                            </span>
+                          </div>
                         </div>
                       </TableCell>
                       <TableCell>
@@ -342,18 +469,38 @@ export default function UsersPage() {
                           dot
                         />
                       </TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          size="sm"
-                          variant={u.isActive ? "outline" : "default"}
-                          className="gap-1.5"
-                          aria-label={u.isActive ? "Deactivate user" : "Activate user"}
-                          disabled={savingId === u.id || u.id === currentUser?.id}
-                          onClick={() => void toggleActive(u)}
-                        >
-                          <Power className="h-3.5 w-3.5" />
-                          {u.isActive ? "Disable" : "Enable"}
-                        </Button>
+                      <TableCell>
+                        <div className="flex items-center justify-end gap-1.5">
+                          <Button
+                            size="icon"
+                            variant="outline"
+                            className="h-8 w-8 border-primary/30 text-primary hover:bg-primary/10"
+                            aria-label={`Edit ${u.fullName}`}
+                            onClick={() => setEditUser(u)}
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="outline"
+                            className="h-8 w-8 border-destructive/30 text-destructive hover:bg-destructive/10"
+                            aria-label={`Delete ${u.fullName}`}
+                            disabled={u.id === currentUser?.id}
+                            onClick={() => setConfirmDelete([u.id])}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="outline"
+                            className="h-8 w-8"
+                            aria-label={u.isActive ? "Deactivate user" : "Activate user"}
+                            disabled={savingId === u.id || u.id === currentUser?.id}
+                            onClick={() => void toggleActive(u)}
+                          >
+                            <Power className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))
@@ -393,6 +540,208 @@ export default function UsersPage() {
           </div>
         </div>
       </div>
+
+      <AddUserDialog
+        open={addOpen}
+        onOpenChange={setAddOpen}
+        onCreated={() => void load()}
+      />
+
+      <EditUserDialog
+        user={editUser}
+        onOpenChange={(open) => !open && setEditUser(null)}
+        onSaved={() => void load()}
+      />
+
+      <AlertDialog
+        open={confirmDelete !== null}
+        onOpenChange={(open) => !open && setConfirmDelete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {confirmDelete?.length ?? 0} user(s)?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This permanently removes the login account and profile. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={busy}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={busy}
+              onClick={(e) => {
+                e.preventDefault();
+                if (confirmDelete) void runDelete(confirmDelete);
+              }}
+            >
+              {busy ? "Deleting…" : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AppShell>
+  );
+}
+
+function AddUserDialog({
+  open,
+  onOpenChange,
+  onCreated,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  onCreated: () => void;
+}) {
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
+  const [role, setRole] = useState<string>("none");
+  const [saving, setSaving] = useState(false);
+
+  async function submit() {
+    if (!email || password.length < 8) {
+      toast.error("Email and a password of at least 8 characters are required");
+      return;
+    }
+    setSaving(true);
+    try {
+      await createUser({ email, password, fullName, phone, role });
+      toast.success("User created");
+      setFullName("");
+      setEmail("");
+      setPhone("");
+      setPassword("");
+      setRole("none");
+      onOpenChange(false);
+      onCreated();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not create user");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Add user</DialogTitle>
+          <DialogDescription>Create a login account and assign a role.</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div className="space-y-1.5">
+            <Label htmlFor="nu-name">Full name</Label>
+            <Input id="nu-name" value={fullName} onChange={(e) => setFullName(e.target.value)} />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="nu-email">Email</Label>
+            <Input id="nu-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="nu-phone">Phone</Label>
+            <Input id="nu-phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="nu-pass">Temporary password</Label>
+            <Input
+              id="nu-pass"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="At least 8 characters"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Role</Label>
+            <Select value={role} onValueChange={setRole}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Normal user (no role)</SelectItem>
+                {roles.map((r) => (
+                  <SelectItem key={r} value={r}>
+                    {ROLE_LABELS[r]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
+            Cancel
+          </Button>
+          <Button onClick={() => void submit()} disabled={saving}>
+            {saving ? "Creating…" : "Create user"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function EditUserDialog({
+  user,
+  onOpenChange,
+  onSaved,
+}: {
+  user: SystemUser | null;
+  onOpenChange: (v: boolean) => void;
+  onSaved: () => void;
+}) {
+  const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      setFullName(user.fullName === "—" ? "" : user.fullName);
+      setPhone(user.phone);
+    }
+  }, [user]);
+
+  async function submit() {
+    if (!user) return;
+    setSaving(true);
+    try {
+      await updateUser({ id: user.id, fullName, phone });
+      toast.success("User updated");
+      onOpenChange(false);
+      onSaved();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not update user");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Dialog open={user !== null} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Edit user</DialogTitle>
+          <DialogDescription>{user?.email}</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div className="space-y-1.5">
+            <Label htmlFor="eu-name">Full name</Label>
+            <Input id="eu-name" value={fullName} onChange={(e) => setFullName(e.target.value)} />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="eu-phone">Phone</Label>
+            <Input id="eu-phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
+            Cancel
+          </Button>
+          <Button onClick={() => void submit()} disabled={saving}>
+            {saving ? "Saving…" : "Save changes"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

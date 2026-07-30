@@ -95,6 +95,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             newSession.access_token,
             String(newSession.user.user_metadata?.phone ?? ""),
           );
+          void import("@/lib/user-admin").then((m) => m.recordLogin());
         }
         await fetchRoles(newSession.user.id);
       } else {

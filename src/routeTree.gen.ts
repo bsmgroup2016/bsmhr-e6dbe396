@@ -41,6 +41,7 @@ import { Route as AuthenticatedAssetsRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedApprovalsRouteImport } from './routes/_authenticated/approvals'
 import { Route as AuthenticatedAlertsRouteImport } from './routes/_authenticated/alerts'
 import { Route as AuthenticatedAccommodationRouteImport } from './routes/_authenticated/accommodation'
+import { Route as ApiPublicUserAdminRouteImport } from './routes/api/public/user-admin'
 import { Route as ApiPublicSendAlertsRouteImport } from './routes/api/public/send-alerts'
 import { Route as ApiPublicR2UploadRouteImport } from './routes/api/public/r2-upload'
 import { Route as ApiPublicR2StatusRouteImport } from './routes/api/public/r2-status'
@@ -214,6 +215,11 @@ const AuthenticatedAccommodationRoute =
     path: '/accommodation',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const ApiPublicUserAdminRoute = ApiPublicUserAdminRouteImport.update({
+  id: '/api/public/user-admin',
+  path: '/api/public/user-admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicSendAlertsRoute = ApiPublicSendAlertsRouteImport.update({
   id: '/api/public/send-alerts',
   path: '/api/public/send-alerts',
@@ -309,6 +315,7 @@ export interface FileRoutesByFullPath {
   '/api/public/r2-status': typeof ApiPublicR2StatusRoute
   '/api/public/r2-upload': typeof ApiPublicR2UploadRoute
   '/api/public/send-alerts': typeof ApiPublicSendAlertsRoute
+  '/api/public/user-admin': typeof ApiPublicUserAdminRoute
 }
 export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
@@ -352,6 +359,7 @@ export interface FileRoutesByTo {
   '/api/public/r2-status': typeof ApiPublicR2StatusRoute
   '/api/public/r2-upload': typeof ApiPublicR2UploadRoute
   '/api/public/send-alerts': typeof ApiPublicSendAlertsRoute
+  '/api/public/user-admin': typeof ApiPublicUserAdminRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -397,6 +405,7 @@ export interface FileRoutesById {
   '/api/public/r2-status': typeof ApiPublicR2StatusRoute
   '/api/public/r2-upload': typeof ApiPublicR2UploadRoute
   '/api/public/send-alerts': typeof ApiPublicSendAlertsRoute
+  '/api/public/user-admin': typeof ApiPublicUserAdminRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -442,6 +451,7 @@ export interface FileRouteTypes {
     | '/api/public/r2-status'
     | '/api/public/r2-upload'
     | '/api/public/send-alerts'
+    | '/api/public/user-admin'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/auth'
@@ -485,6 +495,7 @@ export interface FileRouteTypes {
     | '/api/public/r2-status'
     | '/api/public/r2-upload'
     | '/api/public/send-alerts'
+    | '/api/public/user-admin'
   id:
     | '__root__'
     | '/_authenticated'
@@ -529,6 +540,7 @@ export interface FileRouteTypes {
     | '/api/public/r2-status'
     | '/api/public/r2-upload'
     | '/api/public/send-alerts'
+    | '/api/public/user-admin'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -543,6 +555,7 @@ export interface RootRouteChildren {
   ApiPublicR2StatusRoute: typeof ApiPublicR2StatusRoute
   ApiPublicR2UploadRoute: typeof ApiPublicR2UploadRoute
   ApiPublicSendAlertsRoute: typeof ApiPublicSendAlertsRoute
+  ApiPublicUserAdminRoute: typeof ApiPublicUserAdminRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -771,6 +784,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAccommodationRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/user-admin': {
+      id: '/api/public/user-admin'
+      path: '/api/public/user-admin'
+      fullPath: '/api/public/user-admin'
+      preLoaderRoute: typeof ApiPublicUserAdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/send-alerts': {
       id: '/api/public/send-alerts'
       path: '/api/public/send-alerts'
@@ -939,6 +959,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicR2StatusRoute: ApiPublicR2StatusRoute,
   ApiPublicR2UploadRoute: ApiPublicR2UploadRoute,
   ApiPublicSendAlertsRoute: ApiPublicSendAlertsRoute,
+  ApiPublicUserAdminRoute: ApiPublicUserAdminRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
