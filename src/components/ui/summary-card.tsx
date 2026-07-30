@@ -22,7 +22,7 @@ const summaryCardVariants = cva(
 );
 
 const iconVariants = cva(
-  "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ring-1 transition-transform duration-300 group-hover:scale-105",
+  "flex h-14 w-14 shrink-0 items-center justify-center rounded-xl ring-1 transition-transform duration-300 group-hover:scale-105",
   {
     variants: {
       variant: {
@@ -41,7 +41,7 @@ const iconVariants = cva(
 );
 
 const badgeVariants = cva(
-  "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[0.68rem] font-semibold ring-1",
+  "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ring-1",
   {
     variants: {
       tone: {
