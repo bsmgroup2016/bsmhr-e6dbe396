@@ -703,9 +703,9 @@ function DashboardPage() {
               </div>
 
               <div className="rounded-xl border bg-gradient-surface p-5 shadow-sm">
-                <p className="mb-4 text-sm font-medium text-foreground">Recent activity</p>
+                <p className="mb-4 text-base font-medium text-foreground">Recent activity</p>
                 {recentActivities.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-base text-muted-foreground">
                     No calls, meetings or emails logged yet.
                   </p>
                 ) : (
@@ -716,8 +716,8 @@ function DashboardPage() {
                           <PhoneCall className="h-3.5 w-3.5" />
                         </span>
                         <div className="min-w-0">
-                          <p className="truncate text-sm text-foreground">{a.subject}</p>
-                          <p className="truncate text-xs text-muted-foreground">
+                          <p className="truncate text-base text-foreground">{a.subject}</p>
+                          <p className="truncate text-sm text-muted-foreground">
                             {a.activityType} ·{" "}
                             {(a.clientId && clientNames.get(a.clientId)) ||
                               (a.leadId && leadNames.get(a.leadId)) ||
