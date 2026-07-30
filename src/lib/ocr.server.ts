@@ -3,10 +3,11 @@ import { keyFromRef, presignGet } from "@/lib/r2.server";
 const GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
 const MODEL = "google/gemini-2.5-flash";
 
-/** Fetch an R2 object (by key or /api/public/r2-file link) as a data URL. */
+/** Fetch an R2 object (by key) as a data URL. Only our own bucket is readable. */
 async function fetchAsDataUrl(ref: string) {
   const key = keyFromRef(ref);
-  const url = ref.startsWith("http") && !ref.includes("r2-file") ? ref : await presignGet(key, 300);
+  if (!key || /^https?:/i.test(key)) throw new Error("Invalid file reference");
+  const url = await presignGet(key, 300);
   const res = await fetch(url);
   if (!res.ok) throw new Error("Could not read the uploaded file");
   const type = res.headers.get("content-type") || "application/octet-stream";
