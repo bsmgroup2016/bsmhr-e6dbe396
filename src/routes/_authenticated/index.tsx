@@ -35,6 +35,7 @@ import {
   UserCheck,
   Briefcase,
   CheckCircle2,
+  CalendarCheck2,
 } from "lucide-react";
 import { Target, PhoneCall, TrendingUp } from "lucide-react";
 import { useAuth } from "@/lib/auth";
@@ -353,22 +354,6 @@ function DashboardPage() {
       caption: `${Math.max(0, employees.length - csocWorkers)} without valid CSOC`,
       icon: <BadgeCheck className="h-6 w-6" />,
       variant: "primary" as const,
-    },
-    {
-      to: "/leave" as const,
-      title: "On Normal Leave",
-      value: onNormalLeave.length.toString(),
-      caption: "Annual / other leave today",
-      icon: <Palmtree className="h-6 w-6" />,
-      variant: "info" as const,
-    },
-    {
-      to: "/time-management" as const,
-      title: "Absent Today",
-      value: absentToday.toString(),
-      caption: `${presentToday} present today`,
-      icon: <CalendarX2 className="h-6 w-6" />,
-      variant: (absentToday ? "warning" : "success") as "warning" | "success",
     },
     {
       to: "/projects" as const,
