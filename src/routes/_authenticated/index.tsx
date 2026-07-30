@@ -161,17 +161,17 @@ function DashboardPage() {
   return (
     <AppShell>
       <div className="mx-auto max-w-7xl space-y-8">
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-hero p-6 shadow-elegant sm:p-8">
-          <div className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-white/10 blur-3xl" />
-          <div className="pointer-events-none absolute -bottom-24 left-1/3 h-48 w-48 rounded-full bg-white/5 blur-3xl" />
+        <div className="relative overflow-hidden rounded-2xl border border-border/60 bg-gradient-hero p-7 shadow-elegant sm:p-9">
+          <div className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-primary-foreground/10 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-24 left-1/3 h-48 w-48 rounded-full bg-primary-foreground/5 blur-3xl" />
           <div className="relative flex flex-col gap-2">
-            <span className="w-fit rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-white/90 backdrop-blur">
+            <span className="w-fit rounded-full bg-primary-foreground/15 px-3 py-1 text-xs font-medium text-primary-foreground/90 backdrop-blur">
               BSM Engineering · Singapore
             </span>
-            <h1 className="text-3xl font-semibold tracking-tight text-white">
+            <h1 className="text-3xl font-semibold tracking-tight text-primary-foreground sm:text-4xl">
               {company ? company.name : "Dashboard"}
             </h1>
-            <p className="max-w-xl text-sm text-white/75">
+            <p className="max-w-xl text-sm text-primary-foreground/75">
               Overview of workforce, sites, and operations across all active projects.
             </p>
           </div>
