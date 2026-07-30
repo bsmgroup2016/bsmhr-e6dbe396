@@ -288,7 +288,7 @@ function DashboardPage() {
       title: "WorkPermit Expiring",
       value: wpExpiring.length.toString(),
       caption: `${wpExpiring30} within 30 days · next 60 days`,
-      icon: <WorkPermitIdIcon className="h-7 w-7" />,
+      icon: <WorkPermitIdIcon className="h-8 w-8" />,
       variant: wpExpiring7 ? "destructive" : wpExpiring30 ? "warning" : wpExpiring.length ? "info" : "success",
       badges: wpExpiring.length
         ? [
@@ -304,7 +304,7 @@ function DashboardPage() {
       title: "Passport Expiring",
       value: passportExpiring.length.toString(),
       caption: `${passportExpiring30} within 30 days · next 90 days`,
-      icon: <PassportIcon className="h-7 w-7" />,
+      icon: <PassportIcon className="h-8 w-8" />,
       variant: passportExpiring7
         ? "destructive"
         : passportExpiring30
@@ -326,7 +326,7 @@ function DashboardPage() {
       title: "Available Workers",
       value: availableWorkers.toString(),
       caption: `of ${employees.length} total workers`,
-      icon: <UserCheck className="h-5 w-5" />,
+      icon: <UserCheck className="h-6 w-6" />,
       variant: availableRate >= 70 ? "success" : availableRate >= 40 ? "warning" : "destructive",
       badges: [
         {
@@ -342,7 +342,7 @@ function DashboardPage() {
       title: "On Medical Leave",
       value: medicalLeaveCount.toString(),
       caption: "MC / hospitalisation today",
-      icon: <HeartPulse className="h-5 w-5" />,
+      icon: <HeartPulse className="h-6 w-6" />,
       variant: "info" as const,
     },
     {
@@ -350,7 +350,7 @@ function DashboardPage() {
       title: "CSOC Certified",
       value: csocWorkers.toString(),
       caption: `${Math.max(0, employees.length - csocWorkers)} without valid CSOC`,
-      icon: <BadgeCheck className="h-5 w-5" />,
+      icon: <BadgeCheck className="h-6 w-6" />,
       variant: "primary" as const,
     },
     {
@@ -358,7 +358,7 @@ function DashboardPage() {
       title: "On Normal Leave",
       value: onNormalLeave.length.toString(),
       caption: "Annual / other leave today",
-      icon: <Palmtree className="h-5 w-5" />,
+      icon: <Palmtree className="h-6 w-6" />,
       variant: "info" as const,
     },
     {
@@ -366,7 +366,7 @@ function DashboardPage() {
       title: "Absent Today",
       value: absentToday.toString(),
       caption: `${presentToday} present today`,
-      icon: <CalendarX2 className="h-5 w-5" />,
+      icon: <CalendarX2 className="h-6 w-6" />,
       variant: (absentToday ? "warning" : "success") as "warning" | "success",
     },
     {
@@ -374,7 +374,7 @@ function DashboardPage() {
       title: "Running Projects",
       value: runningProjects.length.toString(),
       caption: `${projects.length} projects in total`,
-      icon: <FolderKanban className="h-5 w-5" />,
+      icon: <FolderKanban className="h-6 w-6" />,
       variant: "primary" as const,
     },
     {
@@ -382,7 +382,7 @@ function DashboardPage() {
       title: "Projects Ending Soon",
       value: endingProjects.length.toString(),
       caption: "Completing within 30 days",
-      icon: <Briefcase className="h-5 w-5" />,
+      icon: <Briefcase className="h-6 w-6" />,
       variant: (endingProjects.length ? "warning" : "default") as "warning" | "default",
     },
     {
@@ -390,7 +390,7 @@ function DashboardPage() {
       title: "Clients",
       value: clientsAll.length.toString(),
       caption: `${activeClientCount} active accounts`,
-      icon: <Building2 className="h-5 w-5" />,
+      icon: <Building2 className="h-6 w-6" />,
       variant: "info" as const,
     },
     {
@@ -398,7 +398,7 @@ function DashboardPage() {
       title: "Salary Paid (Month)",
       value: sgd(salaryPaidMonth),
       caption: `${paidThisMonth.length} payslips · ${monthKey}`,
-      icon: <DollarSign className="h-5 w-5" />,
+      icon: <DollarSign className="h-6 w-6" />,
       variant: "success" as const,
     },
     {
@@ -406,7 +406,7 @@ function DashboardPage() {
       title: "Annual Wages",
       value: sgd(annualWages),
       caption: `Gross wages ${yearKey}`,
-      icon: <Landmark className="h-5 w-5" />,
+      icon: <Landmark className="h-6 w-6" />,
       variant: "primary" as const,
     },
   ];
