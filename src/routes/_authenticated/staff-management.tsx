@@ -328,7 +328,7 @@ function StaffManagementPage() {
             </Select>
           </div>
 
-          <div className="overflow-hidden rounded-lg border">
+          <div className="overflow-x-auto rounded-lg border">
             <Table>
               <TableHeader>
                 <TableRow className="[&>th]:whitespace-nowrap [&>th]:px-4">
