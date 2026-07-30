@@ -17,7 +17,6 @@ import {
 } from "lucide-react";
 import {
   BadgeCheck,
-  BookUser,
   CalendarX2,
   DollarSign,
   HeartPulse,
@@ -77,6 +76,31 @@ function SectionHeading({
       <h2 className="text-base font-semibold tracking-tight text-foreground">{title}</h2>
       {caption ? <span className="ml-auto text-xs text-muted-foreground">{caption}</span> : null}
     </div>
+  );
+}
+
+function WorkPermitIdIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 32 32" fill="none" aria-hidden="true">
+      <rect x="5" y="8" width="22" height="17" rx="3.5" stroke="currentColor" strokeWidth="2.2" />
+      <path d="M12 8V6.8C12 5.8 12.8 5 13.8 5h4.4c1 0 1.8.8 1.8 1.8V8" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+      <circle cx="12.5" cy="15.2" r="2.6" stroke="currentColor" strokeWidth="1.9" />
+      <path d="M8.9 21c.7-2.2 2-3.3 3.6-3.3s2.9 1.1 3.6 3.3" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
+      <path d="M19 14h5.2M19 18h4.2M19 22h5.2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <path d="M6.8 11h18.4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" opacity="0.35" />
+    </svg>
+  );
+}
+
+function PassportIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 32 32" fill="none" aria-hidden="true">
+      <path d="M10 4.5h11.5A4.5 4.5 0 0 1 26 9v14a4.5 4.5 0 0 1-4.5 4.5H10A4 4 0 0 1 6 23.5v-15a4 4 0 0 1 4-4Z" stroke="currentColor" strokeWidth="2.2" />
+      <path d="M10.5 5v22" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" opacity="0.45" />
+      <circle cx="17.5" cy="15.2" r="4" stroke="currentColor" strokeWidth="1.8" />
+      <path d="M13.7 15.2h7.6M17.5 11.2c1.2 1.4 1.8 2.7 1.8 4s-.6 2.6-1.8 4c-1.2-1.4-1.8-2.7-1.8-4s.6-2.6 1.8-4Z" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M14 22h7M14 24.5h5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
   );
 }
 
@@ -194,7 +218,7 @@ function DashboardPage() {
       title: "Work Permit Expiring",
       value: wpExpiring.length.toString(),
       caption: `${wpExpiring30} within 30 days · next 60 days`,
-      icon: <ShieldAlert className="h-5 w-5" />,
+      icon: <WorkPermitIdIcon className="h-7 w-7" />,
       variant: (wpExpiring.length ? "destructive" : "success") as "destructive" | "success",
     },
     {
@@ -202,7 +226,7 @@ function DashboardPage() {
       title: "Passport Expiring",
       value: passportExpiring.length.toString(),
       caption: `${passportExpiring30} within 30 days · next 90 days`,
-      icon: <BookUser className="h-5 w-5" />,
+      icon: <PassportIcon className="h-7 w-7" />,
       variant: (passportExpiring.length ? "warning" : "success") as "warning" | "success",
     },
     {
