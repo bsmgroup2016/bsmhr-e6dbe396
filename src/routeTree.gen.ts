@@ -21,6 +21,7 @@ import { Route as AuthenticatedTimeCardsRouteImport } from './routes/_authentica
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticated/reports'
 import { Route as AuthenticatedRecruitmentRouteImport } from './routes/_authenticated/recruitment'
+import { Route as AuthenticatedQrPunchRouteImport } from './routes/_authenticated/qr-punch'
 import { Route as AuthenticatedProjectsRouteImport } from './routes/_authenticated/projects'
 import { Route as AuthenticatedPayrollRouteImport } from './routes/_authenticated/payroll'
 import { Route as AuthenticatedOperationsRouteImport } from './routes/_authenticated/operations'
@@ -111,6 +112,11 @@ const AuthenticatedRecruitmentRoute =
     path: '/recruitment',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedQrPunchRoute = AuthenticatedQrPunchRouteImport.update({
+  id: '/qr-punch',
+  path: '/qr-punch',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedProjectsRoute = AuthenticatedProjectsRouteImport.update({
   id: '/projects',
   path: '/projects',
@@ -277,6 +283,7 @@ export interface FileRoutesByFullPath {
   '/operations': typeof AuthenticatedOperationsRoute
   '/payroll': typeof AuthenticatedPayrollRoute
   '/projects': typeof AuthenticatedProjectsRoute
+  '/qr-punch': typeof AuthenticatedQrPunchRoute
   '/recruitment': typeof AuthenticatedRecruitmentRoute
   '/reports': typeof AuthenticatedReportsRoute
   '/settings': typeof AuthenticatedSettingsRoute
@@ -317,6 +324,7 @@ export interface FileRoutesByTo {
   '/operations': typeof AuthenticatedOperationsRoute
   '/payroll': typeof AuthenticatedPayrollRoute
   '/projects': typeof AuthenticatedProjectsRoute
+  '/qr-punch': typeof AuthenticatedQrPunchRoute
   '/recruitment': typeof AuthenticatedRecruitmentRoute
   '/reports': typeof AuthenticatedReportsRoute
   '/settings': typeof AuthenticatedSettingsRoute
@@ -360,6 +368,7 @@ export interface FileRoutesById {
   '/_authenticated/operations': typeof AuthenticatedOperationsRoute
   '/_authenticated/payroll': typeof AuthenticatedPayrollRoute
   '/_authenticated/projects': typeof AuthenticatedProjectsRoute
+  '/_authenticated/qr-punch': typeof AuthenticatedQrPunchRoute
   '/_authenticated/recruitment': typeof AuthenticatedRecruitmentRoute
   '/_authenticated/reports': typeof AuthenticatedReportsRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
@@ -404,6 +413,7 @@ export interface FileRouteTypes {
     | '/operations'
     | '/payroll'
     | '/projects'
+    | '/qr-punch'
     | '/recruitment'
     | '/reports'
     | '/settings'
@@ -444,6 +454,7 @@ export interface FileRouteTypes {
     | '/operations'
     | '/payroll'
     | '/projects'
+    | '/qr-punch'
     | '/recruitment'
     | '/reports'
     | '/settings'
@@ -486,6 +497,7 @@ export interface FileRouteTypes {
     | '/_authenticated/operations'
     | '/_authenticated/payroll'
     | '/_authenticated/projects'
+    | '/_authenticated/qr-punch'
     | '/_authenticated/recruitment'
     | '/_authenticated/reports'
     | '/_authenticated/settings'
@@ -604,6 +616,13 @@ declare module '@tanstack/react-router' {
       path: '/recruitment'
       fullPath: '/recruitment'
       preLoaderRoute: typeof AuthenticatedRecruitmentRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/qr-punch': {
+      id: '/_authenticated/qr-punch'
+      path: '/qr-punch'
+      fullPath: '/qr-punch'
+      preLoaderRoute: typeof AuthenticatedQrPunchRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/projects': {
@@ -839,6 +858,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedOperationsRoute: typeof AuthenticatedOperationsRoute
   AuthenticatedPayrollRoute: typeof AuthenticatedPayrollRoute
   AuthenticatedProjectsRoute: typeof AuthenticatedProjectsRoute
+  AuthenticatedQrPunchRoute: typeof AuthenticatedQrPunchRoute
   AuthenticatedRecruitmentRoute: typeof AuthenticatedRecruitmentRoute
   AuthenticatedReportsRoute: typeof AuthenticatedReportsRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
@@ -871,6 +891,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedOperationsRoute: AuthenticatedOperationsRoute,
   AuthenticatedPayrollRoute: AuthenticatedPayrollRoute,
   AuthenticatedProjectsRoute: AuthenticatedProjectsRoute,
+  AuthenticatedQrPunchRoute: AuthenticatedQrPunchRoute,
   AuthenticatedRecruitmentRoute: AuthenticatedRecruitmentRoute,
   AuthenticatedReportsRoute: AuthenticatedReportsRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
