@@ -319,7 +319,7 @@ function BranchPrefixManager() {
     <div className="rounded-xl border bg-card p-5 shadow-sm">
       <div className="mb-1 flex items-center gap-2">
         <Building className="h-5 w-5 text-muted-foreground" />
-        <h2 className="text-lg font-semibold">Branch prefixes (Employee ID)</h2>
+        <h2 className="text-lg font-semibold">Branch prefixes (P-File Number)</h2>
       </div>
       <p className="mb-4 text-sm text-muted-foreground">
         Each branch keeps its own sequence, e.g. BS1, BS2 … / V1, V2 … / P1, P2 …
