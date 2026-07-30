@@ -106,14 +106,15 @@ function CompaniesPage() {
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <SummaryCard title="Total companies" value={String(companies.length)} icon={<Building2 className="h-5 w-5" />} variant="primary" />
+          <SummaryCard title="Total companies" value={String(companies.length)} icon={<Building2 className="h-5 w-5" />} variant="primary" compact />
           <SummaryCard
             title="Active entities"
             value={String(companies.filter((c) => c.status === "Active").length)}
             icon={<CheckCircle2 className="h-5 w-5" />}
             variant="success"
+            compact
           />
-          <SummaryCard title="Total workforce" value={String(employees.length)} icon={<Users className="h-5 w-5" />} variant="info" />
+          <SummaryCard title="Total workforce" value={String(employees.length)} icon={<Users className="h-5 w-5" />} variant="info" compact />
         </div>
 
         <div className="grid gap-4 lg:grid-cols-3">

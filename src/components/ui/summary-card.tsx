@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const summaryCardVariants = cva(
-  "group relative flex flex-col overflow-hidden rounded-2xl border bg-card p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-card hover:border-primary/25 before:absolute before:inset-y-0 before:left-0 before:w-1 before:content-['']",
+  "group relative flex flex-col overflow-hidden rounded-2xl border bg-card p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-card hover:border-primary/25 before:absolute before:inset-y-0 before:left-0 before:w-1 before:content-['']",
   {
     variants: {
       variant: {
@@ -14,15 +14,20 @@ const summaryCardVariants = cva(
         destructive: "border-destructive/20 before:bg-gradient-destructive",
         info: "border-info/20 before:bg-gradient-info",
       },
+      compact: {
+        true: "min-h-[108px] p-4",
+        false: "min-h-[140px]",
+      },
     },
     defaultVariants: {
       variant: "default",
+      compact: false,
     },
   },
 );
 
 const iconVariants = cva(
-  "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ring-1 transition-transform duration-300 group-hover:scale-105",
+  "flex shrink-0 items-center justify-center rounded-xl ring-1 transition-transform duration-300 group-hover:scale-105",
   {
     variants: {
       variant: {
@@ -33,9 +38,14 @@ const iconVariants = cva(
         destructive: "bg-destructive/10 text-destructive ring-destructive/20",
         info: "bg-info/10 text-info ring-info/20",
       },
+      compact: {
+        true: "h-9 w-9",
+        false: "h-11 w-11",
+      },
     },
     defaultVariants: {
       variant: "default",
+      compact: false,
     },
   },
 );
@@ -74,6 +84,7 @@ interface SummaryCardProps
     positive: boolean;
   };
   loading?: boolean;
+  compact?: boolean;
 }
 
 export function SummaryCard({
@@ -84,12 +95,13 @@ export function SummaryCard({
   badges,
   trend,
   loading,
+  compact,
   className,
   variant,
   ...props
 }: SummaryCardProps) {
   return (
-    <div className={cn(summaryCardVariants({ variant }), "min-h-[156px]", className)} {...props}>
+    <div className={cn(summaryCardVariants({ variant, compact }), className)} {...props}>
       <div className="flex flex-1 flex-col justify-between">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0 flex-1">
@@ -104,7 +116,7 @@ export function SummaryCard({
               </p>
             )}
           </div>
-          <div className={cn(iconVariants({ variant }))}>{icon}</div>
+          <div className={cn(iconVariants({ variant, compact }))}>{icon}</div>
         </div>
 
         {badges && badges.length > 0 && !loading && (
