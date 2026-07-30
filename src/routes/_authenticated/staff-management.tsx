@@ -385,7 +385,7 @@ function StaffManagementPage() {
                       <TableCell className="!pl-6">
                         <ExpiryCell date={e.passportExpiry} />
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="!pl-6">
                         {onLeaveToday.some((l) => l.employeeId === e.id) ? (
                           <StatusBadge variant="warning" dot label="On leave" />
                         ) : (
@@ -395,7 +395,7 @@ function StaffManagementPage() {
                       <TableCell>
                         <StatusBadge variant="success" label={e.status} dot />
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="sticky right-0 z-10 bg-card">
                         <div className="flex items-center justify-end gap-1.5">
                           <Button
                             size="icon"
