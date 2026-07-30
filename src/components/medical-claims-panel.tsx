@@ -476,6 +476,21 @@ export function MedicalClaimsPanel({ employees, onChanged }: Props) {
               />
               {(form.documentUrls ?? []).length > 0 && (
                 <div className="space-y-1 rounded-md border p-2">
+                  {(form.documentUrls ?? []).length > 1 && (
+                    <div className="flex justify-end">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={zipping === "form"}
+                        onClick={() =>
+                          void downloadAllBills("form", form.claimNo ?? "claim", form.documentUrls ?? [])
+                        }
+                      >
+                        <Download className="mr-1 h-4 w-4" />
+                        Download all ({(form.documentUrls ?? []).length}) as ZIP
+                      </Button>
+                    </div>
+                  )}
                   {(form.documentUrls ?? []).map((u, i) => (
                     <div key={`${u}-${i}`} className="flex items-center justify-between gap-2 text-sm">
                       <button
