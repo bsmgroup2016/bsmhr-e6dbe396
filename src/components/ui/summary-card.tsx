@@ -40,6 +40,27 @@ const iconVariants = cva(
   },
 );
 
+const badgeVariants = cva(
+  "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[0.68rem] font-semibold ring-1",
+  {
+    variants: {
+      tone: {
+        neutral: "bg-muted text-muted-foreground ring-border",
+        info: "bg-info/10 text-info ring-info/20",
+        success: "bg-success/10 text-success ring-success/20",
+        warning: "bg-warning/10 text-warning ring-warning/20",
+        critical: "bg-destructive/10 text-destructive ring-destructive/20",
+      },
+    },
+    defaultVariants: { tone: "neutral" },
+  },
+);
+
+export type SummaryBadge = {
+  label: string;
+  tone?: "neutral" | "info" | "success" | "warning" | "critical";
+};
+
 interface SummaryCardProps
   extends React.HTMLAttributes<HTMLDivElement>,
     VariantProps<typeof summaryCardVariants> {
@@ -47,6 +68,7 @@ interface SummaryCardProps
   value: string | number;
   icon: React.ReactNode;
   caption?: string;
+  badges?: SummaryBadge[];
   trend?: {
     value: string;
     positive: boolean;
@@ -59,6 +81,7 @@ export function SummaryCard({
   value,
   icon,
   caption,
+  badges,
   trend,
   loading,
   className,
@@ -84,8 +107,18 @@ export function SummaryCard({
           <div className={cn(iconVariants({ variant }))}>{icon}</div>
         </div>
 
+        {badges && badges.length > 0 && !loading && (
+          <div className="mt-3 flex flex-wrap items-center gap-1.5">
+            {badges.map((b) => (
+              <span key={b.label} className={cn(badgeVariants({ tone: b.tone }))}>
+                {b.label}
+              </span>
+            ))}
+          </div>
+        )}
+
         {(caption || trend) && !loading && (
-          <div className="mt-5 flex items-center gap-2 border-t border-border/60 pt-3 text-xs">
+          <div className="mt-4 flex items-center gap-2 border-t border-border/60 pt-3 text-xs">
             {trend && (
               <span
                 className={cn("font-semibold", {

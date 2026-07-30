@@ -2,7 +2,15 @@ import type { ReactNode } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 
 import { AppShell } from "@/components/app-shell";
-import { SummaryCard } from "@/components/ui/summary-card";
+import { SummaryCard, type SummaryBadge } from "@/components/ui/summary-card";
+
+function urgencyTone(days: number | null): SummaryBadge["tone"] {
+  if (days === null) return "neutral";
+  if (days <= 7) return "critical";
+  if (days <= 15) return "warning";
+  if (days <= 30) return "info";
+  return "neutral";
+}
 import { StatusBadge } from "@/components/ui/status-badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { DashboardCharts } from "@/components/dashboard/dashboard-charts";
@@ -150,6 +158,11 @@ function DashboardPage() {
       daysLeft(e.passExpiry) <= 60,
   );
   const wpExpiring30 = wpExpiring.filter((e) => daysLeft(e.passExpiry) <= 30).length;
+  const wpExpiring15 = wpExpiring.filter((e) => daysLeft(e.passExpiry) <= 15).length;
+  const wpExpiring7 = wpExpiring.filter((e) => daysLeft(e.passExpiry) <= 7).length;
+  const wpSoonestDays = wpExpiring.length
+    ? Math.min(...wpExpiring.map((e) => daysLeft(e.passExpiry)))
+    : null;
 
   const passportExpiring = employees.filter(
     (e) =>
@@ -159,6 +172,11 @@ function DashboardPage() {
       daysLeft(e.passportExpiry) <= 90,
   );
   const passportExpiring30 = passportExpiring.filter((e) => daysLeft(e.passportExpiry!) <= 30).length;
+  const passportExpiring15 = passportExpiring.filter((e) => daysLeft(e.passportExpiry!) <= 15).length;
+  const passportExpiring7 = passportExpiring.filter((e) => daysLeft(e.passportExpiry!) <= 7).length;
+  const passportSoonestDays = passportExpiring.length
+    ? Math.min(...passportExpiring.map((e) => daysLeft(e.passportExpiry!)))
+    : null;
 
   const leaves = getLeaveRequests().filter(
     (l) =>
@@ -252,14 +270,34 @@ function DashboardPage() {
     .map((s) => ({ name: s, value: projects.filter((p) => p.status === s).length }))
     .filter((r) => r.value > 0);
 
-  const keyMetrics = [
+  const availableRate = employees.length
+    ? Math.round((availableWorkers / employees.length) * 100)
+    : 0;
+
+  const keyMetrics: Array<{
+    to: string;
+    title: string;
+    value: string;
+    caption: string;
+    icon: React.ReactNode;
+    variant: "default" | "primary" | "success" | "warning" | "destructive" | "info";
+    badges?: SummaryBadge[];
+  }> = [
     {
       to: "/documents" as const,
       title: "WorkPermit Expiring",
       value: wpExpiring.length.toString(),
       caption: `${wpExpiring30} within 30 days · next 60 days`,
       icon: <WorkPermitIdIcon className="h-7 w-7" />,
-      variant: (wpExpiring.length ? "destructive" : "success") as "destructive" | "success",
+      variant: wpExpiring7 ? "destructive" : wpExpiring30 ? "warning" : wpExpiring.length ? "info" : "success",
+      badges: wpExpiring.length
+        ? [
+            { label: `${wpSoonestDays}d left (soonest)`, tone: urgencyTone(wpSoonestDays) },
+            { label: `≤7d: ${wpExpiring7}`, tone: wpExpiring7 ? "critical" : "neutral" },
+            { label: `≤15d: ${wpExpiring15}`, tone: wpExpiring15 ? "warning" : "neutral" },
+            { label: `≤30d: ${wpExpiring30}`, tone: wpExpiring30 ? "info" : "neutral" },
+          ]
+        : [{ label: "No permits expiring", tone: "success" }],
     },
     {
       to: "/documents" as const,
@@ -267,7 +305,21 @@ function DashboardPage() {
       value: passportExpiring.length.toString(),
       caption: `${passportExpiring30} within 30 days · next 90 days`,
       icon: <PassportIcon className="h-7 w-7" />,
-      variant: (passportExpiring.length ? "warning" : "success") as "warning" | "success",
+      variant: passportExpiring7
+        ? "destructive"
+        : passportExpiring30
+          ? "warning"
+          : passportExpiring.length
+            ? "info"
+            : "success",
+      badges: passportExpiring.length
+        ? [
+            { label: `${passportSoonestDays}d left (soonest)`, tone: urgencyTone(passportSoonestDays) },
+            { label: `≤7d: ${passportExpiring7}`, tone: passportExpiring7 ? "critical" : "neutral" },
+            { label: `≤15d: ${passportExpiring15}`, tone: passportExpiring15 ? "warning" : "neutral" },
+            { label: `≤30d: ${passportExpiring30}`, tone: passportExpiring30 ? "info" : "neutral" },
+          ]
+        : [{ label: "No passports expiring", tone: "success" }],
     },
     {
       to: "/workforce" as const,
@@ -275,7 +327,15 @@ function DashboardPage() {
       value: availableWorkers.toString(),
       caption: `of ${employees.length} total workers`,
       icon: <UserCheck className="h-5 w-5" />,
-      variant: "success" as const,
+      variant: availableRate >= 70 ? "success" : availableRate >= 40 ? "warning" : "destructive",
+      badges: [
+        {
+          label: `${availableRate}% available`,
+          tone: availableRate >= 70 ? "success" : availableRate >= 40 ? "warning" : "critical",
+        },
+        { label: `On leave: ${leaves.length}`, tone: leaves.length ? "info" : "neutral" },
+        { label: `Permit ≤30d: ${wpExpiring30}`, tone: wpExpiring30 ? "warning" : "neutral" },
+      ],
     },
     {
       to: "/leave" as const,
@@ -456,6 +516,7 @@ function DashboardPage() {
                   value={m.value}
                   caption={m.caption}
                   icon={m.icon}
+                  badges={m.badges}
                   variant={m.variant}
                   className="h-full cursor-pointer hover:border-primary/40"
                 />
