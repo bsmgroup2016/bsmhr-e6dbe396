@@ -44,7 +44,7 @@ export const Route = createFileRoute("/_authenticated/crm")({
 const today = () => new Date().toISOString().slice(0, 10);
 const sources: Lead["source"][] = ["Referral", "Cold Call", "Website", "Existing Client", "Tender", "Other"];
 const activityTypes: CrmActivity["activityType"][] = ["Call", "Email", "Meeting", "Site Visit", "Quotation", "Note"];
-const sgd = (n: number) => `S$${n.toLocaleString("en-SG", { maximumFractionDigits: 0 })}`;
+const sgd = (n: number) => `$${n.toLocaleString("en-SG", { maximumFractionDigits: 0 })}`;
 
 const emptyLead = {
   companyName: "", contactPerson: "", phone: "", email: "", industry: "", trade: "",
@@ -251,7 +251,7 @@ export default function CrmPage() {
                     <Input type="number" value={leadForm.headcountNeeded} onChange={(e) => setLeadForm({ ...leadForm, headcountNeeded: Number(e.target.value) })} />
                   </div>
                   <div className="space-y-2">
-                    <Label>Monthly value (S$)</Label>
+                    <Label>Monthly value ($)</Label>
                     <Input type="number" value={leadForm.monthlyValue} onChange={(e) => setLeadForm({ ...leadForm, monthlyValue: Number(e.target.value) })} />
                   </div>
                   <div className="space-y-2">

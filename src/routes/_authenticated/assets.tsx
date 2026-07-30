@@ -171,7 +171,7 @@ export default function AssetsPage() {
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <SummaryCard title="Assets" value={scopedAssets.length.toString()} icon={<Boxes className="h-5 w-5" />} variant="primary" caption={`S$${totalValue.toLocaleString()} book value`} />
+          <SummaryCard title="Assets" value={scopedAssets.length.toString()} icon={<Boxes className="h-5 w-5" />} variant="primary" caption={`$${totalValue.toLocaleString()} book value`} />
           <SummaryCard title="Issued out" value={outNow.toString()} icon={<HardHat className="h-5 w-5" />} variant="success" caption="Currently with workers" />
           <SummaryCard title="Overdue returns" value={overdue.length.toString()} icon={<PackageCheck className="h-5 w-5" />} variant={overdue.length ? "warning" : "default"} caption="Past due date" />
           <SummaryCard title="Service alerts" value={alerts.length.toString()} icon={<AlertTriangle className="h-5 w-5" />} variant={alerts.length ? "warning" : "default"} caption="Warranty / calibration" />
@@ -376,7 +376,7 @@ export default function AssetsPage() {
                       <div><Label>Brand</Label><Input value={assetForm.brand} onChange={(e) => setAssetForm({ ...assetForm, brand: e.target.value })} /></div>
                       <div><Label>Serial no</Label><Input value={assetForm.serialNo} onChange={(e) => setAssetForm({ ...assetForm, serialNo: e.target.value })} /></div>
                       <div><Label>Quantity</Label><Input type="number" min={1} value={assetForm.quantity} onChange={(e) => setAssetForm({ ...assetForm, quantity: Number(e.target.value) })} /></div>
-                      <div><Label>Unit cost (S$)</Label><Input type="number" value={assetForm.unitCost} onChange={(e) => setAssetForm({ ...assetForm, unitCost: Number(e.target.value) })} /></div>
+                      <div><Label>Unit cost ($)</Label><Input type="number" value={assetForm.unitCost} onChange={(e) => setAssetForm({ ...assetForm, unitCost: Number(e.target.value) })} /></div>
                       <div><Label>Purchase date</Label><Input type="date" value={assetForm.purchaseDate} onChange={(e) => setAssetForm({ ...assetForm, purchaseDate: e.target.value })} /></div>
                       <div><Label>Warranty expiry</Label><Input type="date" value={assetForm.warrantyExpiry} onChange={(e) => setAssetForm({ ...assetForm, warrantyExpiry: e.target.value })} /></div>
                       <div><Label>Calibration due</Label><Input type="date" value={assetForm.calibrationDue} onChange={(e) => setAssetForm({ ...assetForm, calibrationDue: e.target.value })} /></div>
@@ -423,7 +423,7 @@ export default function AssetsPage() {
                             <span className="font-medium">{assetAvailableQty(a.id)}</span>
                             <span className="text-xs text-muted-foreground"> / {a.quantity} ({assetIssuedQty(a.id)} out)</span>
                           </TableCell>
-                          <TableCell>S${a.unitCost.toLocaleString()}</TableCell>
+                          <TableCell>${a.unitCost.toLocaleString()}</TableCell>
                           <TableCell>{a.calibrationDue ?? "—"}</TableCell>
                           <TableCell>
                             <StatusBadge

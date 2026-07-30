@@ -33,7 +33,7 @@ import {
 
 const PAY_MODES: PaymentMethod[] = ["Bank Transfer", "GIRO", "PayNow", "Cash", "Cheque"];
 
-const sgd = (n: number) => `S$${n.toLocaleString("en-SG", { maximumFractionDigits: 2 })}`;
+const sgd = (n: number) => `$${n.toLocaleString("en-SG", { maximumFractionDigits: 2 })}`;
 
 interface Props {
   employees: Employee[];

@@ -181,7 +181,7 @@ export default function InventoryPage() {
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <SummaryCard title="Items" value={String(scopedItems.length)} icon={<Package className="h-4 w-4" />} />
-          <SummaryCard title="Stock value" value={`S$${totalValue.toFixed(0)}`} icon={<PackagePlus className="h-4 w-4" />} />
+          <SummaryCard title="Stock value" value={`$${totalValue.toFixed(0)}`} icon={<PackagePlus className="h-4 w-4" />} />
           <SummaryCard title="Low stock" value={String(lows.length)} icon={<AlertTriangle className="h-4 w-4" />} />
           <SummaryCard title="Open POs" value={String(openPos.length)} icon={<ShoppingCart className="h-4 w-4" />} />
         </div>
@@ -254,7 +254,7 @@ export default function InventoryPage() {
                       <Input type="number" value={itemForm.reorderLevel} onChange={(e) => setItemForm({ ...itemForm, reorderLevel: Number(e.target.value) })} />
                     </div>
                     <div className="space-y-1">
-                      <Label>Unit cost (S$)</Label>
+                      <Label>Unit cost ($)</Label>
                       <Input type="number" value={itemForm.unitCost} onChange={(e) => setItemForm({ ...itemForm, unitCost: Number(e.target.value) })} />
                     </div>
                     <div className="space-y-1">
@@ -312,7 +312,7 @@ export default function InventoryPage() {
                             </span>
                           </TableCell>
                           <TableCell className="text-right">{i.reorderLevel}</TableCell>
-                          <TableCell className="text-right">S${(onHand * i.unitCost).toFixed(2)}</TableCell>
+                          <TableCell className="text-right">${(onHand * i.unitCost).toFixed(2)}</TableCell>
                           <TableCell>{i.location || "—"}</TableCell>
                           <TableCell className="text-right">
                             <Button
@@ -499,7 +499,7 @@ export default function InventoryPage() {
                       <Input type="number" value={poForm.quantity} onChange={(e) => setPoForm({ ...poForm, quantity: Number(e.target.value) })} />
                     </div>
                     <div className="space-y-1">
-                      <Label>Unit cost (S$)</Label>
+                      <Label>Unit cost ($)</Label>
                       <Input type="number" value={poForm.unitCost} onChange={(e) => setPoForm({ ...poForm, unitCost: Number(e.target.value) })} />
                     </div>
                     <div className="space-y-1">
@@ -557,7 +557,7 @@ export default function InventoryPage() {
                         <TableCell className="font-medium">{p.supplier}</TableCell>
                         <TableCell>{itemName(p.itemId)}</TableCell>
                         <TableCell className="text-right">{p.quantity}</TableCell>
-                        <TableCell className="text-right">S${(p.quantity * p.unitCost).toFixed(2)}</TableCell>
+                        <TableCell className="text-right">${(p.quantity * p.unitCost).toFixed(2)}</TableCell>
                         <TableCell>{p.expectedDate || "—"}</TableCell>
                         <TableCell><StatusBadge label={p.status} variant={p.status === "Received" ? "success" : p.status === "Cancelled" ? "destructive" : "info"} /></TableCell>
                         <TableCell className="text-right">

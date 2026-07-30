@@ -70,7 +70,7 @@ export function myeFor(e: Employee): MyeRow {
   if (skillLevel === "Basic Skilled") {
     issues.push({
       code: "upgrade-opportunity",
-      label: `Upgrade to Higher Skilled saves about S$${HIGHER_SKILLED_LEVY_SAVING}/month in levy`,
+      label: `Upgrade to Higher Skilled saves about $${HIGHER_SKILLED_LEVY_SAVING}/month in levy`,
       severity: "info",
     });
   }

@@ -55,7 +55,7 @@ async function buildAndSend(dryRun: boolean) {
   );
   const invoiceItems = overdue.map(
     (i) =>
-      `Invoice <b>${esc(i.invoice_no)}</b> · due ${esc(i.due_date)} · outstanding <b>S$${(
+      `Invoice <b>${esc(i.invoice_no)}</b> · due ${esc(i.due_date)} · outstanding <b>$${(
         Number(i.total) - Number(i.amount_paid ?? 0)
       ).toFixed(2)}</b>`,
   );

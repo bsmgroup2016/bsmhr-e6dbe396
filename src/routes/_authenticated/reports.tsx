@@ -237,8 +237,8 @@ export default function ReportsPage() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <SummaryCard title="Active workers" value={activeCount.toString()} icon={<Users className="h-5 w-5" />} variant="primary" caption={`${deployedCount} deployed on sites`} />
           <SummaryCard title="Pass alerts" value={(passExpiry.expired + passExpiry.expiringSoon).toString()} icon={<AlertTriangle className="h-5 w-5" />} variant="warning" caption={`${passExpiry.expired} expired`} />
-          <SummaryCard title="Total payroll" value={`S$${totalPayroll.toLocaleString()}`} icon={<DollarSign className="h-5 w-5" />} variant="info" caption="All months" />
-          <SummaryCard title="Net profit" value={`S$${(totalInvoices - totalPaidExpenses).toLocaleString()}`} icon={<TrendingUp className="h-5 w-5" />} variant="success" caption={`S$${totalReceipts.toLocaleString()} received`} />
+          <SummaryCard title="Total payroll" value={`$${totalPayroll.toLocaleString()}`} icon={<DollarSign className="h-5 w-5" />} variant="info" caption="All months" />
+          <SummaryCard title="Net profit" value={`$${(totalInvoices - totalPaidExpenses).toLocaleString()}`} icon={<TrendingUp className="h-5 w-5" />} variant="success" caption={`$${totalReceipts.toLocaleString()} received`} />
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -464,7 +464,7 @@ export default function ReportsPage() {
                     {expenseData.map((row) => (
                       <TableRow key={row.category}>
                         <TableCell className="font-medium">{row.category}</TableCell>
-                        <TableCell>S$ {row.amount.toLocaleString()}</TableCell>
+                        <TableCell>$ {row.amount.toLocaleString()}</TableCell>
                         <TableCell>{row.count}</TableCell>
                       </TableRow>
                     ))}
@@ -518,7 +518,7 @@ export default function ReportsPage() {
               <SummaryCard title="Fleet available" value={fleetData.available.toString()} icon={<Truck className="h-5 w-5" />} variant="success" caption={`${fleetData.total} total vehicles`} />
               <SummaryCard title="In workshop" value={fleetData.inWorkshop.toString()} icon={<HardHat className="h-5 w-5" />} variant="warning" />
               <SummaryCard title="Dorm occupancy" value={`${dormData.reduce((s, d) => s + d.occupied, 0)} / ${dormData.reduce((s, d) => s + d.totalBeds, 0)}`} icon={<BedDouble className="h-5 w-5" />} variant="info" caption="beds occupied" />
-              <SummaryCard title="Asset value" value={`S$${assetData.value.toLocaleString()}`} icon={<Package className="h-5 w-5" />} variant="primary" caption={`${assetData.issued} issued`} />
+              <SummaryCard title="Asset value" value={`$${assetData.value.toLocaleString()}`} icon={<Package className="h-5 w-5" />} variant="primary" caption={`${assetData.issued} issued`} />
             </div>
             <div className="grid gap-4 lg:grid-cols-2">
               <div className="rounded-xl border bg-card p-4 shadow-sm">
@@ -574,9 +574,9 @@ export default function ReportsPage() {
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <SummaryCard title="Levy payable" value={`S$${levyTotals.levy.toLocaleString()}`} icon={<DollarSign className="h-5 w-5" />} variant="warning" caption={`${sector} sector, ${formatMonth(month)}`} />
-              <SummaryCard title="CPF total" value={`S$${(levyTotals.cpfEmployee + levyTotals.cpfEmployer).toLocaleString()}`} icon={<ShieldCheck className="h-5 w-5" />} variant="info" caption={`Employer S$${levyTotals.cpfEmployer.toLocaleString()}`} />
-              <SummaryCard title="SDL + SHG" value={`S$${(levyTotals.sdl + levyTotals.shg).toLocaleString()}`} icon={<ClipboardList className="h-5 w-5" />} variant="default" caption={`SDL S$${levyTotals.sdl.toLocaleString()}`} />
+              <SummaryCard title="Levy payable" value={`$${levyTotals.levy.toLocaleString()}`} icon={<DollarSign className="h-5 w-5" />} variant="warning" caption={`${sector} sector, ${formatMonth(month)}`} />
+              <SummaryCard title="CPF total" value={`$${(levyTotals.cpfEmployee + levyTotals.cpfEmployer).toLocaleString()}`} icon={<ShieldCheck className="h-5 w-5" />} variant="info" caption={`Employer $${levyTotals.cpfEmployer.toLocaleString()}`} />
+              <SummaryCard title="SDL + SHG" value={`$${(levyTotals.sdl + levyTotals.shg).toLocaleString()}`} icon={<ClipboardList className="h-5 w-5" />} variant="default" caption={`SDL $${levyTotals.sdl.toLocaleString()}`} />
               <SummaryCard title="Quota usage" value={`${Math.round(quota.drcUsage * 100)}%`} icon={<Users className="h-5 w-5" />} variant={quota.overQuota ? "warning" : "success"} caption={`${quota.foreign} foreign / ${quota.foreignAllowed} allowed`} />
             </div>
 
@@ -629,9 +629,9 @@ export default function ReportsPage() {
                         <TableRow key={i}>
                           <TableCell>{String(r.Name)}</TableCell>
                           <TableCell>{String(r["Pass Type"])}</TableCell>
-                          <TableCell className="text-right">S${Number(r["Levy Payable"]).toLocaleString()}</TableCell>
-                          <TableCell className="text-right">S${(Number(r["CPF Employee"]) + Number(r["CPF Employer"])).toLocaleString()}</TableCell>
-                          <TableCell className="text-right">S${Number(r.SDL).toLocaleString()}</TableCell>
+                          <TableCell className="text-right">${Number(r["Levy Payable"]).toLocaleString()}</TableCell>
+                          <TableCell className="text-right">${(Number(r["CPF Employee"]) + Number(r["CPF Employer"])).toLocaleString()}</TableCell>
+                          <TableCell className="text-right">${Number(r.SDL).toLocaleString()}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>

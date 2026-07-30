@@ -30,7 +30,7 @@ import {
   deductionRows, deductionSummary, type DeductionRow,
 } from "@/lib/deductions";
 
-const sgd = (n: number) => `S$${n.toLocaleString("en-SG", { maximumFractionDigits: 2 })}`;
+const sgd = (n: number) => `$${n.toLocaleString("en-SG", { maximumFractionDigits: 2 })}`;
 const pctText = (n: number) => `${Math.round(n * 100)}%`;
 
 interface Props {
@@ -206,7 +206,7 @@ export function DeductionCompliancePanel({ employees, onChanged }: Props) {
           </DialogHeader>
           <div className="grid gap-4">
             <div className="grid gap-2">
-              <Label>Accommodation & amenities (S$)</Label>
+              <Label>Accommodation & amenities ($)</Label>
               <Input
                 type="number" min={0}
                 value={form.accommodationDeduction ?? 0}
@@ -214,7 +214,7 @@ export function DeductionCompliancePanel({ employees, onChanged }: Props) {
               />
             </div>
             <div className="grid gap-2">
-              <Label>Loan / advance recovery (S$)</Label>
+              <Label>Loan / advance recovery ($)</Label>
               <Input
                 type="number" min={0}
                 value={form.loanRepayment ?? 0}
@@ -222,7 +222,7 @@ export function DeductionCompliancePanel({ employees, onChanged }: Props) {
               />
             </div>
             <div className="grid gap-2">
-              <Label>Other authorised deductions (S$)</Label>
+              <Label>Other authorised deductions ($)</Label>
               <Input
                 type="number" min={0}
                 value={form.otherDeductions ?? 0}

@@ -162,7 +162,7 @@ export default function AccommodationPage() {
           <SummaryCard title="Dormitories" value={scopedDorms.length.toString()} icon={<Building2 className="h-5 w-5" />} variant="primary" caption="Registered housing" />
           <SummaryCard title="Total beds" value={totalBeds.toString()} icon={<BedDouble className="h-5 w-5" />} variant="default" caption="Licensed capacity" />
           <SummaryCard title="Occupied" value={`${occupied}`} icon={<Users className="h-5 w-5" />} variant="success" caption={`${totalBeds ? Math.round((occupied / totalBeds) * 100) : 0}% utilisation`} />
-          <SummaryCard title="Monthly rent" value={`S$${monthlyCost.toLocaleString()}`} icon={<BedDouble className="h-5 w-5" />} variant="warning" caption="Active allocations" />
+          <SummaryCard title="Monthly rent" value={`$${monthlyCost.toLocaleString()}`} icon={<BedDouble className="h-5 w-5" />} variant="warning" caption="Active allocations" />
         </div>
 
         <Tabs defaultValue="allocations">
@@ -218,7 +218,7 @@ export default function AccommodationPage() {
                       <div><Label>Room no</Label><Input value={allocForm.roomNo} onChange={(e) => setAllocForm({ ...allocForm, roomNo: e.target.value })} /></div>
                       <div><Label>Bed no</Label><Input value={allocForm.bedNo} onChange={(e) => setAllocForm({ ...allocForm, bedNo: e.target.value })} /></div>
                       <div><Label>Check-in date</Label><Input type="date" value={allocForm.checkInDate} onChange={(e) => setAllocForm({ ...allocForm, checkInDate: e.target.value })} /></div>
-                      <div><Label>Monthly rent (S$)</Label><Input type="number" value={allocForm.monthlyRent} onChange={(e) => setAllocForm({ ...allocForm, monthlyRent: Number(e.target.value) })} /></div>
+                      <div><Label>Monthly rent ($)</Label><Input type="number" value={allocForm.monthlyRent} onChange={(e) => setAllocForm({ ...allocForm, monthlyRent: Number(e.target.value) })} /></div>
                       <div className="sm:col-span-2"><Label>Remarks</Label><Textarea value={allocForm.remarks} onChange={(e) => setAllocForm({ ...allocForm, remarks: e.target.value })} /></div>
                     </div>
                     <DialogFooter>
@@ -261,7 +261,7 @@ export default function AccommodationPage() {
                           <TableCell>{a.roomNo}{a.bedNo ? ` / ${a.bedNo}` : ""}</TableCell>
                           <TableCell>{a.checkInDate}</TableCell>
                           <TableCell>{a.checkOutDate ?? "—"}</TableCell>
-                          <TableCell>S${a.monthlyRent.toLocaleString()}</TableCell>
+                          <TableCell>${a.monthlyRent.toLocaleString()}</TableCell>
                           <TableCell>
                             <StatusBadge
                               variant={a.status === "Occupied" ? "success" : a.status === "Reserved" ? "warning" : "ghost"}
@@ -312,7 +312,7 @@ export default function AccommodationPage() {
                       <div><Label>Capacity (beds)</Label><Input type="number" value={dormForm.capacity} onChange={(e) => setDormForm({ ...dormForm, capacity: Number(e.target.value) })} /></div>
                       <div><Label>Sleeping area (m²)</Label><Input type="number" value={dormForm.floorAreaSqm} onChange={(e) => setDormForm({ ...dormForm, floorAreaSqm: Number(e.target.value) })} /></div>
                       <div><Label>Rooms</Label><Input type="number" value={dormForm.rooms} onChange={(e) => setDormForm({ ...dormForm, rooms: Number(e.target.value) })} /></div>
-                      <div><Label>Rent per bed (S$)</Label><Input type="number" value={dormForm.monthlyRent} onChange={(e) => setDormForm({ ...dormForm, monthlyRent: Number(e.target.value) })} /></div>
+                      <div><Label>Rent per bed ($)</Label><Input type="number" value={dormForm.monthlyRent} onChange={(e) => setDormForm({ ...dormForm, monthlyRent: Number(e.target.value) })} /></div>
                       <div><Label>Licence no</Label><Input value={dormForm.licenseNo} onChange={(e) => setDormForm({ ...dormForm, licenseNo: e.target.value })} /></div>
                       <div><Label>Licence expiry</Label><Input type="date" value={dormForm.licenseExpiry} onChange={(e) => setDormForm({ ...dormForm, licenseExpiry: e.target.value })} /></div>
                       <div><Label>Last inspection</Label><Input type="date" value={dormForm.lastInspection} onChange={(e) => setDormForm({ ...dormForm, lastInspection: e.target.value })} /></div>
@@ -374,7 +374,7 @@ export default function AccommodationPage() {
                               );
                             })()}
                           </TableCell>
-                          <TableCell>S${d.monthlyRent.toLocaleString()}</TableCell>
+                          <TableCell>${d.monthlyRent.toLocaleString()}</TableCell>
                           <TableCell>{d.licenseExpiry || "—"}</TableCell>
                           <TableCell><StatusBadge variant={d.status === "Active" ? "success" : "ghost"} label={d.status} dot /></TableCell>
                           <TableCell>

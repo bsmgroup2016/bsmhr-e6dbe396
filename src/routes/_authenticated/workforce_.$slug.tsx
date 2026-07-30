@@ -150,8 +150,8 @@ function EmployeeProfilePage() {
             </div>
             <div className="text-right text-sm">
               <p className="text-muted-foreground">Basic</p>
-              <p className="text-lg font-semibold">S${employee.basicSalary.toLocaleString()}</p>
-              <p className="text-xs text-muted-foreground">OT rate S${(employee.otRate ?? 0).toFixed(2)}/hr</p>
+              <p className="text-lg font-semibold">${employee.basicSalary.toLocaleString()}</p>
+              <p className="text-xs text-muted-foreground">OT rate ${(employee.otRate ?? 0).toFixed(2)}/hr</p>
               <p className="text-xs text-muted-foreground">Joined {employee.joinedOn || "—"}</p>
             </div>
           </div>
@@ -297,10 +297,10 @@ function EmployeeProfilePage() {
 
           <TabsContent value="pay" className="mt-4">
             <Grid>
-              <Item label="Basic salary" value={`S$${employee.basicSalary.toLocaleString()}`} />
-              <Item label="OT rate / hour" value={employee.otRate ? `S$${employee.otRate}` : undefined} />
+              <Item label="Basic salary" value={`$${employee.basicSalary.toLocaleString()}`} />
+              <Item label="OT rate / hour" value={employee.otRate ? `$${employee.otRate}` : undefined} />
               <Item label="Normal hours / day" value={employee.normalHours} />
-              <Item label="Monthly levy" value={employee.levyRate ? `S$${employee.levyRate}` : undefined} />
+              <Item label="Monthly levy" value={employee.levyRate ? `$${employee.levyRate}` : undefined} />
               <Item label="Payroll group" value={employee.payrollGroup} />
               <Item label="Payroll frequency" value={employee.payrollFrequency} />
               <Item label="Bank name" value={employee.bankName} />
@@ -336,10 +336,10 @@ function EmployeeProfilePage() {
               headers={["Month", "Basic", "OT", "Deductions", "Net pay", "Status"]}
               rows={payroll.map((p) => [
                 p.month,
-                `S$${p.basicSalary.toLocaleString()}`,
-                `S$${p.overtimePay.toLocaleString()}`,
-                `S$${(p.deductions + p.cpfEmployee).toLocaleString()}`,
-                `S$${p.netPay.toLocaleString()}`,
+                `$${p.basicSalary.toLocaleString()}`,
+                `$${p.overtimePay.toLocaleString()}`,
+                `$${(p.deductions + p.cpfEmployee).toLocaleString()}`,
+                `$${p.netPay.toLocaleString()}`,
                 p.status,
               ])}
               empty="No payroll entries yet."

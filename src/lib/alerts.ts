@@ -146,7 +146,7 @@ export function buildAlerts(companyId?: string): AppAlert[] {
       category: "Billing",
       severity: "critical",
       title: `Invoice ${inv.invoiceNo} overdue`,
-      detail: `S$${(inv.total - inv.amountPaid).toFixed(2)} outstanding, ${daysLabel(inv.dueDate)}`,
+      detail: `$${(inv.total - inv.amountPaid).toFixed(2)} outstanding, ${daysLabel(inv.dueDate)}`,
       date: inv.dueDate,
       link: "/billing",
     });

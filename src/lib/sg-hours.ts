@@ -1,8 +1,8 @@
 /**
  * Employment Act hours-of-work and overtime pay rules (Part IV).
  *
- * Applies to workmen earning up to S$4,500 and other employees (non-workmen)
- * earning up to S$2,600 basic monthly salary.
+ * Applies to workmen earning up to $4,500 and other employees (non-workmen)
+ * earning up to $2,600 basic monthly salary.
  *
  *  - Normal hours: 8 h/day or 44 h/week.
  *  - Overtime: 1.5x the hourly basic rate.

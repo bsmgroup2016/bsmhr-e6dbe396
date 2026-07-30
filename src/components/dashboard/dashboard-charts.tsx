@@ -87,7 +87,7 @@ export function DashboardCharts({ data }: { data: DashboardChartData }) {
             <YAxis tickFormatter={sgdShort} tickLine={false} axisLine={false} fontSize={12} width={48} />
             <Tooltip
               contentStyle={tooltipStyle}
-              formatter={(v: number) => `S$${Math.round(v).toLocaleString("en-SG")}`}
+              formatter={(v: number) => `$${Math.round(v).toLocaleString("en-SG")}`}
             />
             <Legend iconType="circle" wrapperStyle={{ fontSize: 13 }} />
             <Area

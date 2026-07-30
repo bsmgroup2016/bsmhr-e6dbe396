@@ -43,7 +43,7 @@ export const DRC: Record<MomSector, { drc: number; sPassSubQuota: number }> = {
   Services: { drc: 0.35, sPassSubQuota: 0.1 },
 };
 
-/** Monthly Work Permit levy (S$) by sector and skill tier. */
+/** Monthly Work Permit levy ($) by sector and skill tier. */
 const WP_LEVY: Record<MomSector, Record<LevyTier, number>> = {
   Construction: { "Higher Skilled": 300, "Basic Skilled": 700 },
   Manufacturing: { "Higher Skilled": 300, "Basic Skilled": 450 },
@@ -52,7 +52,7 @@ const WP_LEVY: Record<MomSector, Record<LevyTier, number>> = {
   Services: { "Higher Skilled": 450, "Basic Skilled": 700 },
 };
 
-/** Monthly S Pass levy (S$) by sector. */
+/** Monthly S Pass levy ($) by sector. */
 const SP_LEVY: Record<MomSector, number> = {
   Construction: 550,
   Manufacturing: 650,

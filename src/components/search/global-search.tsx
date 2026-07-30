@@ -86,7 +86,7 @@ function useSearchIndex(): SearchHit[] {
         id: `inv-${i.id}`,
         group: "Invoices",
         label: i.invoiceNo,
-        hint: `${i.status} · S$${Number(i.total ?? 0).toLocaleString()}`,
+        hint: `${i.status} · $${Number(i.total ?? 0).toLocaleString()}`,
         to: "/billing",
         icon: <FileText className="h-4 w-4" />,
       });

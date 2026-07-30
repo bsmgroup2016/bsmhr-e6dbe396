@@ -107,9 +107,9 @@ export function SgStandardsPanel({ employees, section, onChange }: Props) {
         <>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <SummaryCard title="Insurable workers" value={String(fwmiS.total)} icon={<HeartPulse className="h-5 w-5" />} variant="info" caption="Work Permit & S Pass" />
-            <SummaryCard title="Coverage gaps" value={String(fwmiS.gaps)} icon={<HeartPulse className="h-5 w-5" />} variant={fwmiS.gaps ? "destructive" : "success"} caption={`Minimum S$${FWMI_MIN_COVERAGE.toLocaleString()}`} />
+            <SummaryCard title="Coverage gaps" value={String(fwmiS.gaps)} icon={<HeartPulse className="h-5 w-5" />} variant={fwmiS.gaps ? "destructive" : "success"} caption={`Minimum $${FWMI_MIN_COVERAGE.toLocaleString()}`} />
             <SummaryCard title="Expiring in 30 days" value={String(fwmiS.expiring)} icon={<HeartPulse className="h-5 w-5" />} variant={fwmiS.expiring ? "warning" : "success"} caption="Renew policies" />
-            <SummaryCard title="Total sum insured" value={`S$${fwmiS.insuredValue.toLocaleString()}`} icon={<HeartPulse className="h-5 w-5" />} variant="default" caption="Across active policies" />
+            <SummaryCard title="Total sum insured" value={`$${fwmiS.insuredValue.toLocaleString()}`} icon={<HeartPulse className="h-5 w-5" />} variant="default" caption="Across active policies" />
           </div>
           <Card
             title="Foreign Worker Medical Insurance"
@@ -134,7 +134,7 @@ export function SgStandardsPanel({ employees, section, onChange }: Props) {
                     label={r.state} />
                   <div className="text-xs text-muted-foreground">{r.note}</div>
                 </TableCell>
-                <TableCell>S${r.coverage.toLocaleString()}</TableCell>
+                <TableCell>${r.coverage.toLocaleString()}</TableCell>
                 <TableCell className="text-sm">{r.employee.insuranceInsurer ?? "—"}</TableCell>
                 <TableCell className="text-sm">{r.employee.medicalInsuranceExpiry ?? "—"}</TableCell>
                 <TableCell>{actions(r.employee)}</TableCell>
@@ -150,7 +150,7 @@ export function SgStandardsPanel({ employees, section, onChange }: Props) {
             <SummaryCard title="Clearances in progress" value={String(irS.total)} icon={<Receipt className="h-5 w-5" />} variant="info" caption="Departing foreign staff" />
             <SummaryCard title="Overdue filings" value={String(irS.overdue)} icon={<Receipt className="h-5 w-5" />} variant={irS.overdue ? "destructive" : "success"} caption="File IR21 immediately" />
             <SummaryCard title="Due soon" value={String(irS.due)} icon={<Receipt className="h-5 w-5" />} variant={irS.due ? "warning" : "success"} caption="One month before last day" />
-            <SummaryCard title="Monies withheld" value={`S$${irS.withheld.toLocaleString()}`} icon={<Wallet className="h-5 w-5" />} variant="default" caption="Hold until IRAS clears" />
+            <SummaryCard title="Monies withheld" value={`$${irS.withheld.toLocaleString()}`} icon={<Wallet className="h-5 w-5" />} variant="default" caption="Hold until IRAS clears" />
           </div>
           <Card
             title="IR21 tax clearance"
@@ -176,7 +176,7 @@ export function SgStandardsPanel({ employees, section, onChange }: Props) {
                     variant={r.status === "Cleared" ? "success" : r.status === "Filed" ? "info" : r.severity === "overdue" ? "destructive" : "warning"}
                     label={r.status} />
                 </TableCell>
-                <TableCell>{r.employee.ir21AmountWithheld ? `S$${r.employee.ir21AmountWithheld.toLocaleString()}` : "—"}</TableCell>
+                <TableCell>{r.employee.ir21AmountWithheld ? `$${r.employee.ir21AmountWithheld.toLocaleString()}` : "—"}</TableCell>
                 <TableCell>{actions(r.employee)}</TableCell>
               </TableRow>
             ))}
@@ -190,7 +190,7 @@ export function SgStandardsPanel({ employees, section, onChange }: Props) {
             <SummaryCard title="Work Permit holders" value={String(myeS.workers)} icon={<TrendingUp className="h-5 w-5" />} variant="info" caption="Construction / process" />
             <SummaryCard title="Higher Skilled" value={String(myeS.higherSkilled)} icon={<TrendingUp className="h-5 w-5" />} variant="success" caption={`${myeS.basicSkilled} still Basic Skilled`} />
             <SummaryCard title="Certificate gaps" value={String(myeS.certGaps)} icon={<TrendingUp className="h-5 w-5" />} variant={myeS.certGaps ? "destructive" : "success"} caption="Higher Skilled without valid cert" />
-            <SummaryCard title="Man-years used" value={myeS.manYearsUsed.toFixed(1)} icon={<TrendingUp className="h-5 w-5" />} variant="default" caption={`Upgrade saving up to S$${myeS.potentialSaving.toLocaleString()}/mo`} />
+            <SummaryCard title="Man-years used" value={myeS.manYearsUsed.toFixed(1)} icon={<TrendingUp className="h-5 w-5" />} variant="default" caption={`Upgrade saving up to $${myeS.potentialSaving.toLocaleString()}/mo`} />
           </div>
           <Card
             title="MYE & skills upgrading"
@@ -233,7 +233,7 @@ export function SgStandardsPanel({ employees, section, onChange }: Props) {
           <div className="grid gap-4 sm:grid-cols-3">
             <SummaryCard title="PWM covered staff" value={String(pwmS.covered)} icon={<Wallet className="h-5 w-5" />} variant="info" caption="Sectors with a wage ladder" />
             <SummaryCard title="Below wage floor" value={String(pwmS.belowFloor)} icon={<Wallet className="h-5 w-5" />} variant={pwmS.belowFloor ? "destructive" : "success"} caption="Raise to the PWM minimum" />
-            <SummaryCard title="Monthly shortfall" value={`S$${pwmS.totalShortfall.toLocaleString()}`} icon={<Wallet className="h-5 w-5" />} variant={pwmS.totalShortfall ? "warning" : "success"} caption="Total top-up needed" />
+            <SummaryCard title="Monthly shortfall" value={`$${pwmS.totalShortfall.toLocaleString()}`} icon={<Wallet className="h-5 w-5" />} variant={pwmS.totalShortfall ? "warning" : "success"} caption="Total top-up needed" />
           </div>
           <Card
             title="Progressive Wage Model"
@@ -253,10 +253,10 @@ export function SgStandardsPanel({ employees, section, onChange }: Props) {
                 </TableCell>
                 <TableCell className="text-sm">{r.sector}</TableCell>
                 <TableCell className="text-sm">{r.level}</TableCell>
-                <TableCell>S${r.floor.toLocaleString()}</TableCell>
+                <TableCell>${r.floor.toLocaleString()}</TableCell>
                 <TableCell className={r.compliant ? "" : "font-medium text-destructive"}>
-                  S${r.actual.toLocaleString()}
-                  {!r.compliant && <div className="text-xs">short by S${r.shortfall.toLocaleString()}</div>}
+                  ${r.actual.toLocaleString()}
+                  {!r.compliant && <div className="text-xs">short by ${r.shortfall.toLocaleString()}</div>}
                 </TableCell>
                 <TableCell>{actions(r.employee)}</TableCell>
               </TableRow>
@@ -274,7 +274,7 @@ export function SgStandardsPanel({ employees, section, onChange }: Props) {
 
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1">
-              <Label className="text-xs">Insurance coverage (S$)</Label>
+              <Label className="text-xs">Insurance coverage ($)</Label>
               <Input type="number" value={form.insuranceCoverage ?? ""} placeholder={String(FWMI_MIN_COVERAGE)}
                 onChange={(ev) => setForm((f) => ({ ...f, insuranceCoverage: ev.target.value ? Number(ev.target.value) : undefined }))} />
             </div>
@@ -303,7 +303,7 @@ export function SgStandardsPanel({ employees, section, onChange }: Props) {
               <Input type="date" value={form.ir21FiledOn ?? ""} onChange={(ev) => setForm((f) => ({ ...f, ir21FiledOn: ev.target.value || undefined }))} />
             </div>
             <div className="space-y-1">
-              <Label className="text-xs">Monies withheld (S$)</Label>
+              <Label className="text-xs">Monies withheld ($)</Label>
               <Input type="number" value={form.ir21AmountWithheld ?? ""}
                 onChange={(ev) => setForm((f) => ({ ...f, ir21AmountWithheld: ev.target.value ? Number(ev.target.value) : undefined }))} />
             </div>
@@ -360,7 +360,7 @@ export function SgStandardsPanel({ employees, section, onChange }: Props) {
                 <SelectTrigger><SelectValue placeholder="Select level" /></SelectTrigger>
                 <SelectContent>
                   {(form.pwmSector && form.pwmSector !== "None" ? PWM_LADDER[form.pwmSector] : []).map((s) => (
-                    <SelectItem key={s.level} value={s.level}>{s.level} — S${s.minWage.toLocaleString()}</SelectItem>
+                    <SelectItem key={s.level} value={s.level}>{s.level} — ${s.minWage.toLocaleString()}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>

@@ -118,7 +118,7 @@ export function WpLifecyclePanel({ employees, onChange }: Props) {
         <SummaryCard title="Tracked workers" value={String(summary.total)} icon={<IdCard className="h-5 w-5" />} variant="info" caption="Work Permit & S Pass" />
         <SummaryCard title="Overdue actions" value={String(summary.overdue)} icon={<Timer className="h-5 w-5" />} variant={summary.overdue ? "destructive" : "success"} caption="Past a MOM deadline" />
         <SummaryCard title="Due within 7 days" value={String(summary.dueSoon)} icon={<Timer className="h-5 w-5" />} variant={summary.dueSoon ? "warning" : "success"} caption="Act this week" />
-        <SummaryCard title="Security bond gaps" value={String(summary.bondGap)} icon={<ShieldCheck className="h-5 w-5" />} variant={summary.bondGap ? "warning" : "success"} caption={`S$${summary.bondValue.toLocaleString()} bonded`} />
+        <SummaryCard title="Security bond gaps" value={String(summary.bondGap)} icon={<ShieldCheck className="h-5 w-5" />} variant={summary.bondGap ? "warning" : "success"} caption={`$${summary.bondValue.toLocaleString()} bonded`} />
       </div>
 
       <div className="rounded-xl border bg-card p-4 shadow-sm">
@@ -127,7 +127,7 @@ export function WpLifecyclePanel({ employees, onChange }: Props) {
             <h2 className="text-sm font-medium">Work Permit lifecycle</h2>
             <p className="text-xs text-muted-foreground">
               MOM rules: notify within 1 day of employment ending, cancel the pass within 7 days,
-              repatriate within 7 days of cancellation. Non-Malaysian Work Permit holders need a S${SECURITY_BOND_AMOUNT.toLocaleString()} bond.
+              repatriate within 7 days of cancellation. Non-Malaysian Work Permit holders need a ${SECURITY_BOND_AMOUNT.toLocaleString()} bond.
             </p>
           </div>
           <Button size="sm" variant="outline" onClick={exportLifecycle} disabled={!rows.length}>
@@ -237,7 +237,7 @@ export function WpLifecyclePanel({ employees, onChange }: Props) {
             {dateField("repatriationDate", "Repatriated on")}
             {dateField("securityBondExpiry", "Security bond expiry")}
             <div className="space-y-1">
-              <Label className="text-xs">Security bond amount (S$)</Label>
+              <Label className="text-xs">Security bond amount ($)</Label>
               <Input
                 type="number"
                 value={form.securityBondAmount ?? ""}

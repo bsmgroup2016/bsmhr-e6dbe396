@@ -194,7 +194,7 @@ export default function ClientsPage() {
           <SummaryCard title="Total clients" value={clients.length.toString()} icon={<Building2 className="h-5 w-5" />} variant="primary" caption="All clients" />
           <SummaryCard title="Active clients" value={activeCount.toString()} icon={<Building2 className="h-5 w-5" />} variant="success" caption="Under contract" />
           <SummaryCard title="Prospects" value={prospectCount.toString()} icon={<Building2 className="h-5 w-5" />} variant="warning" caption="Potential clients" />
-          <SummaryCard title="Est. contract value" value={`S$${(totalContractValue / 1000).toFixed(0)}k`} icon={<Building2 className="h-5 w-5" />} variant="info" caption="Based on workers" />
+          <SummaryCard title="Est. contract value" value={`$${(totalContractValue / 1000).toFixed(0)}k`} icon={<Building2 className="h-5 w-5" />} variant="info" caption="Based on workers" />
         </div>
 
         <div className="rounded-xl border bg-card p-4 shadow-sm">

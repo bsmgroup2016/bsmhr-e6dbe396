@@ -794,7 +794,7 @@ export function addInvoice(
   setState({ ...s, invoices: [row, ...s.invoices] });
   void supabase.from("invoices").insert({ id: row.id, ...toInvoice(row) })
     .then(({ error }) => fail("invoices", error));
-  addAuditLog("CREATE", "Invoice", row.id, `Invoice ${row.invoiceNo} — S$${row.total.toFixed(2)}`);
+  addAuditLog("CREATE", "Invoice", row.id, `Invoice ${row.invoiceNo} — $${row.total.toFixed(2)}`);
   return row;
 }
 
@@ -901,7 +901,7 @@ export function addMedicalClaim(
   setState({ ...s, medicalClaims: [row, ...s.medicalClaims] });
   void supabase.from("medical_claims").insert({ id: row.id, ...toMedicalClaim(row) })
     .then(({ error }) => fail("medical_claims", error));
-  addAuditLog("CREATE", "MedicalClaim", row.id, `Medical claim ${claimNo} — S$${row.totalAmount}`);
+  addAuditLog("CREATE", "MedicalClaim", row.id, `Medical claim ${claimNo} — $${row.totalAmount}`);
   return row;
 }
 
@@ -1882,7 +1882,7 @@ export function addExpense(x: Omit<Expense, "id" | "createdAt" | "updatedAt">): 
   setState({ ...s, expenses: [row, ...s.expenses] });
   void supabase.from("expenses").insert({ id: row.id, ...toExpense(row) })
     .then(({ error }) => fail("expenses", error));
-  addAuditLog("CREATE", "Expense", row.id, `Recorded ${row.category} expense S$${row.amount}`);
+  addAuditLog("CREATE", "Expense", row.id, `Recorded ${row.category} expense $${row.amount}`);
   return row;
 }
 
@@ -1920,7 +1920,7 @@ export function addReceipt(x: Omit<PaymentReceipt, "id" | "receiptNo" | "created
   setState({ ...s, receipts: [row, ...s.receipts] });
   void supabase.from("payment_receipts").insert({ id: row.id, ...toPaymentReceipt(row) })
     .then(({ error }) => fail("payment_receipts", error));
-  addAuditLog("CREATE", "PaymentReceipt", row.id, `Received S$${row.amount} (${receiptNo})`);
+  addAuditLog("CREATE", "PaymentReceipt", row.id, `Received $${row.amount} (${receiptNo})`);
 
   if (row.invoiceId) {
     const inv = getState().invoices.find((i) => i.id === row.invoiceId);
@@ -2485,7 +2485,7 @@ export function addLoan(
   setState({ ...s, loans: [row, ...s.loans] });
   void supabase.from("employee_loans").insert({ id: row.id, ...toLoan(row) })
     .then(({ error }) => fail("employee_loans", error));
-  addAuditLog("CREATE", "EmployeeLoan", row.id, `Loan ${loanNo} — S$${row.principal}`);
+  addAuditLog("CREATE", "EmployeeLoan", row.id, `Loan ${loanNo} — $${row.principal}`);
   return row;
 }
 
@@ -2524,7 +2524,7 @@ export function addLoanRepayment(
   setState({ ...s, loanRepayments: [row, ...s.loanRepayments] });
   void supabase.from("loan_repayments").insert({ id: row.id, ...toLoanRepayment(row) })
     .then(({ error }) => fail("loan_repayments", error));
-  addAuditLog("CREATE", "LoanRepayment", row.id, `Repayment S$${row.amount} (${row.source})`);
+  addAuditLog("CREATE", "LoanRepayment", row.id, `Repayment $${row.amount} (${row.source})`);
 
   // Auto-settle the loan once fully recovered.
   const loan = getState().loans.find((l) => l.id === row.loanId);

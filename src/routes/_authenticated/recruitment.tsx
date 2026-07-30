@@ -188,13 +188,13 @@ export default function RecruitmentPage() {
           <SummaryCard title="Hired" value={hired.length.toString()} icon={<CheckCircle2 className="h-5 w-5" />} variant="success" caption="Converted to employees" />
           <SummaryCard
             title="Agent commission due"
-            value={`S$${scopedCands
+            value={`$${scopedCands
               .filter((c) => (c.commissionStatus ?? "Unbilled") !== "Paid")
               .reduce((sum, c) => sum + (c.agentCommission ?? 0), 0)
               .toLocaleString()}`}
             icon={<Briefcase className="h-5 w-5" />}
             variant="warning"
-            caption={`S$${scopedCands
+            caption={`$${scopedCands
               .filter((c) => c.commissionStatus === "Paid")
               .reduce((sum, c) => sum + (c.agentCommission ?? 0), 0)
               .toLocaleString()} already paid`}
@@ -243,7 +243,7 @@ export default function RecruitmentPage() {
                       <div><Label>Email</Label><Input type="email" value={candForm.email} onChange={(e) => setCandForm({ ...candForm, email: e.target.value })} /></div>
                       <div><Label>Passport no</Label><Input value={candForm.passportNumber} onChange={(e) => setCandForm({ ...candForm, passportNumber: e.target.value })} /></div>
                       <div><Label>Experience (years)</Label><Input type="number" value={candForm.experienceYears} onChange={(e) => setCandForm({ ...candForm, experienceYears: Number(e.target.value) })} /></div>
-                      <div><Label>Expected salary (S$)</Label><Input type="number" value={candForm.expectedSalary} onChange={(e) => setCandForm({ ...candForm, expectedSalary: Number(e.target.value) })} /></div>
+                      <div><Label>Expected salary ($)</Label><Input type="number" value={candForm.expectedSalary} onChange={(e) => setCandForm({ ...candForm, expectedSalary: Number(e.target.value) })} /></div>
                       <div>
                         <Label>Source</Label>
                         <Select value={candForm.source} onValueChange={(v) => setCandForm({ ...candForm, source: v as Candidate["source"] })}>
@@ -252,7 +252,7 @@ export default function RecruitmentPage() {
                         </Select>
                       </div>
                       <div className="sm:col-span-2"><Label>Agent / referrer</Label><Input value={candForm.agentName} onChange={(e) => setCandForm({ ...candForm, agentName: e.target.value })} /></div>
-                      <div><Label>Agent commission (S$)</Label><Input type="number" value={candForm.agentCommission} onChange={(e) => setCandForm({ ...candForm, agentCommission: Number(e.target.value) })} /></div>
+                      <div><Label>Agent commission ($)</Label><Input type="number" value={candForm.agentCommission} onChange={(e) => setCandForm({ ...candForm, agentCommission: Number(e.target.value) })} /></div>
                       <div>
                         <Label>Commission status</Label>
                         <Select value={candForm.commissionStatus} onValueChange={(v) => setCandForm({ ...candForm, commissionStatus: v as NonNullable<Candidate["commissionStatus"]> })}>
@@ -315,7 +315,7 @@ export default function RecruitmentPage() {
                             {c.agentName ? <div className="text-xs text-muted-foreground">{c.agentName}</div> : null}
                             {c.agentCommission ? (
                               <div className="text-xs text-muted-foreground">
-                                Commission S${c.agentCommission.toLocaleString()} · {c.commissionStatus ?? "Unbilled"}
+                                Commission ${c.agentCommission.toLocaleString()} · {c.commissionStatus ?? "Unbilled"}
                               </div>
                             ) : null}
                           </TableCell>
@@ -388,7 +388,7 @@ export default function RecruitmentPage() {
                           <SelectContent>{passTypes.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent>
                         </Select>
                       </div>
-                      <div><Label>Budget salary (S$)</Label><Input type="number" value={reqForm.budgetSalary} onChange={(e) => setReqForm({ ...reqForm, budgetSalary: Number(e.target.value) })} /></div>
+                      <div><Label>Budget salary ($)</Label><Input type="number" value={reqForm.budgetSalary} onChange={(e) => setReqForm({ ...reqForm, budgetSalary: Number(e.target.value) })} /></div>
                       <div><Label>Target date</Label><Input type="date" value={reqForm.targetDate} onChange={(e) => setReqForm({ ...reqForm, targetDate: e.target.value })} /></div>
                       <div>
                         <Label>Status</Label>
