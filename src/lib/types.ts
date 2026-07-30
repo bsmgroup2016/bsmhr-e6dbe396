@@ -1001,3 +1001,43 @@ export interface PurchaseOrder {
   createdAt: string;
   updatedAt: string;
 }
+
+/* ---------- loan / salary advance ledger ---------- */
+export type LoanType = "Salary Advance" | "Personal Loan" | "Air Ticket" | "Agent Fee" | "Other";
+export type LoanStatus = "Active" | "Settled" | "Written Off" | "Cancelled";
+export type RepaymentSource = "Payroll" | "Cash" | "Bank Transfer" | "Adjustment";
+
+export interface EmployeeLoan {
+  id: string;
+  companyId?: string;
+  employeeId: string;
+  loanNo: string;
+  loanType: LoanType;
+  principal: number;
+  issuedOn?: string;
+  /** YYYY-MM of the first payroll deduction. */
+  firstDeductionMonth?: string;
+  monthlyInstallment: number;
+  purpose?: string;
+  /** MOM requires written worker consent for any loan recovery. */
+  consentSigned: boolean;
+  consentDocumentUrl?: string;
+  status: LoanStatus;
+  remarks?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface LoanRepayment {
+  id: string;
+  loanId: string;
+  employeeId: string;
+  paidOn?: string;
+  /** YYYY-MM payroll month this repayment belongs to. */
+  month?: string;
+  amount: number;
+  source: RepaymentSource;
+  remarks?: string;
+  createdAt: string;
+  updatedAt: string;
+}
