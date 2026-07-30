@@ -111,6 +111,21 @@ export interface Employee {
   levyTier?: "Higher Skilled" | "Basic Skilled";
   medicalInsuranceExpiry?: string;
   medicalCheckupDue?: string;
+  // --- Work Permit lifecycle (IPA -> card -> cancellation -> repatriation) ---
+  wpStage?: WpStage;
+  ipaIssueDate?: string;
+  ipaExpiryDate?: string;
+  arrivalDate?: string;
+  medicalCompletedDate?: string;
+  wpCardCollectedDate?: string;
+  cancellationNotifiedOn?: string;
+  cancellationDate?: string;
+  repatriationDate?: string;
+  securityBondRequired?: boolean;
+  securityBondAmount?: number;
+  securityBondInsurer?: string;
+  securityBondExpiry?: string;
+  securityBondStatus?: SecurityBondStatus;
   createdAt: string;
   updatedAt: string;
 }
