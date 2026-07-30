@@ -15,7 +15,7 @@ import {
 } from "@/lib/housing";
 
 const tone = (s: HousingSyncRow["status"]) =>
-  s === "Overdue" ? "danger" : s === "Pending" ? "warning" : s === "Synced" ? "success" : "muted";
+  s === "Overdue" ? "destructive" : s === "Pending" ? "warning" : s === "Synced" ? "success" : "ghost";
 
 export function HousingNotificationPanel() {
   const [tick, setTick] = useState(0);
@@ -106,7 +106,7 @@ export function HousingNotificationPanel() {
                   <TableCell className="text-xs">{r.effectiveDate || "—"}</TableCell>
                   <TableCell className="text-right text-xs">{r.allocation ? r.daysElapsed : "—"}</TableCell>
                   <TableCell>
-                    <StatusBadge status={r.status} tone={tone(r.status)} />
+                    <StatusBadge label={r.status} variant={tone(r.status)} dot />
                   </TableCell>
                   <TableCell className="text-right">
                     {r.status === "Pending" || r.status === "Overdue" ? (
