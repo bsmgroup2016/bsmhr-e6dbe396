@@ -146,7 +146,6 @@ function normalizeDate(value: string) {
 }
 
 export default function WorkforcePage() {
-  const companyId = getCurrentCompany();
   const [allEmployees, setEmployees] = useState<Employee[]>(getEmployees());
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<EmployeeStatus | "all">("all");
@@ -170,8 +169,7 @@ export default function WorkforcePage() {
 
   // Only real employees: records must belong to a company (admin/staff accounts
   // without a company are excluded from this page).
-  const staffOnly = allEmployees.filter((e) => !!e.companyId);
-  const employees = companyId ? staffOnly.filter((e) => e.companyId === companyId) : staffOnly;
+  const employees = allEmployees.filter((e) => !!e.companyId);
   const sites = Array.from(new Set(employees.map((e) => e.site).filter(Boolean)));
   const nationalities = Array.from(new Set(employees.map((e) => e.nationality).filter(Boolean))).sort();
   const trades = Array.from(new Set(employees.map((e) => e.trade).filter(Boolean))).sort();
@@ -323,7 +321,10 @@ export default function WorkforcePage() {
     addEmployee({
       ...employeeFromForm(formData),
       site: null,
-      companyId: getCurrentCompany() || undefined,
+      companyId:
+        (companyFilter !== "all" ? companyFilter : undefined) ??
+        getCurrentCompany() ??
+        companies[0]?.id,
     } as Omit<Employee, "id" | "employeeCode" | "createdAt" | "updatedAt">);
     setIsCreateOpen(false);
     refresh();
