@@ -168,6 +168,16 @@ export default function WorkforcePage() {
   const [companyFilter, setCompanyFilter] = useState<string>("all");
   const [tradeFilter, setTradeFilter] = useState<string>("all");
   const [showFilters, setShowFilters] = useState(false);
+  const activeFilterCount = [
+    companyFilter,
+    tradeFilter,
+    siteFilter,
+    statusFilter,
+    passFilter,
+    categoryFilter,
+    deployFilter,
+    nationalityFilter,
+  ].filter((v) => v !== "all").length;
   const companies = getCompanies();
 
   // Only real employees: records must belong to a company (admin/staff accounts
