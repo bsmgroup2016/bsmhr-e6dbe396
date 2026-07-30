@@ -160,7 +160,8 @@ export default function WorkforcePage() {
   const [categoryFilter, setCategoryFilter] = useState<WorkerCategory | "all">("all");
   const [deployFilter, setDeployFilter] = useState<DeploymentStatus | "all">("all");
   const [nationalityFilter, setNationalityFilter] = useState<string>("all");
-  const openCreateFromUrl = Route.useSearch().new === true;
+  const routeSearch = Route.useSearch();
+  const openCreateFromUrl = routeSearch.new === true;
   const [isCreateOpen, setIsCreateOpen] = useState(openCreateFromUrl);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   const [viewingEmployee, setViewingEmployee] = useState<Employee | null>(null);
@@ -172,7 +173,7 @@ export default function WorkforcePage() {
   const [companyFilter, setCompanyFilter] = useState<string>("all");
   const [tradeFilter, setTradeFilter] = useState<string>("all");
   const [showFilters, setShowFilters] = useState(false);
-  const [availableOnly, setAvailableOnly] = useState(false);
+  const [availableOnly, setAvailableOnly] = useState(routeSearch.available === true);
   const activeFilterCount = [
     companyFilter,
     tradeFilter,
