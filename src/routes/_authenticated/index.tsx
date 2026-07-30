@@ -47,8 +47,6 @@ import {
   getDocuments,
   getAuditLogs,
   getAttendance,
-  getCompanies,
-  getCurrentCompany,
   getLeads,
   getActivities,
   getClients,
