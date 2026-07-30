@@ -399,6 +399,10 @@ export interface PayrollEntry {
   shgAmount?: number;
   /** Gross + employer CPF + SDL + FWL. */
   employerCost?: number;
+  /** Overtime hours worked in the month (MOM cap: 72 h). */
+  overtimeHours?: number;
+  /** When the itemised payslip was issued. */
+  payslipIssuedAt?: string;
   netPay: number;
   status: PayrollStatus;
   approvedBy?: string;
