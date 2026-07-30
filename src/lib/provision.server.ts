@@ -42,7 +42,7 @@ async function nextCode(prefix: string): Promise<string> {
     if (m) max = Math.max(max, Number(m[1]));
   }
   const p = prefix.toUpperCase();
-  return `${p}-${String(max + 1).padStart(CODE_PAD[p] ?? 2, "0")}`;
+  return `${p}-${String(max + 1).padStart(CODE_PAD, "0")}`;
 }
 
 export type ProvisionResult = {
