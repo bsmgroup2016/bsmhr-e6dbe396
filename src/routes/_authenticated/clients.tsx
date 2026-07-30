@@ -65,6 +65,9 @@ const statuses: ClientStatus[] = ["Active", "Inactive", "Prospect"];
 const industries = ["Construction", "Petrochemical", "Aviation", "Utilities", "Manufacturing", "Marine", "Other"];
 
 export const Route = createFileRoute("/_authenticated/clients")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    new: search.new === "1" || search.new === true ? true : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Clients — BSM Workforce & Operations" },
@@ -81,7 +84,7 @@ export default function ClientsPage() {
   const [projects] = useState(getProjects());
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<ClientStatus | "all">("all");
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isCreateOpen, setIsCreateOpen] = useState(Route.useSearch().new === true);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [viewingClient, setViewingClient] = useState<Client | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Client | null>(null);
