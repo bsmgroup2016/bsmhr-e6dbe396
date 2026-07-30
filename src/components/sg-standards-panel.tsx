@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/table";
 import { updateEmployee } from "@/lib/store";
 import { exportRows } from "@/lib/xlsx";
+import { employeeSlugById } from "@/lib/employee-slug";
 import type { Employee, Ir21Status, PwmSector, SkillCertType, SkillLevel } from "@/lib/types";
 import { FWMI_MIN_COVERAGE, fwmiRows, fwmiSummary } from "@/lib/fwmi";
 import { IR21_STATUSES, ir21Rows, ir21Summary } from "@/lib/ir21";
@@ -82,7 +83,7 @@ export function SgStandardsPanel({ employees, section, onChange }: Props) {
         <Pencil className="h-4 w-4" />
       </Button>
       <Button size="icon" variant="ghost" asChild title="Open profile">
-        <Link to="/workforce/$id" params={{ id: e.id }}><Eye className="h-4 w-4" /></Link>
+        <Link to="/workforce/$slug" params={{ slug: employeeSlugById(e.id) }}><Eye className="h-4 w-4" /></Link>
       </Button>
     </div>
   );

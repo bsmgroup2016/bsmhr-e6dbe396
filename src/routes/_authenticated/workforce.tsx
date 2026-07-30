@@ -59,6 +59,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { getEmployees, addEmployee, updateEmployee, deleteEmployee, getCurrentCompany, getCompanies } from "@/lib/store";
+import { employeeSlugById } from "@/lib/employee-slug";
 import type { Employee, PassType, EmployeeStatus, DeploymentStatus, WorkerCategory } from "@/lib/types";
 import { pick, type ImportColumn } from "@/lib/xlsx";
 
@@ -662,8 +663,8 @@ export default function WorkforcePage() {
                           />
                           <div className="space-y-0.5 text-xs text-muted-foreground">
                             <Link
-                              to="/workforce/$id"
-                              params={{ id: e.id }}
+                              to="/workforce/$slug"
+                              params={{ slug: employeeSlugById(e.id) }}
                               className="block text-sm font-semibold text-primary hover:underline"
                             >
                               {e.name}
@@ -877,7 +878,7 @@ function EmployeeDetail({ employee, onEdit }: { employee: Employee; onEdit: () =
 
       <div className="flex flex-wrap gap-2">
         <Button asChild>
-          <Link to="/workforce/$id" params={{ id: employee.id }}>Open full profile</Link>
+          <Link to="/workforce/$slug" params={{ slug: employeeSlugById(employee.id) }}>Open full profile</Link>
         </Button>
         <Button variant="outline" onClick={onEdit}>
           <Pencil className="mr-2 h-4 w-4" />

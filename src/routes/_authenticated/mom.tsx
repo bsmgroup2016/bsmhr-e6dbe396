@@ -27,6 +27,7 @@ import { DeductionCompliancePanel } from "@/components/deduction-compliance-pane
 import { LoanLedgerPanel } from "@/components/loan-ledger-panel";
 import { SgStandardsPanel } from "@/components/sg-standards-panel";
 import { MedicalClaimsPanel } from "@/components/medical-claims-panel";
+import { employeeSlugById } from "@/lib/employee-slug";
 
 export const Route = createFileRoute("/_authenticated/mom")({
   head: () => ({
@@ -277,7 +278,7 @@ function MomPage() {
                           <TableCell className="text-right font-medium">{money(r.levy)}</TableCell>
                           <TableCell>
                             <Button size="icon" variant="ghost" asChild title="Open profile">
-                              <Link to="/workforce/$id" params={{ id: r.employee.id }}><Eye className="h-4 w-4" /></Link>
+                              <Link to="/workforce/$slug" params={{ slug: employeeSlugById(r.employee.id) }}><Eye className="h-4 w-4" /></Link>
                             </Button>
                           </TableCell>
                         </TableRow>
@@ -340,7 +341,7 @@ function MomPage() {
                           </TableCell>
                           <TableCell>
                             <Button size="icon" variant="ghost" asChild title="Open profile">
-                              <Link to="/workforce/$id" params={{ id: i.employee.id }}><Eye className="h-4 w-4" /></Link>
+                              <Link to="/workforce/$slug" params={{ slug: employeeSlugById(i.employee.id) }}><Eye className="h-4 w-4" /></Link>
                             </Button>
                           </TableCell>
                         </TableRow>

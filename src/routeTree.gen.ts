@@ -51,7 +51,7 @@ import { Route as ApiPublicR2DeleteRouteImport } from './routes/api/public/r2-de
 import { Route as ApiPublicProvisionEmployeeRouteImport } from './routes/api/public/provision-employee'
 import { Route as ApiPublicOcrRouteImport } from './routes/api/public/ocr'
 import { Route as ApiPublicNotifyLeaveRouteImport } from './routes/api/public/notify-leave'
-import { Route as AuthenticatedWorkforceIdRouteImport } from './routes/_authenticated/workforce.$id'
+import { Route as AuthenticatedWorkforceSlugRouteImport } from './routes/_authenticated/workforce_.$slug'
 import { Route as AuthenticatedCompaniesIdRouteImport } from './routes/_authenticated/companies_.$id'
 
 const AuthRoute = AuthRouteImport.update({
@@ -267,11 +267,11 @@ const ApiPublicNotifyLeaveRoute = ApiPublicNotifyLeaveRouteImport.update({
   path: '/api/public/notify-leave',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedWorkforceIdRoute =
-  AuthenticatedWorkforceIdRouteImport.update({
-    id: '/$id',
-    path: '/$id',
-    getParentRoute: () => AuthenticatedWorkforceRoute,
+const AuthenticatedWorkforceSlugRoute =
+  AuthenticatedWorkforceSlugRouteImport.update({
+    id: '/workforce_/$slug',
+    path: '/workforce/$slug',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedCompaniesIdRoute =
   AuthenticatedCompaniesIdRouteImport.update({
@@ -311,9 +311,9 @@ export interface FileRoutesByFullPath {
   '/training': typeof AuthenticatedTrainingRoute
   '/transport': typeof AuthenticatedTransportRoute
   '/users': typeof AuthenticatedUsersRoute
-  '/workforce': typeof AuthenticatedWorkforceRouteWithChildren
+  '/workforce': typeof AuthenticatedWorkforceRoute
   '/companies/$id': typeof AuthenticatedCompaniesIdRoute
-  '/workforce/$id': typeof AuthenticatedWorkforceIdRoute
+  '/workforce/$slug': typeof AuthenticatedWorkforceSlugRoute
   '/api/public/notify-leave': typeof ApiPublicNotifyLeaveRoute
   '/api/public/ocr': typeof ApiPublicOcrRoute
   '/api/public/provision-employee': typeof ApiPublicProvisionEmployeeRoute
@@ -355,10 +355,10 @@ export interface FileRoutesByTo {
   '/training': typeof AuthenticatedTrainingRoute
   '/transport': typeof AuthenticatedTransportRoute
   '/users': typeof AuthenticatedUsersRoute
-  '/workforce': typeof AuthenticatedWorkforceRouteWithChildren
+  '/workforce': typeof AuthenticatedWorkforceRoute
   '/': typeof AuthenticatedIndexRoute
   '/companies/$id': typeof AuthenticatedCompaniesIdRoute
-  '/workforce/$id': typeof AuthenticatedWorkforceIdRoute
+  '/workforce/$slug': typeof AuthenticatedWorkforceSlugRoute
   '/api/public/notify-leave': typeof ApiPublicNotifyLeaveRoute
   '/api/public/ocr': typeof ApiPublicOcrRoute
   '/api/public/provision-employee': typeof ApiPublicProvisionEmployeeRoute
@@ -402,10 +402,10 @@ export interface FileRoutesById {
   '/_authenticated/training': typeof AuthenticatedTrainingRoute
   '/_authenticated/transport': typeof AuthenticatedTransportRoute
   '/_authenticated/users': typeof AuthenticatedUsersRoute
-  '/_authenticated/workforce': typeof AuthenticatedWorkforceRouteWithChildren
+  '/_authenticated/workforce': typeof AuthenticatedWorkforceRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/companies_/$id': typeof AuthenticatedCompaniesIdRoute
-  '/_authenticated/workforce/$id': typeof AuthenticatedWorkforceIdRoute
+  '/_authenticated/workforce_/$slug': typeof AuthenticatedWorkforceSlugRoute
   '/api/public/notify-leave': typeof ApiPublicNotifyLeaveRoute
   '/api/public/ocr': typeof ApiPublicOcrRoute
   '/api/public/provision-employee': typeof ApiPublicProvisionEmployeeRoute
@@ -452,7 +452,7 @@ export interface FileRouteTypes {
     | '/users'
     | '/workforce'
     | '/companies/$id'
-    | '/workforce/$id'
+    | '/workforce/$slug'
     | '/api/public/notify-leave'
     | '/api/public/ocr'
     | '/api/public/provision-employee'
@@ -497,7 +497,7 @@ export interface FileRouteTypes {
     | '/workforce'
     | '/'
     | '/companies/$id'
-    | '/workforce/$id'
+    | '/workforce/$slug'
     | '/api/public/notify-leave'
     | '/api/public/ocr'
     | '/api/public/provision-employee'
@@ -543,7 +543,7 @@ export interface FileRouteTypes {
     | '/_authenticated/workforce'
     | '/_authenticated/'
     | '/_authenticated/companies_/$id'
-    | '/_authenticated/workforce/$id'
+    | '/_authenticated/workforce_/$slug'
     | '/api/public/notify-leave'
     | '/api/public/ocr'
     | '/api/public/provision-employee'
@@ -867,12 +867,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicNotifyLeaveRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/workforce/$id': {
-      id: '/_authenticated/workforce/$id'
-      path: '/$id'
-      fullPath: '/workforce/$id'
-      preLoaderRoute: typeof AuthenticatedWorkforceIdRouteImport
-      parentRoute: typeof AuthenticatedWorkforceRoute
+    '/_authenticated/workforce_/$slug': {
+      id: '/_authenticated/workforce_/$slug'
+      path: '/workforce/$slug'
+      fullPath: '/workforce/$slug'
+      preLoaderRoute: typeof AuthenticatedWorkforceSlugRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/companies_/$id': {
       id: '/_authenticated/companies_/$id'
@@ -883,20 +883,6 @@ declare module '@tanstack/react-router' {
     }
   }
 }
-
-interface AuthenticatedWorkforceRouteChildren {
-  AuthenticatedWorkforceIdRoute: typeof AuthenticatedWorkforceIdRoute
-}
-
-const AuthenticatedWorkforceRouteChildren: AuthenticatedWorkforceRouteChildren =
-  {
-    AuthenticatedWorkforceIdRoute: AuthenticatedWorkforceIdRoute,
-  }
-
-const AuthenticatedWorkforceRouteWithChildren =
-  AuthenticatedWorkforceRoute._addFileChildren(
-    AuthenticatedWorkforceRouteChildren,
-  )
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAccommodationRoute: typeof AuthenticatedAccommodationRoute
@@ -927,9 +913,10 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedTrainingRoute: typeof AuthenticatedTrainingRoute
   AuthenticatedTransportRoute: typeof AuthenticatedTransportRoute
   AuthenticatedUsersRoute: typeof AuthenticatedUsersRoute
-  AuthenticatedWorkforceRoute: typeof AuthenticatedWorkforceRouteWithChildren
+  AuthenticatedWorkforceRoute: typeof AuthenticatedWorkforceRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedCompaniesIdRoute: typeof AuthenticatedCompaniesIdRoute
+  AuthenticatedWorkforceSlugRoute: typeof AuthenticatedWorkforceSlugRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -961,9 +948,10 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedTrainingRoute: AuthenticatedTrainingRoute,
   AuthenticatedTransportRoute: AuthenticatedTransportRoute,
   AuthenticatedUsersRoute: AuthenticatedUsersRoute,
-  AuthenticatedWorkforceRoute: AuthenticatedWorkforceRouteWithChildren,
+  AuthenticatedWorkforceRoute: AuthenticatedWorkforceRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedCompaniesIdRoute: AuthenticatedCompaniesIdRoute,
+  AuthenticatedWorkforceSlugRoute: AuthenticatedWorkforceSlugRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

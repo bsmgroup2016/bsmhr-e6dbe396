@@ -15,12 +15,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
-  getEmployee, updateEmployee, getAssignmentsByEmployee, getAttendanceByEmployee,
+  getEmployees, updateEmployee, getAssignmentsByEmployee, getAttendanceByEmployee,
   getPayrollByEmployee, getDocumentsByEmployee, getAuditLogs, getSites, getProjects, getClients,
 } from "@/lib/store";
 import type { Employee } from "@/lib/types";
+import { findEmployeeByParam } from "@/lib/employee-slug";
 
-export const Route = createFileRoute("/_authenticated/workforce/$id")({
+export const Route = createFileRoute("/_authenticated/workforce_/$slug")({
   head: () => ({
     meta: [
       { title: "Employee profile — BSM Workforce & Operations" },
@@ -68,11 +69,11 @@ function Grid({ children }: { children: React.ReactNode }) {
 }
 
 function EmployeeProfilePage() {
-  const { id } = Route.useParams();
+  const { slug } = Route.useParams();
   const navigate = useNavigate();
   const [, force] = useState(0);
   const [editing, setEditing] = useState(false);
-  const employee = getEmployee(id);
+  const employee = findEmployeeByParam(getEmployees(), slug);
 
   if (!employee) {
     return (
@@ -103,7 +104,7 @@ function EmployeeProfilePage() {
   const activeClient = clients.find((c) => c.id === activeProject?.clientId);
 
   function patch(updates: Partial<Employee>) {
-    updateEmployee(id, updates);
+    updateEmployee(employee!.id, updates);
     force((n) => n + 1);
   }
 
