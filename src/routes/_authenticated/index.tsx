@@ -516,7 +516,12 @@ function DashboardPage() {
           />
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {keyMetrics.map((m) => (
-              <Link key={m.title} to={m.to} className="block focus-visible:outline-none">
+              <Link
+                key={m.title}
+                to={m.to}
+                search={m.search as never}
+                className="block focus-visible:outline-none"
+              >
                 <SummaryCard
                   title={m.title}
                   value={m.value}
