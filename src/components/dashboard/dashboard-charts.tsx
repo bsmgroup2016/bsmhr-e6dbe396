@@ -83,13 +83,13 @@ export function DashboardCharts({ data }: { data: DashboardChartData }) {
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
-            <XAxis dataKey="month" tickLine={false} axisLine={false} fontSize={11} />
-            <YAxis tickFormatter={sgdShort} tickLine={false} axisLine={false} fontSize={11} width={44} />
+            <XAxis dataKey="month" tickLine={false} axisLine={false} fontSize={12} />
+            <YAxis tickFormatter={sgdShort} tickLine={false} axisLine={false} fontSize={12} width={48} />
             <Tooltip
               contentStyle={tooltipStyle}
               formatter={(v: number) => `S$${Math.round(v).toLocaleString("en-SG")}`}
             />
-            <Legend iconType="circle" wrapperStyle={{ fontSize: 12 }} />
+            <Legend iconType="circle" wrapperStyle={{ fontSize: 13 }} />
             <Area
               type="monotone"
               dataKey="gross"
