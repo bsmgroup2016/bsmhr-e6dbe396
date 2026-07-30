@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const summaryCardVariants = cva(
-  "group relative flex flex-col overflow-hidden rounded-2xl border bg-gradient-surface p-7 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-card hover:border-primary/20 before:absolute before:inset-x-0 before:top-0 before:h-1.5 before:content-['']",
+  "group relative flex flex-col overflow-hidden rounded-2xl border bg-card p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-card hover:border-primary/25 before:absolute before:inset-y-0 before:left-0 before:w-1 before:content-['']",
   {
     variants: {
       variant: {
@@ -22,16 +22,16 @@ const summaryCardVariants = cva(
 );
 
 const iconVariants = cva(
-  "flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl transition-transform duration-300 group-hover:scale-105",
+  "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ring-1 transition-transform duration-300 group-hover:scale-105",
   {
     variants: {
       variant: {
-        default: "bg-muted text-muted-foreground",
-        primary: "bg-gradient-primary text-primary-foreground shadow-elegant",
-        success: "bg-gradient-success text-success-foreground",
-        warning: "bg-gradient-warning text-warning-foreground",
-        destructive: "bg-gradient-destructive text-destructive-foreground",
-        info: "bg-gradient-info text-info-foreground",
+        default: "bg-muted text-muted-foreground ring-border",
+        primary: "bg-primary/10 text-primary ring-primary/20",
+        success: "bg-success/10 text-success ring-success/20",
+        warning: "bg-warning/10 text-warning ring-warning/20",
+        destructive: "bg-destructive/10 text-destructive ring-destructive/20",
+        info: "bg-info/10 text-info ring-info/20",
       },
     },
     defaultVariants: {
@@ -66,22 +66,26 @@ export function SummaryCard({
   ...props
 }: SummaryCardProps) {
   return (
-    <div className={cn(summaryCardVariants({ variant }), "min-h-[172px]", className)} {...props}>
+    <div className={cn(summaryCardVariants({ variant }), "min-h-[168px]", className)} {...props}>
       <div className="flex flex-1 flex-col justify-between">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold uppercase tracking-wide text-muted-foreground/80">{title}</p>
+            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+              {title}
+            </p>
             {loading ? (
               <Skeleton className="mt-3 h-11 w-32" />
             ) : (
-              <p className="mt-2 text-4xl font-bold tracking-tight text-foreground">{value}</p>
+              <p className="mt-2.5 text-[2.1rem] font-bold leading-none tracking-tight tabular-nums text-foreground">
+                {value}
+              </p>
             )}
           </div>
           <div className={cn(iconVariants({ variant }))}>{icon}</div>
         </div>
 
         {(caption || trend) && !loading && (
-          <div className="mt-4 flex items-center gap-2 border-t border-border/50 pt-3 text-xs">
+          <div className="mt-5 flex items-center gap-2 border-t border-border/60 pt-3 text-xs">
             {trend && (
               <span
                 className={cn("font-semibold", {
