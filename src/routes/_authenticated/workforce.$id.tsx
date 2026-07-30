@@ -220,7 +220,7 @@ function EmployeeProfilePage() {
             <Grid>
               <Item label="P-File Number" value={employee.employeeCode} />
               <Item label="Worker category" value={employee.workerCategory} />
-              <Item label="Primary skill" value={employee.trade} />
+              <Item label="Designation" value={employee.trade} />
               <Item label="Employment status" value={employee.status} />
               <Item label="Deployment status" value={employee.deploymentStatus ?? "Available"} />
               <Item label="Current client" value={activeClient?.name} />
@@ -264,7 +264,7 @@ function EmployeeProfilePage() {
               <Item label="Employment type" value={employee.employmentType} />
               <Item label="Worker category" value={employee.workerCategory} />
               <Item label="Job title" value={employee.jobTitle} />
-              <Item label="Primary skill" value={employee.trade} />
+              <Item label="Designation" value={employee.trade} />
               <Item label="Secondary skills" value={employee.secondarySkills} />
               <Item label="Application date" value={employee.applicationDate} />
               <Item label="Joining date" value={employee.joinedOn} />

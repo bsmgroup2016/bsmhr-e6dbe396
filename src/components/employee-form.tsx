@@ -377,7 +377,7 @@ export function EmployeeForm({
             <Field label="Job title">
               <Input name="jobTitle" defaultValue={employee?.jobTitle ?? ""} />
             </Field>
-            <Field label="Primary skill / trade">
+            <Field label="Designation">
               <Pick name="trade" options={TRADES} defaultValue={employee?.trade || TRADES[0]} />
             </Field>
             <Field label="Secondary skills">
