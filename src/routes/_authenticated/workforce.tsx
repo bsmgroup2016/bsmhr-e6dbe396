@@ -76,6 +76,7 @@ export const Route = createFileRoute("/_authenticated/workforce")({
   validateSearch: (search: Record<string, unknown>) => ({
     new: search.new === "1" || search.new === true ? true : undefined,
     available: search.available === "1" || search.available === true ? true : undefined,
+    company: typeof search.company === "string" ? search.company : undefined,
   }),
   head: () => ({
     meta: [
