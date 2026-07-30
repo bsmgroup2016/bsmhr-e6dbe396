@@ -1,6 +1,17 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { CheckCircle2, Loader2, Search, Shield, User as UserIcon } from "lucide-react";
+import {
+  CalendarDays,
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+  Mail,
+  Power,
+  Search,
+  Shield,
+  User as UserIcon,
+} from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
 import { SummaryCard } from "@/components/ui/summary-card";
@@ -65,6 +76,8 @@ export default function UsersPage() {
   const [savingId, setSavingId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<AppAuthRole | "all">("all");
+  const [perPage, setPerPage] = useState("10");
+  const [page, setPage] = useState(1);
 
   const load = useCallback(async () => {
     setLoading(true);
