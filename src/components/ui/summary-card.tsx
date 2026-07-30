@@ -95,12 +95,13 @@ export function SummaryCard({
   badges,
   trend,
   loading,
+  compact,
   className,
   variant,
   ...props
 }: SummaryCardProps) {
   return (
-    <div className={cn(summaryCardVariants({ variant }), "min-h-[156px]", className)} {...props}>
+    <div className={cn(summaryCardVariants({ variant, compact }), className)} {...props}>
       <div className="flex flex-1 flex-col justify-between">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0 flex-1">
