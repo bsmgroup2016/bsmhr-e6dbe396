@@ -275,7 +275,7 @@ function DashboardPage() {
     : 0;
 
   const keyMetrics: Array<{
-    to: string;
+    to: LinkProps["to"];
     title: string;
     value: string;
     caption: string;
