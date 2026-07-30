@@ -5,6 +5,7 @@
  */
 import { buildComplianceItems, reminderLabel, reminderTier } from "@/lib/compliance";
 import { lifecycleRows } from "@/lib/wp-lifecycle";
+import { ketGaps, salaryComplianceRows } from "@/lib/salary-compliance";
 import {
   assetAlerts,
   certificationAlerts,
@@ -16,12 +17,14 @@ import {
   overdueIssuances,
   vehicleExpiryAlerts,
 } from "@/lib/store";
+import { getPayroll } from "@/lib/store";
 
 export type AlertSeverity = "critical" | "warning" | "info";
 
 export type AlertCategory =
   | "Compliance"
   | "Work Pass"
+  | "Salary"
   | "Leave"
   | "Billing"
   | "Transport"
