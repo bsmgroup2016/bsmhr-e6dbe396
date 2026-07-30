@@ -658,7 +658,7 @@ export default function WorkforcePage() {
 
           {/* Records per page + search */}
           <div className="flex flex-col gap-3 rounded-lg border bg-muted/20 p-3 lg:flex-row lg:items-center">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-1 items-center gap-2 lg:justify-start">
               <Select value={perPage} onValueChange={(v) => { setPerPage(v); setPage(1); }}>
                 <SelectTrigger className="h-9 w-20"><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -683,7 +683,7 @@ export default function WorkforcePage() {
                     />
                   </div>
                 </div>
-                <div className="flex items-center justify-end gap-2 lg:flex-1">
+                <div className="flex flex-1 items-center justify-end gap-2">
                   <Button variant="outline" size="sm" asChild>
                     <Link to={availableOnly ? "/available-workers" : "/deployed-workers"}>View details</Link>
                   </Button>
