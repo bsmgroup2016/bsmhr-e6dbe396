@@ -112,6 +112,20 @@ export function computeSdl(grossWage: number): number {
   return round2(Math.min(Math.max(raw, 2), 11.25));
 }
 
+/**
+ * Additional Wage (AW) ceiling: bonuses and other non-monthly payments attract
+ * CPF only up to $102,000 minus the year's total Ordinary Wages.
+ */
+export function additionalWageCeiling(annualOrdinaryWages: number): number {
+  return Math.max(0, AW_CEILING_YEAR - Math.min(annualOrdinaryWages, AW_CEILING_YEAR));
+}
+
+/** Portion of an Additional Wage payment that is subject to CPF. */
+export function cpfableAdditionalWage(additionalWage: number, annualOrdinaryWages: number): number {
+  if (additionalWage <= 0) return 0;
+  return round2(Math.min(additionalWage, additionalWageCeiling(annualOrdinaryWages)));
+}
+
 type Bracket = { upTo: number; amount: number };
 
 const CDAC: Bracket[] = [
