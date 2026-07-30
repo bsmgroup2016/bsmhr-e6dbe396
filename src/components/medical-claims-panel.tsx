@@ -226,14 +226,13 @@ export function MedicalClaimsPanel({ employees, onChanged }: Props) {
                   <TableCell className="text-right">{sgd(r.outstanding)}</TableCell>
                   <TableCell>
                     <StatusBadge
+                      label={r.claim.status}
                       variant={
                         r.claim.status === "Paid" ? "success"
                           : r.claim.status === "Rejected" ? "destructive"
                           : r.claim.status === "Approved" ? "info" : "warning"
                       }
-                    >
-                      {r.claim.status}
-                    </StatusBadge>
+                    />
                   </TableCell>
                   <TableCell className="max-w-64 text-xs text-muted-foreground">
                     {r.issues.join("; ") || "Compliant"}
