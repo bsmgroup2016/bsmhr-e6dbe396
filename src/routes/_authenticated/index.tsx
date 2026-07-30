@@ -755,8 +755,8 @@ function DashboardPage() {
                   params={{ id: e.id }}
                   className="rounded-xl border bg-gradient-surface p-4 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-warning/40 hover:shadow-elegant"
                 >
-                  <p className="truncate text-sm font-medium text-foreground">{e.name}</p>
-                  <p className="truncate text-xs text-muted-foreground">
+                  <p className="truncate text-base font-medium text-foreground">{e.name}</p>
+                  <p className="truncate text-sm text-muted-foreground">
                     {e.passType} · {e.employeeCode}
                   </p>
                   <div className="mt-3">
