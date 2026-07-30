@@ -2,7 +2,15 @@ import type { ReactNode } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 
 import { AppShell } from "@/components/app-shell";
-import { SummaryCard } from "@/components/ui/summary-card";
+import { SummaryCard, type SummaryBadge } from "@/components/ui/summary-card";
+
+function urgencyTone(days: number | null): SummaryBadge["tone"] {
+  if (days === null) return "neutral";
+  if (days <= 7) return "critical";
+  if (days <= 15) return "warning";
+  if (days <= 30) return "info";
+  return "neutral";
+}
 import { StatusBadge } from "@/components/ui/status-badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { DashboardCharts } from "@/components/dashboard/dashboard-charts";
