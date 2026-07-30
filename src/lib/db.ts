@@ -662,6 +662,7 @@ export interface LoadedData {
   contracts: ClientContract[];
 }
 
+
 /* ---------- medical claims (FWMI / WICA) ---------- */
 export const fromMedicalClaim = (r: Row): MedicalClaim => ({
   id: r.id, companyId: r.company_id ?? undefined, employeeId: r.employee_id,
