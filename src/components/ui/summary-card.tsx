@@ -22,7 +22,7 @@ const summaryCardVariants = cva(
 );
 
 const iconVariants = cva(
-  "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ring-1 transition-transform duration-300 group-hover:scale-105",
+  "flex h-14 w-14 shrink-0 items-center justify-center rounded-xl ring-1 transition-transform duration-300 group-hover:scale-105",
   {
     variants: {
       variant: {
@@ -41,7 +41,7 @@ const iconVariants = cva(
 );
 
 const badgeVariants = cva(
-  "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[0.68rem] font-semibold ring-1",
+  "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ring-1",
   {
     variants: {
       tone: {
@@ -89,17 +89,17 @@ export function SummaryCard({
   ...props
 }: SummaryCardProps) {
   return (
-    <div className={cn(summaryCardVariants({ variant }), "min-h-[168px]", className)} {...props}>
+    <div className={cn(summaryCardVariants({ variant }), "min-h-[184px]", className)} {...props}>
       <div className="flex flex-1 flex-col justify-between">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0 flex-1">
-            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+            <p className="text-sm font-semibold uppercase tracking-[0.06em] text-muted-foreground">
               {title}
             </p>
             {loading ? (
-              <Skeleton className="mt-3 h-11 w-32" />
+              <Skeleton className="mt-3 h-12 w-36" />
             ) : (
-              <p className="mt-2.5 text-[2.1rem] font-bold leading-none tracking-tight tabular-nums text-foreground">
+              <p className="mt-2.5 text-[2.5rem] font-bold leading-none tracking-tight tabular-nums text-foreground">
                 {value}
               </p>
             )}
@@ -108,7 +108,7 @@ export function SummaryCard({
         </div>
 
         {badges && badges.length > 0 && !loading && (
-          <div className="mt-3 flex flex-wrap items-center gap-1.5">
+          <div className="mt-4 flex flex-wrap items-center gap-2">
             {badges.map((b) => (
               <span key={b.label} className={cn(badgeVariants({ tone: b.tone }))}>
                 {b.label}
@@ -118,7 +118,7 @@ export function SummaryCard({
         )}
 
         {(caption || trend) && !loading && (
-          <div className="mt-4 flex items-center gap-2 border-t border-border/60 pt-3 text-xs">
+          <div className="mt-4 flex items-center gap-2 border-t border-border/60 pt-3 text-sm">
             {trend && (
               <span
                 className={cn("font-semibold", {

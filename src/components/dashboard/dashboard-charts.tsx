@@ -30,7 +30,7 @@ const tooltipStyle = {
   border: "1px solid var(--border)",
   background: "var(--card)",
   color: "var(--foreground)",
-  fontSize: 12,
+  fontSize: 13,
   boxShadow: "0 8px 24px -12px rgb(0 0 0 / 0.25)",
 };
 
@@ -48,8 +48,8 @@ function ChartCard({
   return (
     <div className={`rounded-2xl border bg-card p-5 shadow-sm ${className ?? ""}`}>
       <div className="mb-4 flex items-baseline justify-between gap-3">
-        <h3 className="text-sm font-semibold tracking-tight text-foreground">{title}</h3>
-        {caption ? <span className="text-xs text-muted-foreground">{caption}</span> : null}
+        <h3 className="text-base font-semibold tracking-tight text-foreground">{title}</h3>
+        {caption ? <span className="text-sm text-muted-foreground">{caption}</span> : null}
       </div>
       <div className="h-[260px] w-full">{children}</div>
     </div>
@@ -83,13 +83,13 @@ export function DashboardCharts({ data }: { data: DashboardChartData }) {
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
-            <XAxis dataKey="month" tickLine={false} axisLine={false} fontSize={11} />
-            <YAxis tickFormatter={sgdShort} tickLine={false} axisLine={false} fontSize={11} width={44} />
+            <XAxis dataKey="month" tickLine={false} axisLine={false} fontSize={12} />
+            <YAxis tickFormatter={sgdShort} tickLine={false} axisLine={false} fontSize={12} width={48} />
             <Tooltip
               contentStyle={tooltipStyle}
               formatter={(v: number) => `S$${Math.round(v).toLocaleString("en-SG")}`}
             />
-            <Legend iconType="circle" wrapperStyle={{ fontSize: 12 }} />
+            <Legend iconType="circle" wrapperStyle={{ fontSize: 13 }} />
             <Area
               type="monotone"
               dataKey="gross"
@@ -128,7 +128,7 @@ export function DashboardCharts({ data }: { data: DashboardChartData }) {
               ))}
             </Pie>
             <Tooltip contentStyle={tooltipStyle} />
-            <Legend iconType="circle" wrapperStyle={{ fontSize: 12 }} />
+            <Legend iconType="circle" wrapperStyle={{ fontSize: 13 }} />
           </PieChart>
         </ResponsiveContainer>
       </ChartCard>
@@ -137,10 +137,10 @@ export function DashboardCharts({ data }: { data: DashboardChartData }) {
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data.attendance} margin={{ top: 8, right: 8, left: -18, bottom: 0 }} barSize={22}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
-            <XAxis dataKey="day" tickLine={false} axisLine={false} fontSize={11} />
-            <YAxis allowDecimals={false} tickLine={false} axisLine={false} fontSize={11} width={40} />
+            <XAxis dataKey="day" tickLine={false} axisLine={false} fontSize={12} />
+            <YAxis allowDecimals={false} tickLine={false} axisLine={false} fontSize={12} width={44} />
             <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "var(--muted)", opacity: 0.35 }} />
-            <Legend iconType="circle" wrapperStyle={{ fontSize: 12 }} />
+            <Legend iconType="circle" wrapperStyle={{ fontSize: 13 }} />
             <Bar dataKey="Present" stackId="a" fill={C.success} radius={[0, 0, 0, 0]} />
             <Bar dataKey="Leave" stackId="a" fill={C.info} />
             <Bar dataKey="Absent" stackId="a" fill={C.warning} radius={[6, 6, 0, 0]} />
@@ -157,14 +157,14 @@ export function DashboardCharts({ data }: { data: DashboardChartData }) {
             barSize={18}
           >
             <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="var(--border)" />
-            <XAxis type="number" allowDecimals={false} tickLine={false} axisLine={false} fontSize={11} />
+            <XAxis type="number" allowDecimals={false} tickLine={false} axisLine={false} fontSize={12} />
             <YAxis
               type="category"
               dataKey="name"
               tickLine={false}
               axisLine={false}
-              fontSize={11}
-              width={78}
+              fontSize={12}
+              width={84}
             />
             <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "var(--muted)", opacity: 0.35 }} />
             <Bar dataKey="value" name="Projects" radius={[0, 6, 6, 0]}>

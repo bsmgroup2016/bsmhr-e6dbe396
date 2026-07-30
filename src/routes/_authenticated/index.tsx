@@ -82,8 +82,8 @@ function SectionHeading({
   return (
     <div className="flex items-center gap-2">
       {icon}
-      <h2 className="text-base font-semibold tracking-tight text-foreground">{title}</h2>
-      {caption ? <span className="ml-auto text-xs text-muted-foreground">{caption}</span> : null}
+      <h2 className="text-lg font-semibold tracking-tight text-foreground">{title}</h2>
+      {caption ? <span className="ml-auto text-sm text-muted-foreground">{caption}</span> : null}
     </div>
   );
 }
@@ -288,7 +288,7 @@ function DashboardPage() {
       title: "WorkPermit Expiring",
       value: wpExpiring.length.toString(),
       caption: `${wpExpiring30} within 30 days · next 60 days`,
-      icon: <WorkPermitIdIcon className="h-7 w-7" />,
+      icon: <WorkPermitIdIcon className="h-8 w-8" />,
       variant: wpExpiring7 ? "destructive" : wpExpiring30 ? "warning" : wpExpiring.length ? "info" : "success",
       badges: wpExpiring.length
         ? [
@@ -304,7 +304,7 @@ function DashboardPage() {
       title: "Passport Expiring",
       value: passportExpiring.length.toString(),
       caption: `${passportExpiring30} within 30 days · next 90 days`,
-      icon: <PassportIcon className="h-7 w-7" />,
+      icon: <PassportIcon className="h-8 w-8" />,
       variant: passportExpiring7
         ? "destructive"
         : passportExpiring30
@@ -326,7 +326,7 @@ function DashboardPage() {
       title: "Available Workers",
       value: availableWorkers.toString(),
       caption: `of ${employees.length} total workers`,
-      icon: <UserCheck className="h-5 w-5" />,
+      icon: <UserCheck className="h-6 w-6" />,
       variant: availableRate >= 70 ? "success" : availableRate >= 40 ? "warning" : "destructive",
       badges: [
         {
@@ -342,7 +342,7 @@ function DashboardPage() {
       title: "On Medical Leave",
       value: medicalLeaveCount.toString(),
       caption: "MC / hospitalisation today",
-      icon: <HeartPulse className="h-5 w-5" />,
+      icon: <HeartPulse className="h-6 w-6" />,
       variant: "info" as const,
     },
     {
@@ -350,7 +350,7 @@ function DashboardPage() {
       title: "CSOC Certified",
       value: csocWorkers.toString(),
       caption: `${Math.max(0, employees.length - csocWorkers)} without valid CSOC`,
-      icon: <BadgeCheck className="h-5 w-5" />,
+      icon: <BadgeCheck className="h-6 w-6" />,
       variant: "primary" as const,
     },
     {
@@ -358,7 +358,7 @@ function DashboardPage() {
       title: "On Normal Leave",
       value: onNormalLeave.length.toString(),
       caption: "Annual / other leave today",
-      icon: <Palmtree className="h-5 w-5" />,
+      icon: <Palmtree className="h-6 w-6" />,
       variant: "info" as const,
     },
     {
@@ -366,7 +366,7 @@ function DashboardPage() {
       title: "Absent Today",
       value: absentToday.toString(),
       caption: `${presentToday} present today`,
-      icon: <CalendarX2 className="h-5 w-5" />,
+      icon: <CalendarX2 className="h-6 w-6" />,
       variant: (absentToday ? "warning" : "success") as "warning" | "success",
     },
     {
@@ -374,7 +374,7 @@ function DashboardPage() {
       title: "Running Projects",
       value: runningProjects.length.toString(),
       caption: `${projects.length} projects in total`,
-      icon: <FolderKanban className="h-5 w-5" />,
+      icon: <FolderKanban className="h-6 w-6" />,
       variant: "primary" as const,
     },
     {
@@ -382,7 +382,7 @@ function DashboardPage() {
       title: "Projects Ending Soon",
       value: endingProjects.length.toString(),
       caption: "Completing within 30 days",
-      icon: <Briefcase className="h-5 w-5" />,
+      icon: <Briefcase className="h-6 w-6" />,
       variant: (endingProjects.length ? "warning" : "default") as "warning" | "default",
     },
     {
@@ -390,7 +390,7 @@ function DashboardPage() {
       title: "Clients",
       value: clientsAll.length.toString(),
       caption: `${activeClientCount} active accounts`,
-      icon: <Building2 className="h-5 w-5" />,
+      icon: <Building2 className="h-6 w-6" />,
       variant: "info" as const,
     },
     {
@@ -398,7 +398,7 @@ function DashboardPage() {
       title: "Salary Paid (Month)",
       value: sgd(salaryPaidMonth),
       caption: `${paidThisMonth.length} payslips · ${monthKey}`,
-      icon: <DollarSign className="h-5 w-5" />,
+      icon: <DollarSign className="h-6 w-6" />,
       variant: "success" as const,
     },
     {
@@ -406,7 +406,7 @@ function DashboardPage() {
       title: "Annual Wages",
       value: sgd(annualWages),
       caption: `Gross wages ${yearKey}`,
-      icon: <Landmark className="h-5 w-5" />,
+      icon: <Landmark className="h-6 w-6" />,
       variant: "primary" as const,
     },
   ];
@@ -478,10 +478,10 @@ function DashboardPage() {
       <div className="w-full space-y-8">
         <div className="flex flex-col gap-4 border-b border-border/60 pb-5 sm:flex-row sm:items-end sm:justify-between">
           <div className="space-y-1">
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+            <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
               Dashboard
             </h1>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-base text-muted-foreground">
               Workforce, compliance and operations at a glance ·{" "}
               {today.toLocaleDateString("en-SG", {
                 weekday: "long",
@@ -492,11 +492,11 @@ function DashboardPage() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-success/25 bg-success/10 px-3 py-1.5 text-xs font-medium text-success">
-              <UserCheck className="h-3.5 w-3.5" /> {availableWorkers} available today
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-success/25 bg-success/10 px-3 py-1.5 text-sm font-medium text-success">
+              <UserCheck className="h-4 w-4" /> {availableWorkers} available today
             </span>
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-warning/25 bg-warning/10 px-3 py-1.5 text-xs font-medium text-warning">
-              <AlertCircle className="h-3.5 w-3.5" /> {pendingApprovals} pending approvals
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-warning/25 bg-warning/10 px-3 py-1.5 text-sm font-medium text-warning">
+              <AlertCircle className="h-4 w-4" /> {pendingApprovals} pending approvals
             </span>
           </div>
         </div>
@@ -531,28 +531,28 @@ function DashboardPage() {
             <SummaryCard
               title="Total Employees"
               value={employees.length.toString()}
-              icon={<Users className="h-5 w-5" />}
+              icon={<Users className="h-6 w-6" />}
               variant="primary"
               caption={`${activeEmployees} active · ${deployedEmployees} deployed`}
             />
             <SummaryCard
               title="Active Sites"
               value={activeSites.toString()}
-              icon={<Building2 className="h-5 w-5" />}
+              icon={<Building2 className="h-6 w-6" />}
               variant="info"
               caption={`Across ${projects.length} projects`}
             />
             <SummaryCard
               title="Active Projects"
               value={activeProjects.toString()}
-              icon={<FolderKanban className="h-5 w-5" />}
+              icon={<FolderKanban className="h-6 w-6" />}
               variant="success"
               caption={`${projects.filter((p) => p.status === "Planning").length} planning`}
             />
             <SummaryCard
               title="Pending Approval"
               value={pendingApprovals.toString()}
-              icon={<Clock className="h-5 w-5" />}
+              icon={<Clock className="h-6 w-6" />}
               variant="warning"
               caption={`${expiringDocs} docs · ${presentToday} present today`}
             />
@@ -577,12 +577,12 @@ function DashboardPage() {
                   search={action.search as never}
                   className="flex items-center gap-3 rounded-xl border bg-gradient-surface p-4 text-left shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-elegant"
                 >
-                  <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg shadow-sm ${colorClass}`}>
-                    <action.icon className="h-4 w-4" />
+                  <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-lg shadow-sm ${colorClass}`}>
+                    <action.icon className="h-5 w-5" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-foreground">{action.label}</p>
-                    <p className="truncate text-xs text-muted-foreground">{action.desc}</p>
+                    <p className="text-base font-medium text-foreground">{action.label}</p>
+                    <p className="truncate text-sm text-muted-foreground">{action.desc}</p>
                   </div>
                 </Link>
               );
@@ -598,36 +598,36 @@ function DashboardPage() {
               caption="Lead pipeline & recent client activity"
               icon={<Target className="h-4 w-4 text-primary" />}
             />
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <SummaryCard
-                title="Open Leads"
-                value={openLeads.length.toString()}
-                icon={<Target className="h-5 w-5" />}
-                variant="primary"
-                caption={`${wonLeads.length} won · ${leads.length} total`}
-              />
-              <SummaryCard
-                title="Pipeline Value"
-                value={money(pipelineValue)}
-                icon={<TrendingUp className="h-5 w-5" />}
-                variant="info"
-                caption={`${money(weightedValue)} weighted / month`}
-              />
-              <SummaryCard
-                title="Active Clients"
-                value={activeClients.toString()}
-                icon={<Building2 className="h-5 w-5" />}
-                variant="success"
-                caption="Currently engaged accounts"
-              />
-              <SummaryCard
-                title="Follow-ups Due"
-                value={followUpsDue.toString()}
-                icon={<PhoneCall className="h-5 w-5" />}
-                variant="warning"
-                caption={`${overdueCount} overdue · today or earlier`}
-              />
-            </div>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <SummaryCard
+              title="Open Leads"
+              value={openLeads.length.toString()}
+              icon={<Target className="h-6 w-6" />}
+              variant="primary"
+              caption={`${wonLeads.length} won · ${leads.length} total`}
+            />
+            <SummaryCard
+              title="Pipeline Value"
+              value={money(pipelineValue)}
+              icon={<TrendingUp className="h-6 w-6" />}
+              variant="info"
+              caption={`${money(weightedValue)} weighted / month`}
+            />
+            <SummaryCard
+              title="Active Clients"
+              value={activeClients.toString()}
+              icon={<Building2 className="h-6 w-6" />}
+              variant="success"
+              caption="Currently engaged accounts"
+            />
+            <SummaryCard
+              title="Follow-ups Due"
+              value={followUpsDue.toString()}
+              icon={<PhoneCall className="h-6 w-6" />}
+              variant="warning"
+              caption={`${overdueCount} overdue · today or earlier`}
+            />
+          </div>
 
             {followUpCards.length > 0 ? (
               <div className="space-y-3">
@@ -645,19 +645,19 @@ function DashboardPage() {
                         to="/clients"
                         className="rounded-xl border bg-gradient-surface p-4 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-warning/40 hover:shadow-elegant"
                       >
-                        <p className="truncate text-sm font-medium text-foreground">{f.subject}</p>
-                        <p className="truncate text-xs text-muted-foreground">
-                          {f.activityType} ·{" "}
-                          {(f.clientId && clientNames.get(f.clientId)) ||
-                            (f.leadId && leadNames.get(f.leadId)) ||
-                            "—"}
-                        </p>
-                        <div className="mt-3 flex items-center justify-between gap-2">
-                          <StatusBadge variant={badge.variant} label={badge.label} dot />
-                          <span className="shrink-0 text-xs text-muted-foreground">
-                            {f.followUpDate}
-                          </span>
-                        </div>
+                    <p className="truncate text-base font-medium text-foreground">{f.subject}</p>
+                    <p className="truncate text-sm text-muted-foreground">
+                      {f.activityType} ·{" "}
+                      {(f.clientId && clientNames.get(f.clientId)) ||
+                        (f.leadId && leadNames.get(f.leadId)) ||
+                        "—"}
+                    </p>
+                    <div className="mt-3 flex items-center justify-between gap-2">
+                      <StatusBadge variant={badge.variant} label={badge.label} dot />
+                      <span className="shrink-0 text-sm text-muted-foreground">
+                        {f.followUpDate}
+                      </span>
+                    </div>
                       </Link>
                     );
                   })}
@@ -668,20 +668,20 @@ function DashboardPage() {
             <div className="grid gap-4 lg:grid-cols-3">
               <div className="rounded-xl border bg-gradient-surface p-5 shadow-sm lg:col-span-2">
                 <div className="mb-4 flex items-center justify-between">
-                  <p className="text-sm font-medium text-foreground">Lead pipeline</p>
-                  <Link to="/clients" className="text-xs text-primary hover:underline">
+                  <p className="text-base font-medium text-foreground">Lead pipeline</p>
+                  <Link to="/clients" className="text-sm text-primary hover:underline">
                     Open CRM
                   </Link>
                 </div>
                 {openLeads.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-base text-muted-foreground">
                     No open leads yet. Add a lead to start tracking your pipeline.
                   </p>
                 ) : (
                   <div className="space-y-3">
                     {pipeline.map((p) => (
                       <div key={p.stage} className="flex items-center gap-3">
-                        <span className="w-28 shrink-0 truncate text-xs text-muted-foreground">
+                        <span className="w-28 shrink-0 truncate text-sm text-muted-foreground">
                           {p.stage}
                         </span>
                         <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-muted">
@@ -690,10 +690,10 @@ function DashboardPage() {
                             style={{ width: `${(p.count / maxStageCount) * 100}%` }}
                           />
                         </div>
-                        <span className="w-8 shrink-0 text-right text-xs font-medium text-foreground">
+                        <span className="w-8 shrink-0 text-right text-sm font-medium text-foreground">
                           {p.count}
                         </span>
-                        <span className="w-20 shrink-0 text-right text-xs text-muted-foreground">
+                        <span className="w-20 shrink-0 text-right text-sm text-muted-foreground">
                           {money(p.value)}
                         </span>
                       </div>
@@ -703,9 +703,9 @@ function DashboardPage() {
               </div>
 
               <div className="rounded-xl border bg-gradient-surface p-5 shadow-sm">
-                <p className="mb-4 text-sm font-medium text-foreground">Recent activity</p>
+                <p className="mb-4 text-base font-medium text-foreground">Recent activity</p>
                 {recentActivities.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-base text-muted-foreground">
                     No calls, meetings or emails logged yet.
                   </p>
                 ) : (
@@ -716,8 +716,8 @@ function DashboardPage() {
                           <PhoneCall className="h-3.5 w-3.5" />
                         </span>
                         <div className="min-w-0">
-                          <p className="truncate text-sm text-foreground">{a.subject}</p>
-                          <p className="truncate text-xs text-muted-foreground">
+                          <p className="truncate text-base text-foreground">{a.subject}</p>
+                          <p className="truncate text-sm text-muted-foreground">
                             {a.activityType} ·{" "}
                             {(a.clientId && clientNames.get(a.clientId)) ||
                               (a.leadId && leadNames.get(a.leadId)) ||
@@ -755,8 +755,8 @@ function DashboardPage() {
                   params={{ id: e.id }}
                   className="rounded-xl border bg-gradient-surface p-4 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-warning/40 hover:shadow-elegant"
                 >
-                  <p className="truncate text-sm font-medium text-foreground">{e.name}</p>
-                  <p className="truncate text-xs text-muted-foreground">
+                  <p className="truncate text-base font-medium text-foreground">{e.name}</p>
+                  <p className="truncate text-sm text-muted-foreground">
                     {e.passType} · {e.employeeCode}
                   </p>
                   <div className="mt-3">
@@ -805,22 +805,22 @@ function DashboardPage() {
               />
             ) : (
               <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
-                <table className="w-full text-sm">
+                <table className="w-full text-base">
                   <thead className="bg-muted/50">
                     <tr>
-                      <th className="px-4 py-2 text-left font-medium">Time</th>
-                      <th className="px-4 py-2 text-left font-medium">User</th>
-                      <th className="px-4 py-2 text-left font-medium">Action</th>
-                      <th className="px-4 py-2 text-left font-medium">Details</th>
+                      <th className="px-4 py-2.5 text-left font-medium">Time</th>
+                      <th className="px-4 py-2.5 text-left font-medium">User</th>
+                      <th className="px-4 py-2.5 text-left font-medium">Action</th>
+                      <th className="px-4 py-2.5 text-left font-medium">Details</th>
                     </tr>
                   </thead>
                   <tbody>
                     {logs.map((l) => (
                       <tr key={l.id} className="border-t">
-                        <td className="px-4 py-2 text-muted-foreground">{new Date(l.timestamp).toLocaleString()}</td>
-                        <td className="px-4 py-2 font-medium">{l.userName}</td>
-                        <td className="px-4 py-2">{l.action} {l.entityType}</td>
-                        <td className="max-w-xs truncate px-4 py-2 text-muted-foreground">{l.details}</td>
+                        <td className="px-4 py-2.5 text-muted-foreground">{new Date(l.timestamp).toLocaleString()}</td>
+                        <td className="px-4 py-2.5 font-medium">{l.userName}</td>
+                        <td className="px-4 py-2.5">{l.action} {l.entityType}</td>
+                        <td className="max-w-xs truncate px-4 py-2.5 text-muted-foreground">{l.details}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -833,19 +833,19 @@ function DashboardPage() {
             <SectionHeading title="Status" />
             <div className="space-y-3 rounded-xl border bg-gradient-surface p-5 shadow-sm">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">System</span>
+                <span className="text-base text-muted-foreground">System</span>
                 <StatusBadge variant="success" label="Operational" dot />
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Payroll period</span>
+                <span className="text-base text-muted-foreground">Payroll period</span>
                 <StatusBadge variant="primary" label="Jul 2026" />
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Attendance lock</span>
+                <span className="text-base text-muted-foreground">Attendance lock</span>
                 <StatusBadge variant="warning" label="Pending" dot />
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Expiring docs</span>
+                <span className="text-base text-muted-foreground">Expiring docs</span>
                 <StatusBadge
                   variant={expiringDocs > 0 ? "warning" : "success"}
                   label={expiringDocs > 0 ? `${expiringDocs} alert` : "OK"}
