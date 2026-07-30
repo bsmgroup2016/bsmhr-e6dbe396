@@ -325,7 +325,7 @@ function DashboardPage() {
     },
     {
       to: "/workforce" as const,
-      search: { available: "1" },
+      search: companyId ? { available: "1", company: companyId } : { available: "1" },
       title: "Available Workers",
       value: availableWorkers.toString(),
       caption: `of ${employees.length} total workers`,
