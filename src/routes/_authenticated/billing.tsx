@@ -87,7 +87,7 @@ const units: RateUnit[] = ["Hourly", "Daily", "Monthly"];
 const cycles: BillingCycle[] = ["Weekly", "Fortnightly", "Monthly"];
 
 const money = (n: number) =>
-  `S$${n.toLocaleString("en-SG", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  `$${n.toLocaleString("en-SG", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 export const Route = createFileRoute("/_authenticated/billing")({
   head: () => ({
@@ -992,7 +992,7 @@ function ContractForm({
           </Select>
         </div>
         <div className="space-y-1">
-          <Label htmlFor="fixedAmount">Fixed amount (S$)</Label>
+          <Label htmlFor="fixedAmount">Fixed amount ($)</Label>
           <Input
             id="fixedAmount"
             name="fixedAmount"
@@ -1105,11 +1105,11 @@ function RateForm({
           </Select>
         </div>
         <div className="space-y-1">
-          <Label htmlFor="normalRate">Normal rate (S$)</Label>
+          <Label htmlFor="normalRate">Normal rate ($)</Label>
           <Input id="normalRate" name="normalRate" type="number" step="0.01" defaultValue={0} required />
         </div>
         <div className="space-y-1">
-          <Label htmlFor="otRate">OT rate / hr (S$)</Label>
+          <Label htmlFor="otRate">OT rate / hr ($)</Label>
           <Input id="otRate" name="otRate" type="number" step="0.01" defaultValue={0} />
         </div>
         <div className="space-y-1">

@@ -245,7 +245,7 @@ function MyPortalPage() {
           />
           <SummaryCard
             title="Latest net pay"
-            value={lastPayslip ? `S$${lastPayslip.netPay.toLocaleString()}` : "—"}
+            value={lastPayslip ? `$${lastPayslip.netPay.toLocaleString()}` : "—"}
             icon={<Wallet className="h-5 w-5" />}
             caption={lastPayslip ? lastPayslip.month : "No payslip yet"}
           />

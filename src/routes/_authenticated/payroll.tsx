@@ -163,7 +163,7 @@ export default function PayrollPage() {
     };
   });
   const annualMaxMonth = Math.max(1, ...annualByMonth.map((m) => m.gross));
-  const money = (n: number) => `S$${Math.round(n).toLocaleString("en-SG")}`;
+  const money = (n: number) => `$${Math.round(n).toLocaleString("en-SG")}`;
 
   function refresh() {
     setPayroll(getPayroll());
@@ -504,10 +504,10 @@ export default function PayrollPage() {
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-          <SummaryCard title="Net pay" value={`S$${totalNetPay.toLocaleString()}`} icon={<DollarSign className="h-5 w-5" />} variant="primary" caption={month} />
-          <SummaryCard title="CPF total" value={`S$${Math.round(totalCpf).toLocaleString()}`} icon={<Landmark className="h-5 w-5" />} variant="info" caption="Employee + employer" />
-          <SummaryCard title="Employer cost" value={`S$${Math.round(totalEmployerCost).toLocaleString()}`} icon={<Calculator className="h-5 w-5" />} variant="default" caption="Gross + CPF + SDL + levy" />
-          <SummaryCard title="Levies" value={`S$${totalLevies.toLocaleString()}`} icon={<DollarSign className="h-5 w-5" />} variant="warning" caption={month} />
+          <SummaryCard title="Net pay" value={`$${totalNetPay.toLocaleString()}`} icon={<DollarSign className="h-5 w-5" />} variant="primary" caption={month} />
+          <SummaryCard title="CPF total" value={`$${Math.round(totalCpf).toLocaleString()}`} icon={<Landmark className="h-5 w-5" />} variant="info" caption="Employee + employer" />
+          <SummaryCard title="Employer cost" value={`$${Math.round(totalEmployerCost).toLocaleString()}`} icon={<Calculator className="h-5 w-5" />} variant="default" caption="Gross + CPF + SDL + levy" />
+          <SummaryCard title="Levies" value={`$${totalLevies.toLocaleString()}`} icon={<DollarSign className="h-5 w-5" />} variant="warning" caption={month} />
           <SummaryCard title="Paid" value={paidCount.toString()} icon={<CheckCircle2 className="h-5 w-5" />} variant="success" caption={month} />
           <SummaryCard title="Pending" value={pendingCount.toString()} icon={<Clock className="h-5 w-5" />} variant="info" caption={month} />
         </div>
@@ -617,13 +617,13 @@ export default function PayrollPage() {
                           <div className="font-medium">{emp?.name}</div>
                           <div className="text-xs text-muted-foreground">{emp?.employeeCode}</div>
                         </TableCell>
-                        <TableCell>S$ {p.basicSalary.toLocaleString()}</TableCell>
-                        <TableCell>S$ {p.overtimePay.toLocaleString()}</TableCell>
-                        <TableCell>S$ {p.allowances.toLocaleString()}</TableCell>
-                        <TableCell>S$ {p.deductions.toLocaleString()}</TableCell>
-                        <TableCell>S$ {p.cpfEmployee.toLocaleString()}</TableCell>
-                        <TableCell>S$ {p.levies.toLocaleString()}</TableCell>
-                        <TableCell className="font-medium">S$ {p.netPay.toLocaleString()}</TableCell>
+                        <TableCell>$ {p.basicSalary.toLocaleString()}</TableCell>
+                        <TableCell>$ {p.overtimePay.toLocaleString()}</TableCell>
+                        <TableCell>$ {p.allowances.toLocaleString()}</TableCell>
+                        <TableCell>$ {p.deductions.toLocaleString()}</TableCell>
+                        <TableCell>$ {p.cpfEmployee.toLocaleString()}</TableCell>
+                        <TableCell>$ {p.levies.toLocaleString()}</TableCell>
+                        <TableCell className="font-medium">$ {p.netPay.toLocaleString()}</TableCell>
                         <TableCell>
                           <StatusBadge
                             variant={p.status === "Paid" ? "success" : p.status === "Approved" ? "success" : p.status === "Rejected" ? "destructive" : p.status === "Draft" ? "ghost" : "warning"}
@@ -707,7 +707,7 @@ function PayslipDialog({
   onClose: () => void;
 }) {
   if (!entry) return null;
-  const money = (n: number) => `S$ ${n.toLocaleString()}`;
+  const money = (n: number) => `$ ${n.toLocaleString()}`;
   const rows: [string, number][] = [
     ["Basic salary", entry.basicSalary],
     ["Overtime", entry.overtimePay],

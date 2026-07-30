@@ -43,7 +43,7 @@ export const Route = createFileRoute("/_authenticated/mom")({
   component: MomPage,
 });
 
-const money = (n: number) => `S$${Math.round(n).toLocaleString()}`;
+const money = (n: number) => `$${Math.round(n).toLocaleString()}`;
 const pct = (n: number) => (Number.isFinite(n) ? `${Math.round(n * 100)}%` : "Over quota");
 
 function MomPage() {
@@ -73,7 +73,7 @@ function MomPage() {
         "Pass type": r.employee.passType,
         Sector: sector,
         "Levy tier": r.tier,
-        "Monthly levy (S$)": r.levy,
+        "Monthly levy ($)": r.levy,
       })),
       "mom-levy-summary", "Levy",
     );

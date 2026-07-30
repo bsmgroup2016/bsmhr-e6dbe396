@@ -34,7 +34,7 @@ import {
   CLAIM_STATUSES, CLAIM_TYPES, claimRows, claimSummary, utilisation,
 } from "@/lib/medical-claims";
 
-const sgd = (n: number) => `S$${n.toLocaleString("en-SG", { maximumFractionDigits: 2 })}`;
+const sgd = (n: number) => `$${n.toLocaleString("en-SG", { maximumFractionDigits: 2 })}`;
 
 type Form = Partial<MedicalClaim>;
 
@@ -401,7 +401,7 @@ export function MedicalClaimsPanel({ employees, onChanged }: Props) {
               <Input value={form.diagnosis ?? ""} onChange={(e) => set({ diagnosis: e.target.value })} />
             </div>
             <div className="space-y-2">
-              <Label>Total bill (S$)</Label>
+              <Label>Total bill ($)</Label>
               <Input type="number" value={form.totalAmount ?? 0} onChange={(e) => set({ totalAmount: Number(e.target.value) })} />
             </div>
             <div className="space-y-2">
@@ -425,15 +425,15 @@ export function MedicalClaimsPanel({ employees, onChanged }: Props) {
               <Input value={form.policyNo ?? ""} onChange={(e) => set({ policyNo: e.target.value })} />
             </div>
             <div className="space-y-2">
-              <Label>Insurer paid (S$)</Label>
+              <Label>Insurer paid ($)</Label>
               <Input type="number" value={form.insurerPaid ?? 0} onChange={(e) => set({ insurerPaid: Number(e.target.value) })} />
             </div>
             <div className="space-y-2">
-              <Label>Employer paid (S$)</Label>
+              <Label>Employer paid ($)</Label>
               <Input type="number" value={form.employerPaid ?? 0} onChange={(e) => set({ employerPaid: Number(e.target.value) })} />
             </div>
             <div className="space-y-2">
-              <Label>Employee paid (S$)</Label>
+              <Label>Employee paid ($)</Label>
               <Input type="number" value={form.employeePaid ?? 0} onChange={(e) => set({ employeePaid: Number(e.target.value) })} />
             </div>
             <div className="space-y-2">

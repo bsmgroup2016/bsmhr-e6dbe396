@@ -41,7 +41,7 @@ export const Route = createFileRoute("/_authenticated/finance")({
 
 const today = () => new Date().toISOString().slice(0, 10);
 const thisMonth = () => new Date().toISOString().slice(0, 7);
-const sgd = (n: number) => `S$${n.toLocaleString("en-SG", { maximumFractionDigits: 0 })}`;
+const sgd = (n: number) => `$${n.toLocaleString("en-SG", { maximumFractionDigits: 0 })}`;
 
 const emptyExpense = {
   expenseDate: today(),
@@ -304,11 +304,11 @@ export default function FinancePage() {
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      <Label>Amount (S$)</Label>
+                      <Label>Amount ($)</Label>
                       <Input type="number" value={expForm.amount} onChange={(e) => setExpForm({ ...expForm, amount: Number(e.target.value) })} />
                     </div>
                     <div className="space-y-2">
-                      <Label>GST (S$)</Label>
+                      <Label>GST ($)</Label>
                       <Input type="number" value={expForm.gstAmount} onChange={(e) => setExpForm({ ...expForm, gstAmount: Number(e.target.value) })} />
                     </div>
                     <div className="space-y-2">
@@ -449,7 +449,7 @@ export default function FinancePage() {
                       <Input type="date" value={rcpForm.receivedOn} onChange={(e) => setRcpForm({ ...rcpForm, receivedOn: e.target.value })} />
                     </div>
                     <div className="space-y-2">
-                      <Label>Amount (S$)</Label>
+                      <Label>Amount ($)</Label>
                       <Input type="number" value={rcpForm.amount} onChange={(e) => setRcpForm({ ...rcpForm, amount: Number(e.target.value) })} />
                     </div>
                     <div className="space-y-2">

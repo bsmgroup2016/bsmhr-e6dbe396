@@ -789,7 +789,7 @@ export default function WorkforcePage() {
                             </Link>
                             <div>P-File No: {e.employeeCode}</div>
                             <div>FIN: {e.fin || "—"}</div>
-                            <div>Basic Rate: S${e.basicSalary.toLocaleString()}</div>
+                            <div>Basic Rate: ${e.basicSalary.toLocaleString()}</div>
                           </div>
                         </div>
                       </TableCell>
@@ -977,8 +977,8 @@ function EmployeeDetail({ employee, onEdit }: { employee: Employee; onEdit: () =
         <DetailItem label="FIN / NRIC" value={employee.fin} />
         <DetailItem label="Pass type" value={employee.passType} />
         <DetailItem label="Pass expiry" value={employee.passExpiry} />
-        <DetailItem label="Basic salary" value={`S$${employee.basicSalary.toLocaleString()}`} />
-        <DetailItem label="Levy rate" value={employee.levyRate ? `S$${employee.levyRate}` : "—"} />
+        <DetailItem label="Basic salary" value={`$${employee.basicSalary.toLocaleString()}`} />
+        <DetailItem label="Levy rate" value={employee.levyRate ? `$${employee.levyRate}` : "—"} />
         <DetailItem label="Joined on" value={employee.joinedOn} />
         <DetailItem label="Site" value={employee.site || "Unassigned"} />
         <DetailItem label="Phone" value={employee.phone || "—"} />

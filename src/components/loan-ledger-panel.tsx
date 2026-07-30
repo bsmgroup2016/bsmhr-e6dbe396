@@ -26,7 +26,7 @@ import type { EmployeeLoan, LoanRepayment } from "@/lib/types";
 
 const today = () => new Date().toISOString().slice(0, 10);
 const thisMonth = () => new Date().toISOString().slice(0, 7);
-const money = (n: number) => `S$${n.toLocaleString("en-SG", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const money = (n: number) => `$${n.toLocaleString("en-SG", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 const LOAN_TYPES: EmployeeLoan["loanType"][] = ["Salary Advance", "Personal Loan", "Air Ticket", "Agent Fee", "Other"];
 const LOAN_STATUS: EmployeeLoan["status"][] = ["Active", "Settled", "Written Off", "Cancelled"];
@@ -135,11 +135,11 @@ export function LoanLedgerPanel() {
                   </Select>
                 </div>
                 <div>
-                  <Label>Principal (S$)</Label>
+                  <Label>Principal ($)</Label>
                   <Input type="number" value={draft.principal} onChange={(e) => setDraft({ ...draft, principal: Number(e.target.value) })} />
                 </div>
                 <div>
-                  <Label>Monthly installment (S$)</Label>
+                  <Label>Monthly installment ($)</Label>
                   <Input type="number" value={draft.monthlyInstallment} onChange={(e) => setDraft({ ...draft, monthlyInstallment: Number(e.target.value) })} />
                 </div>
                 <div>
@@ -307,7 +307,7 @@ export function LoanLedgerPanel() {
           </DialogHeader>
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
-              <Label>Amount (S$)</Label>
+              <Label>Amount ($)</Label>
               <Input type="number" value={payDraft.amount} onChange={(e) => setPayDraft({ ...payDraft, amount: Number(e.target.value) })} />
             </div>
             <div>

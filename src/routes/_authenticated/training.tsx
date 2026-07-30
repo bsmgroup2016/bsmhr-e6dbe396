@@ -387,7 +387,7 @@ export default function TrainingPage() {
                       </div>
                       <div><Label>Provider</Label><Input value={courseForm.provider} onChange={(e) => setCourseForm({ ...courseForm, provider: e.target.value })} /></div>
                       <div><Label>Validity (months)</Label><Input type="number" min={0} value={courseForm.validityMonths} onChange={(e) => setCourseForm({ ...courseForm, validityMonths: Number(e.target.value) })} /></div>
-                      <div><Label>Cost (S$)</Label><Input type="number" min={0} value={courseForm.cost} onChange={(e) => setCourseForm({ ...courseForm, cost: Number(e.target.value) })} /></div>
+                      <div><Label>Cost ($)</Label><Input type="number" min={0} value={courseForm.cost} onChange={(e) => setCourseForm({ ...courseForm, cost: Number(e.target.value) })} /></div>
                       <div>
                         <Label>Mandatory</Label>
                         <Select value={courseForm.mandatory ? "yes" : "no"} onValueChange={(v) => setCourseForm({ ...courseForm, mandatory: v === "yes" })}>
@@ -438,7 +438,7 @@ export default function TrainingPage() {
                           <TableCell>{c.category}</TableCell>
                           <TableCell>{c.provider ?? "—"}</TableCell>
                           <TableCell>{c.validityMonths ? `${c.validityMonths} mo` : "—"}</TableCell>
-                          <TableCell>S${c.cost.toLocaleString()}</TableCell>
+                          <TableCell>${c.cost.toLocaleString()}</TableCell>
                           <TableCell>
                             <StatusBadge variant={c.mandatory ? "warning" : "default"} label={c.mandatory ? "Mandatory" : "Optional"} dot />
                           </TableCell>
