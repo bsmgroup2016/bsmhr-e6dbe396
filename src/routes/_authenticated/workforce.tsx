@@ -172,7 +172,7 @@ export default function WorkforcePage() {
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [perPage, setPerPage] = useState("10");
   const [page, setPage] = useState(1);
-  const [companyFilter, setCompanyFilter] = useState<string>("all");
+  const [companyFilter, setCompanyFilter] = useState<string>(routeSearch.company ?? "all");
   const [tradeFilter, setTradeFilter] = useState<string>("all");
   const [showFilters, setShowFilters] = useState(false);
   const [availableOnly, setAvailableOnly] = useState(routeSearch.available === true);
