@@ -4,7 +4,7 @@
  * against the insured limit.
  */
 import { useMemo, useState } from "react";
-import { AlertTriangle, Download, FileText, HeartPulse, Pencil, Plus, Trash2, Wallet } from "lucide-react";
+import { AlertTriangle, Download, FileText, HeartPulse, Pencil, Plus, Trash2, Wallet, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -239,12 +239,21 @@ export function MedicalClaimsPanel({ employees, onChanged }: Props) {
                     />
                   </TableCell>
                   <TableCell>
-                    {r.claim.documentUrl ? (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => void openR2File(r.claim.documentUrl!)}
-                      >
+                    {(r.claim.documentUrls?.length ?? 0) > 0 ? (
+                      <div className="flex flex-wrap gap-1">
+                        {r.claim.documentUrls!.map((u, i) => (
+                          <Button
+                            key={`${u}-${i}`}
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => void openR2File(u)}
+                          >
+                            <FileText className="mr-1 h-4 w-4" />{i + 1}
+                          </Button>
+                        ))}
+                      </div>
+                    ) : r.claim.documentUrl ? (
+                      <Button size="sm" variant="ghost" onClick={() => void openR2File(r.claim.documentUrl!)}>
                         <FileText className="mr-1 h-4 w-4" />View
                       </Button>
                     ) : (
