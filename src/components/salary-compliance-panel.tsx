@@ -75,8 +75,7 @@ export function SalaryCompliancePanel({ employees, onChanged }: Props) {
   };
 
   const exportRowsCsv = () => {
-    exportRows(
-      "salary-compliance",
+    void exportRows(
       rows.map((r) => ({
         Employee: r.employee.name,
         Code: r.employee.employeeCode,
@@ -89,6 +88,7 @@ export function SalaryCompliancePanel({ employees, onChanged }: Props) {
         "Days after period": r.paidOnDay ?? "",
         Issues: r.issues.map((i) => i.label).join("; ") || "Compliant",
       })),
+      "salary-compliance.xlsx",
     );
   };
 
