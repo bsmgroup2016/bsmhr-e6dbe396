@@ -366,19 +366,6 @@ export default function WorkforcePage() {
               <EmployeeForm onSubmit={handleCreate} />
             </DialogContent>
           </Dialog>
-          <div className="mt-2 flex flex-wrap gap-2 sm:mt-0">
-            <ImportDialog
-              title="Import employees"
-              description="Upload any Excel/CSV of workers, then map its columns to system fields. Rows with a matching Employee ID are updated; the rest get a new branch-prefixed ID."
-              templateName="employees"
-              columns={EMPLOYEE_IMPORT_COLUMNS}
-              onImport={handleImport}
-              onDone={refresh}
-              mappable
-              label="Upload Employee XLSX"
-            />
-            <ExportButton rows={filtered.map(toEmployeeRow)} baseName="employees" sheetName="Employees" />
-          </div>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
