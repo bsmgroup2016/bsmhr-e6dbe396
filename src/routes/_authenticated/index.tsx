@@ -280,6 +280,7 @@ function DashboardPage() {
 
   const keyMetrics: Array<{
     to: LinkProps["to"];
+    search?: Record<string, string>;
     title: string;
     value: string;
     caption: string;
@@ -327,6 +328,7 @@ function DashboardPage() {
     },
     {
       to: "/workforce" as const,
+      search: { available: "1" },
       title: "Available Workers",
       value: availableWorkers.toString(),
       caption: `of ${employees.length} total workers`,
