@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, type LinkProps } from "@tanstack/react-router";
 
 import { AppShell } from "@/components/app-shell";
 import { SummaryCard, type SummaryBadge } from "@/components/ui/summary-card";
