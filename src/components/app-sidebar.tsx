@@ -147,7 +147,7 @@ export function AppSidebar() {
       className="[&>[data-sidebar=sidebar]]:bg-[image:var(--gradient-sidebar)]"
     >
       <SidebarHeader className="border-b border-sidebar-border">
-        <div className="flex h-14 items-center gap-3 px-4">
+        <div className="flex h-16 items-center gap-3 px-4">
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-primary text-primary-foreground font-bold text-sm shadow-glow">
             BSM
           </div>
