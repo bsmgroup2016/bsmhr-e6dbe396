@@ -331,16 +331,16 @@ function StaffManagementPage() {
           <div className="overflow-hidden rounded-lg border">
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Staff</TableHead>
-                  <TableHead>Company</TableHead>
-                  <TableHead>Department</TableHead>
-                  <TableHead>Designation</TableHead>
-                  <TableHead className="text-right">Fixed Salary</TableHead>
-                  <TableHead>Passport</TableHead>
-                  <TableHead>Leave</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                <TableRow className="[&>th]:whitespace-nowrap [&>th]:px-4">
+                  <TableHead className="w-[22%] min-w-[200px]">Staff</TableHead>
+                  <TableHead className="w-[10%] min-w-[110px]">Company</TableHead>
+                  <TableHead className="w-[12%] min-w-[120px]">Department</TableHead>
+                  <TableHead className="w-[14%] min-w-[140px]">Designation</TableHead>
+                  <TableHead className="w-[12%] min-w-[130px] text-right">Fixed Salary</TableHead>
+                  <TableHead className="w-[14%] min-w-[180px]">Passport</TableHead>
+                  <TableHead className="w-[9%] min-w-[110px]">Leave</TableHead>
+                  <TableHead className="w-[9%] min-w-[110px]">Status</TableHead>
+                  <TableHead className="w-[8%] min-w-[96px] text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -357,8 +357,11 @@ function StaffManagementPage() {
                   </TableRow>
                 ) : (
                   rows.map((e) => (
-                    <TableRow key={e.id}>
-                      <TableCell className="whitespace-nowrap">
+                    <TableRow
+                      key={e.id}
+                      className="[&>td]:whitespace-nowrap [&>td]:px-4 [&>td]:py-3 [&>td]:align-middle"
+                    >
+                      <TableCell>
                         <Link
                           to="/workforce/$slug"
                           params={{ slug: employeeSlugById(e.id) }}
@@ -370,12 +373,12 @@ function StaffManagementPage() {
                           Employee ID: {e.employeeCode}
                         </div>
                       </TableCell>
-                      <TableCell className="whitespace-nowrap">
+                      <TableCell>
                         {companies.find((c) => c.id === e.companyId)?.name ?? "—"}
                       </TableCell>
-                      <TableCell className="whitespace-nowrap">{e.department ?? "—"}</TableCell>
-                      <TableCell className="whitespace-nowrap">{e.trade ?? "—"}</TableCell>
-                      <TableCell className="whitespace-nowrap text-right font-medium">
+                      <TableCell>{e.department ?? "—"}</TableCell>
+                      <TableCell>{e.trade ?? "—"}</TableCell>
+                      <TableCell className="text-right font-medium tabular-nums">
                         ${(e.basicSalary || 0).toLocaleString()}
                         <span className="ml-1 text-xs text-muted-foreground">/mo</span>
                       </TableCell>
