@@ -1,11 +1,39 @@
 /**
  * OCR extraction service — SINGLE integration point.
  *
- * Documents live in R2, so the reading happens server-side: the server fns in
- * `ocr.functions.ts` presign the object and send it to the AI gateway's vision
- * model. Manual entry still works everywhere, OCR only pre-fills.
+ * Documents live in R2, so the reading happens server-side: the authenticated
+ * endpoint `/api/public/ocr` verifies the caller owns (or may access) the
+ * object, presigns it and sends it to the AI gateway's vision model.
+ * Manual entry still works everywhere, OCR only pre-fills.
  */
-import { ocrIpa, ocrTimeCard } from "@/lib/ocr.functions";
+import { supabase } from "@/integrations/supabase/client";
+
+const OCR_URL = "/api/public/ocr";
+
+async function callOcr(kind: "ipa" | "timecard", ref: string): Promise<unknown> {
+  const { data: session } = await supabase.auth.getSession();
+  const token = session.session?.access_token;
+  if (!token) throw new Error("Sign in again to use OCR");
+  const res = await fetch(OCR_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ kind, ref }),
+  });
+  if (!res.ok) {
+    let message = OCR_NOT_CONFIGURED;
+    try {
+      const body = (await res.json()) as { error?: string };
+      if (body?.error) message = body.error;
+    } catch {
+      /* non-JSON error body */
+    }
+    if (res.status === 401) message = "Sign in again to use OCR";
+    if (res.status === 404) message = "You do not have access to this file";
+    throw new Error(message);
+  }
+  const body = (await res.json()) as { data?: unknown };
+  return body.data;
+}
 
 export type OcrResult<T> =
   | { ok: true; data: T }
@@ -40,7 +68,7 @@ export type TimeCardExtractRow = {
 export async function extractIpaData(fileUrl: string): Promise<OcrResult<IpaExtract>> {
   if (!fileUrl) return { ok: false, reason: "Upload the IPA copy first" };
   try {
-    const data = (await ocrIpa({ data: { ref: fileUrl } })) as IpaExtract;
+    const data = (await callOcr("ipa", fileUrl)) as IpaExtract;
     if (!data || Object.keys(data).length === 0) return { ok: false, reason: OCR_NOT_CONFIGURED };
     return { ok: true, data };
   } catch (e) {
@@ -57,7 +85,7 @@ export async function extractTimeCardData(
 ): Promise<OcrResult<TimeCardExtractRow[]>> {
   if (!fileUrl) return { ok: false, reason: "Upload the time card first" };
   try {
-    const rows = (await ocrTimeCard({ data: { ref: fileUrl } })) as TimeCardExtractRow[];
+    const rows = (await callOcr("timecard", fileUrl)) as TimeCardExtractRow[];
     const clean = (rows ?? []).filter((r) => r && typeof r.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(r.date));
     if (clean.length === 0) return { ok: false, reason: OCR_NOT_CONFIGURED };
     return { ok: true, data: clean };
