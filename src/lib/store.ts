@@ -2553,7 +2553,7 @@ export function updateDepartment(id: string, updates: Partial<Department>): Depa
   if (!existing) return undefined;
   const updated: Department = {
     ...existing, ...updates,
-    code: (updates.code ?? existing.code).toUpperCase(),
+    code: (updates.code ?? existing.code ?? "").toUpperCase(),
     updatedAt: new Date().toISOString(),
   };
   setState({ ...s, departments: s.departments.map((d) => (d.id === id ? updated : d)) });
@@ -2592,7 +2592,7 @@ export function updateDesignation(id: string, updates: Partial<Designation>): De
   if (!existing) return undefined;
   const updated: Designation = {
     ...existing, ...updates,
-    code: (updates.code ?? existing.code).toUpperCase(),
+    code: (updates.code ?? existing.code ?? "").toUpperCase(),
     updatedAt: new Date().toISOString(),
   };
   setState({ ...s, designations: s.designations.map((d) => (d.id === id ? updated : d)) });
