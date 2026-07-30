@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Bell,
   BellRing,
@@ -42,6 +42,18 @@ const quickCreateItems = [
   { label: "Attendance entry", to: "/time-management", search: { new: true } },
 ] as const;
 
+const SEEN_KEY = "bsm.alerts.seen";
+
+function readSeen(): string[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(SEEN_KEY);
+    return raw ? (JSON.parse(raw) as string[]) : [];
+  } catch {
+    return [];
+  }
+}
+
 export function AppHeader() {
   const { user, signOut } = useAuth();
   const initials = user?.email?.slice(0, 2).toUpperCase() ?? "BS";
@@ -49,6 +61,24 @@ export function AppHeader() {
   const counts = alertCounts(alerts);
   const [searchOpen, setSearchOpen] = useState(false);
   useGlobalSearchHotkey(useCallback(() => setSearchOpen(true), []));
+
+  const [seen, setSeen] = useState<string[]>([]);
+  useEffect(() => setSeen(readSeen()), []);
+
+  const unseenCount = useMemo(
+    () => alerts.filter((a) => !seen.includes(a.id)).length,
+    [alerts, seen],
+  );
+
+  const markAllSeen = useCallback(() => {
+    const ids = alerts.map((a) => a.id);
+    setSeen(ids);
+    try {
+      window.localStorage.setItem(SEEN_KEY, JSON.stringify(ids));
+    } catch {
+      /* ignore */
+    }
+  }, [alerts]);
 
   return (
     <header className="sticky top-0 z-30 flex h-16 flex-col border-b border-border/70 bg-gradient-surface backdrop-blur supports-[backdrop-filter]:bg-card/70">
@@ -105,13 +135,17 @@ export function AppHeader() {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <DropdownMenu>
+          <DropdownMenu
+            onOpenChange={(open) => {
+              if (open) markAllSeen();
+            }}
+          >
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="relative h-8 w-8 shrink-0">
                 <Bell className="h-4 w-4" />
-                {counts.total > 0 && (
+                {unseenCount > 0 && (
                   <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-semibold text-destructive-foreground ring-1 ring-background">
-                    {counts.total > 99 ? "99+" : counts.total}
+                    {unseenCount > 99 ? "99+" : unseenCount}
                   </span>
                 )}
                 <span className="sr-only">Notifications</span>
