@@ -69,6 +69,9 @@ const projectStatuses: ProjectStatus[] = ["Planning", "Active", "On Hold", "Comp
 const siteStatuses: SiteStatus[] = ["Active", "Inactive", "Completed"];
 
 export const Route = createFileRoute("/_authenticated/projects")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    new: search.new === "1" || search.new === true ? true : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Projects & Sites — BSM Workforce & Operations" },
@@ -87,7 +90,9 @@ export default function ProjectsPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<ProjectStatus | "all">("all");
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
-  const [isCreateProjectOpen, setIsCreateProjectOpen] = useState(false);
+  const [isCreateProjectOpen, setIsCreateProjectOpen] = useState(
+    Route.useSearch().new === true,
+  );
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [viewingProject, setViewingProject] = useState<Project | null>(null);
   const [addSiteProject, setAddSiteProject] = useState<Project | null>(null);

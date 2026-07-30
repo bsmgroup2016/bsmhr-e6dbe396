@@ -64,6 +64,9 @@ import type { Assignment, AssignmentStatus } from "@/lib/types";
 const statuses: AssignmentStatus[] = ["Pending", "Approved", "Active", "Ended", "Transferred", "Rejected"];
 
 export const Route = createFileRoute("/_authenticated/operations")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    new: search.new === "1" || search.new === true ? true : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Operations — BSM Workforce & Operations" },
@@ -83,7 +86,7 @@ export default function OperationsPage() {
   const [users] = useState(getUsers());
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<AssignmentStatus | "all">("all");
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isCreateOpen, setIsCreateOpen] = useState(Route.useSearch().new === true);
   const [viewing, setViewing] = useState<Assignment | null>(null);
   const [editStatus, setEditStatus] = useState<Assignment | null>(null);
 
