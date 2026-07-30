@@ -81,7 +81,7 @@ export function WpLifecyclePanel({ employees, onChange }: Props) {
   function exportLifecycle() {
     void exportRows(
       rows.map((r) => ({
-        "Employee code": r.employee.employeeCode,
+        "P-File No": r.employee.employeeCode,
         Name: r.employee.name,
         FIN: r.employee.fin,
         Nationality: r.employee.nationality,

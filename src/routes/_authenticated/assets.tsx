@@ -143,7 +143,7 @@ export default function AssetsPage() {
         Asset: assetName(i.assetId),
         "Asset code": assetCode(i.assetId),
         Worker: empName(i.employeeId),
-        "Employee code": empCode(i.employeeId),
+        "P-File No": empCode(i.employeeId),
         Site: siteName(i.siteId),
         Qty: i.quantity,
         "Issue date": i.issueDate,

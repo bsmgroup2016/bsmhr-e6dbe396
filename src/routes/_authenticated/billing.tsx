@@ -610,7 +610,7 @@ function BillingPage() {
                     <TableRow>
                       <TableHead>Client</TableHead>
                       <TableHead>Project</TableHead>
-                      <TableHead>Trade</TableHead>
+                      <TableHead>Designation</TableHead>
                       <TableHead>Unit</TableHead>
                       <TableHead className="text-right">Normal</TableHead>
                       <TableHead className="text-right">OT / hr</TableHead>
@@ -1086,7 +1086,7 @@ function RateForm({
 
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="space-y-1">
-          <Label htmlFor="trade">Trade</Label>
+          <Label htmlFor="trade">Designation</Label>
           <Input id="trade" name="trade" placeholder="e.g. Welder or All" defaultValue="All" />
         </div>
         <div className="space-y-1">

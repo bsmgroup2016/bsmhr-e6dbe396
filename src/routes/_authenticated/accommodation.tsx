@@ -132,7 +132,7 @@ export default function AccommodationPage() {
     void exportRows(
       filteredAllocs.map((a) => ({
         Worker: empName(a.employeeId),
-        "Employee code": empCode(a.employeeId),
+        "P-File No": empCode(a.employeeId),
         Dormitory: dormName(a.dormitoryId),
         Room: a.roomNo,
         Bed: a.bedNo ?? "",

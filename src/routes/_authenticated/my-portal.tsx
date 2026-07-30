@@ -269,7 +269,7 @@ function MyPortalPage() {
           <TabsContent value="profile" className="mt-4">
             <div className="grid gap-4 rounded-xl border bg-card p-5 shadow-sm sm:grid-cols-2 lg:grid-cols-3">
               {[
-                ["Employee code", employee.employeeCode],
+                ["P-File No", employee.employeeCode],
                 ["Full name", employee.name],
                 ["Nationality", employee.nationality],
                 ["FIN / NRIC", employee.fin],

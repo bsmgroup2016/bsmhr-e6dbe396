@@ -407,7 +407,7 @@ export default function WorkforcePage() {
             <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
               <DialogHeader>
                 <DialogTitle>Register new employee</DialogTitle>
-                <DialogDescription>Enter worker details. A unique employee code will be generated automatically.</DialogDescription>
+                <DialogDescription>Enter worker details. A unique P-File number will be generated automatically.</DialogDescription>
               </DialogHeader>
               <EmployeeForm onSubmit={handleCreate} />
             </DialogContent>
@@ -676,7 +676,7 @@ export default function WorkforcePage() {
                     <Input
                       id="wf-search"
                       type="search"
-                      placeholder="Name, code, FIN, project, trade…"
+                      placeholder="Name, P-File, FIN, project, designation…"
                       value={search}
                       onChange={(e) => { setSearch(e.target.value); setPage(1); }}
                       className="h-9 pl-9"
@@ -707,7 +707,7 @@ export default function WorkforcePage() {
                     <Input
                       id="wf-search"
                       type="search"
-                      placeholder="Name, code, FIN, project, trade…"
+                      placeholder="Name, P-File, FIN, project, designation…"
                       value={search}
                       onChange={(e) => { setSearch(e.target.value); setPage(1); }}
                       className="h-9 pl-9"
@@ -799,9 +799,8 @@ export default function WorkforcePage() {
                           <div className="text-sm font-semibold text-foreground">
                             {companies.find((c) => c.id === e.companyId)?.name ?? e.branch ?? "—"}
                           </div>
-                          <div>Department : {e.trade || "—"}</div>
-                          <div>Designation : {e.workerCategory ?? e.passType}</div>
-                          <div>Site : {e.site || "Unassigned"}</div>
+                          <div>Department : {e.department || "—"}</div>
+                          <div>Designation : {e.trade || "—"}</div>
                         </div>
                       </TableCell>
                       <TableCell>
