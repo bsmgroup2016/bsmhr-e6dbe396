@@ -437,121 +437,125 @@ export default function WorkforcePage() {
 
         <div className="space-y-4 rounded-xl border bg-card p-4 shadow-sm">
           {/* Action bar */}
-          <div className="flex flex-wrap items-center gap-2">
-            <Button size="sm" onClick={() => setIsCreateOpen(true)} className="gap-1.5">
-              <Plus className="h-4 w-4" />
-              Add Employee
-            </Button>
-            <Button
-              size="sm"
-              variant="destructive"
-              className="gap-1.5"
-              disabled={selectedIds.length === 0}
-              onClick={() => setBulkDeleteOpen(true)}
-            >
-              <Trash2 className="h-4 w-4" />
-              Bulk delete{selectedIds.length > 0 ? ` (${selectedIds.length})` : ""}
-            </Button>
-            <Button
-              size="sm"
-              variant={showFilters ? "default" : "secondary"}
-              className="gap-1.5"
-              onClick={() => setShowFilters((v) => !v)}
-            >
-              <Filter className="h-4 w-4" />
-              Filter
-            </Button>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <Button size="sm" onClick={() => setIsCreateOpen(true)} className="gap-1.5">
+                <Plus className="h-4 w-4" />
+                Add Employee
+              </Button>
+              <Button
+                size="sm"
+                variant="destructive"
+                className="gap-1.5"
+                disabled={selectedIds.length === 0}
+                onClick={() => setBulkDeleteOpen(true)}
+              >
+                <Trash2 className="h-4 w-4" />
+                Bulk delete{selectedIds.length > 0 ? ` (${selectedIds.length})` : ""}
+              </Button>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <ImportDialog
+                title="Import employees"
+                description="Upload any Excel/CSV of workers, then map its columns to system fields."
+                templateName="employees"
+                columns={EMPLOYEE_IMPORT_COLUMNS}
+                onImport={handleImport}
+                onDone={refresh}
+                mappable
+                label="Upload XLSX"
+              />
+              <ExportButton rows={filtered.map(toEmployeeRow)} baseName="employees" sheetName="Employees" />
+            </div>
           </div>
 
           {/* Filter panel */}
-          {showFilters ? (
-            <div className="rounded-lg border bg-muted/30 p-4">
-              <div className="grid gap-4 lg:grid-cols-5">
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold">Company</Label>
-                  <Select value={companyFilter} onValueChange={(v) => { setCompanyFilter(v); setPage(1); }}>
-                    <SelectTrigger><SelectValue placeholder="Select Company…" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All companies</SelectItem>
-                      {companies.map((c) => (
-                        <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold">Department / Trade</Label>
-                  <Select value={tradeFilter} onValueChange={(v) => { setTradeFilter(v); setPage(1); }}>
-                    <SelectTrigger><SelectValue placeholder="Select Department…" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All trades</SelectItem>
-                      {trades.map((t) => (
-                        <SelectItem key={t} value={t}>{t}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold">Site</Label>
-                  <Select value={siteFilter} onValueChange={(v) => { setSiteFilter(v); setPage(1); }}>
-                    <SelectTrigger><SelectValue placeholder="Select Site…" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All sites</SelectItem>
-                      {sites.map((s) => (
-                        <SelectItem key={s} value={s as string}>{s}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold">Status</Label>
-                  <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v as EmployeeStatus | "all"); setPage(1); }}>
-                    <SelectTrigger><SelectValue placeholder="Select Status…" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All status</SelectItem>
-                      {statuses.map((s) => (
-                        <SelectItem key={s} value={s}>{s}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="flex items-end gap-2">
-                  <Button variant="outline" onClick={resetFilters}>Reset</Button>
-                </div>
+          <div className="rounded-lg border bg-muted/30 p-4">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold">Company</Label>
+                <Select value={companyFilter} onValueChange={(v) => { setCompanyFilter(v); setPage(1); }}>
+                  <SelectTrigger><SelectValue placeholder="Select Company…" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All companies</SelectItem>
+                    {companies.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-
-              <div className="mt-4 flex flex-wrap items-center gap-2 border-t pt-4">
-                <Select value={passFilter} onValueChange={(v) => setPassFilter(v as PassType | "all")}>
-                  <SelectTrigger className="w-40"><SelectValue placeholder="Pass type" /></SelectTrigger>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold">Department / Trade</Label>
+                <Select value={tradeFilter} onValueChange={(v) => { setTradeFilter(v); setPage(1); }}>
+                  <SelectTrigger><SelectValue placeholder="Select Department…" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All passes</SelectItem>
-                    {passTypes.map((p) => (<SelectItem key={p} value={p}>{p}</SelectItem>))}
+                    <SelectItem value="all">All trades</SelectItem>
+                    {trades.map((t) => (
+                      <SelectItem key={t} value={t}>{t}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
-                <Select value={categoryFilter} onValueChange={(v) => setCategoryFilter(v as WorkerCategory | "all")}>
-                  <SelectTrigger className="w-40"><SelectValue placeholder="Category" /></SelectTrigger>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold">Site</Label>
+                <Select value={siteFilter} onValueChange={(v) => { setSiteFilter(v); setPage(1); }}>
+                  <SelectTrigger><SelectValue placeholder="Select Site…" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All categories</SelectItem>
-                    {WORKER_CATEGORIES.map((c) => (<SelectItem key={c} value={c}>{c}</SelectItem>))}
+                    <SelectItem value="all">All sites</SelectItem>
+                    {sites.map((s) => (
+                      <SelectItem key={s} value={s as string}>{s}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
-                <Select value={deployFilter} onValueChange={(v) => setDeployFilter(v as DeploymentStatus | "all")}>
-                  <SelectTrigger className="w-40"><SelectValue placeholder="Deployment" /></SelectTrigger>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold">Status</Label>
+                <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v as EmployeeStatus | "all"); setPage(1); }}>
+                  <SelectTrigger><SelectValue placeholder="Select Status…" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All deployment</SelectItem>
-                    {DEPLOYMENT_STATUSES.map((d) => (<SelectItem key={d} value={d}>{d}</SelectItem>))}
+                    <SelectItem value="all">All status</SelectItem>
+                    {statuses.map((s) => (
+                      <SelectItem key={s} value={s}>{s}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
-                <Select value={nationalityFilter} onValueChange={setNationalityFilter}>
-                  <SelectTrigger className="w-40"><SelectValue placeholder="Nationality" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All nationalities</SelectItem>
-                    {nationalities.map((n) => (<SelectItem key={n} value={n}>{n}</SelectItem>))}
-                  </SelectContent>
-                </Select>
+              </div>
+              <div className="flex items-end gap-2">
+                <Button variant="outline" className="w-full" onClick={resetFilters}>Reset</Button>
               </div>
             </div>
-          ) : null}
+
+            <div className="mt-4 flex flex-wrap items-center gap-2 border-t pt-4">
+              <Select value={passFilter} onValueChange={(v) => setPassFilter(v as PassType | "all")}>
+                <SelectTrigger className="w-40"><SelectValue placeholder="Pass type" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All passes</SelectItem>
+                  {passTypes.map((p) => (<SelectItem key={p} value={p}>{p}</SelectItem>))}
+                </SelectContent>
+              </Select>
+              <Select value={categoryFilter} onValueChange={(v) => setCategoryFilter(v as WorkerCategory | "all")}>
+                <SelectTrigger className="w-40"><SelectValue placeholder="Category" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All categories</SelectItem>
+                  {WORKER_CATEGORIES.map((c) => (<SelectItem key={c} value={c}>{c}</SelectItem>))}
+                </SelectContent>
+              </Select>
+              <Select value={deployFilter} onValueChange={(v) => setDeployFilter(v as DeploymentStatus | "all")}>
+                <SelectTrigger className="w-40"><SelectValue placeholder="Deployment" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All deployment</SelectItem>
+                  {DEPLOYMENT_STATUSES.map((d) => (<SelectItem key={d} value={d}>{d}</SelectItem>))}
+                </SelectContent>
+              </Select>
+              <Select value={nationalityFilter} onValueChange={setNationalityFilter}>
+                <SelectTrigger className="w-40"><SelectValue placeholder="Nationality" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All nationalities</SelectItem>
+                  {nationalities.map((n) => (<SelectItem key={n} value={n}>{n}</SelectItem>))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
 
           {/* Records per page + search */}
           <div className="flex flex-col gap-3 rounded-lg border bg-muted/20 p-3 lg:flex-row lg:items-center lg:justify-between">
