@@ -1,11 +1,18 @@
 import { useCallback, useState } from "react";
 import {
   Bell,
+  BellRing,
   ChevronDown,
   Plus,
   Search,
   SidebarIcon,
+  UserRound,
 } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Link } from "@tanstack/react-router";
 
 import { cn } from "@/lib/utils";
@@ -154,6 +161,40 @@ export function AppHeader() {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                asChild
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 shrink-0"
+              >
+                <Link to="/alerts">
+                  <BellRing className="h-4 w-4" />
+                  <span className="sr-only">Alerts Centre</span>
+                </Link>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Alerts Centre</TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                asChild
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 shrink-0"
+              >
+                <Link to="/my-portal">
+                  <UserRound className="h-4 w-4" />
+                  <span className="sr-only">My Portal</span>
+                </Link>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>My Portal</TooltipContent>
+          </Tooltip>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
