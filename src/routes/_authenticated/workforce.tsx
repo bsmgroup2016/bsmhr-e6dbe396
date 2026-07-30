@@ -351,21 +351,6 @@ export default function WorkforcePage() {
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">Workforce</h1>
             <p className="text-sm text-muted-foreground">Employee directory and worker management.</p>
           </div>
-          <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-            <DialogTrigger asChild>
-              <Button size="sm" className="mt-2 sm:mt-0">
-                <Plus className="mr-1 h-4 w-4" />
-                Register employee
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
-              <DialogHeader>
-                <DialogTitle>Register new employee</DialogTitle>
-                <DialogDescription>Enter worker details. A unique employee code will be generated automatically.</DialogDescription>
-              </DialogHeader>
-              <EmployeeForm onSubmit={handleCreate} />
-            </DialogContent>
-          </Dialog>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
