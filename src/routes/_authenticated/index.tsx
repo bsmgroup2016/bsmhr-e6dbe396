@@ -82,7 +82,7 @@ function SectionHeading({
   return (
     <div className="flex items-center gap-2">
       {icon}
-      <h2 className="text-lg font-semibold tracking-tight text-foreground">{title}</h2>
+      <h2 className="text-base font-semibold tracking-tight text-foreground">{title}</h2>
       {caption ? <span className="ml-auto text-sm text-muted-foreground">{caption}</span> : null}
     </div>
   );
@@ -478,10 +478,10 @@ function DashboardPage() {
       <div className="w-full space-y-8">
         <div className="flex flex-col gap-4 border-b border-border/60 pb-5 sm:flex-row sm:items-end sm:justify-between">
           <div className="space-y-1">
-            <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
               Dashboard
             </h1>
-            <p className="text-base text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               Workforce, compliance and operations at a glance ·{" "}
               {today.toLocaleDateString("en-SG", {
                 weekday: "long",
@@ -581,7 +581,7 @@ function DashboardPage() {
                     <action.icon className="h-5 w-5" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-base font-medium text-foreground">{action.label}</p>
+                    <p className="text-sm font-medium text-foreground">{action.label}</p>
                     <p className="truncate text-sm text-muted-foreground">{action.desc}</p>
                   </div>
                 </Link>
@@ -645,7 +645,7 @@ function DashboardPage() {
                         to="/clients"
                         className="rounded-xl border bg-gradient-surface p-4 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-warning/40 hover:shadow-elegant"
                       >
-                    <p className="truncate text-base font-medium text-foreground">{f.subject}</p>
+                    <p className="truncate text-sm font-medium text-foreground">{f.subject}</p>
                     <p className="truncate text-sm text-muted-foreground">
                       {f.activityType} ·{" "}
                       {(f.clientId && clientNames.get(f.clientId)) ||
@@ -668,13 +668,13 @@ function DashboardPage() {
             <div className="grid gap-4 lg:grid-cols-3">
               <div className="rounded-xl border bg-gradient-surface p-5 shadow-sm lg:col-span-2">
                 <div className="mb-4 flex items-center justify-between">
-                  <p className="text-base font-medium text-foreground">Lead pipeline</p>
+                  <p className="text-sm font-medium text-foreground">Lead pipeline</p>
                   <Link to="/clients" className="text-sm text-primary hover:underline">
                     Open CRM
                   </Link>
                 </div>
                 {openLeads.length === 0 ? (
-                  <p className="text-base text-muted-foreground">
+                  <p className="text-sm text-muted-foreground">
                     No open leads yet. Add a lead to start tracking your pipeline.
                   </p>
                 ) : (
@@ -703,9 +703,9 @@ function DashboardPage() {
               </div>
 
               <div className="rounded-xl border bg-gradient-surface p-5 shadow-sm">
-                <p className="mb-4 text-base font-medium text-foreground">Recent activity</p>
+                <p className="mb-4 text-sm font-medium text-foreground">Recent activity</p>
                 {recentActivities.length === 0 ? (
-                  <p className="text-base text-muted-foreground">
+                  <p className="text-sm text-muted-foreground">
                     No calls, meetings or emails logged yet.
                   </p>
                 ) : (
@@ -716,7 +716,7 @@ function DashboardPage() {
                           <PhoneCall className="h-3.5 w-3.5" />
                         </span>
                         <div className="min-w-0">
-                          <p className="truncate text-base text-foreground">{a.subject}</p>
+                          <p className="truncate text-sm text-foreground">{a.subject}</p>
                           <p className="truncate text-sm text-muted-foreground">
                             {a.activityType} ·{" "}
                             {(a.clientId && clientNames.get(a.clientId)) ||
@@ -755,7 +755,7 @@ function DashboardPage() {
                   params={{ id: e.id }}
                   className="rounded-xl border bg-gradient-surface p-4 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-warning/40 hover:shadow-elegant"
                 >
-                  <p className="truncate text-base font-medium text-foreground">{e.name}</p>
+                  <p className="truncate text-sm font-medium text-foreground">{e.name}</p>
                   <p className="truncate text-sm text-muted-foreground">
                     {e.passType} · {e.employeeCode}
                   </p>
@@ -805,7 +805,7 @@ function DashboardPage() {
               />
             ) : (
               <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
-                <table className="w-full text-base">
+                <table className="w-full text-sm">
                   <thead className="bg-muted/50">
                     <tr>
                       <th className="px-4 py-2.5 text-left font-medium">Time</th>
@@ -833,19 +833,19 @@ function DashboardPage() {
             <SectionHeading title="Status" />
             <div className="space-y-3 rounded-xl border bg-gradient-surface p-5 shadow-sm">
               <div className="flex items-center justify-between">
-                <span className="text-base text-muted-foreground">System</span>
+                <span className="text-sm text-muted-foreground">System</span>
                 <StatusBadge variant="success" label="Operational" dot />
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-base text-muted-foreground">Payroll period</span>
+                <span className="text-sm text-muted-foreground">Payroll period</span>
                 <StatusBadge variant="primary" label="Jul 2026" />
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-base text-muted-foreground">Attendance lock</span>
+                <span className="text-sm text-muted-foreground">Attendance lock</span>
                 <StatusBadge variant="warning" label="Pending" dot />
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-base text-muted-foreground">Expiring docs</span>
+                <span className="text-sm text-muted-foreground">Expiring docs</span>
                 <StatusBadge
                   variant={expiringDocs > 0 ? "warning" : "success"}
                   label={expiringDocs > 0 ? `${expiringDocs} alert` : "OK"}
