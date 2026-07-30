@@ -31,6 +31,7 @@ export const fromCompany = (r: Row): Company => ({
   industry: r.industry ?? "", address: r.address ?? "", phone: r.phone ?? "", email: r.email ?? "",
   status: (r.status ?? "Active") as Company["status"], accent: (r.accent ?? "primary") as Company["accent"],
   sector: r.sector ?? undefined,
+  logoUrl: r.logo_url ?? undefined,
   createdAt: r.created_at, updatedAt: r.updated_at,
 });
 
@@ -341,6 +342,7 @@ export const toCompany = (c: Partial<Company>): Row => ({
   code: c.code, name: c.name, legal_name: c.legalName, uen: c.uen, industry: c.industry,
   address: c.address, phone: c.phone, email: c.email, status: c.status, accent: c.accent,
   sector: c.sector ?? null,
+  logo_url: c.logoUrl ?? null,
 });
 
 export const fromLeave = (r: Row): LeaveRequest => ({

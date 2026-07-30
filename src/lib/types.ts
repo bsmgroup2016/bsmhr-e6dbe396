@@ -499,6 +499,8 @@ export interface Company {
   email: string;
   status: "Active" | "Inactive";
   accent: "primary" | "success" | "warning" | "info" | "destructive";
+  /** R2 object key or link for the company logo. */
+  logoUrl?: string;
   /** MOM sector — drives levy rates and Dependency Ratio Ceiling. */
   sector?: string;
   createdAt: string;

@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Building2, CheckCircle2, Mail, MapPin, Pencil, Phone, Plus, Trash2, Users } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
+import { R2Image } from "@/components/r2-image";
 import { SummaryCard } from "@/components/ui/summary-card";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Button } from "@/components/ui/button";
@@ -62,6 +63,7 @@ const accentBg: Record<Company["accent"], string> = {
 };
 
 function CompaniesPage() {
+  const navigate = useNavigate();
   const [companies, setCompanies] = useState<Company[]>(getCompanies());
   const [active, setActive] = useState<string>(getCurrentCompany());
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -134,7 +136,13 @@ function CompaniesPage() {
           {companies.map((c) => (
             <div
               key={c.id}
-              className={`relative overflow-hidden rounded-xl border bg-gradient-surface p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-elegant ${
+              role="link"
+              tabIndex={0}
+              onClick={() => navigate({ to: "/companies/$id", params: { id: c.id } })}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") navigate({ to: "/companies/$id", params: { id: c.id } });
+              }}
+              className={`relative cursor-pointer overflow-hidden rounded-xl border bg-gradient-surface p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-elegant ${
                 active === c.id ? "ring-2 ring-primary/60" : ""
               }`}
             >
@@ -142,12 +150,14 @@ function CompaniesPage() {
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3">
                   <div
-                    className={`flex h-11 w-11 items-center justify-center rounded-lg text-sm font-bold text-primary-foreground shadow-elegant ${accentBg[c.accent]}`}
+                    className={`flex h-11 w-11 items-center justify-center overflow-hidden rounded-lg text-sm font-bold text-primary-foreground shadow-elegant ${
+                      c.logoUrl ? "bg-card" : accentBg[c.accent]
+                    }`}
                   >
-                    {c.code}
+                    <R2Image src={c.logoUrl} alt={`${c.name} logo`} className="h-full w-full object-contain" fallback={<span>{c.code}</span>} />
                   </div>
                   <div className="min-w-0">
-                    <p className="truncate font-semibold">{c.name}</p>
+                    <p className="truncate font-semibold hover:underline">{c.name}</p>
                     <p className="truncate text-xs text-muted-foreground">{c.legalName}</p>
                   </div>
                 </div>
@@ -162,10 +172,13 @@ function CompaniesPage() {
                 <div className="flex items-center gap-2"><Users className="h-3.5 w-3.5" /> {headcount(c.id)} employees</div>
               </dl>
 
-              <div className="mt-4 flex flex-wrap gap-2">
+              <div className="mt-4 flex flex-wrap gap-2" onClick={(e) => e.stopPropagation()}>
+                <Button asChild size="sm" variant="default" className="gap-1">
+                  <Link to="/companies/$id" params={{ id: c.id }}>Open dashboard</Link>
+                </Button>
                 <Button
                   size="sm"
-                  variant={active === c.id ? "secondary" : "default"}
+                  variant="secondary"
                   disabled={active === c.id}
                   onClick={() => {
                     setCurrentCompany(c.id);
