@@ -137,10 +137,10 @@ export function DashboardCharts({ data }: { data: DashboardChartData }) {
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data.attendance} margin={{ top: 8, right: 8, left: -18, bottom: 0 }} barSize={22}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
-            <XAxis dataKey="day" tickLine={false} axisLine={false} fontSize={11} />
-            <YAxis allowDecimals={false} tickLine={false} axisLine={false} fontSize={11} width={40} />
+            <XAxis dataKey="day" tickLine={false} axisLine={false} fontSize={12} />
+            <YAxis allowDecimals={false} tickLine={false} axisLine={false} fontSize={12} width={44} />
             <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "var(--muted)", opacity: 0.35 }} />
-            <Legend iconType="circle" wrapperStyle={{ fontSize: 12 }} />
+            <Legend iconType="circle" wrapperStyle={{ fontSize: 13 }} />
             <Bar dataKey="Present" stackId="a" fill={C.success} radius={[0, 0, 0, 0]} />
             <Bar dataKey="Leave" stackId="a" fill={C.info} />
             <Bar dataKey="Absent" stackId="a" fill={C.warning} radius={[6, 6, 0, 0]} />
