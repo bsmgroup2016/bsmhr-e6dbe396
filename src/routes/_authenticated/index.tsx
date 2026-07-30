@@ -668,20 +668,20 @@ function DashboardPage() {
             <div className="grid gap-4 lg:grid-cols-3">
               <div className="rounded-xl border bg-gradient-surface p-5 shadow-sm lg:col-span-2">
                 <div className="mb-4 flex items-center justify-between">
-                  <p className="text-sm font-medium text-foreground">Lead pipeline</p>
-                  <Link to="/clients" className="text-xs text-primary hover:underline">
+                  <p className="text-base font-medium text-foreground">Lead pipeline</p>
+                  <Link to="/clients" className="text-sm text-primary hover:underline">
                     Open CRM
                   </Link>
                 </div>
                 {openLeads.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-base text-muted-foreground">
                     No open leads yet. Add a lead to start tracking your pipeline.
                   </p>
                 ) : (
                   <div className="space-y-3">
                     {pipeline.map((p) => (
                       <div key={p.stage} className="flex items-center gap-3">
-                        <span className="w-28 shrink-0 truncate text-xs text-muted-foreground">
+                        <span className="w-28 shrink-0 truncate text-sm text-muted-foreground">
                           {p.stage}
                         </span>
                         <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-muted">
@@ -690,10 +690,10 @@ function DashboardPage() {
                             style={{ width: `${(p.count / maxStageCount) * 100}%` }}
                           />
                         </div>
-                        <span className="w-8 shrink-0 text-right text-xs font-medium text-foreground">
+                        <span className="w-8 shrink-0 text-right text-sm font-medium text-foreground">
                           {p.count}
                         </span>
-                        <span className="w-20 shrink-0 text-right text-xs text-muted-foreground">
+                        <span className="w-20 shrink-0 text-right text-sm text-muted-foreground">
                           {money(p.value)}
                         </span>
                       </div>
