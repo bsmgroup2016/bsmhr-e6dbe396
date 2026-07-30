@@ -111,6 +111,177 @@ function DashboardPage() {
   const daysLeft = (iso: string) =>
     Math.ceil((new Date(iso).getTime() - today.getTime()) / 86_400_000);
 
+  // ---- Key operational metrics (each card links to its page) ----
+  const monthKey = todayKey.slice(0, 7);
+  const yearKey = todayKey.slice(0, 4);
+  const empIds = new Set(employees.map((e) => e.id));
+
+  const wpExpiring = employees.filter(
+    (e) =>
+      (e.passType === "Work Permit" || e.passType === "S Pass" || e.passType === "Employment Pass") &&
+      e.passExpiry &&
+      e.passExpiry !== "-" &&
+      daysLeft(e.passExpiry) <= 60,
+  );
+  const wpExpired = wpExpiring.filter((e) => daysLeft(e.passExpiry) < 0).length;
+
+  const passportExpiring = employees.filter(
+    (e) => e.passportExpiry && e.passportExpiry !== "-" && daysLeft(e.passportExpiry) <= 90,
+  );
+  const passportExpired = passportExpiring.filter((e) => daysLeft(e.passportExpiry!) < 0).length;
+
+  const leaves = getLeaveRequests().filter(
+    (l) =>
+      empIds.has(l.employeeId) &&
+      l.status === "Approved" &&
+      l.startDate <= todayKey &&
+      l.endDate >= todayKey,
+  );
+  const onMedicalLeave = leaves.filter(
+    (l) => l.type === "Medical Leave" || l.type === "Hospitalisation Leave",
+  );
+  const onNormalLeave = leaves.filter(
+    (l) => l.type !== "Medical Leave" && l.type !== "Hospitalisation Leave",
+  );
+  const onLeaveIds = new Set(leaves.map((l) => l.employeeId));
+
+  const csocValid = getCertifications().filter((c) => {
+    if (!empIds.has(c.employeeId)) return false;
+    const name = c.courseName.toLowerCase();
+    const isCsoc =
+      name.includes("csoc") || name.includes("safety orientation") || name.includes("safety course");
+    if (!isCsoc) return false;
+    return !c.expiryDate || daysLeft(c.expiryDate) >= 0;
+  });
+  const csocWorkers = new Set(csocValid.map((c) => c.employeeId)).size;
+
+  const todayAttendance = getAttendance().filter((a) => a.date === todayKey && empIds.has(a.employeeId));
+  const absentToday = todayAttendance.filter((a) => a.status === "Absent").length;
+  const mcAttendanceToday = todayAttendance.filter((a) => a.status === "MC").length;
+  const medicalLeaveCount = Math.max(onMedicalLeave.length, mcAttendanceToday);
+
+  const availableWorkers = employees.filter(
+    (e) =>
+      (e.status === "Active" || e.status === "Deployed") &&
+      !onLeaveIds.has(e.id) &&
+      !todayAttendance.some((a) => a.employeeId === e.id && a.status === "Absent"),
+  ).length;
+
+  const runningProjects = projects.filter((p) => p.status === "Active");
+  const endingProjects = runningProjects.filter(
+    (p) => p.endDate && daysLeft(p.endDate) >= 0 && daysLeft(p.endDate) <= 30,
+  );
+  const clientsAll = getClients();
+  const activeClientCount = clientsAll.filter((c) => c.status === "Active").length;
+
+  const payrollAll = getPayroll().filter((p) => empIds.has(p.employeeId));
+  const paidThisMonth = payrollAll.filter((p) => p.month === monthKey && p.status === "Paid");
+  const salaryPaidMonth = paidThisMonth.reduce((s, p) => s + p.netPay, 0);
+  const annualWages = payrollAll
+    .filter((p) => p.month.startsWith(yearKey))
+    .reduce((s, p) => s + p.basicSalary + p.overtimePay + p.allowances, 0);
+
+  const sgd = (n: number) => `S$${Math.round(n).toLocaleString("en-SG")}`;
+
+  const keyMetrics = [
+    {
+      to: "/documents" as const,
+      title: "Work Permit Expiry",
+      value: wpExpiring.length.toString(),
+      caption: `${wpExpired} expired · next 60 days`,
+      icon: <ShieldAlert className="h-5 w-5" />,
+      variant: (wpExpiring.length ? "destructive" : "success") as "destructive" | "success",
+    },
+    {
+      to: "/documents" as const,
+      title: "Passport Expiry",
+      value: passportExpiring.length.toString(),
+      caption: `${passportExpired} expired · next 90 days`,
+      icon: <BookUser className="h-5 w-5" />,
+      variant: (passportExpiring.length ? "warning" : "success") as "warning" | "success",
+    },
+    {
+      to: "/leave" as const,
+      title: "On Medical Leave",
+      value: medicalLeaveCount.toString(),
+      caption: "MC / hospitalisation today",
+      icon: <HeartPulse className="h-5 w-5" />,
+      variant: "info" as const,
+    },
+    {
+      to: "/training" as const,
+      title: "CSOC Certified",
+      value: csocWorkers.toString(),
+      caption: `${Math.max(0, employees.length - csocWorkers)} without valid CSOC`,
+      icon: <BadgeCheck className="h-5 w-5" />,
+      variant: "primary" as const,
+    },
+    {
+      to: "/workforce" as const,
+      title: "Available Workers",
+      value: availableWorkers.toString(),
+      caption: `of ${employees.length} total workers`,
+      icon: <UserCheck className="h-5 w-5" />,
+      variant: "success" as const,
+    },
+    {
+      to: "/leave" as const,
+      title: "On Normal Leave",
+      value: onNormalLeave.length.toString(),
+      caption: "Annual / other leave today",
+      icon: <Palmtree className="h-5 w-5" />,
+      variant: "info" as const,
+    },
+    {
+      to: "/time-management" as const,
+      title: "Absent Today",
+      value: absentToday.toString(),
+      caption: `${presentToday} present today`,
+      icon: <CalendarX2 className="h-5 w-5" />,
+      variant: (absentToday ? "warning" : "success") as "warning" | "success",
+    },
+    {
+      to: "/projects" as const,
+      title: "Running Projects",
+      value: runningProjects.length.toString(),
+      caption: `${projects.length} projects in total`,
+      icon: <FolderKanban className="h-5 w-5" />,
+      variant: "primary" as const,
+    },
+    {
+      to: "/projects" as const,
+      title: "Projects Ending Soon",
+      value: endingProjects.length.toString(),
+      caption: "Completing within 30 days",
+      icon: <Briefcase className="h-5 w-5" />,
+      variant: (endingProjects.length ? "warning" : "default") as "warning" | "default",
+    },
+    {
+      to: "/clients" as const,
+      title: "Clients",
+      value: clientsAll.length.toString(),
+      caption: `${activeClientCount} active accounts`,
+      icon: <Building2 className="h-5 w-5" />,
+      variant: "info" as const,
+    },
+    {
+      to: "/payroll" as const,
+      title: "Salary Paid (Month)",
+      value: sgd(salaryPaidMonth),
+      caption: `${paidThisMonth.length} payslips · ${monthKey}`,
+      icon: <DollarSign className="h-5 w-5" />,
+      variant: "success" as const,
+    },
+    {
+      to: "/payroll" as const,
+      title: "Annual Wages",
+      value: sgd(annualWages),
+      caption: `Gross wages ${yearKey}`,
+      icon: <Landmark className="h-5 w-5" />,
+      variant: "primary" as const,
+    },
+  ];
+
   // CRM overview
   const leads = getLeads().filter((l) => !companyId || !l.companyId || l.companyId === companyId);
   const pipeline = crmPipeline(companyId ?? undefined).filter(
