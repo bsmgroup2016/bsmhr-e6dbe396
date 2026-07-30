@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  Bell,
   BellRing,
   ChevronDown,
   Plus,
@@ -15,8 +14,7 @@ import {
 } from "@/components/ui/tooltip";
 import { Link } from "@tanstack/react-router";
 
-import { cn } from "@/lib/utils";
-import { alertCounts, buildAlerts } from "@/lib/alerts";
+import { buildAlerts } from "@/lib/alerts";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import {
@@ -58,7 +56,6 @@ export function AppHeader() {
   const { user, signOut } = useAuth();
   const initials = user?.email?.slice(0, 2).toUpperCase() ?? "BS";
   const alerts = buildAlerts();
-  const counts = alertCounts(alerts);
   const [searchOpen, setSearchOpen] = useState(false);
   useGlobalSearchHotkey(useCallback(() => setSearchOpen(true), []));
 
@@ -135,77 +132,21 @@ export function AppHeader() {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <DropdownMenu
-            onOpenChange={(open) => {
-              if (open) markAllSeen();
-            }}
-          >
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="relative h-8 w-8 shrink-0">
-                <Bell className="h-4 w-4" />
-                {unseenCount > 0 && (
-                  <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-semibold text-destructive-foreground ring-1 ring-background">
-                    {unseenCount > 99 ? "99+" : unseenCount}
-                  </span>
-                )}
-                <span className="sr-only">Notifications</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-80">
-              <DropdownMenuLabel className="flex items-center justify-between">
-                <span>Alerts</span>
-                <span className="text-xs font-normal text-muted-foreground">
-                  {counts.critical} critical
-                </span>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {alerts.length === 0 ? (
-                <div className="px-2 py-6 text-center text-xs text-muted-foreground">
-                  Nothing needs attention
-                </div>
-              ) : (
-                alerts.slice(0, 6).map((a) => (
-                  <DropdownMenuItem key={a.id} asChild>
-                    <Link to={a.link} className="flex flex-col items-start gap-0.5">
-                      <span className="flex w-full items-center gap-2">
-                        <span
-                          className={cn(
-                            "h-1.5 w-1.5 shrink-0 rounded-full",
-                            a.severity === "critical"
-                              ? "bg-destructive"
-                              : a.severity === "warning"
-                                ? "bg-warning"
-                                : "bg-muted-foreground",
-                          )}
-                        />
-                        <span className="truncate text-xs font-medium">{a.title}</span>
-                      </span>
-                      <span className="truncate pl-3.5 text-[11px] text-muted-foreground">
-                        {a.detail}
-                      </span>
-                    </Link>
-                  </DropdownMenuItem>
-                ))
-              )}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <Link to="/alerts" className="justify-center text-xs font-medium">
-                  View all alerts
-                </Link>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
                 asChild
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 shrink-0"
+                className="relative h-8 w-8 shrink-0"
               >
-                <Link to="/alerts">
+                <Link to="/alerts" onClick={markAllSeen}>
                   <BellRing className="h-4 w-4" />
+                  {unseenCount > 0 && (
+                    <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-semibold text-destructive-foreground ring-1 ring-background">
+                      {unseenCount > 99 ? "99+" : unseenCount}
+                    </span>
+                  )}
                   <span className="sr-only">Alerts Centre</span>
                 </Link>
               </Button>
