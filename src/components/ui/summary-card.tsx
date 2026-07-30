@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const summaryCardVariants = cva(
-  "group relative flex flex-col overflow-hidden rounded-xl border bg-gradient-surface p-6 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-elegant before:absolute before:inset-x-0 before:top-0 before:h-1 before:content-['']",
+  "group relative flex flex-col overflow-hidden rounded-2xl border bg-gradient-surface p-7 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-card hover:border-primary/20 before:absolute before:inset-x-0 before:top-0 before:h-1.5 before:content-['']",
   {
     variants: {
       variant: {
@@ -22,7 +22,7 @@ const summaryCardVariants = cva(
 );
 
 const iconVariants = cva(
-  "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl transition-transform duration-300 group-hover:scale-105",
+  "flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl transition-transform duration-300 group-hover:scale-105",
   {
     variants: {
       variant: {
@@ -66,32 +66,35 @@ export function SummaryCard({
   ...props
 }: SummaryCardProps) {
   return (
-    <div className={cn(summaryCardVariants({ variant }), className)} {...props}>
-      <div className="flex items-start justify-between gap-4">
-        <div className="min-w-0 flex-1">
-          <p className="text-sm font-medium text-muted-foreground">{title}</p>
-          {loading ? (
-            <Skeleton className="mt-2 h-9 w-28" />
-          ) : (
-            <p className="mt-1 text-3xl font-semibold tracking-tight text-foreground">{value}</p>
-          )}
-          {(caption || trend) && !loading && (
-            <div className="mt-2 flex items-center gap-2 text-xs">
-              {trend && (
-                <span
-                  className={cn("font-medium", {
-                    "text-success": trend.positive,
-                    "text-destructive": !trend.positive,
-                  })}
-                >
-                  {trend.positive ? "↑" : "↓"} {trend.value}
-                </span>
-              )}
-              {caption && <span className="text-muted-foreground">{caption}</span>}
-            </div>
-          )}
+    <div className={cn(summaryCardVariants({ variant }), "min-h-[172px]", className)} {...props}>
+      <div className="flex flex-1 flex-col justify-between">
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold uppercase tracking-wide text-muted-foreground/80">{title}</p>
+            {loading ? (
+              <Skeleton className="mt-3 h-11 w-32" />
+            ) : (
+              <p className="mt-2 text-4xl font-bold tracking-tight text-foreground">{value}</p>
+            )}
+          </div>
+          <div className={cn(iconVariants({ variant }))}>{icon}</div>
         </div>
-        <div className={cn(iconVariants({ variant }))}>{icon}</div>
+
+        {(caption || trend) && !loading && (
+          <div className="mt-4 flex items-center gap-2 border-t border-border/50 pt-3 text-xs">
+            {trend && (
+              <span
+                className={cn("font-semibold", {
+                  "text-success": trend.positive,
+                  "text-destructive": !trend.positive,
+                })}
+              >
+                {trend.positive ? "↑" : "↓"} {trend.value}
+              </span>
+            )}
+            {caption && <span className="text-muted-foreground">{caption}</span>}
+          </div>
+        )}
       </div>
     </div>
   );
