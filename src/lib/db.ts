@@ -18,6 +18,7 @@ import type {
 } from "@/lib/types";
 import type { ClientContract } from "@/lib/types";
 import type { MedicalClaim } from "@/lib/types";
+import type { EmployeeLoan, LoanRepayment } from "@/lib/types";
 
 type Row = Record<string, any>;
 
@@ -661,6 +662,8 @@ export interface LoadedData {
   timeCards: TimeCard[]; claimSheets: ClaimSheet[];
   contracts: ClientContract[];
   medicalClaims: MedicalClaim[];
+  loans: EmployeeLoan[];
+  loanRepayments: LoanRepayment[];
 }
 
 
@@ -807,6 +810,11 @@ export async function loadAll(): Promise<LoadedData> {
     all("medical_claims"),
   ]);
 
+  const [loanRows, repaymentRows] = await Promise.all([
+    all("employee_loans"),
+    all("loan_repayments"),
+  ]);
+
   const roleByUser = new Map<string, string>();
   for (const r of roles) if (!roleByUser.has(r.user_id)) roleByUser.set(r.user_id, r.role);
 
@@ -865,6 +873,8 @@ export async function loadAll(): Promise<LoadedData> {
     claimSheets: claimSheets.map(fromClaimSheet),
     contracts: contracts.map(fromContract),
     medicalClaims: medicalClaims.map(fromMedicalClaim),
+    loans: loanRows.map(fromLoan),
+    loanRepayments: repaymentRows.map(fromLoanRepayment),
   };
 }
 
