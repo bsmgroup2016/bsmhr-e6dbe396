@@ -698,6 +698,7 @@ export default function WorkforcePage() {
                   </TableHead>
                   <TableHead className="min-w-[260px]">Employee</TableHead>
                   <TableHead className="min-w-[220px]">Company</TableHead>
+                  <TableHead className="min-w-[180px]">Project</TableHead>
                   <TableHead className="min-w-[220px]">Contact</TableHead>
                   <TableHead className="w-40">Status</TableHead>
                   <TableHead className="w-36 text-right">Action</TableHead>
