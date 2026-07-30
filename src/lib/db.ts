@@ -963,3 +963,39 @@ export const toPurchaseOrder = (x: Partial<PurchaseOrder>): Row => ({
   order_date: nullDate(x.orderDate), expected_date: nullDate(x.expectedDate),
   received_date: nullDate(x.receivedDate), status: x.status, remarks: x.remarks ?? null,
 });
+
+/* ---------- loan / salary advance ledger ---------- */
+export const fromLoan = (r: Row): EmployeeLoan => ({
+  id: r.id, companyId: r.company_id ?? undefined, employeeId: r.employee_id,
+  loanNo: r.loan_no ?? "", loanType: (r.loan_type ?? "Salary Advance") as EmployeeLoan["loanType"],
+  principal: Number(r.principal ?? 0), issuedOn: d(r.issued_on),
+  firstDeductionMonth: r.first_deduction_month ?? undefined,
+  monthlyInstallment: Number(r.monthly_installment ?? 0),
+  purpose: r.purpose ?? undefined, consentSigned: !!r.consent_signed,
+  consentDocumentUrl: r.consent_document_url ?? undefined,
+  status: (r.status ?? "Active") as EmployeeLoan["status"],
+  remarks: r.remarks ?? undefined,
+  createdAt: r.created_at, updatedAt: r.updated_at,
+});
+
+export const toLoan = (x: Partial<EmployeeLoan>): Row => ({
+  company_id: x.companyId || null, employee_id: x.employeeId, loan_no: x.loanNo ?? "",
+  loan_type: x.loanType, principal: x.principal ?? 0, issued_on: nullDate(x.issuedOn),
+  first_deduction_month: x.firstDeductionMonth ?? null,
+  monthly_installment: x.monthlyInstallment ?? 0, purpose: x.purpose ?? null,
+  consent_signed: !!x.consentSigned, consent_document_url: x.consentDocumentUrl ?? null,
+  status: x.status, remarks: x.remarks ?? null,
+});
+
+export const fromLoanRepayment = (r: Row): LoanRepayment => ({
+  id: r.id, loanId: r.loan_id, employeeId: r.employee_id,
+  paidOn: d(r.paid_on), month: r.month ?? undefined, amount: Number(r.amount ?? 0),
+  source: (r.source ?? "Payroll") as LoanRepayment["source"],
+  remarks: r.remarks ?? undefined,
+  createdAt: r.created_at, updatedAt: r.updated_at,
+});
+
+export const toLoanRepayment = (x: Partial<LoanRepayment>): Row => ({
+  loan_id: x.loanId, employee_id: x.employeeId, paid_on: nullDate(x.paidOn),
+  month: x.month ?? null, amount: x.amount ?? 0, source: x.source, remarks: x.remarks ?? null,
+});
