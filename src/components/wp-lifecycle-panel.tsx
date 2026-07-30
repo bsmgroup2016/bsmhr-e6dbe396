@@ -31,10 +31,10 @@ import {
 
 const BOND_STATUSES: SecurityBondStatus[] = ["Not Required", "Active", "Discharged", "Forfeited"];
 
-const stageVariant = (stage: WpStage) =>
+const stageVariant = (stage: WpStage): "success" | "warning" | "default" | "info" =>
   stage === "Active" ? "success"
     : stage === "Cancellation Pending" ? "warning"
-      : stage === "Cancelled" || stage === "Repatriated" ? "neutral"
+      : stage === "Cancelled" || stage === "Repatriated" ? "default"
         : "info";
 
 interface Props {
