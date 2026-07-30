@@ -64,8 +64,6 @@ const navGroups: { label: string; items: NavItem[] }[] = [
     label: "Workforce",
     items: [
       { title: "Employees", url: "/workforce", icon: Users },
-      { title: "Available Workers", url: "/available-workers", icon: HardHat },
-      { title: "Deployed Workers", url: "/deployed-workers", icon: Briefcase },
       { title: "Documents", url: "/documents", icon: FileText },
       { title: "Compliance", url: "/compliance", icon: ShieldCheck },
       { title: "MOM Levy & Quota", url: "/mom", icon: Landmark },
