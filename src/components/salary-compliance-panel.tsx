@@ -96,9 +96,9 @@ export function SalaryCompliancePanel({ employees, onChanged }: Props) {
     <div className="space-y-4">
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <SummaryCard title="Payroll rows checked" value={String(summary.checked)} icon={<FileText className="h-4 w-4" />} />
-        <SummaryCard title="Breaches" value={String(summary.critical)} icon={<AlertTriangle className="h-4 w-4" />} tone={summary.critical ? "danger" : "success"} />
-        <SummaryCard title="Late salary / OT" value={String(summary.latePayments)} icon={<Timer className="h-4 w-4" />} tone={summary.latePayments ? "warning" : "success"} />
-        <SummaryCard title="KET not issued" value={String(ketMissing.length)} icon={<BadgeCheck className="h-4 w-4" />} tone={ketMissing.length ? "warning" : "success"} />
+        <SummaryCard title="Breaches" value={String(summary.critical)} icon={<AlertTriangle className="h-4 w-4" />} variant={summary.critical ? "destructive" : "success"} />
+        <SummaryCard title="Late salary / OT" value={String(summary.latePayments)} icon={<Timer className="h-4 w-4" />} variant={summary.latePayments ? "warning" : "success"} />
+        <SummaryCard title="KET not issued" value={String(ketMissing.length)} icon={<BadgeCheck className="h-4 w-4" />} variant={ketMissing.length ? "warning" : "success"} />
       </div>
 
       <div className="rounded-xl border bg-card p-4 shadow-sm">
@@ -167,13 +167,11 @@ export function SalaryCompliancePanel({ employees, onChanged }: Props) {
                   </TableCell>
                   <TableCell>
                     {r.issues.length === 0 ? (
-                      <StatusBadge variant="success">Compliant</StatusBadge>
+                      <StatusBadge variant="success" label="Compliant" />
                     ) : (
                       <div className="flex flex-wrap gap-1">
                         {r.issues.map((i) => (
-                          <StatusBadge key={i.code} variant={i.severity === "critical" ? "danger" : "warning"} title={i.detail}>
-                            {i.label}
-                          </StatusBadge>
+                          <StatusBadge key={i.code} variant={i.severity === "critical" ? "destructive" : "warning"} title={i.detail} label={i.label} />
                         ))}
                       </div>
                     )}
@@ -216,7 +214,7 @@ export function SalaryCompliancePanel({ employees, onChanged }: Props) {
                 <TableRow key={e.id}>
                   <TableCell className="font-medium">{e.name}</TableCell>
                   <TableCell className="text-sm">{e.joinedOn}</TableCell>
-                  <TableCell><StatusBadge variant="warning">KET not issued</StatusBadge></TableCell>
+                  <TableCell><StatusBadge variant="warning" label="KET not issued" /></TableCell>
                   <TableCell>
                     <Button size="icon" variant="ghost" onClick={() => openEdit(e)}>
                       <Pencil className="h-4 w-4" />
