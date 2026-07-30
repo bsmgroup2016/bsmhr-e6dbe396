@@ -27,7 +27,7 @@ const summaryCardVariants = cva(
 );
 
 const iconVariants = cva(
-  "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ring-1 transition-transform duration-300 group-hover:scale-105",
+  "flex shrink-0 items-center justify-center rounded-xl ring-1 transition-transform duration-300 group-hover:scale-105",
   {
     variants: {
       variant: {
@@ -38,9 +38,14 @@ const iconVariants = cva(
         destructive: "bg-destructive/10 text-destructive ring-destructive/20",
         info: "bg-info/10 text-info ring-info/20",
       },
+      compact: {
+        true: "h-9 w-9",
+        false: "h-11 w-11",
+      },
     },
     defaultVariants: {
       variant: "default",
+      compact: false,
     },
   },
 );
