@@ -56,8 +56,8 @@ function ExpiryCell({ date }: { date?: string | null }) {
   const d = daysUntil(date);
   if (d === null) return <span className="text-muted-foreground">—</span>;
   return (
-    <div className="whitespace-nowrap">
-      <span className="text-sm">{date}</span>{" "}
+    <div className="flex items-center gap-2 whitespace-nowrap">
+      <span className="text-sm tabular-nums">{date}</span>
       <StatusBadge
         variant={d < 0 ? "destructive" : d <= 60 ? "warning" : "success"}
         label={d < 0 ? "expired" : `${d}d`}
