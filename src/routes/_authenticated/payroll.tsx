@@ -67,7 +67,8 @@ import { pick, type ImportColumn } from "@/lib/xlsx";
 import { exportCsv, timestampedName } from "@/lib/xlsx";
 import { cpfWebRows, ir8aRows } from "@/lib/gov-files";
 import { bankFileRows } from "@/lib/ops";
-import { computeStatutory, round2 } from "@/lib/sg-payroll";
+import { computeStatutory, cpfableAdditionalWage, round2 } from "@/lib/sg-payroll";
+import { OT_HOURS_CAP, overtimePay as computeOtPay } from "@/lib/sg-hours";
 
 const statuses: PayrollStatus[] = ["Draft", "Pending Approval", "Approved", "Paid", "Rejected"];
 
@@ -356,12 +357,18 @@ export default function PayrollPage() {
     const employeeId = formData.get("employeeId") as string;
     const emp = employees.find((e) => e.id === employeeId);
     const basicSalary = Number(formData.get("basicSalary") || 0);
-    const overtimePay = Number(formData.get("overtimePay") || 0);
+    const overtimeHours = Number(formData.get("overtimeHours") || 0);
+    const overtimePay = Number(formData.get("overtimePay") || 0)
+      || (emp && overtimeHours ? computeOtPay(emp, overtimeHours) : 0);
     const allowances = Number(formData.get("allowances") || 0);
     const deductions = Number(formData.get("deductions") || 0);
-    const gross = basicSalary + overtimePay + allowances;
+    const bonus = Number(formData.get("bonus") || 0);
+    const gross = basicSalary + overtimePay + allowances + bonus;
+    // Bonuses are Additional Wages: CPF applies only up to the AW ceiling.
+    const cpfableGross = basicSalary + overtimePay + allowances
+      + cpfableAdditionalWage(bonus, basicSalary * 12);
     const stat = emp
-      ? computeStatutory(emp, gross)
+      ? computeStatutory(emp, cpfableGross)
       : { cpfEmployee: 0, cpfEmployer: 0, sdl: 0, shgFund: "None" as const, shgAmount: 0, levy: 0, employerCost: gross, age: 0 };
     const cpfEmployee = Number(formData.get("cpfEmployee") || 0) || stat.cpfEmployee;
     const levies = Number(formData.get("levies") || 0) || stat.levy;
@@ -371,6 +378,7 @@ export default function PayrollPage() {
       month: formData.get("month") as string,
       basicSalary,
       overtimePay,
+      overtimeHours,
       allowances,
       deductions,
       cpfEmployee,
@@ -730,6 +738,17 @@ function PayrollForm({ employees, onSubmit }: { employees: ReturnType<typeof get
         <div className="space-y-2">
           <Label htmlFor="overtimePay">Overtime pay</Label>
           <Input id="overtimePay" name="overtimePay" type="number" defaultValue={0} />
+          <p className="text-xs text-muted-foreground">Leave at 0 to auto-calculate from OT hours at 1.5x the hourly basic rate.</p>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="overtimeHours">Overtime hours</Label>
+          <Input id="overtimeHours" name="overtimeHours" type="number" step="0.5" defaultValue={0} />
+          <p className="text-xs text-muted-foreground">MOM cap: {OT_HOURS_CAP} hours a month.</p>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="bonus">Bonus / Additional Wage</Label>
+          <Input id="bonus" name="bonus" type="number" defaultValue={0} />
+          <p className="text-xs text-muted-foreground">CPF applies only up to the annual Additional Wage ceiling.</p>
         </div>
         <div className="space-y-2">
           <Label htmlFor="allowances">Allowances</Label>
