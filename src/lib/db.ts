@@ -19,6 +19,7 @@ import type {
 import type { ClientContract } from "@/lib/types";
 import type { MedicalClaim } from "@/lib/types";
 import type { EmployeeLoan, LoanRepayment } from "@/lib/types";
+import type { Department, Designation } from "@/lib/types";
 
 type Row = Record<string, any>;
 
@@ -666,6 +667,34 @@ export interface LoadedData {
   loanRepayments: LoanRepayment[];
 }
 
+/* ---------- organisation: departments & designations ---------- */
+export const fromDepartment = (r: Row): Department => ({
+  id: r.id, companyId: r.company_id ?? undefined, code: r.code ?? "", name: r.name ?? "",
+  description: r.description ?? undefined, headEmployeeId: r.head_employee_id ?? undefined,
+  status: (r.status ?? "Active") as Department["status"],
+  createdAt: r.created_at, updatedAt: r.updated_at,
+});
+
+export const toDepartment = (x: Partial<Department>): Row => ({
+  company_id: x.companyId || null, code: x.code ?? "", name: x.name ?? "",
+  description: x.description ?? null, head_employee_id: x.headEmployeeId || null,
+  status: x.status ?? "Active",
+});
+
+export const fromDesignation = (r: Row): Designation => ({
+  id: r.id, companyId: r.company_id ?? undefined, departmentId: r.department_id ?? undefined,
+  code: r.code ?? "", title: r.title ?? "", level: r.level ?? undefined,
+  description: r.description ?? undefined,
+  status: (r.status ?? "Active") as Designation["status"],
+  createdAt: r.created_at, updatedAt: r.updated_at,
+});
+
+export const toDesignation = (x: Partial<Designation>): Row => ({
+  company_id: x.companyId || null, department_id: x.departmentId || null,
+  code: x.code ?? "", title: x.title ?? "", level: x.level ?? null,
+  description: x.description ?? null, status: x.status ?? "Active",
+});
+
 
 /* ---------- medical claims (FWMI / WICA) ---------- */
 export const fromMedicalClaim = (r: Row): MedicalClaim => ({
@@ -813,6 +842,11 @@ export async function loadAll(): Promise<LoadedData> {
   const [loanRows, repaymentRows] = await Promise.all([
     all("employee_loans"),
     all("loan_repayments"),
+  ]);
+
+  const [departmentRows, designationRows] = await Promise.all([
+    all("departments"),
+    all("designations"),
   ]);
 
   const roleByUser = new Map<string, string>();
