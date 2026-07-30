@@ -58,6 +58,8 @@ import {
   getCertifications,
   getPayroll,
 } from "@/lib/store";
+import { getAssignments } from "@/lib/store";
+import { activeAssignedEmployeeIds, isEmployeeAvailable } from "@/lib/availability";
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
