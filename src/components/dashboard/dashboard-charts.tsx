@@ -128,7 +128,7 @@ export function DashboardCharts({ data }: { data: DashboardChartData }) {
               ))}
             </Pie>
             <Tooltip contentStyle={tooltipStyle} />
-            <Legend iconType="circle" wrapperStyle={{ fontSize: 12 }} />
+            <Legend iconType="circle" wrapperStyle={{ fontSize: 13 }} />
           </PieChart>
         </ResponsiveContainer>
       </ChartCard>
