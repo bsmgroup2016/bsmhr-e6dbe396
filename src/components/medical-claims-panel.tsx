@@ -17,7 +17,7 @@ import { SummaryCard } from "@/components/ui/summary-card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Progress } from "@/components/ui/progress";
 import { FileUpload } from "@/components/file-upload";
-import { downloadR2File, openR2File, r2FileName } from "@/lib/r2";
+import { downloadR2File, downloadR2FilesAsZip, openR2File, r2FileName } from "@/lib/r2";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
@@ -77,6 +77,32 @@ export function MedicalClaimsPanel({ employees, onChanged }: Props) {
     void downloadR2File(ref).catch((e) =>
       toast.error(e instanceof Error ? e.message : "Download failed"),
     );
+  };
+
+  const [zipping, setZipping] = useState<string | null>(null);
+
+  const downloadAllBills = async (id: string, claimNo: string, refs: string[]) => {
+    if (refs.length === 0) return;
+    setZipping(id);
+    const toastId = toast.loading(`Preparing ${refs.length} bills…`);
+    try {
+      const { added, failed } = await downloadR2FilesAsZip(
+        refs,
+        `bills-${(claimNo || "claim").replace(/[^\w.-]+/g, "-")}.zip`,
+      );
+      if (added === 0) {
+        toast.error("Could not package the bills — downloading them individually", { id: toastId });
+        for (const ref of refs) await downloadR2File(ref);
+      } else if (failed.length > 0) {
+        toast.warning(`${added} bills zipped, ${failed.length} could not be read`, { id: toastId });
+      } else {
+        toast.success(`${added} bills downloaded as ZIP`, { id: toastId });
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Download failed", { id: toastId });
+    } finally {
+      setZipping(null);
+    }
   };
 
   const openNew = () => {
@@ -262,6 +288,19 @@ export function MedicalClaimsPanel({ employees, onChanged }: Props) {
                             </Button>
                           </div>
                         ))}
+                        {(r.claim.documentUrls?.length ?? 0) > 1 && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={zipping === r.claim.id}
+                            onClick={() =>
+                              void downloadAllBills(r.claim.id, r.claim.claimNo, r.claim.documentUrls ?? [])
+                            }
+                          >
+                            <Download className="mr-1 h-4 w-4" />
+                            ZIP ({r.claim.documentUrls!.length})
+                          </Button>
+                        )}
                       </div>
                     ) : r.claim.documentUrl ? (
                       <div className="flex items-center">
@@ -437,6 +476,21 @@ export function MedicalClaimsPanel({ employees, onChanged }: Props) {
               />
               {(form.documentUrls ?? []).length > 0 && (
                 <div className="space-y-1 rounded-md border p-2">
+                  {(form.documentUrls ?? []).length > 1 && (
+                    <div className="flex justify-end">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={zipping === "form"}
+                        onClick={() =>
+                          void downloadAllBills("form", form.claimNo ?? "claim", form.documentUrls ?? [])
+                        }
+                      >
+                        <Download className="mr-1 h-4 w-4" />
+                        Download all ({(form.documentUrls ?? []).length}) as ZIP
+                      </Button>
+                    </div>
+                  )}
                   {(form.documentUrls ?? []).map((u, i) => (
                     <div key={`${u}-${i}`} className="flex items-center justify-between gap-2 text-sm">
                       <button
