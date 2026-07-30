@@ -50,7 +50,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 
-type NavItem = { title: string; url: string; icon: typeof Gauge; soon?: boolean };
+type NavItem = { title: string; url: string; icon: typeof Gauge; soon?: boolean; sub?: boolean };
 
 const navGroups: { label: string; items: NavItem[] }[] = [
   {
@@ -63,7 +63,8 @@ const navGroups: { label: string; items: NavItem[] }[] = [
   {
     label: "Workforce",
     items: [
-      { title: "Employees", url: "/workforce", icon: Users },
+      { title: "Employee/Workers", url: "/workforce", icon: Users },
+      { title: "Staff Management", url: "/staff-management", icon: Briefcase, sub: true },
       { title: "Documents", url: "/documents", icon: FileText },
       { title: "Compliance", url: "/compliance", icon: ShieldCheck },
       { title: "MOM Levy & Quota", url: "/mom", icon: Landmark },
@@ -164,7 +165,7 @@ export function AppSidebar() {
               {group.items.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild isActive={isActive(item.url)} tooltip={item.title}>
-                    <Link to={item.url} className="flex items-center gap-3">
+                    <Link to={item.url} className={cn("flex items-center gap-3", item.sub && !collapsed && "pl-4")}>
                       <item.icon className="h-4 w-4 shrink-0" />
                       <span className="truncate">{item.title}</span>
                       {item.soon && !collapsed && (
