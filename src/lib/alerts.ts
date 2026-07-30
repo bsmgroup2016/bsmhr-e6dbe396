@@ -4,6 +4,7 @@
  * into one prioritised list used by the header bell and the Alerts page.
  */
 import { buildComplianceItems, reminderLabel, reminderTier } from "@/lib/compliance";
+import { lifecycleRows } from "@/lib/wp-lifecycle";
 import {
   assetAlerts,
   certificationAlerts,
@@ -20,6 +21,7 @@ export type AlertSeverity = "critical" | "warning" | "info";
 
 export type AlertCategory =
   | "Compliance"
+  | "Work Pass"
   | "Leave"
   | "Billing"
   | "Transport"
@@ -74,6 +76,24 @@ export function buildAlerts(companyId?: string): AppAlert[] {
   }
 
   // Pending leave requests
+  // Work Permit lifecycle deadlines (MOM notify / cancel / repatriate / bond)
+  for (const row of lifecycleRows(employees)) {
+    for (const task of row.tasks) {
+      if (task.severity === "ok") continue;
+      out.push({
+        id: `wp-${row.employee.id}-${task.label}`,
+        category: "Work Pass",
+        severity: task.severity === "overdue" ? "critical" : "warning",
+        title: `${task.label} — ${row.employee.name}`,
+        detail: task.dueDate
+          ? `${row.stage} · due ${task.dueDate} (${daysLabel(task.dueDate)})`
+          : row.stage,
+        date: task.dueDate || undefined,
+        link: "/mom",
+      });
+    }
+  }
+
   for (const leave of getLeaveRequests().filter((l) => l.status === "Pending")) {
     const emp = employees.find((e) => e.id === leave.employeeId);
     if (companyId && !emp) continue;
@@ -189,6 +209,7 @@ export function alertCounts(alerts: AppAlert[]) {
 
 export const ALERT_CATEGORIES: AlertCategory[] = [
   "Compliance",
+  "Work Pass",
   "Leave",
   "Billing",
   "Transport",
