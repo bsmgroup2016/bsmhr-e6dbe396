@@ -43,6 +43,11 @@ const bodySchema = z.discriminatedUnion("action", [
     id: z.string().uuid(),
     fullName: z.string().max(120).optional(),
     phone: z.string().max(40).optional(),
+    username: z.string().max(60).optional().nullable(),
+    email: z.string().email().optional(),
+    password: z.string().min(8).max(72).optional(),
+    isActive: z.boolean().optional(),
+    avatarKey: z.string().max(300).optional().nullable(),
   }),
 ]);
 
@@ -118,11 +123,26 @@ export const Route = createFileRoute("/api/public/user-admin")({
           }
 
           if (body.action === "update") {
+            if (body.email || body.password) {
+              const res = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${body.id}`, {
+                method: "PUT",
+                headers: serviceHeaders(),
+                body: JSON.stringify({
+                  ...(body.email ? { email: body.email, email_confirm: true } : {}),
+                  ...(body.password ? { password: body.password } : {}),
+                }),
+              });
+              if (!res.ok) return Response.json({ error: await res.text() }, { status: 400 });
+            }
             await rest(`profiles?id=eq.${body.id}`, {
               method: "PATCH",
               body: JSON.stringify({
                 full_name: body.fullName ?? null,
                 phone: body.phone ?? null,
+                username: body.username ?? null,
+                ...(body.email ? { email: body.email } : {}),
+                ...(body.isActive === undefined ? {} : { is_active: body.isActive }),
+                ...(body.avatarKey === undefined ? {} : { avatar_key: body.avatarKey }),
               }),
             });
             return Response.json({ ok: true });

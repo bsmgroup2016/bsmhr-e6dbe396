@@ -64,6 +64,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { ROLE_LABELS, type AppAuthRole } from "@/lib/permissions";
 import { createUser, deleteUsers, updateUser } from "@/lib/user-admin";
+import { uploadToR2 } from "@/lib/r2";
 
 const roles: AppAuthRole[] = [
   "admin",
@@ -79,6 +80,8 @@ interface SystemUser {
   email: string;
   phone: string;
   fullName: string;
+  username: string;
+  avatarKey: string | null;
   isActive: boolean;
   role: AppAuthRole | null;
   createdAt: string;
@@ -138,7 +141,9 @@ export default function UsersPage() {
     const [{ data: profiles, error: pErr }, { data: roleRows, error: rErr }] = await Promise.all([
       supabase
         .from("profiles")
-        .select("id, email, full_name, phone, is_active, created_at, last_login_at, last_login_ip"),
+        .select(
+          "id, email, full_name, username, avatar_key, phone, is_active, created_at, last_login_at, last_login_ip",
+        ),
       supabase.from("user_roles").select("user_id, role"),
     ]);
     if (pErr || rErr) {
@@ -154,6 +159,8 @@ export default function UsersPage() {
         email: (p.email as string) ?? "",
         phone: (p.phone as string) ?? "",
         fullName: (p.full_name as string) ?? "—",
+        username: (p.username as string) ?? "",
+        avatarKey: (p.avatar_key as string) ?? null,
         isActive: p.is_active !== false,
         role: roleMap.get(p.id as string) ?? null,
         createdAt: (p.created_at as string) ?? "",
@@ -690,22 +697,80 @@ function EditUserDialog({
   onOpenChange: (v: boolean) => void;
   onSaved: () => void;
 }) {
-  const [fullName, setFullName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [isActive, setIsActive] = useState(true);
+  const [avatarKey, setAvatarKey] = useState<string | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (user) {
-      setFullName(user.fullName === "—" ? "" : user.fullName);
-      setPhone(user.phone);
-    }
+    if (!user) return;
+    const name = user.fullName === "—" ? "" : user.fullName;
+    const parts = name.trim().split(/\s+/).filter(Boolean);
+    setFirstName(parts[0] ?? "");
+    setLastName(parts.slice(1).join(" "));
+    setUsername(user.username || (user.email ? user.email.split("@")[0] : ""));
+    setEmail(user.email);
+    setPhone(user.phone);
+    setPassword("");
+    setConfirmPassword("");
+    setIsActive(user.isActive);
+    setAvatarKey(user.avatarKey);
+    setAvatarPreview(null);
   }, [user]);
+
+  async function pickImage(file?: File) {
+    if (!file) return;
+    setUploading(true);
+    try {
+      const res = await uploadToR2(file, "avatars");
+      setAvatarKey(res.key);
+      setAvatarPreview(URL.createObjectURL(file));
+      toast.success("Photo uploaded");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Upload failed");
+    } finally {
+      setUploading(false);
+    }
+  }
 
   async function submit() {
     if (!user) return;
+    if (!firstName.trim() || !lastName.trim()) {
+      toast.error("First name and last name are required");
+      return;
+    }
+    if (!username.trim()) {
+      toast.error("Username is required");
+      return;
+    }
+    if (password && password.length < 8) {
+      toast.error("Password must be at least 8 characters");
+      return;
+    }
+    if (password && password !== confirmPassword) {
+      toast.error("Passwords do not match");
+      return;
+    }
     setSaving(true);
     try {
-      await updateUser({ id: user.id, fullName, phone });
+      await updateUser({
+        id: user.id,
+        fullName: `${firstName.trim()} ${lastName.trim()}`.trim(),
+        phone,
+        username: username.trim(),
+        email: email && email !== user.email ? email : undefined,
+        password: password || undefined,
+        isActive,
+        avatarKey,
+      });
       toast.success("User updated");
       onOpenChange(false);
       onSaved();
@@ -716,29 +781,127 @@ function EditUserDialog({
     }
   }
 
+  const initials = (firstName || email || "U").slice(0, 2).toUpperCase();
+
   return (
     <Dialog open={user !== null} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Edit user</DialogTitle>
-          <DialogDescription>{user?.email}</DialogDescription>
+      <DialogContent className="sm:max-w-2xl">
+        <DialogHeader className="border-b pb-3">
+          <DialogTitle>Edit</DialogTitle>
+          <DialogDescription className="sr-only">Edit user account details</DialogDescription>
         </DialogHeader>
-        <div className="space-y-3">
-          <div className="space-y-1.5">
-            <Label htmlFor="eu-name">Full name</Label>
-            <Input id="eu-name" value={fullName} onChange={(e) => setFullName(e.target.value)} />
+
+        <div className="space-y-5">
+          <div className="flex items-center gap-3">
+            {avatarPreview ? (
+              <img
+                src={avatarPreview}
+                alt="Selected profile"
+                className="h-16 w-16 rounded-full object-cover ring-2 ring-primary/20"
+              />
+            ) : (
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-primary text-lg font-semibold text-primary-foreground">
+                {initials}
+              </div>
+            )}
+            {uploading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
           </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="eu-phone">Phone</Label>
-            <Input id="eu-phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="eu-first">
+                First Name <span className="text-destructive">*</span>
+              </Label>
+              <Input id="eu-first" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="eu-last">
+                Last Name <span className="text-destructive">*</span>
+              </Label>
+              <Input id="eu-last" value={lastName} onChange={(e) => setLastName(e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="eu-username">
+                Username <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="eu-username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="bg-primary/5"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="eu-email">Email</Label>
+              <Input
+                id="eu-email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="eu-phone">Phone</Label>
+              <Input id="eu-phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="eu-pass">Password</Label>
+              <Input
+                id="eu-pass"
+                type="password"
+                value={password}
+                autoComplete="new-password"
+                placeholder="Leave blank to keep current"
+                onChange={(e) => setPassword(e.target.value)}
+                className="bg-primary/5"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="eu-confirm">Confirm Password</Label>
+              <Input
+                id="eu-confirm"
+                type="password"
+                value={confirmPassword}
+                autoComplete="new-password"
+                placeholder="Re-type Password"
+                onChange={(e) => setConfirmPassword(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="eu-image" className="font-semibold">
+                Image
+              </Label>
+              <Input
+                id="eu-image"
+                type="file"
+                accept="image/*"
+                disabled={uploading}
+                onChange={(e) => void pickImage(e.target.files?.[0])}
+                className="cursor-pointer file:mr-3 file:rounded-md file:border file:bg-muted file:px-2 file:py-1 file:text-xs"
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 pt-1">
+            <Checkbox
+              id="eu-active"
+              checked={isActive}
+              onCheckedChange={(v) => setIsActive(v === true)}
+            />
+            <Label htmlFor="eu-active" className="font-normal">
+              Active
+            </Label>
           </div>
         </div>
+
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
-            Cancel
-          </Button>
-          <Button onClick={() => void submit()} disabled={saving}>
-            {saving ? "Saving…" : "Save changes"}
+          <Button
+            className="w-full"
+            size="lg"
+            onClick={() => void submit()}
+            disabled={saving || uploading}
+          >
+            {saving ? "Saving…" : "Edit"}
           </Button>
         </DialogFooter>
       </DialogContent>
