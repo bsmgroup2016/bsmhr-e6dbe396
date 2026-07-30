@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/table";
 import { getPayroll, updateEmployee } from "@/lib/store";
 import { exportRows } from "@/lib/xlsx";
+import { employeeSlugById } from "@/lib/employee-slug";
 import type { Employee, PaymentMethod } from "@/lib/types";
 import {
   KET_WINDOW_DAYS, OT_MONTHLY_CAP, ketGaps, salaryComplianceRows, salarySummary,
@@ -148,7 +149,7 @@ export function SalaryCompliancePanel({ employees, onChanged }: Props) {
               ) : rows.map((r) => (
                 <TableRow key={r.id}>
                   <TableCell>
-                    <Link to="/workforce/$id" params={{ id: r.employee.id }} className="font-medium hover:underline">
+                    <Link to="/workforce/$slug" params={{ slug: employeeSlugById(r.employee.id) }} className="font-medium hover:underline">
                       {r.employee.name}
                     </Link>
                     <div className="text-xs text-muted-foreground">{r.employee.employeeCode} · {r.employee.passType}</div>

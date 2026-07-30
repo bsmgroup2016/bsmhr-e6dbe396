@@ -18,6 +18,7 @@ import { getEmployees, getDocuments, getCurrentCompany } from "@/lib/store";
 import { buildComplianceItems, severityLabel, severityVariant, type ComplianceSeverity } from "@/lib/compliance";
 import { openR2File } from "@/lib/r2";
 import { exportRows } from "@/lib/xlsx";
+import { employeeSlugById } from "@/lib/employee-slug";
 
 export const Route = createFileRoute("/_authenticated/compliance")({
   head: () => ({
@@ -193,7 +194,7 @@ export default function CompliancePage() {
                             </Button>
                           )}
                           <Button size="icon" variant="ghost" asChild title="Open profile">
-                            <Link to="/workforce/$id" params={{ id: i.employeeId }}>
+                            <Link to="/workforce/$slug" params={{ slug: employeeSlugById(i.employeeId) }}>
                               <Eye className="h-4 w-4" />
                             </Link>
                           </Button>

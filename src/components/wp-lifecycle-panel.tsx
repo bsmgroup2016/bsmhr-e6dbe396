@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/table";
 import { updateEmployee } from "@/lib/store";
 import { exportRows } from "@/lib/xlsx";
+import { employeeSlugById } from "@/lib/employee-slug";
 import type { Employee, SecurityBondStatus, WpStage } from "@/lib/types";
 import {
   SECURITY_BOND_AMOUNT, WP_STAGES, lifecycleRows, lifecycleSummary,
@@ -192,7 +193,7 @@ export function WpLifecyclePanel({ employees, onChange }: Props) {
                             <Pencil className="h-4 w-4" />
                           </Button>
                           <Button size="icon" variant="ghost" asChild title="Open profile">
-                            <Link to="/workforce/$id" params={{ id: r.employee.id }}><Eye className="h-4 w-4" /></Link>
+                            <Link to="/workforce/$slug" params={{ slug: employeeSlugById(r.employee.id) }}><Eye className="h-4 w-4" /></Link>
                           </Button>
                         </div>
                       </TableCell>

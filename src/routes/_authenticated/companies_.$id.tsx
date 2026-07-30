@@ -27,6 +27,7 @@ import {
 import { findCompanyByParam } from "@/lib/company-slug";
 import { MOM_SECTORS } from "@/lib/mom";
 import { uploadToR2 } from "@/lib/r2";
+import { employeeSlugById } from "@/lib/employee-slug";
 import type { Company, Employee } from "@/lib/types";
 
 export const Route = createFileRoute("/_authenticated/companies_/$id")({
@@ -321,7 +322,7 @@ function CompanyDashboardPage() {
                     {data.expiring.map(({ e, days }) => (
                       <TableRow key={e.id}>
                         <TableCell className="font-medium">
-                          <Link to="/workforce/$id" params={{ id: e.id }} className="hover:underline">{e.name}</Link>
+                          <Link to="/workforce/$slug" params={{ slug: employeeSlugById(e.id) }} className="hover:underline">{e.name}</Link>
                         </TableCell>
                         <TableCell>{e.passType}</TableCell>
                         <TableCell>{e.passExpiry}</TableCell>
@@ -375,7 +376,7 @@ function WorkerTable({ rows }: { rows: Employee[] }) {
             <TableRow key={e.id}>
               <TableCell className="font-mono text-xs">{e.employeeCode}</TableCell>
               <TableCell className="font-medium">
-                <Link to="/workforce/$id" params={{ id: e.id }} className="hover:underline">{e.name}</Link>
+                <Link to="/workforce/$slug" params={{ slug: employeeSlugById(e.id) }} className="hover:underline">{e.name}</Link>
               </TableCell>
               <TableCell>{e.trade}</TableCell>
               <TableCell>{e.passType}</TableCell>
