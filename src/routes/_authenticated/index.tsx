@@ -212,12 +212,8 @@ function DashboardPage() {
   const medicalLeaveCount = Math.max(onMedicalLeave.length, mcAttendanceToday);
 
   const assignedIds = activeAssignedEmployeeIds(getAssignments());
-  const availableWorkers = employees.filter(
-    (e) =>
-      isEmployeeAvailable(e, assignedIds) &&
-      !onLeaveIds.has(e.id) &&
-      !todayAttendance.some((a) => a.employeeId === e.id && a.status === "Absent"),
-  ).length;
+  // Same definition as the Workforce page so both screens always match.
+  const availableWorkers = employees.filter((e) => isEmployeeAvailable(e, assignedIds)).length;
 
   const runningProjects = projects.filter((p) => p.status === "Active");
   const endingProjects = runningProjects.filter(
