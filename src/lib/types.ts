@@ -124,6 +124,15 @@ export interface Employee {
   levyTier?: "Higher Skilled" | "Basic Skilled";
   medicalInsuranceExpiry?: string;
   medicalCheckupDue?: string;
+  // --- Salary compliance (Employment Act / EFMA) ---
+  /** Monthly salary declared to MOM on the IPA / Work Permit. */
+  declaredSalary?: number;
+  /** Fixed monthly allowances counted towards the declared salary. */
+  fixedAllowance?: number;
+  /** Date the Key Employment Terms were issued in writing. */
+  ketIssuedOn?: string;
+  /** How salary is actually disbursed (overrides paymentMethod for audits). */
+  salaryPaymentMode?: PaymentMethod;
   // --- Work Permit lifecycle (IPA -> card -> cancellation -> repatriation) ---
   wpStage?: WpStage;
   ipaIssueDate?: string;
@@ -390,6 +399,10 @@ export interface PayrollEntry {
   shgAmount?: number;
   /** Gross + employer CPF + SDL + FWL. */
   employerCost?: number;
+  /** Overtime hours worked in the month (MOM cap: 72 h). */
+  overtimeHours?: number;
+  /** When the itemised payslip was issued. */
+  payslipIssuedAt?: string;
   netPay: number;
   status: PayrollStatus;
   approvedBy?: string;

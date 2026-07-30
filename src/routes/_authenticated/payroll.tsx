@@ -581,7 +581,12 @@ export default function PayrollPage() {
                                   employee: emp,
                                   companyName:
                                     companies.find((c) => c.id === emp?.companyId)?.name ?? "BSM Engineering",
-                                }).then(() => toast.success("Payslip PDF downloaded"))
+                                }).then(() => {
+                                  if (!p.payslipIssuedAt) {
+                                    updatePayroll(p.id, { payslipIssuedAt: new Date().toISOString() });
+                                  }
+                                  toast.success("Payslip PDF downloaded");
+                                })
                               }
                             >
                               <FileDown className="h-4 w-4" />
