@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const summaryCardVariants = cva(
-  "group relative flex flex-col overflow-hidden rounded-xl border bg-gradient-surface p-5 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-elegant before:absolute before:inset-x-0 before:top-0 before:h-1 before:content-['']",
+  "group relative flex flex-col overflow-hidden rounded-xl border bg-gradient-surface p-6 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-elegant before:absolute before:inset-x-0 before:top-0 before:h-1 before:content-['']",
   {
     variants: {
       variant: {
@@ -22,7 +22,7 @@ const summaryCardVariants = cva(
 );
 
 const iconVariants = cva(
-  "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-transform duration-300 group-hover:scale-105",
+  "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl transition-transform duration-300 group-hover:scale-105",
   {
     variants: {
       variant: {
@@ -71,9 +71,9 @@ export function SummaryCard({
         <div className="min-w-0 flex-1">
           <p className="text-sm font-medium text-muted-foreground">{title}</p>
           {loading ? (
-            <Skeleton className="mt-2 h-8 w-24" />
+            <Skeleton className="mt-2 h-9 w-28" />
           ) : (
-            <p className="mt-1 text-2xl font-semibold tracking-tight text-foreground">{value}</p>
+            <p className="mt-1 text-3xl font-semibold tracking-tight text-foreground">{value}</p>
           )}
           {(caption || trend) && !loading && (
             <div className="mt-2 flex items-center gap-2 text-xs">
