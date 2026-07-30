@@ -12,7 +12,7 @@ import {
   Clock,
   HardHat,
 } from "lucide-react";
-import { ArrowRight, ChevronLeft, ChevronRight, Mail, Phone } from "lucide-react";
+import { ChevronLeft, ChevronRight, Mail, Phone } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
 import { R2Image } from "@/components/r2-image";
