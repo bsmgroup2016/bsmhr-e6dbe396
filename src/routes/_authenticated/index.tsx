@@ -750,7 +750,8 @@ function DashboardPage() {
               {expiringPasses.map((e) => (
                 <Link
                   key={e.id}
-                  to="/workforce"
+                  to="/workforce/$id"
+                  params={{ id: e.id }}
                   className="rounded-xl border bg-gradient-surface p-4 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-warning/40 hover:shadow-elegant"
                 >
                   <p className="truncate text-sm font-medium text-foreground">{e.name}</p>
