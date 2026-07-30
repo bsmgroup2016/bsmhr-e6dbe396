@@ -328,7 +328,7 @@ function StaffManagementPage() {
             </Select>
           </div>
 
-          <div className="overflow-hidden rounded-lg border">
+          <div className="overflow-x-auto rounded-lg border">
             <Table>
               <TableHeader>
                 <TableRow className="[&>th]:whitespace-nowrap [&>th]:px-4">
@@ -338,9 +338,9 @@ function StaffManagementPage() {
                   <TableHead>Designation</TableHead>
                 <TableHead className="!pr-6 text-right">Fixed Salary</TableHead>
                 <TableHead className="!pl-6">Passport</TableHead>
-                  <TableHead>Leave</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                <TableHead className="!pl-6">Leave</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="sticky right-0 z-10 bg-card text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -385,7 +385,7 @@ function StaffManagementPage() {
                       <TableCell className="!pl-6">
                         <ExpiryCell date={e.passportExpiry} />
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="!pl-6">
                         {onLeaveToday.some((l) => l.employeeId === e.id) ? (
                           <StatusBadge variant="warning" dot label="On leave" />
                         ) : (
@@ -395,7 +395,7 @@ function StaffManagementPage() {
                       <TableCell>
                         <StatusBadge variant="success" label={e.status} dot />
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="sticky right-0 z-10 bg-card">
                         <div className="flex items-center justify-end gap-1.5">
                           <Button
                             size="icon"
