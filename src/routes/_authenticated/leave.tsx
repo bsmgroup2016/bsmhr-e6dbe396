@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
 import { notifyLeaveDecision } from "@/lib/notify";
 import { ExportButton } from "@/components/data-io";
+import { LeaveEntitlements } from "@/components/leave-entitlements";
 import { SummaryCard } from "@/components/ui/summary-card";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -304,6 +305,8 @@ export default function LeavePage() {
             </Table>
           </div>
         </div>
+
+        <LeaveEntitlements employees={companyEmployees} requests={leaves} />
       </div>
     </AppShell>
   );
