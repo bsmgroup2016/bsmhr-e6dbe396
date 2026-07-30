@@ -658,7 +658,7 @@ export default function WorkforcePage() {
 
           {/* Records per page + search */}
           <div className="flex flex-col gap-3 rounded-lg border bg-muted/20 p-3 lg:flex-row lg:items-center">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 lg:flex-1">
               <Select value={perPage} onValueChange={(v) => { setPerPage(v); setPage(1); }}>
                 <SelectTrigger className="h-9 w-20"><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -667,7 +667,7 @@ export default function WorkforcePage() {
               </Select>
               <span className="text-sm text-muted-foreground">records per page</span>
             </div>
-            <div className="flex flex-1 items-center gap-2">
+            <div className="flex flex-1 items-center justify-center gap-2">
               <Label htmlFor="wf-search" className="text-sm text-muted-foreground">Search</Label>
               <div className="relative w-full max-w-sm">
                 <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -681,12 +681,13 @@ export default function WorkforcePage() {
                 />
               </div>
             </div>
-            <div className="flex items-center justify-end gap-2">
+            <div className="flex items-center justify-end gap-2 lg:flex-1">
               <Button variant="outline" size="sm" asChild>
                 <Link to="/deployed-workers">View details</Link>
               </Button>
             </div>
           </div>
+
 
           <div className="overflow-x-auto rounded-lg border">
             <Table>
