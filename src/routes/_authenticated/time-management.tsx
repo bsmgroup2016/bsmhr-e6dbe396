@@ -67,7 +67,7 @@ const statuses: AttendanceStatus[] = ["Present", "Absent", "On Leave", "MC", "Ha
 
 const ATTENDANCE_IMPORT_COLUMNS: ImportColumn[] = [
   { key: "date", label: "Date", required: true, example: "2026-07-28" },
-  { key: "employeeCode", label: "Employee Code", required: true, example: "BSM-0001" },
+  { key: "employeeCode", label: "P-File Number", required: true, example: "BSM-0001" },
   { key: "site", label: "Site", example: "Tuas Yard" },
   { key: "status", label: "Status", required: true, example: "Present" },
   { key: "checkIn", label: "Check In", example: "08:00" },
@@ -116,7 +116,7 @@ export default function TimeManagementPage() {
     ).map((r) => {
       const emp = employees.find((e) => e.id === r.employeeId);
       return {
-        "Employee Code": emp?.employeeCode ?? "",
+        "P-File Number": emp?.employeeCode ?? "",
         Name: emp?.name ?? "",
         Month: summaryMonth,
         "Present Days": r.presentDays,
@@ -157,7 +157,7 @@ export default function TimeManagementPage() {
     const site = sites.find((s) => s.id === record.siteId);
     return {
       Date: record.date,
-      "Employee Code": emp?.employeeCode ?? "",
+      "P-File Number": emp?.employeeCode ?? "",
       Name: emp?.name ?? "",
       FIN: emp?.fin ?? "",
       Site: site?.name ?? "",

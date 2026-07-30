@@ -218,7 +218,7 @@ function EmployeeProfilePage() {
 
           <TabsContent value="overview" className="mt-4">
             <Grid>
-              <Item label="Employee ID" value={employee.employeeCode} />
+              <Item label="P-File Number" value={employee.employeeCode} />
               <Item label="Worker category" value={employee.workerCategory} />
               <Item label="Primary skill" value={employee.trade} />
               <Item label="Employment status" value={employee.status} />

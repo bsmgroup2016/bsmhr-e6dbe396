@@ -265,7 +265,7 @@ export function isEmployeeCodeTaken(code: string, exceptId?: string): boolean {
 }
 
 /**
- * Rename an Employee ID. All related records (attendance, payroll, documents,
+ * Rename a P-File Number. All related records (attendance, payroll, documents,
  * assignments) reference the employee row's UUID, so this is a safe metadata
  * rename — nothing is re-created or orphaned.
  */
@@ -277,13 +277,13 @@ export function changeEmployeeCode(
   const employee = getEmployee(id);
   if (!employee) return { ok: false, error: "Employee not found" };
   const code = newCode.trim();
-  if (!code) return { ok: false, error: "Employee ID cannot be empty" };
-  if (isEmployeeCodeTaken(code, id)) return { ok: false, error: `Employee ID ${code} already exists` };
+  if (!code) return { ok: false, error: "P-File Number cannot be empty" };
+  if (isEmployeeCodeTaken(code, id)) return { ok: false, error: `P-File Number ${code} already exists` };
   const old = employee.employeeCode;
   updateEmployee(id, { employeeCode: code });
   addAuditLog(
     "RENAME", "Employee", id,
-    `Employee ID changed ${old} → ${code}. Reason: ${reason || "not provided"}`,
+    `P-File Number changed ${old} → ${code}. Reason: ${reason || "not provided"}`,
   );
   return { ok: true };
 }

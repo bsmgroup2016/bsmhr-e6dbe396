@@ -35,7 +35,7 @@ export function LeaveEntitlements({ employees, requests }: Props) {
       employees.flatMap((e) =>
         leaveBalances(e, requests).map((b) => ({
           Employee: e.name,
-          "Employee code": e.employeeCode,
+          "P-File Number": e.employeeCode,
           "Leave type": b.type,
           Entitled: b.entitled,
           Taken: b.taken,

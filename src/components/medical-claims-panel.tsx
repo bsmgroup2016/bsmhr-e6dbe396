@@ -163,7 +163,7 @@ export function MedicalClaimsPanel({ employees, onChanged }: Props) {
     exportRows(
       rows.map((r) => ({
         "Claim no": r.claim.claimNo,
-        Code: r.employeeCode,
+        "P-File Number": r.employeeCode,
         Employee: r.employeeName,
         Type: r.claim.claimType,
         "Treatment date": r.claim.treatmentDate ?? "",

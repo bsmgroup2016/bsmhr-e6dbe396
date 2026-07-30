@@ -100,7 +100,7 @@ function expiryBadge(passExpiry: string) {
 }
 
 const EMPLOYEE_IMPORT_COLUMNS: ImportColumn[] = [
-  { key: "employeeCode", label: "Employee ID", example: "BS12" },
+  { key: "employeeCode", label: "P-File Number", example: "BS12" },
   { key: "name", label: "Name", required: true, example: "Rahman Md" },
   { key: "fin", label: "FIN", example: "G1234567X" },
   { key: "passportNumber", label: "Passport Number", example: "BX0912345" },
@@ -122,7 +122,7 @@ const EMPLOYEE_IMPORT_COLUMNS: ImportColumn[] = [
 
 function toEmployeeRow(employee: Employee) {
   return {
-    "Employee Code": employee.employeeCode,
+    "P-File Number": employee.employeeCode,
     Name: employee.name,
     FIN: employee.fin,
     Nationality: employee.nationality,
@@ -668,7 +668,7 @@ export default function WorkforcePage() {
                             >
                               {e.name}
                             </Link>
-                            <div>Staff Id: {e.employeeCode}</div>
+                            <div>P-File No: {e.employeeCode}</div>
                             <div>FIN: {e.fin || "—"}</div>
                             <div>Nationality: {e.nationality || "—"}</div>
                             <div>Salary: S${e.basicSalary.toLocaleString()}</div>
