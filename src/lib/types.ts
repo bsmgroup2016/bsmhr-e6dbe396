@@ -761,7 +761,7 @@ export type IncidentStatus = "Open" | "Under Investigation" | "Closed";
 export interface TrainingCourse {
   id: string;
   companyId?: string;
-  code: string;
+  code?: string;
   name: string;
   category: CourseCategory;
   provider?: string;
@@ -1047,7 +1047,7 @@ export interface LoanRepayment {
 export interface Department {
   id: string;
   companyId?: string;
-  code: string;
+  code?: string;
   name: string;
   description?: string;
   headEmployeeId?: string;
@@ -1060,7 +1060,7 @@ export interface Designation {
   id: string;
   companyId?: string;
   departmentId?: string;
-  code: string;
+  code?: string;
   title: string;
   level?: string;
   description?: string;

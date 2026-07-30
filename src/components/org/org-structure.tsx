@@ -50,7 +50,6 @@ export function DepartmentsPanel({ companyId }: { companyId: string }) {
   function readForm(fd: FormData) {
     return {
       companyId,
-      code: String(fd.get("code") ?? ""),
       name: String(fd.get("name") ?? ""),
       description: String(fd.get("description") ?? "") || undefined,
       headEmployeeId: (fd.get("headEmployeeId") as string) === "none" ? undefined : (fd.get("headEmployeeId") as string) || undefined,
@@ -74,7 +73,6 @@ export function DepartmentsPanel({ companyId }: { companyId: string }) {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-28">Code</TableHead>
               <TableHead>Department</TableHead>
               <TableHead>Head</TableHead>
               <TableHead className="w-32">Headcount</TableHead>
@@ -84,14 +82,13 @@ export function DepartmentsPanel({ companyId }: { companyId: string }) {
           </TableHeader>
           <TableBody>
             {rows.length === 0 ? (
-              <EmptyRow colSpan={6} text="No departments yet. Add your first department." />
+              <EmptyRow colSpan={5} text="No departments yet. Add your first department." />
             ) : (
               rows.map((d) => {
                 const head = employees.find((e) => e.id === d.headEmployeeId);
                 const count = employees.filter((e) => (e.department ?? "") === d.name).length;
                 return (
                   <TableRow key={d.id}>
-                    <TableCell className="font-mono text-xs font-semibold">{d.code || "—"}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <span className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 text-primary">
@@ -202,11 +199,7 @@ function DepartmentFields({
 }) {
   return (
     <div className="grid gap-3 py-4 sm:grid-cols-2">
-      <div className="space-y-1.5">
-        <Label htmlFor="code">Code</Label>
-        <Input id="code" name="code" maxLength={8} defaultValue={department?.code} placeholder="OPS" />
-      </div>
-      <div className="space-y-1.5">
+      <div className="space-y-1.5 sm:col-span-2">
         <Label htmlFor="name">Department name</Label>
         <Input id="name" name="name" required defaultValue={department?.name} placeholder="Operations" />
       </div>
@@ -262,7 +255,6 @@ export function DesignationsPanel({ companyId }: { companyId: string }) {
     return {
       companyId,
       departmentId: !dept || dept === "none" ? undefined : dept,
-      code: String(fd.get("code") ?? ""),
       title: String(fd.get("title") ?? ""),
       level: String(fd.get("level") ?? "") || undefined,
       description: String(fd.get("description") ?? "") || undefined,
@@ -286,7 +278,6 @@ export function DesignationsPanel({ companyId }: { companyId: string }) {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-28">Code</TableHead>
               <TableHead>Designation</TableHead>
               <TableHead>Department</TableHead>
               <TableHead className="w-32">Level</TableHead>
@@ -297,7 +288,7 @@ export function DesignationsPanel({ companyId }: { companyId: string }) {
           </TableHeader>
           <TableBody>
             {rows.length === 0 ? (
-              <EmptyRow colSpan={7} text="No designations yet. Add your first job title." />
+              <EmptyRow colSpan={6} text="No designations yet. Add your first job title." />
             ) : (
               rows.map((g) => {
                 const dept = departments.find((d) => d.id === g.departmentId);
@@ -306,7 +297,6 @@ export function DesignationsPanel({ companyId }: { companyId: string }) {
                 ).length;
                 return (
                   <TableRow key={g.id}>
-                    <TableCell className="font-mono text-xs font-semibold">{g.code || "—"}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <span className="flex h-8 w-8 items-center justify-center rounded-md bg-info/10 text-info">
@@ -416,10 +406,6 @@ function DesignationFields({
 }) {
   return (
     <div className="grid gap-3 py-4 sm:grid-cols-2">
-      <div className="space-y-1.5">
-        <Label htmlFor="code">Code</Label>
-        <Input id="code" name="code" maxLength={8} defaultValue={designation?.code} placeholder="SUP" />
-      </div>
       <div className="space-y-1.5">
         <Label htmlFor="title">Job title</Label>
         <Input id="title" name="title" required defaultValue={designation?.title} placeholder="Site Supervisor" />
