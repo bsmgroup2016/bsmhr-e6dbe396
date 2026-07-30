@@ -456,6 +456,7 @@ function DashboardPage() {
                   value={m.value}
                   caption={m.caption}
                   icon={m.icon}
+                  badges={m.badges}
                   variant={m.variant}
                   className="h-full cursor-pointer hover:border-primary/40"
                 />
