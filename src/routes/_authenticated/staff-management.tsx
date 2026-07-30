@@ -336,8 +336,8 @@ function StaffManagementPage() {
                   <TableHead>Company</TableHead>
                   <TableHead>Department</TableHead>
                   <TableHead>Designation</TableHead>
-                  <TableHead className="text-right">Fixed Salary</TableHead>
-                  <TableHead>Passport</TableHead>
+                <TableHead className="!pr-6 text-right">Fixed Salary</TableHead>
+                <TableHead className="!pl-6">Passport</TableHead>
                   <TableHead>Leave</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
@@ -378,11 +378,11 @@ function StaffManagementPage() {
                       </TableCell>
                       <TableCell>{e.department ?? "—"}</TableCell>
                       <TableCell>{e.trade ?? "—"}</TableCell>
-                      <TableCell className="text-right font-medium tabular-nums">
+                      <TableCell className="!pr-6 text-right font-medium tabular-nums">
                         ${(e.basicSalary || 0).toLocaleString()}
                         <span className="ml-1 text-xs text-muted-foreground">/mo</span>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="!pl-6">
                         <ExpiryCell date={e.passportExpiry} />
                       </TableCell>
                       <TableCell>
