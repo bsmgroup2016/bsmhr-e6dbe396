@@ -119,7 +119,7 @@ function CompanyDashboardPage() {
           icon={<Building2 className="h-8 w-8" />}
           title="Company not found"
           description="This entity may have been removed."
-          action={<Button onClick={() => navigate({ to: "/companies" })}>Back to companies</Button>}
+          action={{ label: "Back to companies", onClick: () => navigate({ to: "/companies" }) }}
         />
       </AppShell>
     );

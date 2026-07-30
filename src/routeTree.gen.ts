@@ -52,6 +52,7 @@ import { Route as ApiPublicProvisionEmployeeRouteImport } from './routes/api/pub
 import { Route as ApiPublicOcrRouteImport } from './routes/api/public/ocr'
 import { Route as ApiPublicNotifyLeaveRouteImport } from './routes/api/public/notify-leave'
 import { Route as AuthenticatedWorkforceIdRouteImport } from './routes/_authenticated/workforce.$id'
+import { Route as AuthenticatedCompaniesIdRouteImport } from './routes/_authenticated/companies_.$id'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -272,6 +273,12 @@ const AuthenticatedWorkforceIdRoute =
     path: '/$id',
     getParentRoute: () => AuthenticatedWorkforceRoute,
   } as any)
+const AuthenticatedCompaniesIdRoute =
+  AuthenticatedCompaniesIdRouteImport.update({
+    id: '/companies_/$id',
+    path: '/companies/$id',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
@@ -305,6 +312,7 @@ export interface FileRoutesByFullPath {
   '/transport': typeof AuthenticatedTransportRoute
   '/users': typeof AuthenticatedUsersRoute
   '/workforce': typeof AuthenticatedWorkforceRouteWithChildren
+  '/companies/$id': typeof AuthenticatedCompaniesIdRoute
   '/workforce/$id': typeof AuthenticatedWorkforceIdRoute
   '/api/public/notify-leave': typeof ApiPublicNotifyLeaveRoute
   '/api/public/ocr': typeof ApiPublicOcrRoute
@@ -349,6 +357,7 @@ export interface FileRoutesByTo {
   '/users': typeof AuthenticatedUsersRoute
   '/workforce': typeof AuthenticatedWorkforceRouteWithChildren
   '/': typeof AuthenticatedIndexRoute
+  '/companies/$id': typeof AuthenticatedCompaniesIdRoute
   '/workforce/$id': typeof AuthenticatedWorkforceIdRoute
   '/api/public/notify-leave': typeof ApiPublicNotifyLeaveRoute
   '/api/public/ocr': typeof ApiPublicOcrRoute
@@ -395,6 +404,7 @@ export interface FileRoutesById {
   '/_authenticated/users': typeof AuthenticatedUsersRoute
   '/_authenticated/workforce': typeof AuthenticatedWorkforceRouteWithChildren
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/companies_/$id': typeof AuthenticatedCompaniesIdRoute
   '/_authenticated/workforce/$id': typeof AuthenticatedWorkforceIdRoute
   '/api/public/notify-leave': typeof ApiPublicNotifyLeaveRoute
   '/api/public/ocr': typeof ApiPublicOcrRoute
@@ -441,6 +451,7 @@ export interface FileRouteTypes {
     | '/transport'
     | '/users'
     | '/workforce'
+    | '/companies/$id'
     | '/workforce/$id'
     | '/api/public/notify-leave'
     | '/api/public/ocr'
@@ -485,6 +496,7 @@ export interface FileRouteTypes {
     | '/users'
     | '/workforce'
     | '/'
+    | '/companies/$id'
     | '/workforce/$id'
     | '/api/public/notify-leave'
     | '/api/public/ocr'
@@ -530,6 +542,7 @@ export interface FileRouteTypes {
     | '/_authenticated/users'
     | '/_authenticated/workforce'
     | '/_authenticated/'
+    | '/_authenticated/companies_/$id'
     | '/_authenticated/workforce/$id'
     | '/api/public/notify-leave'
     | '/api/public/ocr'
@@ -861,6 +874,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedWorkforceIdRouteImport
       parentRoute: typeof AuthenticatedWorkforceRoute
     }
+    '/_authenticated/companies_/$id': {
+      id: '/_authenticated/companies_/$id'
+      path: '/companies/$id'
+      fullPath: '/companies/$id'
+      preLoaderRoute: typeof AuthenticatedCompaniesIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
@@ -909,6 +929,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedUsersRoute: typeof AuthenticatedUsersRoute
   AuthenticatedWorkforceRoute: typeof AuthenticatedWorkforceRouteWithChildren
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedCompaniesIdRoute: typeof AuthenticatedCompaniesIdRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -942,6 +963,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedUsersRoute: AuthenticatedUsersRoute,
   AuthenticatedWorkforceRoute: AuthenticatedWorkforceRouteWithChildren,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedCompaniesIdRoute: AuthenticatedCompaniesIdRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
