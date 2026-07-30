@@ -8,7 +8,6 @@ import {
   Boxes,
   CalendarClock,
   ScanLine,
-  BellRing,
   ChevronRight,
   ClipboardList,
   FileText,
@@ -27,7 +26,6 @@ import {
   Landmark,
   Truck,
   UserPlus,
-  UserRound,
   Users,
   Wallet,
 } from "lucide-react";
