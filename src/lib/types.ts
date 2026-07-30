@@ -623,6 +623,8 @@ export interface MedicalClaim {
   submittedOn?: string;
   settledOn?: string;
   documentUrl?: string;
+  /** All uploaded hospital bill files (images/PDFs) for this claim. */
+  documentUrls?: string[];
   remarks?: string;
   createdAt: string;
   updatedAt: string;
