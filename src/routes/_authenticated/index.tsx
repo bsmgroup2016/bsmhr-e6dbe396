@@ -262,14 +262,34 @@ function DashboardPage() {
     .map((s) => ({ name: s, value: projects.filter((p) => p.status === s).length }))
     .filter((r) => r.value > 0);
 
-  const keyMetrics = [
+  const availableRate = employees.length
+    ? Math.round((availableWorkers / employees.length) * 100)
+    : 0;
+
+  const keyMetrics: Array<{
+    to: string;
+    title: string;
+    value: string;
+    caption: string;
+    icon: React.ReactNode;
+    variant: "default" | "primary" | "success" | "warning" | "destructive" | "info";
+    badges?: SummaryBadge[];
+  }> = [
     {
       to: "/documents" as const,
       title: "WorkPermit Expiring",
       value: wpExpiring.length.toString(),
       caption: `${wpExpiring30} within 30 days · next 60 days`,
       icon: <WorkPermitIdIcon className="h-7 w-7" />,
-      variant: (wpExpiring.length ? "destructive" : "success") as "destructive" | "success",
+      variant: wpExpiring7 ? "destructive" : wpExpiring30 ? "warning" : wpExpiring.length ? "info" : "success",
+      badges: wpExpiring.length
+        ? [
+            { label: `${wpSoonestDays}d left (soonest)`, tone: urgencyTone(wpSoonestDays) },
+            { label: `≤7d: ${wpExpiring7}`, tone: wpExpiring7 ? "critical" : "neutral" },
+            { label: `≤15d: ${wpExpiring15}`, tone: wpExpiring15 ? "warning" : "neutral" },
+            { label: `≤30d: ${wpExpiring30}`, tone: wpExpiring30 ? "info" : "neutral" },
+          ]
+        : [{ label: "No permits expiring", tone: "success" }],
     },
     {
       to: "/documents" as const,
@@ -277,7 +297,21 @@ function DashboardPage() {
       value: passportExpiring.length.toString(),
       caption: `${passportExpiring30} within 30 days · next 90 days`,
       icon: <PassportIcon className="h-7 w-7" />,
-      variant: (passportExpiring.length ? "warning" : "success") as "warning" | "success",
+      variant: passportExpiring7
+        ? "destructive"
+        : passportExpiring30
+          ? "warning"
+          : passportExpiring.length
+            ? "info"
+            : "success",
+      badges: passportExpiring.length
+        ? [
+            { label: `${passportSoonestDays}d left (soonest)`, tone: urgencyTone(passportSoonestDays) },
+            { label: `≤7d: ${passportExpiring7}`, tone: passportExpiring7 ? "critical" : "neutral" },
+            { label: `≤15d: ${passportExpiring15}`, tone: passportExpiring15 ? "warning" : "neutral" },
+            { label: `≤30d: ${passportExpiring30}`, tone: passportExpiring30 ? "info" : "neutral" },
+          ]
+        : [{ label: "No passports expiring", tone: "success" }],
     },
     {
       to: "/workforce" as const,
@@ -285,7 +319,15 @@ function DashboardPage() {
       value: availableWorkers.toString(),
       caption: `of ${employees.length} total workers`,
       icon: <UserCheck className="h-5 w-5" />,
-      variant: "success" as const,
+      variant: availableRate >= 70 ? "success" : availableRate >= 40 ? "warning" : "destructive",
+      badges: [
+        {
+          label: `${availableRate}% available`,
+          tone: availableRate >= 70 ? "success" : availableRate >= 40 ? "warning" : "critical",
+        },
+        { label: `On leave: ${leaves.length}`, tone: leaves.length ? "info" : "neutral" },
+        { label: `Permit ≤30d: ${wpExpiring30}`, tone: wpExpiring30 ? "warning" : "neutral" },
+      ],
     },
     {
       to: "/leave" as const,
