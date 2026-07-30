@@ -24,6 +24,7 @@ import { exportRows } from "@/lib/xlsx";
 import { WpLifecyclePanel } from "@/components/wp-lifecycle-panel";
 import { SalaryCompliancePanel } from "@/components/salary-compliance-panel";
 import { DeductionCompliancePanel } from "@/components/deduction-compliance-panel";
+import { SgStandardsPanel } from "@/components/sg-standards-panel";
 
 export const Route = createFileRoute("/_authenticated/mom")({
   head: () => ({
@@ -133,6 +134,10 @@ function MomPage() {
             <TabsTrigger value="lifecycle">Work Permit lifecycle</TabsTrigger>
             <TabsTrigger value="salary">Salary compliance</TabsTrigger>
             <TabsTrigger value="deductions">Deductions</TabsTrigger>
+            <TabsTrigger value="fwmi">FWMI insurance</TabsTrigger>
+            <TabsTrigger value="mye">MYE & skills</TabsTrigger>
+            <TabsTrigger value="ir21">IR21 clearance</TabsTrigger>
+            <TabsTrigger value="pwm">Progressive Wage</TabsTrigger>
             <TabsTrigger value="levy">Levy bill</TabsTrigger>
             <TabsTrigger value="insurance">Medical & insurance</TabsTrigger>
           </TabsList>
@@ -147,6 +152,22 @@ function MomPage() {
 
           <TabsContent value="deductions" className="mt-4">
             <DeductionCompliancePanel employees={employees} />
+          </TabsContent>
+
+          <TabsContent value="fwmi" className="mt-4">
+            <SgStandardsPanel employees={employees} section="fwmi" />
+          </TabsContent>
+
+          <TabsContent value="mye" className="mt-4">
+            <SgStandardsPanel employees={employees} section="mye" />
+          </TabsContent>
+
+          <TabsContent value="ir21" className="mt-4">
+            <SgStandardsPanel employees={employees} section="ir21" />
+          </TabsContent>
+
+          <TabsContent value="pwm" className="mt-4">
+            <SgStandardsPanel employees={employees} section="pwm" />
           </TabsContent>
 
           <TabsContent value="quota" className="mt-4 space-y-4">
