@@ -789,8 +789,7 @@ export default function WorkforcePage() {
                             </Link>
                             <div>P-File No: {e.employeeCode}</div>
                             <div>FIN: {e.fin || "—"}</div>
-                            <div>Nationality: {e.nationality || "—"}</div>
-                            <div>Salary: S${e.basicSalary.toLocaleString()}</div>
+                            <div>Basic Rate: S${e.basicSalary.toLocaleString()}</div>
                           </div>
                         </div>
                       </TableCell>
