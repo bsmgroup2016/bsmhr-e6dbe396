@@ -707,7 +707,7 @@ export default function WorkforcePage() {
               <TableBody>
                 {paged.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="h-32 text-center">
+                    <TableCell colSpan={7} className="h-32 text-center">
                       <EmptyState
                         className="bg-transparent border-0"
                         icon={<Users className="h-5 w-5" />}
