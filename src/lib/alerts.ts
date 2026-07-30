@@ -97,8 +97,33 @@ export function buildAlerts(companyId?: string): AppAlert[] {
     }
   }
 
+  // Salary compliance (Employment Act / EFMA)
+  for (const row of salaryComplianceRows(employees, getPayroll())) {
+    for (const issue of row.issues) {
+      out.push({
+        id: `salary-${row.id}-${issue.code}`,
+        category: "Salary",
+        severity: issue.severity === "critical" ? "critical" : "warning",
+        title: `${issue.label} — ${row.employee.name}`,
+        detail: `${row.entry.month}: ${issue.detail}`,
+        date: row.periodEnd,
+        link: "/mom",
+      });
+    }
+  }
+  for (const emp of ketGaps(employees)) {
+    out.push({
+      id: `ket-${emp.id}`,
+      category: "Salary",
+      severity: "warning",
+      title: `Key Employment Terms not issued — ${emp.name}`,
+      detail: `Joined ${emp.joinedOn}; KET must be issued within 14 days.`,
+      date: emp.joinedOn,
+      link: "/mom",
+    });
+  }
+
   for (const leave of getLeaveRequests().filter((l) => l.status === "Pending")) {
-    // (salary compliance alerts are appended below)
     const emp = employees.find((e) => e.id === leave.employeeId);
     if (companyId && !emp) continue;
     out.push({
