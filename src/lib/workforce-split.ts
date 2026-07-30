@@ -19,6 +19,7 @@ export const SITE_DESIGNATIONS = [
   "Site Supervisor",
   "Electrician",
   "Plumber",
+  "Rebar Man",
 ];
 
 export const STAFF_DESIGNATIONS = [
@@ -28,6 +29,7 @@ export const STAFF_DESIGNATIONS = [
   "Engineer",
   "QS",
   "Accounts Head",
+  "Accounts Executive",
   "Accounts Assistant",
   "HR Head",
   "HR Assistant",
@@ -43,14 +45,30 @@ const has = (list: string[], v?: string | null) =>
 /** `trade` is the employee designation column. */
 type Person = { department?: string | null; trade?: string | null };
 
-/** True for Construction / site trades. */
+/**
+ * Designation is authoritative (an Engineer sitting in the Construction
+ * department is still office staff); department is the fallback.
+ */
 export function isSiteWorker(p: Person): boolean {
-  if (has(SITE_DEPARTMENTS, p.department)) return true;
-  if (has(STAFF_DEPARTMENTS, p.department)) return false;
-  return has(SITE_DESIGNATIONS, p.trade);
+  if (has(SITE_DESIGNATIONS, p.trade)) return true;
+  if (has(STAFF_DESIGNATIONS, p.trade)) return false;
+  return has(SITE_DEPARTMENTS, p.department);
 }
 
 /** True for office / administrative staff (everyone not on site). */
 export function isOfficeStaff(p: Person): boolean {
   return !isSiteWorker(p);
+}
+
+/**
+ * Staff carry a numeric Employee ID (1000, 1001 …); site workers carry a
+ * branch-prefixed P-File Number (BS-01, V-02 …).
+ */
+export function idLabel(p: Person): string {
+  return isOfficeStaff(p) ? "Employee ID" : "P-File Number";
+}
+
+/** Staff are on a fixed monthly salary; workers on an hourly basic rate. */
+export function payLabel(p: Person): string {
+  return isOfficeStaff(p) ? "Fixed Salary" : "Basic Rate";
 }
