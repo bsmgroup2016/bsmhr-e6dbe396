@@ -403,10 +403,12 @@ export default function WorkforcePage() {
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <SummaryCard title="Total employees" value={employees.length.toString()} icon={<Users className="h-5 w-5" />} variant="primary" caption="All workers" />
-          <SummaryCard title="Available workers" value={availableCount.toString()} icon={<HardHat className="h-5 w-5" />} variant="success" caption="Not assigned to any project" />
-          <SummaryCard title="Expiring passes" value={expiringCount.toString()} icon={<Clock className="h-5 w-5" />} variant="warning" caption="Within 60 days" />
-          <SummaryCard title="Expired passes" value={expiredCount.toString()} icon={<AlertTriangle className="h-5 w-5" />} variant="destructive" caption="Immediate action" />
+          <SummaryCard title="Total employees" value={employees.length.toString()} icon={<Users className="h-5 w-5" />} variant="primary" caption="All workers" compact />
+          <Link to="/available-workers" className="block h-full">
+            <SummaryCard title="Available workers" value={availableCount.toString()} icon={<HardHat className="h-5 w-5" />} variant="success" caption="Not assigned to any project" compact />
+          </Link>
+          <SummaryCard title="Expiring passes" value={expiringCount.toString()} icon={<Clock className="h-5 w-5" />} variant="warning" caption="Within 60 days" compact />
+          <SummaryCard title="Expired passes" value={expiredCount.toString()} icon={<AlertTriangle className="h-5 w-5" />} variant="destructive" caption="Immediate action" compact />
         </div>
 
         {pendingProfiles.length > 0 ? (
@@ -535,12 +537,6 @@ export default function WorkforcePage() {
                 >
                   {deployedWorkerCount}
                 </span>
-              </Button>
-              <Button size="sm" variant="ghost" className="gap-1.5" asChild>
-                <Link to="/available-workers">Available board</Link>
-              </Button>
-              <Button size="sm" variant="ghost" className="gap-1.5" asChild>
-                <Link to="/deployed-workers">Deployed board</Link>
               </Button>
             </div>
             <div className="flex flex-wrap items-center gap-2">
