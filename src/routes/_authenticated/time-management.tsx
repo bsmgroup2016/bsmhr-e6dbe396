@@ -55,6 +55,7 @@ import {
 } from "@/components/ui/select";
 import { getEmployees, getSites, getAttendance, addAttendance, saveDailySheet, getCurrentCompany } from "@/lib/store";
 import { GeoCapture } from "@/components/geo-capture";
+import { QrAttendancePanel } from "@/components/qr-attendance-panel";
 import { LocationMap } from "@/components/location-map";
 import type { Attendance, AttendanceStatus } from "@/lib/types";
 import { pick, type ImportColumn } from "@/lib/xlsx";
