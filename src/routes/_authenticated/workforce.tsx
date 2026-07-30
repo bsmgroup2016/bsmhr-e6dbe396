@@ -186,18 +186,9 @@ export default function WorkforcePage() {
   ].filter((v) => v !== "all").length;
   const companies = getCompanies();
   const assignments = getAssignments();
-  const assignedIds = new Set(
-    assignments.filter((a) => a.status === "Active" || a.status === "Approved").map((a) => a.employeeId),
-  );
+  const assignedIds = activeAssignedEmployeeIds(assignments);
   function isAvailable(e: Employee) {
-    const deploy = e.deploymentStatus ?? "Available";
-    return (
-      !assignedIds.has(e.id) &&
-      deploy !== "Blocked" &&
-      deploy !== "Not Deployable" &&
-      deploy !== "Deployed" &&
-      (e.status === "Active" || e.status === "On Leave")
-    );
+    return isEmployeeAvailable(e, assignedIds);
   }
 
   // Only real employees: records must belong to a company (admin/staff accounts
