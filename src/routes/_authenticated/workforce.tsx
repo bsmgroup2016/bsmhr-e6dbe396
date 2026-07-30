@@ -674,7 +674,7 @@ export default function WorkforcePage() {
                 <Input
                   id="wf-search"
                   type="search"
-                  placeholder="Name, code, FIN, trade…"
+                  placeholder="Name, code, FIN, project, trade…"
                   value={search}
                   onChange={(e) => { setSearch(e.target.value); setPage(1); }}
                   className="h-9 pl-9"
