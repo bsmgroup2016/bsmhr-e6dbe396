@@ -512,6 +512,41 @@ export default function PayrollPage() {
           <SummaryCard title="Pending" value={pendingCount.toString()} icon={<Clock className="h-5 w-5" />} variant="info" caption={month} />
         </div>
 
+        <div className="rounded-xl border bg-card p-5 shadow-sm">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <p className="text-sm font-semibold text-foreground">Annual wages · {year}</p>
+              <p className="text-xs text-muted-foreground">
+                Total gross wages (ordinary + overtime + allowances) for the calendar year, used for IR8A and AW ceiling checks.
+              </p>
+            </div>
+            <Button size="sm" variant="outline" onClick={exportIrasAis}>
+              <FileDown className="mr-1 h-4 w-4" />
+              IR8A ({year})
+            </Button>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <SummaryCard title="Annual gross wages" value={money(annualGross)} icon={<Landmark className="h-5 w-5" />} variant="primary" caption={`${annualHeadcount} workers paid`} />
+            <SummaryCard title="Annual net paid" value={money(annualPaid)} icon={<DollarSign className="h-5 w-5" />} variant="success" caption={`${money(annualNet)} net total`} />
+            <SummaryCard title="Annual CPF" value={money(annualCpf)} icon={<Calculator className="h-5 w-5" />} variant="info" caption="Employee + employer" />
+            <SummaryCard title="Average per worker" value={money(annualAveragePerWorker)} icon={<BadgeCheck className="h-5 w-5" />} variant="default" caption={`OW ${money(annualOrdinary)} · OT ${money(annualOvertime)} · Allw ${money(annualAllowances)}`} />
+          </div>
+          <div className="mt-5 space-y-2">
+            {annualByMonth.map((m) => (
+              <div key={m.key} className="flex items-center gap-3">
+                <span className="w-10 shrink-0 text-xs text-muted-foreground">{m.label}</span>
+                <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-muted">
+                  <div
+                    className="h-full rounded-full bg-gradient-primary transition-all duration-500"
+                    style={{ width: `${(m.gross / annualMaxMonth) * 100}%` }}
+                  />
+                </div>
+                <span className="w-24 shrink-0 text-right text-xs text-muted-foreground">{money(m.gross)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
         <div className="rounded-xl border bg-card p-4 shadow-sm">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div className="relative w-full max-w-sm">
