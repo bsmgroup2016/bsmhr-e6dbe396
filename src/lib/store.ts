@@ -245,22 +245,40 @@ export function prefixForBranch(branch?: string): string {
   return (match?.code ?? list.find((b) => b.code === "X")?.code ?? list[0].code).toUpperCase();
 }
 
-/** Next free sequential ID for a branch prefix — BS1, BS2 … per-prefix counters. */
+/**
+ * Digits used in the sequence part of a P-File Number, per branch prefix.
+ * V-01, P-01 … are zero padded to 2; BS-1, BS-11 … are not padded.
+ */
+const CODE_PAD: Record<string, number> = { V: 2, P: 2, BS: 1 };
+
+/** Build a P-File Number, e.g. ("V", 1) -> "V-01", ("BS", 11) -> "BS-11". */
+export function formatEmployeeCode(prefix: string, seq: number): string {
+  const p = prefix.toUpperCase();
+  return `${p}-${String(seq).padStart(CODE_PAD[p] ?? 2, "0")}`;
+}
+
+/** Compare P-File Numbers ignoring dashes, spaces and leading zeros. */
+export function normalizeEmployeeCode(code: string): string {
+  const m = /^([a-z]+)[^a-z0-9]*0*(\d+)$/i.exec((code ?? "").trim());
+  return m ? `${m[1].toUpperCase()}${Number(m[2])}` : (code ?? "").trim().toUpperCase();
+}
+
+/** Next free sequential P-File Number for a branch prefix — V-01, V-02 … */
 export function nextEmployeeCode(branch?: string): string {
   const prefix = prefixForBranch(branch);
-  const re = new RegExp(`^${prefix}(\\d+)$`, "i");
+  const re = new RegExp(`^${prefix}[^a-z0-9]*(\\d+)$`, "i");
   let max = 0;
   for (const e of getState().employees) {
     const m = re.exec((e.employeeCode ?? "").trim());
     if (m) max = Math.max(max, Number(m[1]));
   }
-  return `${prefix}${max + 1}`;
+  return formatEmployeeCode(prefix, max + 1);
 }
 
 export function isEmployeeCodeTaken(code: string, exceptId?: string): boolean {
-  const key = code.trim().toLowerCase();
+  const key = normalizeEmployeeCode(code);
   return getState().employees.some(
-    (e) => e.id !== exceptId && (e.employeeCode ?? "").trim().toLowerCase() === key,
+    (e) => e.id !== exceptId && normalizeEmployeeCode(e.employeeCode ?? "") === key,
   );
 }
 

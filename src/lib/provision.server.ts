@@ -27,18 +27,22 @@ async function rest<T = any>(path: string, init?: RequestInit): Promise<T[]> {
   return text ? (JSON.parse(text) as T[]) : [];
 }
 
-/** Next sequential employee code for a branch prefix (BS1, BS2 …). */
+/** Digits in the sequence part per prefix — V-01, P-01 padded; BS-1 not. */
+const CODE_PAD: Record<string, number> = { V: 2, P: 2, BS: 1 };
+
+/** Next sequential P-File Number for a branch prefix (V-01, V-02 …). */
 async function nextCode(prefix: string): Promise<string> {
   const rows = await rest<{ employee_code: string }>(
     `employees?select=employee_code&employee_code=like.${encodeURIComponent(`${prefix}%`)}`,
   );
-  const re = new RegExp(`^${prefix}(\\d+)$`, "i");
+  const re = new RegExp(`^${prefix}[^a-z0-9]*(\\d+)$`, "i");
   let max = 0;
   for (const r of rows) {
     const m = re.exec((r.employee_code ?? "").trim());
     if (m) max = Math.max(max, Number(m[1]));
   }
-  return `${prefix}${max + 1}`;
+  const p = prefix.toUpperCase();
+  return `${p}-${String(max + 1).padStart(CODE_PAD[p] ?? 2, "0")}`;
 }
 
 export type ProvisionResult = {

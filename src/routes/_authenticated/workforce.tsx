@@ -105,7 +105,7 @@ function expiryBadge(passExpiry: string) {
 }
 
 const EMPLOYEE_IMPORT_COLUMNS: ImportColumn[] = [
-  { key: "employeeCode", label: "P-File Number", example: "BS12" },
+  { key: "employeeCode", label: "P-File Number", example: "BS-12" },
   { key: "name", label: "Name", required: true, example: "Rahman Md" },
   { key: "fin", label: "FIN", example: "G1234567X" },
   { key: "passportNumber", label: "Passport Number", example: "BX0912345" },
@@ -205,6 +205,7 @@ export default function WorkforcePage() {
     const matchesSearch =
       e.name.toLowerCase().includes(q) ||
       e.employeeCode.toLowerCase().includes(q) ||
+      e.employeeCode.toLowerCase().replace(/[^a-z0-9]/g, "").includes(q.replace(/[^a-z0-9]/g, "")) ||
       e.fin.toLowerCase().includes(q) ||
       e.trade.toLowerCase().includes(q) ||
       (e.phone ?? "").toLowerCase().includes(q) ||

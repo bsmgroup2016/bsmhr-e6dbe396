@@ -27,6 +27,7 @@ import {
   getSites,
   getVehicles,
 } from "@/lib/store";
+import { employeeSlug } from "@/lib/employee-slug";
 
 export type SearchHit = {
   id: string;
@@ -46,7 +47,7 @@ function useSearchIndex(): SearchHit[] {
         group: "Employees",
         label: e.name,
         hint: [e.employeeCode, e.passportNumber, e.fin, e.trade].filter(Boolean).join(" · "),
-        to: `/workforce/${e.id}`,
+        to: `/workforce/${employeeSlug(e)}`,
         icon: <Users className="h-4 w-4" />,
       });
     }
@@ -127,10 +128,13 @@ export function GlobalSearchDialog({
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
+    const qc = q.replace(/[^a-z0-9]/g, "");
     const pool = q
       ? index.filter(
           (h) =>
-            h.label.toLowerCase().includes(q) || h.hint.toLowerCase().includes(q),
+            h.label.toLowerCase().includes(q) ||
+            h.hint.toLowerCase().includes(q) ||
+            (qc.length > 1 && h.hint.toLowerCase().replace(/[^a-z0-9]/g, "").includes(qc)),
         )
       : index;
     const grouped = new Map<string, SearchHit[]>();
