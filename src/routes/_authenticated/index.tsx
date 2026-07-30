@@ -58,6 +58,8 @@ import {
   getCertifications,
   getPayroll,
 } from "@/lib/store";
+import { getAssignments } from "@/lib/store";
+import { activeAssignedEmployeeIds, isEmployeeAvailable } from "@/lib/availability";
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
@@ -209,9 +211,10 @@ function DashboardPage() {
   const mcAttendanceToday = todayAttendance.filter((a) => a.status === "MC").length;
   const medicalLeaveCount = Math.max(onMedicalLeave.length, mcAttendanceToday);
 
+  const assignedIds = activeAssignedEmployeeIds(getAssignments());
   const availableWorkers = employees.filter(
     (e) =>
-      (e.status === "Active" || e.status === "Deployed") &&
+      isEmployeeAvailable(e, assignedIds) &&
       !onLeaveIds.has(e.id) &&
       !todayAttendance.some((a) => a.employeeId === e.id && a.status === "Absent"),
   ).length;
@@ -277,6 +280,7 @@ function DashboardPage() {
 
   const keyMetrics: Array<{
     to: LinkProps["to"];
+    search?: Record<string, string>;
     title: string;
     value: string;
     caption: string;
@@ -324,6 +328,7 @@ function DashboardPage() {
     },
     {
       to: "/workforce" as const,
+      search: { available: "1" },
       title: "Available Workers",
       value: availableWorkers.toString(),
       caption: `of ${employees.length} total workers`,
@@ -511,7 +516,12 @@ function DashboardPage() {
           />
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {keyMetrics.map((m) => (
-              <Link key={m.title} to={m.to} className="block focus-visible:outline-none">
+              <Link
+                key={m.title}
+                to={m.to}
+                search={m.search as never}
+                className="block focus-visible:outline-none"
+              >
                 <SummaryCard
                   title={m.title}
                   value={m.value}

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { activeAssignedEmployeeIds, isEmployeeAvailable } from "@/lib/availability";
 import {
   Plus,
   Search,
@@ -74,6 +75,7 @@ const statuses: EmployeeStatus[] = [
 export const Route = createFileRoute("/_authenticated/workforce")({
   validateSearch: (search: Record<string, unknown>) => ({
     new: search.new === "1" || search.new === true ? true : undefined,
+    available: search.available === "1" || search.available === true ? true : undefined,
   }),
   head: () => ({
     meta: [
@@ -159,7 +161,8 @@ export default function WorkforcePage() {
   const [categoryFilter, setCategoryFilter] = useState<WorkerCategory | "all">("all");
   const [deployFilter, setDeployFilter] = useState<DeploymentStatus | "all">("all");
   const [nationalityFilter, setNationalityFilter] = useState<string>("all");
-  const openCreateFromUrl = Route.useSearch().new === true;
+  const routeSearch = Route.useSearch();
+  const openCreateFromUrl = routeSearch.new === true;
   const [isCreateOpen, setIsCreateOpen] = useState(openCreateFromUrl);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   const [viewingEmployee, setViewingEmployee] = useState<Employee | null>(null);
@@ -171,7 +174,7 @@ export default function WorkforcePage() {
   const [companyFilter, setCompanyFilter] = useState<string>("all");
   const [tradeFilter, setTradeFilter] = useState<string>("all");
   const [showFilters, setShowFilters] = useState(false);
-  const [availableOnly, setAvailableOnly] = useState(false);
+  const [availableOnly, setAvailableOnly] = useState(routeSearch.available === true);
   const activeFilterCount = [
     companyFilter,
     tradeFilter,
@@ -184,18 +187,9 @@ export default function WorkforcePage() {
   ].filter((v) => v !== "all").length;
   const companies = getCompanies();
   const assignments = getAssignments();
-  const assignedIds = new Set(
-    assignments.filter((a) => a.status === "Active" || a.status === "Approved").map((a) => a.employeeId),
-  );
+  const assignedIds = activeAssignedEmployeeIds(assignments);
   function isAvailable(e: Employee) {
-    const deploy = e.deploymentStatus ?? "Available";
-    return (
-      !assignedIds.has(e.id) &&
-      deploy !== "Blocked" &&
-      deploy !== "Not Deployable" &&
-      deploy !== "Deployed" &&
-      (e.status === "Active" || e.status === "On Leave")
-    );
+    return isEmployeeAvailable(e, assignedIds);
   }
 
   // Only real employees: records must belong to a company (admin/staff accounts
