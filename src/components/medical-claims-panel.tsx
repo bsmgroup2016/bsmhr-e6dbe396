@@ -391,15 +391,48 @@ export function MedicalClaimsPanel({ employees, onChanged }: Props) {
                 onCheckedChange={(v) => set({ momReported: v })}
               />
             </div>
-            <div className="sm:col-span-2">
+            <div className="space-y-2 sm:col-span-2">
               <FileUpload
-                key={editingId ?? "new"}
+                key={`${editingId ?? "new"}-${(form.documentUrls ?? []).length}`}
                 name="claimDocument"
-                label="Hospital bill (image or PDF)"
+                label="Hospital bills (images or PDFs) — upload one by one"
                 folder="medical-claims"
-                defaultValue={form.documentUrl ?? ""}
-                onUploaded={(url) => set({ documentUrl: url })}
+                defaultValue=""
+                onUploaded={(url) =>
+                  setForm((f) => {
+                    const next = [...(f.documentUrls ?? []), url];
+                    return { ...f, documentUrls: next, documentUrl: next[0] };
+                  })
+                }
               />
+              {(form.documentUrls ?? []).length > 0 && (
+                <div className="space-y-1 rounded-md border p-2">
+                  {(form.documentUrls ?? []).map((u, i) => (
+                    <div key={`${u}-${i}`} className="flex items-center justify-between gap-2 text-sm">
+                      <button
+                        type="button"
+                        className="flex min-w-0 items-center gap-2 text-left hover:underline"
+                        onClick={() => void openR2File(u)}
+                      >
+                        <FileText className="h-4 w-4 shrink-0" />
+                        <span className="truncate">{decodeURIComponent(u.split("/").pop()?.split("?")[0] ?? `Bill ${i + 1}`)}</span>
+                      </button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() =>
+                          setForm((f) => {
+                            const next = (f.documentUrls ?? []).filter((_, idx) => idx !== i);
+                            return { ...f, documentUrls: next, documentUrl: next[0] };
+                          })
+                        }
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
             <div className="space-y-2 sm:col-span-2">
               <Label>Remarks</Label>
