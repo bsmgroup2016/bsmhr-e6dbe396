@@ -88,7 +88,7 @@ export function deductionRows(
       return {
         payrollId: p.id,
         employeeId: p.employeeId,
-        employeeName: employee.fullName ?? employee.id,
+        employeeName: employee.name ?? employee.id,
         employeeCode: employee.employeeCode ?? "—",
         month: p.month,
         grossSalary: gross,
