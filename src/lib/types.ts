@@ -12,6 +12,19 @@ export interface User {
 
 
 export type PassType = "Work Permit" | "S Pass" | "Employment Pass" | "Singaporean/PR";
+
+/** MOM work pass lifecycle stages, in order. */
+export type WpStage =
+  | "IPA Issued"
+  | "Arrived"
+  | "Medical Cleared"
+  | "Card Issued"
+  | "Active"
+  | "Cancellation Pending"
+  | "Cancelled"
+  | "Repatriated";
+
+export type SecurityBondStatus = "Not Required" | "Active" | "Discharged" | "Forfeited";
 export type EmployeeStatus =
   | "Draft"
   | "Pending Approval"
