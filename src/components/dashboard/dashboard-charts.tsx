@@ -157,14 +157,14 @@ export function DashboardCharts({ data }: { data: DashboardChartData }) {
             barSize={18}
           >
             <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="var(--border)" />
-            <XAxis type="number" allowDecimals={false} tickLine={false} axisLine={false} fontSize={11} />
+            <XAxis type="number" allowDecimals={false} tickLine={false} axisLine={false} fontSize={12} />
             <YAxis
               type="category"
               dataKey="name"
               tickLine={false}
               axisLine={false}
-              fontSize={11}
-              width={78}
+              fontSize={12}
+              width={84}
             />
             <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "var(--muted)", opacity: 0.35 }} />
             <Bar dataKey="value" name="Projects" radius={[0, 6, 6, 0]}>
