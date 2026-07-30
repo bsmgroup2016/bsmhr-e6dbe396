@@ -24,6 +24,7 @@ import { exportRows } from "@/lib/xlsx";
 import { WpLifecyclePanel } from "@/components/wp-lifecycle-panel";
 import { SalaryCompliancePanel } from "@/components/salary-compliance-panel";
 import { DeductionCompliancePanel } from "@/components/deduction-compliance-panel";
+import { LoanLedgerPanel } from "@/components/loan-ledger-panel";
 import { SgStandardsPanel } from "@/components/sg-standards-panel";
 import { MedicalClaimsPanel } from "@/components/medical-claims-panel";
 
@@ -135,6 +136,7 @@ function MomPage() {
             <TabsTrigger value="lifecycle">Work Permit lifecycle</TabsTrigger>
             <TabsTrigger value="salary">Salary compliance</TabsTrigger>
             <TabsTrigger value="deductions">Deductions</TabsTrigger>
+            <TabsTrigger value="loans">Loans & advances</TabsTrigger>
             <TabsTrigger value="fwmi">FWMI insurance</TabsTrigger>
             <TabsTrigger value="claims">Medical claims</TabsTrigger>
             <TabsTrigger value="mye">MYE & skills</TabsTrigger>
@@ -154,6 +156,10 @@ function MomPage() {
 
           <TabsContent value="deductions" className="mt-4">
             <DeductionCompliancePanel employees={employees} />
+          </TabsContent>
+
+          <TabsContent value="loans" className="mt-4">
+            <LoanLedgerPanel />
           </TabsContent>
 
           <TabsContent value="fwmi" className="mt-4">
