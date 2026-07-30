@@ -30,7 +30,7 @@ const tooltipStyle = {
   border: "1px solid var(--border)",
   background: "var(--card)",
   color: "var(--foreground)",
-  fontSize: 12,
+  fontSize: 13,
   boxShadow: "0 8px 24px -12px rgb(0 0 0 / 0.25)",
 };
 
