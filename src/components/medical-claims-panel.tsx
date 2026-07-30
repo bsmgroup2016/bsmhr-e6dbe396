@@ -4,7 +4,7 @@
  * against the insured limit.
  */
 import { useMemo, useState } from "react";
-import { AlertTriangle, Download, HeartPulse, Pencil, Plus, Trash2, Wallet } from "lucide-react";
+import { AlertTriangle, Download, FileText, HeartPulse, Pencil, Plus, Trash2, Wallet } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,8 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { SummaryCard } from "@/components/ui/summary-card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Progress } from "@/components/ui/progress";
+import { FileUpload } from "@/components/file-upload";
+import { openR2File } from "@/lib/r2";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
@@ -107,6 +109,7 @@ export function MedicalClaimsPanel({ employees, onChanged }: Props) {
       status: form.status ?? "Draft",
       submittedOn: form.submittedOn,
       settledOn: form.settledOn,
+      documentUrl: form.documentUrl,
       remarks: form.remarks,
     };
     if (editingId) updateMedicalClaim(editingId, payload);
@@ -201,6 +204,7 @@ export function MedicalClaimsPanel({ employees, onChanged }: Props) {
                 <TableHead className="text-right">Employer</TableHead>
                 <TableHead className="text-right">Outstanding</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Bill</TableHead>
                 <TableHead>Issues</TableHead>
                 <TableHead className="w-24" />
               </TableRow>
@@ -233,6 +237,19 @@ export function MedicalClaimsPanel({ employees, onChanged }: Props) {
                           : r.claim.status === "Approved" ? "info" : "warning"
                       }
                     />
+                  </TableCell>
+                  <TableCell>
+                    {r.claim.documentUrl ? (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => void openR2File(r.claim.documentUrl!)}
+                      >
+                        <FileText className="mr-1 h-4 w-4" />View
+                      </Button>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    )}
                   </TableCell>
                   <TableCell className="max-w-64 text-xs text-muted-foreground">
                     {r.issues.join("; ") || "Compliant"}
@@ -372,6 +389,16 @@ export function MedicalClaimsPanel({ employees, onChanged }: Props) {
                 id="mom-reported"
                 checked={Boolean(form.momReported)}
                 onCheckedChange={(v) => set({ momReported: v })}
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <FileUpload
+                key={editingId ?? "new"}
+                name="claimDocument"
+                label="Hospital bill (image or PDF)"
+                folder="medical-claims"
+                defaultValue={form.documentUrl ?? ""}
+                onUploaded={(url) => set({ documentUrl: url })}
               />
             </div>
             <div className="space-y-2 sm:col-span-2">
