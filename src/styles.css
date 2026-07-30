@@ -67,8 +67,8 @@
 }
 
 /*
- * Midnight Indigo — dark-first palette.
- * #0a0a1a canvas, #141432 panels, #1e1e5a lines, #4f46e5 electric indigo accent.
+ * Midnight Indigo — light content surfaces with a deep indigo sidebar.
+ * Inside the app: soft white canvas, white cards, indigo accents.
  * Roboto typography, comfortable density.
  */
 :root {
@@ -76,37 +76,37 @@
   --radius: 0.875rem;
 
   /* Surfaces */
-  --background: oklch(0.13 0.032 281);
-  --foreground: oklch(0.96 0.008 280);
-  --card: oklch(0.2 0.048 281);
-  --card-foreground: oklch(0.96 0.008 280);
-  --popover: oklch(0.19 0.05 281);
-  --popover-foreground: oklch(0.96 0.008 280);
+  --background: oklch(0.975 0.006 280);
+  --foreground: oklch(0.23 0.045 281);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.23 0.045 281);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.23 0.045 281);
 
   /* Primary: electric indigo */
   --primary: oklch(0.53 0.225 277);
   --primary-foreground: oklch(0.98 0.01 277);
 
-  --secondary: oklch(0.25 0.06 280);
-  --secondary-foreground: oklch(0.95 0.01 280);
+  --secondary: oklch(0.955 0.012 280);
+  --secondary-foreground: oklch(0.27 0.05 281);
 
-  --muted: oklch(0.24 0.055 281);
-  --muted-foreground: oklch(0.73 0.03 280);
-  --accent: oklch(0.3 0.09 278);
-  --accent-foreground: oklch(0.97 0.01 280);
+  --muted: oklch(0.955 0.012 280);
+  --muted-foreground: oklch(0.5 0.04 281);
+  --accent: oklch(0.935 0.035 280);
+  --accent-foreground: oklch(0.25 0.055 281);
 
   /* Semantic status colors */
-  --success: oklch(0.72 0.16 158);
-  --success-foreground: oklch(0.15 0.03 158);
-  --warning: oklch(0.8 0.14 82);
-  --warning-foreground: oklch(0.18 0.03 82);
-  --info: oklch(0.72 0.13 232);
-  --info-foreground: oklch(0.14 0.03 232);
-  --destructive: oklch(0.62 0.22 22);
-  --destructive-foreground: oklch(0.98 0.005 22);
+  --success: oklch(0.6 0.15 158);
+  --success-foreground: oklch(0.99 0.01 158);
+  --warning: oklch(0.74 0.15 72);
+  --warning-foreground: oklch(0.2 0.04 72);
+  --info: oklch(0.6 0.14 232);
+  --info-foreground: oklch(0.99 0.01 232);
+  --destructive: oklch(0.58 0.22 22);
+  --destructive-foreground: oklch(0.99 0.005 22);
 
-  --border: oklch(0.3 0.075 278);
-  --input: oklch(0.28 0.07 278);
+  --border: oklch(0.9 0.014 280);
+  --input: oklch(0.9 0.014 280);
   --ring: oklch(0.53 0.225 277);
 
   /* Sidebar: deepest canvas */
@@ -139,31 +139,22 @@
   --gradient-warning: linear-gradient(135deg, oklch(0.72 0.15 65), oklch(0.84 0.14 92));
   --gradient-info: linear-gradient(135deg, oklch(0.58 0.16 262), oklch(0.74 0.13 205));
   --gradient-destructive: linear-gradient(135deg, oklch(0.58 0.21 20), oklch(0.7 0.18 40));
-  --gradient-surface: linear-gradient(160deg, oklch(0.21 0.052 281) 0%, oklch(0.17 0.045 278) 100%);
+  --gradient-surface: linear-gradient(160deg, oklch(1 0 0) 0%, oklch(0.972 0.014 280) 100%);
 
-  --shadow-elegant: 0 16px 40px -18px oklch(0.06 0.03 281 / 80%);
+  --shadow-elegant: 0 12px 32px -14px color-mix(in oklab, var(--primary) 30%, transparent);
   --shadow-glow: 0 0 0 1px color-mix(in oklab, var(--primary) 22%, transparent),
-    0 20px 48px -22px color-mix(in oklab, var(--primary-glow) 65%, transparent);
+    0 18px 44px -22px color-mix(in oklab, var(--primary-glow) 45%, transparent);
 }
 
-/* Optional light surface variant, same indigo accent */
-.light {
-  --background: oklch(0.985 0.004 280);
-  --foreground: oklch(0.2 0.04 281);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.2 0.04 281);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.2 0.04 281);
-  --secondary: oklch(0.955 0.012 280);
-  --secondary-foreground: oklch(0.25 0.05 281);
-  --muted: oklch(0.955 0.012 280);
-  --muted-foreground: oklch(0.5 0.04 281);
-  --accent: oklch(0.93 0.035 280);
-  --accent-foreground: oklch(0.22 0.05 281);
-  --border: oklch(0.89 0.015 280);
-  --input: oklch(0.9 0.015 280);
-  --gradient-surface: linear-gradient(160deg, oklch(1 0 0) 0%, oklch(0.975 0.014 280) 100%);
-  --shadow-elegant: 0 12px 32px -14px color-mix(in oklab, var(--primary) 34%, transparent);
+/* Optional deep variant for dark surfaces inside a light page */
+.dark-panel {
+  --background: oklch(0.13 0.032 281);
+  --foreground: oklch(0.96 0.008 280);
+  --card: oklch(0.2 0.048 281);
+  --card-foreground: oklch(0.96 0.008 280);
+  --border: oklch(0.3 0.075 278);
+  --muted-foreground: oklch(0.73 0.03 280);
+  --gradient-surface: linear-gradient(160deg, oklch(0.21 0.052 281) 0%, oklch(0.17 0.045 278) 100%);
 }
 
 @layer base {
