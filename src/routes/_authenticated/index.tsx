@@ -47,8 +47,6 @@ import {
   getDocuments,
   getAuditLogs,
   getAttendance,
-  getCompanies,
-  getCurrentCompany,
   getLeads,
   getActivities,
   getClients,
@@ -117,13 +115,13 @@ function PassportIcon({ className }: { className?: string }) {
 }
 
 function DashboardPage() {
-  const companyId = getCurrentCompany();
   const { roles } = useAuth();
   const showCrm = canAccess("/clients", roles);
-  const company = getCompanies().find((c) => c.id === companyId);
+  // The dashboard is group-wide: it always aggregates all companies,
+  // regardless of the branch selected in the header.
+  const companyId: string | null = null;
   const allEmployees = getEmployees();
-  // Only real worker records (same rule as the Workforce page), scoped to the
-  // selected company when a branch is active.
+  // Only real worker records (same rule as the Workforce page), across all companies.
   const employees = allEmployees.filter(
     (e) => !!e.companyId && (!companyId || e.companyId === companyId),
   );
