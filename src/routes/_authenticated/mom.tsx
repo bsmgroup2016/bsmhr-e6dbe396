@@ -21,6 +21,7 @@ import {
   MOM_SECTORS, DRC, computeQuota, levySummary, insuranceItems, type MomSector,
 } from "@/lib/mom";
 import { exportRows } from "@/lib/xlsx";
+import { WpLifecyclePanel } from "@/components/wp-lifecycle-panel";
 
 export const Route = createFileRoute("/_authenticated/mom")({
   head: () => ({
@@ -127,9 +128,14 @@ function MomPage() {
         <Tabs defaultValue="quota">
           <TabsList>
             <TabsTrigger value="quota">Quota (DRC)</TabsTrigger>
+            <TabsTrigger value="lifecycle">Work Permit lifecycle</TabsTrigger>
             <TabsTrigger value="levy">Levy bill</TabsTrigger>
             <TabsTrigger value="insurance">Medical & insurance</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="lifecycle" className="mt-4">
+            <WpLifecyclePanel employees={employees} />
+          </TabsContent>
 
           <TabsContent value="quota" className="mt-4 space-y-4">
             <div className="grid gap-4 lg:grid-cols-2">
