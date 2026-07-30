@@ -22,6 +22,7 @@ import {
   addDormitory, deleteDormitory, addAllocation, checkOutAllocation, deleteAllocation, dormOccupancy,
 } from "@/lib/store";
 import { exportRows } from "@/lib/xlsx";
+import { HousingNotificationPanel } from "@/components/housing-notification-panel";
 import { dormCapacityCheck, SQM_PER_RESIDENT } from "@/lib/mom";
 import type { Dormitory, BedAllocation } from "@/lib/types";
 
@@ -168,6 +169,7 @@ export default function AccommodationPage() {
           <TabsList>
             <TabsTrigger value="allocations">Allocations</TabsTrigger>
             <TabsTrigger value="dormitories">Dormitories</TabsTrigger>
+            <TabsTrigger value="mom-address">MOM address notification</TabsTrigger>
           </TabsList>
 
           <TabsContent value="allocations" className="mt-4">
@@ -386,6 +388,12 @@ export default function AccommodationPage() {
                   </TableBody>
                 </Table>
               </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="mom-address" className="mt-4">
+            <div className="rounded-xl border bg-card p-4 shadow-sm">
+              <HousingNotificationPanel />
             </div>
           </TabsContent>
         </Tabs>
