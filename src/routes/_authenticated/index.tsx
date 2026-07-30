@@ -35,6 +35,7 @@ import {
   UserCheck,
   Briefcase,
   CheckCircle2,
+  CalendarCheck2,
 } from "lucide-react";
 import { Target, PhoneCall, TrendingUp } from "lucide-react";
 import { useAuth } from "@/lib/auth";
@@ -347,14 +348,6 @@ function DashboardPage() {
       variant: "info" as const,
     },
     {
-      to: "/training" as const,
-      title: "CSOC Certified",
-      value: csocWorkers.toString(),
-      caption: `${Math.max(0, employees.length - csocWorkers)} without valid CSOC`,
-      icon: <BadgeCheck className="h-6 w-6" />,
-      variant: "primary" as const,
-    },
-    {
       to: "/leave" as const,
       title: "On Normal Leave",
       value: onNormalLeave.length.toString(),
@@ -364,11 +357,27 @@ function DashboardPage() {
     },
     {
       to: "/time-management" as const,
+      title: "Attendance Today",
+      value: presentToday.toString(),
+      caption: `${employees.length} total workers`,
+      icon: <CalendarCheck2 className="h-6 w-6" />,
+      variant: (presentToday ? "success" : "warning") as "success" | "warning",
+    },
+    {
+      to: "/time-management" as const,
       title: "Absent Today",
       value: absentToday.toString(),
       caption: `${presentToday} present today`,
       icon: <CalendarX2 className="h-6 w-6" />,
       variant: (absentToday ? "warning" : "success") as "warning" | "success",
+    },
+    {
+      to: "/training" as const,
+      title: "CSOC Certified",
+      value: csocWorkers.toString(),
+      caption: `${Math.max(0, employees.length - csocWorkers)} without valid CSOC`,
+      icon: <BadgeCheck className="h-6 w-6" />,
+      variant: "primary" as const,
     },
     {
       to: "/projects" as const,
