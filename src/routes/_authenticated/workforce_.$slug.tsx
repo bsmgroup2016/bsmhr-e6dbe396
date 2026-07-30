@@ -20,6 +20,7 @@ import {
 } from "@/lib/store";
 import type { Employee } from "@/lib/types";
 import { findEmployeeByParam } from "@/lib/employee-slug";
+import { isOfficeStaff } from "@/lib/workforce-split";
 
 export const Route = createFileRoute("/_authenticated/workforce_/$slug")({
   head: () => ({
