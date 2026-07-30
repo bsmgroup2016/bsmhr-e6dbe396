@@ -1,8 +1,6 @@
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import {
   Bell,
-  Building2,
-  Check,
   ChevronDown,
   Plus,
   Search,
@@ -14,7 +12,6 @@ import { cn } from "@/lib/utils";
 import { alertCounts, buildAlerts } from "@/lib/alerts";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,7 +23,7 @@ import {
 import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
 import { AppBreadcrumbs } from "@/components/nav/breadcrumbs";
 import { GlobalSearchDialog, useGlobalSearchHotkey } from "@/components/search/global-search";
-import { getCompanies, getCurrentCompany, setCurrentCompany } from "@/lib/store";
+
 
 const quickCreateItems = [
   { label: "Employee", to: "/workforce", search: { new: true } },
