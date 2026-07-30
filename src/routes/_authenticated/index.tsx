@@ -833,19 +833,19 @@ function DashboardPage() {
             <SectionHeading title="Status" />
             <div className="space-y-3 rounded-xl border bg-gradient-surface p-5 shadow-sm">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">System</span>
+                <span className="text-base text-muted-foreground">System</span>
                 <StatusBadge variant="success" label="Operational" dot />
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Payroll period</span>
+                <span className="text-base text-muted-foreground">Payroll period</span>
                 <StatusBadge variant="primary" label="Jul 2026" />
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Attendance lock</span>
+                <span className="text-base text-muted-foreground">Attendance lock</span>
                 <StatusBadge variant="warning" label="Pending" dot />
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Expiring docs</span>
+                <span className="text-base text-muted-foreground">Expiring docs</span>
                 <StatusBadge
                   variant={expiringDocs > 0 ? "warning" : "success"}
                   label={expiringDocs > 0 ? `${expiringDocs} alert` : "OK"}
