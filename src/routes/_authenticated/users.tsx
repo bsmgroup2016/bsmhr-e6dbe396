@@ -79,6 +79,8 @@ interface SystemUser {
   email: string;
   phone: string;
   fullName: string;
+  username: string;
+  avatarKey: string | null;
   isActive: boolean;
   role: AppAuthRole | null;
   createdAt: string;
@@ -138,7 +140,9 @@ export default function UsersPage() {
     const [{ data: profiles, error: pErr }, { data: roleRows, error: rErr }] = await Promise.all([
       supabase
         .from("profiles")
-        .select("id, email, full_name, phone, is_active, created_at, last_login_at, last_login_ip"),
+        .select(
+          "id, email, full_name, username, avatar_key, phone, is_active, created_at, last_login_at, last_login_ip",
+        ),
       supabase.from("user_roles").select("user_id, role"),
     ]);
     if (pErr || rErr) {
@@ -154,6 +158,8 @@ export default function UsersPage() {
         email: (p.email as string) ?? "",
         phone: (p.phone as string) ?? "",
         fullName: (p.full_name as string) ?? "—",
+        username: (p.username as string) ?? "",
+        avatarKey: (p.avatar_key as string) ?? null,
         isActive: p.is_active !== false,
         role: roleMap.get(p.id as string) ?? null,
         createdAt: (p.created_at as string) ?? "",
