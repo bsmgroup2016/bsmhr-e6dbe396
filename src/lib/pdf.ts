@@ -8,7 +8,7 @@ const BRAND: [number, number, number] = [37, 99, 235];
 const MUTED: [number, number, number] = [107, 114, 128];
 
 function money(n: number) {
-  return `S$ ${(Math.round(n * 100) / 100).toLocaleString("en-SG", {
+  return `$ ${(Math.round(n * 100) / 100).toLocaleString("en-SG", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}`;

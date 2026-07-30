@@ -11,7 +11,7 @@
  *  - MOM must be notified within 1 day when employment ends.
  *  - The pass must be cancelled within 7 days of the last working day.
  *  - The worker must be repatriated within 7 days of cancellation.
- *  - A S$5,000 security bond is required for every non-Malaysian Work Permit holder.
+ *  - A $5,000 security bond is required for every non-Malaysian Work Permit holder.
  */
 import type { Employee, WpStage } from "@/lib/types";
 import { daysUntil } from "@/lib/compliance";
@@ -135,8 +135,8 @@ export function lifecycleFor(e: Employee): WpLifecycleRow {
   if (bondRequired && !bondOk && !["Cancelled", "Repatriated"].includes(stage)) {
     tasks.push({
       label: e.securityBondAmount
-        ? "Security bond expired or below S$5,000"
-        : "Security bond not recorded (S$5,000)",
+        ? "Security bond expired or below $5,000"
+        : "Security bond not recorded ($5,000)",
       dueDate: e.securityBondExpiry ?? "",
       daysLeft: bondDays ?? 0,
       severity: "overdue",

@@ -54,7 +54,7 @@ export function loanLedger(
         issues.push(`Installment ${Math.round(installmentPct * 100)}% exceeds the 25% salary cap`);
       }
       if (repaid > loan.principal + 0.01) {
-        issues.push(`Over-recovered by S$${r2(repaid - loan.principal)}`);
+        issues.push(`Over-recovered by $${r2(repaid - loan.principal)}`);
       }
       if (
         outstanding > 0 &&

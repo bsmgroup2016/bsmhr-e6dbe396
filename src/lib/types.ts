@@ -853,7 +853,7 @@ export interface Candidate {
   joinDate?: string;
   resumeUrl?: string;
   employeeId?: string;
-  /** Agent placement commission agreed for this candidate (S$). */
+  /** Agent placement commission agreed for this candidate ($). */
   agentCommission?: number;
   commissionStatus?: "Unbilled" | "Payable" | "Paid";
   commissionPaidOn?: string;

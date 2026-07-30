@@ -3,7 +3,7 @@
  *
  * Every Work Permit and S Pass holder must be covered by medical insurance for
  * inpatient care and day surgery. The statutory minimum annual coverage is
- * S$15,000 for policies bought before 1 Jul 2023, and S$60,000 for policies
+ * $15,000 for policies bought before 1 Jul 2023, and $60,000 for policies
  * starting on or after that date. We check against the higher figure when the
  * policy runs into the current period.
  */
@@ -53,7 +53,7 @@ export function fwmiFor(e: Employee): FwmiRow {
   if (coverage < required) {
     return {
       employee: e, state: "Under-insured", required, coverage, daysLeft,
-      note: `Coverage S$${coverage.toLocaleString()} is below the S$${required.toLocaleString()} minimum`,
+      note: `Coverage $${coverage.toLocaleString()} is below the $${required.toLocaleString()} minimum`,
     };
   }
   if (daysLeft != null && daysLeft <= 30) {

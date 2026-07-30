@@ -59,7 +59,7 @@ const daysBetween = (from: string, to: string) =>
       new Date(`${from.slice(0, 10)}T00:00:00Z`).getTime()) / 86400000,
   );
 
-const money = (n: number) => `S$${n.toLocaleString("en-SG", { maximumFractionDigits: 2 })}`;
+const money = (n: number) => `$${n.toLocaleString("en-SG", { maximumFractionDigits: 2 })}`;
 
 const isForeign = (e: Employee) => e.passType !== "Singaporean/PR";
 
