@@ -29,19 +29,13 @@ import { GlobalSearchDialog, useGlobalSearchHotkey } from "@/components/search/g
 import { getCompanies, getCurrentCompany, setCurrentCompany } from "@/lib/store";
 
 const quickCreateItems = [
-  { label: "Employee", href: "#" },
-  { label: "Client", href: "#" },
-  { label: "Project", href: "#" },
-  { label: "Site", href: "#" },
-  { label: "Assignment", href: "#" },
-  { label: "Attendance entry", href: "#" },
-];
-
-const branches = [
-  { id: "hq", label: "Headquarters" },
-  { id: "east", label: "East Branch" },
-  { id: "west", label: "West Branch" },
-];
+  { label: "Employee", to: "/workforce", search: { new: true } },
+  { label: "Client", to: "/clients", search: { new: true } },
+  { label: "Project", to: "/projects", search: { new: true } },
+  { label: "Site", to: "/projects", search: {} },
+  { label: "Assignment", to: "/operations", search: { new: true } },
+  { label: "Attendance entry", to: "/time-management", search: { new: true } },
+] as const;
 
 export function AppHeader() {
   const { state } = useSidebar();
@@ -124,24 +118,6 @@ export function AppHeader() {
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="hidden gap-1 lg:flex">
-                <span className="text-xs">Headquarters</span>
-                <ChevronDown className="h-3.5 w-3.5" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Select branch</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {branches.map((branch) => (
-                <DropdownMenuItem key={branch.id}>
-                  {branch.label}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
               <Button size="sm" className="hidden gap-1 sm:flex">
                 <Plus className="h-4 w-4" />
                 <span className="text-xs">Create</span>
@@ -152,7 +128,9 @@ export function AppHeader() {
               <DropdownMenuSeparator />
               {quickCreateItems.map((item) => (
                 <DropdownMenuItem key={item.label} asChild>
-                  <Link to={item.href}>{item.label}</Link>
+                  <Link to={item.to} search={item.search}>
+                    {item.label}
+                  </Link>
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>
