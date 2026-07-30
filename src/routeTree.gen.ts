@@ -31,11 +31,13 @@ import { Route as AuthenticatedLeaveRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedInventoryRouteImport } from './routes/_authenticated/inventory'
 import { Route as AuthenticatedFinanceRouteImport } from './routes/_authenticated/finance'
 import { Route as AuthenticatedDocumentsRouteImport } from './routes/_authenticated/documents'
+import { Route as AuthenticatedDeployedWorkersRouteImport } from './routes/_authenticated/deployed-workers'
 import { Route as AuthenticatedCrmRouteImport } from './routes/_authenticated/crm'
 import { Route as AuthenticatedComplianceRouteImport } from './routes/_authenticated/compliance'
 import { Route as AuthenticatedCompaniesRouteImport } from './routes/_authenticated/companies'
 import { Route as AuthenticatedClientsRouteImport } from './routes/_authenticated/clients'
 import { Route as AuthenticatedBillingRouteImport } from './routes/_authenticated/billing'
+import { Route as AuthenticatedAvailableWorkersRouteImport } from './routes/_authenticated/available-workers'
 import { Route as AuthenticatedAuditLogsRouteImport } from './routes/_authenticated/audit-logs'
 import { Route as AuthenticatedAssetsRouteImport } from './routes/_authenticated/assets'
 import { Route as AuthenticatedApprovalsRouteImport } from './routes/_authenticated/approvals'
@@ -165,6 +167,12 @@ const AuthenticatedDocumentsRoute = AuthenticatedDocumentsRouteImport.update({
   path: '/documents',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedDeployedWorkersRoute =
+  AuthenticatedDeployedWorkersRouteImport.update({
+    id: '/deployed-workers',
+    path: '/deployed-workers',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedCrmRoute = AuthenticatedCrmRouteImport.update({
   id: '/crm',
   path: '/crm',
@@ -190,6 +198,12 @@ const AuthenticatedBillingRoute = AuthenticatedBillingRouteImport.update({
   path: '/billing',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAvailableWorkersRoute =
+  AuthenticatedAvailableWorkersRouteImport.update({
+    id: '/available-workers',
+    path: '/available-workers',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAuditLogsRoute = AuthenticatedAuditLogsRouteImport.update({
   id: '/audit-logs',
   path: '/audit-logs',
@@ -288,11 +302,13 @@ export interface FileRoutesByFullPath {
   '/approvals': typeof AuthenticatedApprovalsRoute
   '/assets': typeof AuthenticatedAssetsRoute
   '/audit-logs': typeof AuthenticatedAuditLogsRoute
+  '/available-workers': typeof AuthenticatedAvailableWorkersRoute
   '/billing': typeof AuthenticatedBillingRoute
   '/clients': typeof AuthenticatedClientsRoute
   '/companies': typeof AuthenticatedCompaniesRoute
   '/compliance': typeof AuthenticatedComplianceRoute
   '/crm': typeof AuthenticatedCrmRoute
+  '/deployed-workers': typeof AuthenticatedDeployedWorkersRoute
   '/documents': typeof AuthenticatedDocumentsRoute
   '/finance': typeof AuthenticatedFinanceRoute
   '/inventory': typeof AuthenticatedInventoryRoute
@@ -332,11 +348,13 @@ export interface FileRoutesByTo {
   '/approvals': typeof AuthenticatedApprovalsRoute
   '/assets': typeof AuthenticatedAssetsRoute
   '/audit-logs': typeof AuthenticatedAuditLogsRoute
+  '/available-workers': typeof AuthenticatedAvailableWorkersRoute
   '/billing': typeof AuthenticatedBillingRoute
   '/clients': typeof AuthenticatedClientsRoute
   '/companies': typeof AuthenticatedCompaniesRoute
   '/compliance': typeof AuthenticatedComplianceRoute
   '/crm': typeof AuthenticatedCrmRoute
+  '/deployed-workers': typeof AuthenticatedDeployedWorkersRoute
   '/documents': typeof AuthenticatedDocumentsRoute
   '/finance': typeof AuthenticatedFinanceRoute
   '/inventory': typeof AuthenticatedInventoryRoute
@@ -379,11 +397,13 @@ export interface FileRoutesById {
   '/_authenticated/approvals': typeof AuthenticatedApprovalsRoute
   '/_authenticated/assets': typeof AuthenticatedAssetsRoute
   '/_authenticated/audit-logs': typeof AuthenticatedAuditLogsRoute
+  '/_authenticated/available-workers': typeof AuthenticatedAvailableWorkersRoute
   '/_authenticated/billing': typeof AuthenticatedBillingRoute
   '/_authenticated/clients': typeof AuthenticatedClientsRoute
   '/_authenticated/companies': typeof AuthenticatedCompaniesRoute
   '/_authenticated/compliance': typeof AuthenticatedComplianceRoute
   '/_authenticated/crm': typeof AuthenticatedCrmRoute
+  '/_authenticated/deployed-workers': typeof AuthenticatedDeployedWorkersRoute
   '/_authenticated/documents': typeof AuthenticatedDocumentsRoute
   '/_authenticated/finance': typeof AuthenticatedFinanceRoute
   '/_authenticated/inventory': typeof AuthenticatedInventoryRoute
@@ -427,11 +447,13 @@ export interface FileRouteTypes {
     | '/approvals'
     | '/assets'
     | '/audit-logs'
+    | '/available-workers'
     | '/billing'
     | '/clients'
     | '/companies'
     | '/compliance'
     | '/crm'
+    | '/deployed-workers'
     | '/documents'
     | '/finance'
     | '/inventory'
@@ -471,11 +493,13 @@ export interface FileRouteTypes {
     | '/approvals'
     | '/assets'
     | '/audit-logs'
+    | '/available-workers'
     | '/billing'
     | '/clients'
     | '/companies'
     | '/compliance'
     | '/crm'
+    | '/deployed-workers'
     | '/documents'
     | '/finance'
     | '/inventory'
@@ -517,11 +541,13 @@ export interface FileRouteTypes {
     | '/_authenticated/approvals'
     | '/_authenticated/assets'
     | '/_authenticated/audit-logs'
+    | '/_authenticated/available-workers'
     | '/_authenticated/billing'
     | '/_authenticated/clients'
     | '/_authenticated/companies'
     | '/_authenticated/compliance'
     | '/_authenticated/crm'
+    | '/_authenticated/deployed-workers'
     | '/_authenticated/documents'
     | '/_authenticated/finance'
     | '/_authenticated/inventory'
@@ -727,6 +753,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDocumentsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/deployed-workers': {
+      id: '/_authenticated/deployed-workers'
+      path: '/deployed-workers'
+      fullPath: '/deployed-workers'
+      preLoaderRoute: typeof AuthenticatedDeployedWorkersRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/crm': {
       id: '/_authenticated/crm'
       path: '/crm'
@@ -760,6 +793,13 @@ declare module '@tanstack/react-router' {
       path: '/billing'
       fullPath: '/billing'
       preLoaderRoute: typeof AuthenticatedBillingRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/available-workers': {
+      id: '/_authenticated/available-workers'
+      path: '/available-workers'
+      fullPath: '/available-workers'
+      preLoaderRoute: typeof AuthenticatedAvailableWorkersRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/audit-logs': {
@@ -890,11 +930,13 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedApprovalsRoute: typeof AuthenticatedApprovalsRoute
   AuthenticatedAssetsRoute: typeof AuthenticatedAssetsRoute
   AuthenticatedAuditLogsRoute: typeof AuthenticatedAuditLogsRoute
+  AuthenticatedAvailableWorkersRoute: typeof AuthenticatedAvailableWorkersRoute
   AuthenticatedBillingRoute: typeof AuthenticatedBillingRoute
   AuthenticatedClientsRoute: typeof AuthenticatedClientsRoute
   AuthenticatedCompaniesRoute: typeof AuthenticatedCompaniesRoute
   AuthenticatedComplianceRoute: typeof AuthenticatedComplianceRoute
   AuthenticatedCrmRoute: typeof AuthenticatedCrmRoute
+  AuthenticatedDeployedWorkersRoute: typeof AuthenticatedDeployedWorkersRoute
   AuthenticatedDocumentsRoute: typeof AuthenticatedDocumentsRoute
   AuthenticatedFinanceRoute: typeof AuthenticatedFinanceRoute
   AuthenticatedInventoryRoute: typeof AuthenticatedInventoryRoute
@@ -925,11 +967,13 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedApprovalsRoute: AuthenticatedApprovalsRoute,
   AuthenticatedAssetsRoute: AuthenticatedAssetsRoute,
   AuthenticatedAuditLogsRoute: AuthenticatedAuditLogsRoute,
+  AuthenticatedAvailableWorkersRoute: AuthenticatedAvailableWorkersRoute,
   AuthenticatedBillingRoute: AuthenticatedBillingRoute,
   AuthenticatedClientsRoute: AuthenticatedClientsRoute,
   AuthenticatedCompaniesRoute: AuthenticatedCompaniesRoute,
   AuthenticatedComplianceRoute: AuthenticatedComplianceRoute,
   AuthenticatedCrmRoute: AuthenticatedCrmRoute,
+  AuthenticatedDeployedWorkersRoute: AuthenticatedDeployedWorkersRoute,
   AuthenticatedDocumentsRoute: AuthenticatedDocumentsRoute,
   AuthenticatedFinanceRoute: AuthenticatedFinanceRoute,
   AuthenticatedInventoryRoute: AuthenticatedInventoryRoute,
