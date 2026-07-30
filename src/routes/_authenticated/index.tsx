@@ -375,7 +375,7 @@ function DashboardPage() {
             caption="Click any card to open the related page"
             icon={<CheckCircle2 className="h-4 w-4 text-primary" />}
           />
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {keyMetrics.map((m) => (
               <Link key={m.title} to={m.to} className="block focus-visible:outline-none">
                 <SummaryCard
