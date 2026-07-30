@@ -78,6 +78,9 @@ const ATTENDANCE_IMPORT_COLUMNS: ImportColumn[] = [
 ];
 
 export const Route = createFileRoute("/_authenticated/time-management")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    new: search.new === "1" || search.new === true ? true : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Time Management — BSM Workforce & Operations" },
@@ -95,7 +98,7 @@ export default function TimeManagementPage() {
   const [sites] = useState(getSites());
   const [search, setSearch] = useState("");
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isCreateOpen, setIsCreateOpen] = useState(Route.useSearch().new === true);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [summaryMonth, setSummaryMonth] = useState(() => new Date().toISOString().slice(0, 7));
   const [noLocationOnly, setNoLocationOnly] = useState(false);

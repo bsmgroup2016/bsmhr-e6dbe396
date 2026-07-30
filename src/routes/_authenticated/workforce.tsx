@@ -74,6 +74,9 @@ const statuses: EmployeeStatus[] = [
 ];
 
 export const Route = createFileRoute("/_authenticated/workforce")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    new: search.new === "1" || search.new === true ? true : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Workforce — BSM Workforce & Operations" },
@@ -159,7 +162,8 @@ export default function WorkforcePage() {
   const [categoryFilter, setCategoryFilter] = useState<WorkerCategory | "all">("all");
   const [deployFilter, setDeployFilter] = useState<DeploymentStatus | "all">("all");
   const [nationalityFilter, setNationalityFilter] = useState<string>("all");
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const openCreateFromUrl = Route.useSearch().new === true;
+  const [isCreateOpen, setIsCreateOpen] = useState(openCreateFromUrl);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   const [viewingEmployee, setViewingEmployee] = useState<Employee | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Employee | null>(null);
