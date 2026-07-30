@@ -10,8 +10,11 @@ import {
   AlertTriangle,
   Clock,
   HardHat,
+  SlidersHorizontal,
+  ChevronDown,
 } from "lucide-react";
 import { ChevronLeft, ChevronRight, Mail, Phone } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 import { AppShell } from "@/components/app-shell";
 import { R2Image } from "@/components/r2-image";
@@ -165,6 +168,17 @@ export default function WorkforcePage() {
   const [page, setPage] = useState(1);
   const [companyFilter, setCompanyFilter] = useState<string>("all");
   const [tradeFilter, setTradeFilter] = useState<string>("all");
+  const [showFilters, setShowFilters] = useState(false);
+  const activeFilterCount = [
+    companyFilter,
+    tradeFilter,
+    siteFilter,
+    statusFilter,
+    passFilter,
+    categoryFilter,
+    deployFilter,
+    nationalityFilter,
+  ].filter((v) => v !== "all").length;
   const companies = getCompanies();
 
   // Only real employees: records must belong to a company (admin/staff accounts
@@ -439,6 +453,22 @@ export default function WorkforcePage() {
                 <Trash2 className="h-4 w-4" />
                 Bulk delete{selectedIds.length > 0 ? ` (${selectedIds.length})` : ""}
               </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1.5"
+                aria-expanded={showFilters}
+                onClick={() => setShowFilters((v) => !v)}
+              >
+                <SlidersHorizontal className="h-4 w-4" />
+                Filter
+                {activeFilterCount > 0 ? (
+                  <span className="ml-1 rounded-full bg-primary px-1.5 text-[11px] font-semibold text-primary-foreground">
+                    {activeFilterCount}
+                  </span>
+                ) : null}
+                <ChevronDown className={cn("h-4 w-4 transition-transform", showFilters && "rotate-180")} />
+              </Button>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <ImportDialog
@@ -456,7 +486,8 @@ export default function WorkforcePage() {
           </div>
 
           {/* Filter panel */}
-          <div className="rounded-lg border bg-muted/30 p-4">
+          {showFilters ? (
+          <div className="rounded-lg border bg-muted/30 p-4 animate-in fade-in slide-in-from-top-2">
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
               <div className="space-y-1.5">
                 <Label className="text-xs font-semibold">Company</Label>
@@ -542,6 +573,7 @@ export default function WorkforcePage() {
               </Select>
             </div>
           </div>
+          ) : null}
 
           {/* Records per page + search */}
           <div className="flex flex-col gap-3 rounded-lg border bg-muted/20 p-3 lg:flex-row lg:items-center lg:justify-between">
@@ -567,7 +599,6 @@ export default function WorkforcePage() {
                   className="h-9 pl-9"
                 />
               </div>
-              <ExportButton rows={filtered.map(toEmployeeRow)} baseName="employees" sheetName="Employees" />
             </div>
           </div>
 
