@@ -73,6 +73,12 @@ export function MedicalClaimsPanel({ employees, onChanged }: Props) {
 
   const set = (patch: Form) => setForm((f) => ({ ...f, ...patch }));
 
+  const downloadBill = (ref: string) => {
+    void downloadR2File(ref).catch((e) =>
+      toast.error(e instanceof Error ? e.message : "Download failed"),
+    );
+  };
+
   const openNew = () => {
     setEditingId(null);
     setForm(blank(employees[0]?.id ?? ""));
