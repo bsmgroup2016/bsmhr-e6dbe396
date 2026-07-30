@@ -17,6 +17,7 @@ import type {
   TimeCardEntry, ClaimSheetRow,
 } from "@/lib/types";
 import type { ClientContract } from "@/lib/types";
+import type { MedicalClaim } from "@/lib/types";
 
 type Row = Record<string, any>;
 
