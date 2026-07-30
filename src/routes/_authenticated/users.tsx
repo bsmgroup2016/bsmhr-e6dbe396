@@ -64,6 +64,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { ROLE_LABELS, type AppAuthRole } from "@/lib/permissions";
 import { createUser, deleteUsers, updateUser } from "@/lib/user-admin";
+import { uploadToR2 } from "@/lib/r2";
 
 const roles: AppAuthRole[] = [
   "admin",
