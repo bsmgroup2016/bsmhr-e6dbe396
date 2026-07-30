@@ -531,28 +531,28 @@ function DashboardPage() {
             <SummaryCard
               title="Total Employees"
               value={employees.length.toString()}
-              icon={<Users className="h-5 w-5" />}
+              icon={<Users className="h-6 w-6" />}
               variant="primary"
               caption={`${activeEmployees} active · ${deployedEmployees} deployed`}
             />
             <SummaryCard
               title="Active Sites"
               value={activeSites.toString()}
-              icon={<Building2 className="h-5 w-5" />}
+              icon={<Building2 className="h-6 w-6" />}
               variant="info"
               caption={`Across ${projects.length} projects`}
             />
             <SummaryCard
               title="Active Projects"
               value={activeProjects.toString()}
-              icon={<FolderKanban className="h-5 w-5" />}
+              icon={<FolderKanban className="h-6 w-6" />}
               variant="success"
               caption={`${projects.filter((p) => p.status === "Planning").length} planning`}
             />
             <SummaryCard
               title="Pending Approval"
               value={pendingApprovals.toString()}
-              icon={<Clock className="h-5 w-5" />}
+              icon={<Clock className="h-6 w-6" />}
               variant="warning"
               caption={`${expiringDocs} docs · ${presentToday} present today`}
             />
