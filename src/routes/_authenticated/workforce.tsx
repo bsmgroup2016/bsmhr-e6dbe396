@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { activeAssignedEmployeeIds, isEmployeeAvailable } from "@/lib/availability";
 import {
@@ -61,7 +61,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { getEmployees, addEmployee, updateEmployee, deleteEmployee, getCurrentCompany, getCompanies, getAssignments } from "@/lib/store";
+import { getEmployees, addEmployee, updateEmployee, deleteEmployee, getCurrentCompany, getCompanies, getProjects, getAssignments } from "@/lib/store";
 import { employeeSlugById } from "@/lib/employee-slug";
 import type { Employee, PassType, EmployeeStatus, DeploymentStatus, WorkerCategory } from "@/lib/types";
 import { pick, type ImportColumn } from "@/lib/xlsx";
@@ -190,8 +190,18 @@ export default function WorkforcePage() {
     nationalityFilter,
   ].filter((v) => v !== "all").length;
   const companies = getCompanies();
+  const projects = getProjects();
   const assignments = getAssignments();
   const assignedIds = activeAssignedEmployeeIds(assignments);
+  const employeeProjectMap = useMemo(() => {
+    const map = new Map<string, string>();
+    const active = assignments.filter((a) => a.status === "Active" || a.status === "Approved");
+    for (const a of active) {
+      const p = projects.find((proj) => proj.id === a.projectId);
+      if (p) map.set(a.employeeId, p.name);
+    }
+    return map;
+  }, [assignments, projects]);
   function isAvailable(e: Employee) {
     return isEmployeeAvailable(e, assignedIds);
   }
@@ -205,6 +215,7 @@ export default function WorkforcePage() {
 
   const filtered = employees.filter((e) => {
     const q = search.toLowerCase();
+    const assignedProject = employeeProjectMap.get(e.id) ?? "";
     const matchesSearch =
       e.name.toLowerCase().includes(q) ||
       e.employeeCode.toLowerCase().includes(q) ||
@@ -214,7 +225,8 @@ export default function WorkforcePage() {
       (e.phone ?? "").toLowerCase().includes(q) ||
       (e.email ?? "").toLowerCase().includes(q) ||
       (e.passportNumber ?? "").toLowerCase().includes(q) ||
-      (e.workPermitNumber ?? "").toLowerCase().includes(q);
+      (e.workPermitNumber ?? "").toLowerCase().includes(q) ||
+      assignedProject.toLowerCase().includes(q);
     return (
       matchesSearch &&
       (statusFilter === "all" || e.status === statusFilter) &&
@@ -662,7 +674,7 @@ export default function WorkforcePage() {
                 <Input
                   id="wf-search"
                   type="search"
-                  placeholder="Name, code, FIN, trade…"
+                  placeholder="Name, code, FIN, project, trade…"
                   value={search}
                   onChange={(e) => { setSearch(e.target.value); setPage(1); }}
                   className="h-9 pl-9"
@@ -686,6 +698,7 @@ export default function WorkforcePage() {
                   </TableHead>
                   <TableHead className="min-w-[260px]">Employee</TableHead>
                   <TableHead className="min-w-[220px]">Company</TableHead>
+                  <TableHead className="min-w-[180px]">Project</TableHead>
                   <TableHead className="min-w-[220px]">Contact</TableHead>
                   <TableHead className="w-40">Status</TableHead>
                   <TableHead className="w-36 text-right">Action</TableHead>
@@ -694,7 +707,7 @@ export default function WorkforcePage() {
               <TableBody>
                 {paged.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="h-32 text-center">
+                    <TableCell colSpan={7} className="h-32 text-center">
                       <EmptyState
                         className="bg-transparent border-0"
                         icon={<Users className="h-5 w-5" />}
@@ -752,6 +765,11 @@ export default function WorkforcePage() {
                           <div>Department : {e.trade || "—"}</div>
                           <div>Designation : {e.workerCategory ?? e.passType}</div>
                           <div>Site : {e.site || "Unassigned"}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm font-medium text-foreground">
+                          {employeeProjectMap.get(e.id) ?? "—"}
                         </div>
                       </TableCell>
                       <TableCell>
