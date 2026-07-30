@@ -332,15 +332,15 @@ function StaffManagementPage() {
             <Table>
               <TableHeader>
                 <TableRow className="[&>th]:whitespace-nowrap [&>th]:px-4">
-                  <TableHead className="w-[22%] min-w-[200px]">Staff</TableHead>
-                  <TableHead className="w-[10%] min-w-[110px]">Company</TableHead>
-                  <TableHead className="w-[12%] min-w-[120px]">Department</TableHead>
-                  <TableHead className="w-[14%] min-w-[140px]">Designation</TableHead>
-                  <TableHead className="w-[12%] min-w-[130px] text-right">Fixed Salary</TableHead>
-                  <TableHead className="w-[14%] min-w-[180px]">Passport</TableHead>
-                  <TableHead className="w-[9%] min-w-[110px]">Leave</TableHead>
-                  <TableHead className="w-[9%] min-w-[110px]">Status</TableHead>
-                  <TableHead className="w-[8%] min-w-[96px] text-right">Actions</TableHead>
+                  <TableHead>Staff</TableHead>
+                  <TableHead>Company</TableHead>
+                  <TableHead>Department</TableHead>
+                  <TableHead>Designation</TableHead>
+                  <TableHead className="text-right">Fixed Salary</TableHead>
+                  <TableHead>Passport</TableHead>
+                  <TableHead>Leave</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
