@@ -143,8 +143,8 @@ export default function TrainingPage() {
   }
 
   function seedWshCourses() {
-    const existing = new Set(courses.map((c) => c.code.toUpperCase()));
-    const missing = WSH_STANDARD_COURSES.filter((c) => !existing.has(c.code.toUpperCase()));
+    const existing = new Set(courses.map((c) => (c.code ?? "").toUpperCase()));
+    const missing = WSH_STANDARD_COURSES.filter((c) => !existing.has((c.code ?? "").toUpperCase()));
     if (!missing.length) return toast.info("All WSH standard courses already exist");
     for (const c of missing) addCourse({ ...c, companyId: companyId || undefined });
     refresh();
