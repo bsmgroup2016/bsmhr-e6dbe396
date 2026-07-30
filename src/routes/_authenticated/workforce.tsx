@@ -255,8 +255,6 @@ export default function WorkforcePage() {
     refresh();
   }
 
-  const activeCount = employees.filter((e) => e.status === "Active" || e.status === "Deployed").length;
-  const deployedCount = employees.filter((e) => e.status === "Deployed").length;
   const expiringCount = employees.filter((e) => {
     const days = daysUntil(e.passExpiry);
     return days !== null && days <= 60 && days >= 0;
