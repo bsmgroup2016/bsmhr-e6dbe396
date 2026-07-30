@@ -90,9 +90,9 @@ export function specialDayPay(e: Employee, day: SpecialDay, hours: number, worki
   const halfDay = NORMAL_HOURS_PER_DAY / 2;
   const multiplier = normal <= halfDay ? 1 : 2;
   return {
-    basePay: round2(daily * multiplier * (multiplier === 1 ? 0.5 : 1) * (multiplier === 1 ? 2 : 1) / (multiplier === 1 ? 2 : 1)) || round2(daily * (multiplier === 1 ? 0.5 : 1) * 2) / 2,
+    basePay: round2(daily * multiplier),
     otPay,
-    total: round2(daily * (normal <= halfDay ? 1 : 2) + otPay),
+    total: round2(daily * multiplier + otPay),
     note: normal <= halfDay
       ? "Up to half a day worked on a rest day = 1 day's salary"
       : "More than half a day worked on a rest day = 2 days' salary",
