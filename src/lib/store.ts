@@ -245,16 +245,13 @@ export function prefixForBranch(branch?: string): string {
   return (match?.code ?? list.find((b) => b.code === "X")?.code ?? list[0].code).toUpperCase();
 }
 
-/**
- * Digits used in the sequence part of a P-File Number, per branch prefix.
- * V-01, P-01 … are zero padded to 2; BS-1, BS-11 … are not padded.
- */
-const CODE_PAD: Record<string, number> = { V: 2, P: 2, BS: 1 };
+/** Sequence part of a P-File Number is always zero padded to 2 digits. */
+const CODE_PAD = 2;
 
 /** Build a P-File Number, e.g. ("V", 1) -> "V-01", ("BS", 11) -> "BS-11". */
 export function formatEmployeeCode(prefix: string, seq: number): string {
   const p = prefix.toUpperCase();
-  return `${p}-${String(seq).padStart(CODE_PAD[p] ?? 2, "0")}`;
+  return `${p}-${String(seq).padStart(CODE_PAD, "0")}`;
 }
 
 /** Compare P-File Numbers ignoring dashes, spaces and leading zeros. */

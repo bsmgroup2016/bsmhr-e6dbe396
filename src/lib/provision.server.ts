@@ -27,8 +27,8 @@ async function rest<T = any>(path: string, init?: RequestInit): Promise<T[]> {
   return text ? (JSON.parse(text) as T[]) : [];
 }
 
-/** Digits in the sequence part per prefix — V-01, P-01 padded; BS-1 not. */
-const CODE_PAD: Record<string, number> = { V: 2, P: 2, BS: 1 };
+/** Sequence part is always zero padded to 2 digits — V-01, BS-01, P-01. */
+const CODE_PAD = 2;
 
 /** Next sequential P-File Number for a branch prefix (V-01, V-02 …). */
 async function nextCode(prefix: string): Promise<string> {
