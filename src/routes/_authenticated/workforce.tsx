@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { activeAssignedEmployeeIds, isEmployeeAvailable } from "@/lib/availability";
 import {
@@ -61,7 +61,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { getEmployees, addEmployee, updateEmployee, deleteEmployee, getCurrentCompany, getCompanies, getAssignments } from "@/lib/store";
+import { getEmployees, addEmployee, updateEmployee, deleteEmployee, getCurrentCompany, getCompanies, getProjects, getAssignments } from "@/lib/store";
 import { employeeSlugById } from "@/lib/employee-slug";
 import type { Employee, PassType, EmployeeStatus, DeploymentStatus, WorkerCategory } from "@/lib/types";
 import { pick, type ImportColumn } from "@/lib/xlsx";
