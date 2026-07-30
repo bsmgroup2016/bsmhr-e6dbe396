@@ -1,8 +1,6 @@
 import { useCallback, useState } from "react";
 import {
   Bell,
-  Building2,
-  Check,
   ChevronDown,
   Plus,
   Search,
@@ -14,7 +12,6 @@ import { cn } from "@/lib/utils";
 import { alertCounts, buildAlerts } from "@/lib/alerts";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,10 +20,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 import { AppBreadcrumbs } from "@/components/nav/breadcrumbs";
 import { GlobalSearchDialog, useGlobalSearchHotkey } from "@/components/search/global-search";
-import { getCompanies, getCurrentCompany, setCurrentCompany } from "@/lib/store";
+
+
 
 const quickCreateItems = [
   { label: "Employee", to: "/workforce", search: { new: true } },
@@ -38,14 +36,9 @@ const quickCreateItems = [
 ] as const;
 
 export function AppHeader() {
-  const { state } = useSidebar();
-  const collapsed = state === "collapsed";
-  const [companies] = useState(() => getCompanies());
-  const [companyId, setCompanyId] = useState(() => getCurrentCompany());
-  const activeCompany = companies.find((c) => c.id === companyId) ?? companies[0];
   const { user, signOut } = useAuth();
   const initials = user?.email?.slice(0, 2).toUpperCase() ?? "BS";
-  const alerts = buildAlerts(companyId);
+  const alerts = buildAlerts();
   const counts = alertCounts(alerts);
   const [searchOpen, setSearchOpen] = useState(false);
   useGlobalSearchHotkey(useCallback(() => setSearchOpen(true), []));
@@ -84,37 +77,6 @@ export function AppHeader() {
             <span className="sr-only">Search</span>
           </Button>
           <GlobalSearchDialog open={searchOpen} onOpenChange={setSearchOpen} />
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="hidden gap-1 sm:flex">
-                <Building2 className="h-3.5 w-3.5" />
-                <span className="text-xs font-medium">{activeCompany?.name ?? "Company"}</span>
-                <ChevronDown className="h-3.5 w-3.5" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Switch company</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {companies.map((company) => (
-                <DropdownMenuItem
-                  key={company.id}
-                  onSelect={() => {
-                    setCurrentCompany(company.id);
-                    setCompanyId(company.id);
-                  }}
-                  className="gap-2"
-                >
-                  <span className="flex-1">{company.name}</span>
-                  {company.id === companyId && <Check className="h-3.5 w-3.5 text-primary" />}
-                </DropdownMenuItem>
-              ))}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <Link to="/companies">Manage companies</Link>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
