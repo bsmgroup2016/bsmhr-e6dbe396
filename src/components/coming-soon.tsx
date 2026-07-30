@@ -12,14 +12,14 @@ export function ComingSoon({ title, description, planned, phase }: ComingSoonPro
   return (
     <AppShell>
       <div className="mx-auto max-w-4xl space-y-6">
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-hero p-6 shadow-elegant sm:p-8">
-          <div className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-white/10 blur-3xl" />
+        <div className="relative overflow-hidden rounded-2xl border border-border/60 bg-gradient-hero p-7 shadow-elegant sm:p-9">
+          <div className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-primary-foreground/10 blur-3xl" />
           <div className="relative flex flex-col gap-2">
-            <span className="w-fit rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-white/90 backdrop-blur">
+            <span className="w-fit rounded-full bg-primary-foreground/15 px-3 py-1 text-xs font-medium text-primary-foreground/90 backdrop-blur">
               {phase}
             </span>
-            <h1 className="text-3xl font-semibold tracking-tight text-white">{title}</h1>
-            <p className="max-w-xl text-sm text-white/75">{description}</p>
+            <h1 className="text-3xl font-semibold tracking-tight text-primary-foreground">{title}</h1>
+            <p className="max-w-xl text-sm text-primary-foreground/75">{description}</p>
           </div>
         </div>
 

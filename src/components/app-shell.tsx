@@ -11,9 +11,9 @@ export function AppShell({ children }: AppShellProps) {
   return (
     <SidebarProvider defaultOpen={true}>
       <AppSidebar />
-      <SidebarInset className="min-h-svh">
+      <SidebarInset className="min-h-svh bg-background">
         <AppHeader />
-        <main className="flex-1 p-4 pb-20 sm:p-6 md:pb-6">{children}</main>
+        <main className="flex-1 p-5 pb-24 sm:p-8 md:pb-10">{children}</main>
         <MobileNav />
       </SidebarInset>
     </SidebarProvider>
