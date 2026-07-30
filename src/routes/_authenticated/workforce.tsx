@@ -105,7 +105,7 @@ function expiryBadge(passExpiry: string) {
 }
 
 const EMPLOYEE_IMPORT_COLUMNS: ImportColumn[] = [
-  { key: "employeeCode", label: "P-File Number", example: "BS12" },
+  { key: "employeeCode", label: "P-File Number", example: "BS-12" },
   { key: "name", label: "Name", required: true, example: "Rahman Md" },
   { key: "fin", label: "FIN", example: "G1234567X" },
   { key: "passportNumber", label: "Passport Number", example: "BX0912345" },
