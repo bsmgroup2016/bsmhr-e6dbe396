@@ -805,22 +805,22 @@ function DashboardPage() {
               />
             ) : (
               <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
-                <table className="w-full text-sm">
+                <table className="w-full text-base">
                   <thead className="bg-muted/50">
                     <tr>
-                      <th className="px-4 py-2 text-left font-medium">Time</th>
-                      <th className="px-4 py-2 text-left font-medium">User</th>
-                      <th className="px-4 py-2 text-left font-medium">Action</th>
-                      <th className="px-4 py-2 text-left font-medium">Details</th>
+                      <th className="px-4 py-2.5 text-left font-medium">Time</th>
+                      <th className="px-4 py-2.5 text-left font-medium">User</th>
+                      <th className="px-4 py-2.5 text-left font-medium">Action</th>
+                      <th className="px-4 py-2.5 text-left font-medium">Details</th>
                     </tr>
                   </thead>
                   <tbody>
                     {logs.map((l) => (
                       <tr key={l.id} className="border-t">
-                        <td className="px-4 py-2 text-muted-foreground">{new Date(l.timestamp).toLocaleString()}</td>
-                        <td className="px-4 py-2 font-medium">{l.userName}</td>
-                        <td className="px-4 py-2">{l.action} {l.entityType}</td>
-                        <td className="max-w-xs truncate px-4 py-2 text-muted-foreground">{l.details}</td>
+                        <td className="px-4 py-2.5 text-muted-foreground">{new Date(l.timestamp).toLocaleString()}</td>
+                        <td className="px-4 py-2.5 font-medium">{l.userName}</td>
+                        <td className="px-4 py-2.5">{l.action} {l.entityType}</td>
+                        <td className="max-w-xs truncate px-4 py-2.5 text-muted-foreground">{l.details}</td>
                       </tr>
                     ))}
                   </tbody>
