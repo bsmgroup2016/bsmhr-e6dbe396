@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Briefcase, Building2, Search, Users } from "lucide-react";
+import {
+  Briefcase, Building2, CalendarOff, IdCard, Plane, Search, Users, Wallet,
+} from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
 import { SummaryCard } from "@/components/ui/summary-card";
@@ -22,11 +24,31 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { getEmployees, getCompanies } from "@/lib/store";
+import { Button } from "@/components/ui/button";
+import { getEmployees, getCompanies, getLeaveRequests } from "@/lib/store";
 import { employeeSlugById } from "@/lib/employee-slug";
 import { isOfficeStaff } from "@/lib/workforce-split";
 
+function daysUntil(iso?: string | null): number | null {
+  if (!iso || iso === "-") return null;
+  const t = new Date(`${iso}T00:00:00+08:00`).getTime();
+  if (Number.isNaN(t)) return null;
+  return Math.round((t - Date.now()) / 86_400_000);
+}
 
+function ExpiryCell({ date }: { date?: string | null }) {
+  const d = daysUntil(date);
+  if (d === null) return <span className="text-muted-foreground">—</span>;
+  return (
+    <div className="whitespace-nowrap">
+      <span className="text-sm">{date}</span>{" "}
+      <StatusBadge
+        variant={d < 0 ? "destructive" : d <= 60 ? "warning" : "success"}
+        label={d < 0 ? "expired" : `${d}d`}
+      />
+    </div>
+  );
+}
 
 export const Route = createFileRoute("/_authenticated/staff-management")({
   head: () => ({
@@ -49,6 +71,25 @@ export const Route = createFileRoute("/_authenticated/staff-management")({
 function StaffManagementPage() {
   const companies = getCompanies();
   const staff = getEmployees().filter(isOfficeStaff);
+  const leave = getLeaveRequests();
+  const today = new Date().toISOString().slice(0, 10);
+  const staffIds = new Set(staff.map((e) => e.id));
+  const onLeaveToday = leave.filter(
+    (l) =>
+      staffIds.has(l.employeeId) &&
+      l.status === "Approved" &&
+      l.startDate <= today &&
+      l.endDate >= today,
+  );
+  const monthlyPayroll = staff.reduce((sum, e) => sum + (e.basicSalary || 0), 0);
+  const passExpiring = staff.filter((e) => {
+    const d = daysUntil(e.workPermitExpiryDate ?? e.passExpiry);
+    return d !== null && d <= 60;
+  }).length;
+  const passportExpiring = staff.filter((e) => {
+    const d = daysUntil(e.passportExpiry);
+    return d !== null && d <= 60;
+  }).length;
 
   const [search, setSearch] = useState("");
   const [department, setDepartment] = useState("all");
@@ -85,8 +126,26 @@ function StaffManagementPage() {
           <div>
             <h1 className="text-2xl font-semibold tracking-tight">Staff Management</h1>
             <p className="text-sm text-muted-foreground">
-              Office and administrative staff — HR, Accounts, IT, Admin and QS.
+              Office and administrative staff — HR, Accounts, IT, Admin and QS. Staff use an
+              Employee ID and a fixed monthly salary.
             </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" variant="outline" asChild>
+              <Link to="/leave">
+                <CalendarOff className="mr-1 h-4 w-4" /> Leave
+              </Link>
+            </Button>
+            <Button size="sm" variant="outline" asChild>
+              <Link to="/payroll">
+                <Wallet className="mr-1 h-4 w-4" /> Payslips
+              </Link>
+            </Button>
+            <Button size="sm" variant="outline" asChild>
+              <Link to="/compliance">
+                <Plane className="mr-1 h-4 w-4" /> Pass & passport
+              </Link>
+            </Button>
           </div>
         </div>
 
@@ -97,6 +156,38 @@ function StaffManagementPage() {
             icon={<Briefcase className="h-5 w-5" />}
             variant="primary"
             caption="Office & admin"
+            compact
+          />
+          <SummaryCard
+            title="On leave today"
+            value={String(onLeaveToday.length)}
+            icon={<CalendarOff className="h-5 w-5" />}
+            variant="warning"
+            caption="Approved leave"
+            compact
+          />
+          <SummaryCard
+            title="Monthly salary bill"
+            value={`$${monthlyPayroll.toLocaleString()}`}
+            icon={<Wallet className="h-5 w-5" />}
+            variant="success"
+            caption="Fixed salaries"
+            compact
+          />
+          <SummaryCard
+            title="Work permit expiry"
+            value={String(passExpiring)}
+            icon={<IdCard className="h-5 w-5" />}
+            variant={passExpiring ? "warning" : "info"}
+            caption="Within 60 days"
+            compact
+          />
+          <SummaryCard
+            title="Passport expiry"
+            value={String(passportExpiring)}
+            icon={<Plane className="h-5 w-5" />}
+            variant={passportExpiring ? "warning" : "info"}
+            caption="Within 60 days"
             compact
           />
           <SummaryCard
@@ -153,7 +244,7 @@ function StaffManagementPage() {
             <div className="relative w-full max-w-sm">
               <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="Name, P-File, passport, designation…"
+                placeholder="Name, Employee ID, passport, designation…"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="pl-9"
@@ -208,13 +299,17 @@ function StaffManagementPage() {
                   <TableHead>Company</TableHead>
                   <TableHead>Department</TableHead>
                   <TableHead>Designation</TableHead>
+                  <TableHead className="text-right">Fixed Salary</TableHead>
+                  <TableHead>Work permit</TableHead>
+                  <TableHead>Passport</TableHead>
+                  <TableHead>Leave</TableHead>
                   <TableHead>Status</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {rows.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="h-32 text-center">
+                    <TableCell colSpan={9} className="h-32 text-center">
                       <EmptyState
                         className="border-0 bg-transparent"
                         icon={<Briefcase className="h-5 w-5" />}
@@ -235,7 +330,7 @@ function StaffManagementPage() {
                           {e.name}
                         </Link>
                         <div className="text-xs text-muted-foreground">
-                          P-File No: {e.employeeCode}
+                          Employee ID: {e.employeeCode}
                         </div>
                       </TableCell>
                       <TableCell>
@@ -243,6 +338,23 @@ function StaffManagementPage() {
                       </TableCell>
                       <TableCell>{e.department ?? "—"}</TableCell>
                       <TableCell>{e.trade ?? "—"}</TableCell>
+                      <TableCell className="text-right font-medium">
+                        ${(e.basicSalary || 0).toLocaleString()}
+                        <span className="ml-1 text-xs text-muted-foreground">/mo</span>
+                      </TableCell>
+                      <TableCell>
+                        <ExpiryCell date={e.workPermitExpiryDate ?? e.passExpiry} />
+                      </TableCell>
+                      <TableCell>
+                        <ExpiryCell date={e.passportExpiry} />
+                      </TableCell>
+                      <TableCell>
+                        {onLeaveToday.some((l) => l.employeeId === e.id) ? (
+                          <StatusBadge variant="warning" dot label="On leave" />
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
                       <TableCell>
                         <StatusBadge variant="success" label={e.status} dot />
                       </TableCell>
