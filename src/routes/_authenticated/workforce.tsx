@@ -14,6 +14,7 @@ import {
   SlidersHorizontal,
   ChevronDown,
   UserCheck,
+  Briefcase,
 } from "lucide-react";
 import { ChevronLeft, ChevronRight, Mail, Phone } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -76,6 +77,7 @@ export const Route = createFileRoute("/_authenticated/workforce")({
   validateSearch: (search: Record<string, unknown>) => ({
     new: search.new === "1" || search.new === true ? true : undefined,
     available: search.available === "1" || search.available === true ? true : undefined,
+    deployed: search.deployed === "1" || search.deployed === true ? true : undefined,
     company: typeof search.company === "string" ? search.company : undefined,
   }),
   head: () => ({
@@ -176,6 +178,7 @@ export default function WorkforcePage() {
   const [tradeFilter, setTradeFilter] = useState<string>("all");
   const [showFilters, setShowFilters] = useState(false);
   const [availableOnly, setAvailableOnly] = useState(routeSearch.available === true);
+  const [deployedOnly, setDeployedOnly] = useState(routeSearch.deployed === true);
   const activeFilterCount = [
     companyFilter,
     tradeFilter,
@@ -222,11 +225,13 @@ export default function WorkforcePage() {
       (nationalityFilter === "all" || e.nationality === nationalityFilter) &&
       (companyFilter === "all" || e.companyId === companyFilter) &&
       (tradeFilter === "all" || e.trade === tradeFilter) &&
-      (!availableOnly || isAvailable(e))
+      (!availableOnly || isAvailable(e)) &&
+      (!deployedOnly || assignedIds.has(e.id))
     );
   });
 
   const availableCount = employees.filter(isAvailable).length;
+  const deployedWorkerCount = employees.filter((e) => assignedIds.has(e.id)).length;
 
   const pageSize = Number(perPage);
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
@@ -401,7 +406,7 @@ export default function WorkforcePage() {
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <SummaryCard title="Total employees" value={employees.length.toString()} icon={<Users className="h-5 w-5" />} variant="primary" caption="All workers" />
-          <SummaryCard title="Active / Deployed" value={activeCount.toString()} icon={<HardHat className="h-5 w-5" />} variant="success" caption="Available or deployed" />
+          <SummaryCard title="Available workers" value={availableCount.toString()} icon={<HardHat className="h-5 w-5" />} variant="success" caption="Not assigned to any project" />
           <SummaryCard title="Expiring passes" value={expiringCount.toString()} icon={<Clock className="h-5 w-5" />} variant="warning" caption="Within 60 days" />
           <SummaryCard title="Expired passes" value={expiredCount.toString()} icon={<AlertTriangle className="h-5 w-5" />} variant="destructive" caption="Immediate action" />
         </div>
@@ -492,6 +497,7 @@ export default function WorkforcePage() {
                 aria-pressed={availableOnly}
                 onClick={() => {
                   setAvailableOnly((v) => !v);
+                  setDeployedOnly(false);
                   setPage(1);
                 }}
               >
@@ -507,6 +513,36 @@ export default function WorkforcePage() {
                 >
                   {availableCount}
                 </span>
+              </Button>
+              <Button
+                size="sm"
+                variant={deployedOnly ? "default" : "outline"}
+                className="gap-1.5"
+                aria-pressed={deployedOnly}
+                onClick={() => {
+                  setDeployedOnly((v) => !v);
+                  setAvailableOnly(false);
+                  setPage(1);
+                }}
+              >
+                <Briefcase className="h-4 w-4" />
+                Deployed workers
+                <span
+                  className={cn(
+                    "ml-1 rounded-full px-1.5 text-[11px] font-semibold",
+                    deployedOnly
+                      ? "bg-primary-foreground/20 text-primary-foreground"
+                      : "bg-muted text-muted-foreground",
+                  )}
+                >
+                  {deployedWorkerCount}
+                </span>
+              </Button>
+              <Button size="sm" variant="ghost" className="gap-1.5" asChild>
+                <Link to="/available-workers">Available board</Link>
+              </Button>
+              <Button size="sm" variant="ghost" className="gap-1.5" asChild>
+                <Link to="/deployed-workers">Deployed board</Link>
               </Button>
             </div>
             <div className="flex flex-wrap items-center gap-2">
