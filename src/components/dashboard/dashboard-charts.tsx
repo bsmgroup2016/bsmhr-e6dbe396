@@ -48,8 +48,8 @@ function ChartCard({
   return (
     <div className={`rounded-2xl border bg-card p-5 shadow-sm ${className ?? ""}`}>
       <div className="mb-4 flex items-baseline justify-between gap-3">
-        <h3 className="text-sm font-semibold tracking-tight text-foreground">{title}</h3>
-        {caption ? <span className="text-xs text-muted-foreground">{caption}</span> : null}
+        <h3 className="text-base font-semibold tracking-tight text-foreground">{title}</h3>
+        {caption ? <span className="text-sm text-muted-foreground">{caption}</span> : null}
       </div>
       <div className="h-[260px] w-full">{children}</div>
     </div>
