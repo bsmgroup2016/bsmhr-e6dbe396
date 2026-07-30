@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const summaryCardVariants = cva(
-  "group relative flex flex-col overflow-hidden rounded-2xl border bg-card p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-card hover:border-primary/25 before:absolute before:inset-y-0 before:left-0 before:w-1 before:content-['']",
+  "group relative flex flex-col overflow-hidden rounded-2xl border bg-card p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-card hover:border-primary/25 before:absolute before:inset-y-0 before:left-0 before:w-1 before:content-['']",
   {
     variants: {
       variant: {
@@ -14,9 +14,14 @@ const summaryCardVariants = cva(
         destructive: "border-destructive/20 before:bg-gradient-destructive",
         info: "border-info/20 before:bg-gradient-info",
       },
+      compact: {
+        true: "min-h-[108px] p-4",
+        false: "min-h-[140px]",
+      },
     },
     defaultVariants: {
       variant: "default",
+      compact: false,
     },
   },
 );
