@@ -224,6 +224,47 @@
   animation: fade-in 0.2s ease-out;
 }
 
+@utility skeleton-shimmer {
+  position: relative;
+  overflow: hidden;
+  background-color: color-mix(in oklab, var(--color-muted) 82%, var(--color-primary) 18%);
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background-image: linear-gradient(
+      90deg,
+      transparent 0%,
+      color-mix(in oklab, var(--color-card) 78%, transparent) 45%,
+      color-mix(in oklab, var(--color-card) 92%, transparent) 55%,
+      transparent 100%
+    );
+    animation: skeleton-sweep 1.6s ease-in-out infinite;
+  }
+}
+
+@keyframes skeleton-sweep {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes empty-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+@utility animate-empty-float {
+  animation: empty-float 4s ease-in-out infinite;
+}
+
 @keyframes fade-in {
   from {
     opacity: 0;
