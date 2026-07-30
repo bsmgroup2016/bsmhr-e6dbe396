@@ -150,6 +150,11 @@ function DashboardPage() {
       daysLeft(e.passExpiry) <= 60,
   );
   const wpExpiring30 = wpExpiring.filter((e) => daysLeft(e.passExpiry) <= 30).length;
+  const wpExpiring15 = wpExpiring.filter((e) => daysLeft(e.passExpiry) <= 15).length;
+  const wpExpiring7 = wpExpiring.filter((e) => daysLeft(e.passExpiry) <= 7).length;
+  const wpSoonestDays = wpExpiring.length
+    ? Math.min(...wpExpiring.map((e) => daysLeft(e.passExpiry)))
+    : null;
 
   const passportExpiring = employees.filter(
     (e) =>
@@ -159,6 +164,11 @@ function DashboardPage() {
       daysLeft(e.passportExpiry) <= 90,
   );
   const passportExpiring30 = passportExpiring.filter((e) => daysLeft(e.passportExpiry!) <= 30).length;
+  const passportExpiring15 = passportExpiring.filter((e) => daysLeft(e.passportExpiry!) <= 15).length;
+  const passportExpiring7 = passportExpiring.filter((e) => daysLeft(e.passportExpiry!) <= 7).length;
+  const passportSoonestDays = passportExpiring.length
+    ? Math.min(...passportExpiring.map((e) => daysLeft(e.passportExpiry!)))
+    : null;
 
   const leaves = getLeaveRequests().filter(
     (l) =>
