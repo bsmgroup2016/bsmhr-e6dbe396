@@ -205,6 +205,7 @@ export default function WorkforcePage() {
     const matchesSearch =
       e.name.toLowerCase().includes(q) ||
       e.employeeCode.toLowerCase().includes(q) ||
+      e.employeeCode.toLowerCase().replace(/[^a-z0-9]/g, "").includes(q.replace(/[^a-z0-9]/g, "")) ||
       e.fin.toLowerCase().includes(q) ||
       e.trade.toLowerCase().includes(q) ||
       (e.phone ?? "").toLowerCase().includes(q) ||
