@@ -211,9 +211,10 @@ function DashboardPage() {
   const mcAttendanceToday = todayAttendance.filter((a) => a.status === "MC").length;
   const medicalLeaveCount = Math.max(onMedicalLeave.length, mcAttendanceToday);
 
+  const assignedIds = activeAssignedEmployeeIds(getAssignments());
   const availableWorkers = employees.filter(
     (e) =>
-      (e.status === "Active" || e.status === "Deployed") &&
+      isEmployeeAvailable(e, assignedIds) &&
       !onLeaveIds.has(e.id) &&
       !todayAttendance.some((a) => a.employeeId === e.id && a.status === "Absent"),
   ).length;
