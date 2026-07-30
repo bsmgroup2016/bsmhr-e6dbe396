@@ -109,7 +109,7 @@ const EMPLOYEE_IMPORT_COLUMNS: ImportColumn[] = [
   { key: "passExpiry", label: "Pass Expiry", example: "2027-05-31" },
   { key: "workPermitNumber", label: "Work Permit Number", example: "0-1234567" },
   { key: "branch", label: "Branch", example: "BSM Engineering" },
-  { key: "trade", label: "Trade", example: "Welder" },
+  { key: "trade", label: "Designation", example: "Welder" },
   { key: "status", label: "Status", example: "Active" },
   { key: "basicSalary", label: "Basic Salary", example: "1400" },
   { key: "joinedOn", label: "Joined On", example: "2025-01-15" },
@@ -129,7 +129,7 @@ function toEmployeeRow(employee: Employee) {
     "Pass Type": employee.passType,
     "Pass Expiry": employee.passExpiry,
     "Days To Expiry": daysUntil(employee.passExpiry) ?? "",
-    Trade: employee.trade,
+    Designation: employee.trade,
     Site: employee.site ?? "",
     Status: employee.status,
     "Basic Salary": employee.basicSalary,
@@ -502,7 +502,7 @@ export default function WorkforcePage() {
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold">Department / Trade</Label>
+                <Label className="text-xs font-semibold">Designation</Label>
                 <Select value={tradeFilter} onValueChange={(v) => { setTradeFilter(v); setPage(1); }}>
                   <SelectTrigger><SelectValue placeholder="Select Department…" /></SelectTrigger>
                   <SelectContent>

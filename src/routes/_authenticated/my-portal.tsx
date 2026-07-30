@@ -275,7 +275,7 @@ function MyPortalPage() {
                 ["FIN / NRIC", employee.fin],
                 ["Pass type", employee.passType],
                 ["Pass expiry", employee.passExpiry],
-                ["Trade", employee.trade],
+                ["Designation", employee.trade],
                 ["Site", employee.site ?? "Unassigned"],
                 ["Status", employee.status],
                 ["Joined on", employee.joinedOn],

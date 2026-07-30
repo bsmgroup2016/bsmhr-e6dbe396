@@ -365,7 +365,7 @@ function WorkerTable({ rows }: { rows: Employee[] }) {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>P-File No</TableHead><TableHead>Name</TableHead><TableHead>Trade</TableHead>
+            <TableHead>P-File No</TableHead><TableHead>Name</TableHead><TableHead>Designation</TableHead>
             <TableHead>Pass</TableHead><TableHead>Expiry</TableHead><TableHead>Status</TableHead>
             <TableHead className="text-right">Basic</TableHead>
           </TableRow>
