@@ -76,6 +76,7 @@ export const Route = createFileRoute("/_authenticated/workforce")({
   validateSearch: (search: Record<string, unknown>) => ({
     new: search.new === "1" || search.new === true ? true : undefined,
     available: search.available === "1" || search.available === true ? true : undefined,
+    company: typeof search.company === "string" ? search.company : undefined,
   }),
   head: () => ({
     meta: [
@@ -171,7 +172,7 @@ export default function WorkforcePage() {
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [perPage, setPerPage] = useState("10");
   const [page, setPage] = useState(1);
-  const [companyFilter, setCompanyFilter] = useState<string>("all");
+  const [companyFilter, setCompanyFilter] = useState<string>(routeSearch.company ?? "all");
   const [tradeFilter, setTradeFilter] = useState<string>("all");
   const [showFilters, setShowFilters] = useState(false);
   const [availableOnly, setAvailableOnly] = useState(routeSearch.available === true);
