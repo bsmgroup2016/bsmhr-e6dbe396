@@ -681,11 +681,16 @@ export default function WorkforcePage() {
                 />
               </div>
             </div>
-            <div className="flex items-center justify-end gap-2 lg:flex-1">
-              <Button variant="outline" size="sm" asChild>
-                <Link to="/deployed-workers">View details</Link>
-              </Button>
-            </div>
+            {deployedOnly ? (
+              <div className="flex items-center justify-end gap-2 lg:flex-1">
+                <Button variant="outline" size="sm" asChild>
+                  <Link to="/deployed-workers">View details</Link>
+                </Button>
+              </div>
+            ) : (
+              <div className="lg:flex-1" />
+            )}
+
           </div>
 
 
