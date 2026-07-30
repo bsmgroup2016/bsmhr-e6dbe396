@@ -23,6 +23,7 @@ import {
   prefixForBranch,
 } from "@/lib/store";
 import { OCR_NOT_CONFIGURED, extractIpaData, isOcrConfigured } from "@/lib/ocr";
+import { isOfficeStaff } from "@/lib/workforce-split";
 import type {
   DeploymentStatus,
   Employee,
