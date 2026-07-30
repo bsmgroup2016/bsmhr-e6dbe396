@@ -121,14 +121,19 @@ function DashboardPage() {
       (e.passType === "Work Permit" || e.passType === "S Pass" || e.passType === "Employment Pass") &&
       e.passExpiry &&
       e.passExpiry !== "-" &&
+      daysLeft(e.passExpiry) >= 0 &&
       daysLeft(e.passExpiry) <= 60,
   );
-  const wpExpired = wpExpiring.filter((e) => daysLeft(e.passExpiry) < 0).length;
+  const wpExpiring30 = wpExpiring.filter((e) => daysLeft(e.passExpiry) <= 30).length;
 
   const passportExpiring = employees.filter(
-    (e) => e.passportExpiry && e.passportExpiry !== "-" && daysLeft(e.passportExpiry) <= 90,
+    (e) =>
+      e.passportExpiry &&
+      e.passportExpiry !== "-" &&
+      daysLeft(e.passportExpiry) >= 0 &&
+      daysLeft(e.passportExpiry) <= 90,
   );
-  const passportExpired = passportExpiring.filter((e) => daysLeft(e.passportExpiry!) < 0).length;
+  const passportExpiring30 = passportExpiring.filter((e) => daysLeft(e.passportExpiry!) <= 30).length;
 
   const leaves = getLeaveRequests().filter(
     (l) =>
@@ -186,17 +191,17 @@ function DashboardPage() {
   const keyMetrics = [
     {
       to: "/documents" as const,
-      title: "Work Permit Expiry",
+      title: "Work Permit Expiring",
       value: wpExpiring.length.toString(),
-      caption: `${wpExpired} expired · next 60 days`,
+      caption: `${wpExpiring30} within 30 days · next 60 days`,
       icon: <ShieldAlert className="h-5 w-5" />,
       variant: (wpExpiring.length ? "destructive" : "success") as "destructive" | "success",
     },
     {
       to: "/documents" as const,
-      title: "Passport Expiry",
+      title: "Passport Expiring",
       value: passportExpiring.length.toString(),
-      caption: `${passportExpired} expired · next 90 days`,
+      caption: `${passportExpiring30} within 30 days · next 90 days`,
       icon: <BookUser className="h-5 w-5" />,
       variant: (passportExpiring.length ? "warning" : "success") as "warning" | "success",
     },
