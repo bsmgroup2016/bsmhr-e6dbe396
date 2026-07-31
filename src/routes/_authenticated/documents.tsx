@@ -224,7 +224,7 @@ export default function DocumentsPage() {
 
         <div className="rounded-xl border bg-card p-4 shadow-sm">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-            <div className="relative w-full min-w-0 lg:max-w-sm">
+            <div className="relative w-full min-w-0 lg:max-w-xs">
               <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input type="search" placeholder="Search documents..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full pl-9" />
             </div>
