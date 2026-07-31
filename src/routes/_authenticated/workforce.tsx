@@ -567,7 +567,7 @@ export default function WorkforcePage() {
                 Register employee
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
+            <DialogContent className="max-h-[90vh] w-[calc(100%-2rem)] overflow-y-auto sm:max-w-3xl">
               <DialogHeader>
                 <DialogTitle>Register new employee</DialogTitle>
                 <DialogDescription>Enter worker details. A unique P-File number will be generated automatically.</DialogDescription>
@@ -1068,7 +1068,7 @@ export default function WorkforcePage() {
         </Dialog>
 
         <Dialog open={!!editingEmployee} onOpenChange={(open) => !open && setEditingEmployee(null)}>
-          <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
+          <DialogContent className="max-h-[90vh] w-[calc(100%-2rem)] overflow-y-auto sm:max-w-3xl">
             <DialogHeader>
               <DialogTitle>Edit employee</DialogTitle>
               <DialogDescription>Update worker details for {editingEmployee?.employeeCode}.</DialogDescription>
