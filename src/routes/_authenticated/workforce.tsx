@@ -393,6 +393,30 @@ export default function WorkforcePage() {
     let imported = 0;
     let updated = 0;
     const existing = getEmployees();
+    const allProjects = getProjects();
+    const allClients = getClients();
+    const allSites = getSites();
+    const allAssignments = getAssignments();
+    const linkProject = (employeeId: string, projectName: string, clientName: string, start: string) => {
+      const lcP = projectName.trim().toLowerCase();
+      const lcC = clientName.trim().toLowerCase();
+      const client = lcC ? allClients.find((c) => c.name.toLowerCase() === lcC) : undefined;
+      const project =
+        (lcP ? allProjects.find((p) => p.name.toLowerCase() === lcP || (p.code ?? "").toLowerCase() === lcP) : undefined) ??
+        (client ? allProjects.find((p) => p.clientId === client.id) : undefined);
+      if (!project) return;
+      const active = allAssignments.some(
+        (a) => a.employeeId === employeeId && a.projectId === project.id && (a.status === "Active" || a.status === "Approved"),
+      );
+      if (active) return;
+      addAssignment({
+        employeeId,
+        projectId: project.id,
+        siteId: allSites.find((s) => s.projectId === project.id)?.id ?? "",
+        startDate: start,
+        status: "Active",
+      });
+    };
 
     rows.forEach((row, index) => {
       const get = (key: string) => {
@@ -411,17 +435,20 @@ export default function WorkforcePage() {
         return;
       }
 
+      const joined = normalizeDate(get("joinedOn")) || new Date().toISOString().slice(0, 10);
+      const passExpiry =
+        normalizeDate(get("passExpiry")) || normalizeDate(get("workPermitExpiry")) || "-";
       const payload = {
         name: get("name"),
         nationality: get("nationality"),
         fin,
         passType,
-        passExpiry: normalizeDate(get("passExpiry")) || "-",
+        passExpiry,
         trade: get("trade") || "General Worker",
         site: get("site") || null,
         status,
         basicSalary: salary || 0,
-        joinedOn: normalizeDate(get("joinedOn")) || new Date().toISOString().slice(0, 10),
+        joinedOn: joined,
         phone: get("phone"),
         levyRate: Number(get("levyRate").replace(/[^0-9.-]/g, "")) || 0,
         dormitory: get("dormitory"),
@@ -451,6 +478,12 @@ export default function WorkforcePage() {
         bankAccount: get("bankAccount") || undefined,
         paymentMethod: (get("paymentMethod") || undefined) as Employee["paymentMethod"],
         skillLevel: (get("skillLevel") || undefined) as Employee["skillLevel"],
+        skillCertType: (get("skillCertType") || undefined) as Employee["skillCertType"],
+        skillCertNo: get("skillCertNo") || undefined,
+        skillCertExpiry: normalizeDate(get("skillCertExpiry")) || undefined,
+        safetyCourseType: get("safetyCourseType") || undefined,
+        safetyCourseNo: get("safetyCourseNo") || undefined,
+        safetyCourseExpiry: normalizeDate(get("safetyCourseExpiry")) || undefined,
         remarks: get("remarks") || undefined,
         companyId:
           (companyFilter !== "all" ? companyFilter : undefined) ??
@@ -465,12 +498,14 @@ export default function WorkforcePage() {
         : undefined;
       if (byCode) {
         updateEmployee(byCode.id, payload);
+        linkProject(byCode.id, get("projectName"), get("clientName"), joined);
         updated += 1;
         imported += 1;
         return;
       }
       if (code) {
-        addEmployee({ ...payload, employeeCode: code } as never);
+        const created = addEmployee({ ...payload, employeeCode: code } as never);
+        if (created) linkProject(created.id, get("projectName"), get("clientName"), joined);
         imported += 1;
         return;
       }
@@ -478,9 +513,11 @@ export default function WorkforcePage() {
       const match = fin ? existing.find((e) => e.fin.toUpperCase() === fin) : undefined;
       if (match) {
         updateEmployee(match.id, payload);
+        linkProject(match.id, get("projectName"), get("clientName"), joined);
         updated += 1;
       } else {
-        addEmployee(payload);
+        const created = addEmployee(payload);
+        if (created) linkProject(created.id, get("projectName"), get("clientName"), joined);
       }
       imported += 1;
     });
