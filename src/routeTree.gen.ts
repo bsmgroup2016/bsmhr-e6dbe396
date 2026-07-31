@@ -55,6 +55,7 @@ import { Route as ApiPublicR2DeleteRouteImport } from './routes/api/public/r2-de
 import { Route as ApiPublicProvisionEmployeeRouteImport } from './routes/api/public/provision-employee'
 import { Route as ApiPublicOcrRouteImport } from './routes/api/public/ocr'
 import { Route as ApiPublicNotifyLeaveRouteImport } from './routes/api/public/notify-leave'
+import { Route as ApiPublicAiStatusRouteImport } from './routes/api/public/ai-status'
 import { Route as AuthenticatedWorkforceSlugRouteImport } from './routes/_authenticated/workforce_.$slug'
 import { Route as AuthenticatedCompaniesIdRouteImport } from './routes/_authenticated/companies_.$id'
 
@@ -294,6 +295,11 @@ const ApiPublicNotifyLeaveRoute = ApiPublicNotifyLeaveRouteImport.update({
   path: '/api/public/notify-leave',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicAiStatusRoute = ApiPublicAiStatusRouteImport.update({
+  id: '/api/public/ai-status',
+  path: '/api/public/ai-status',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedWorkforceSlugRoute =
   AuthenticatedWorkforceSlugRouteImport.update({
     id: '/workforce_/$slug',
@@ -344,6 +350,7 @@ export interface FileRoutesByFullPath {
   '/workforce': typeof AuthenticatedWorkforceRoute
   '/companies/$id': typeof AuthenticatedCompaniesIdRoute
   '/workforce/$slug': typeof AuthenticatedWorkforceSlugRoute
+  '/api/public/ai-status': typeof ApiPublicAiStatusRoute
   '/api/public/notify-leave': typeof ApiPublicNotifyLeaveRoute
   '/api/public/ocr': typeof ApiPublicOcrRoute
   '/api/public/provision-employee': typeof ApiPublicProvisionEmployeeRoute
@@ -393,6 +400,7 @@ export interface FileRoutesByTo {
   '/': typeof AuthenticatedIndexRoute
   '/companies/$id': typeof AuthenticatedCompaniesIdRoute
   '/workforce/$slug': typeof AuthenticatedWorkforceSlugRoute
+  '/api/public/ai-status': typeof ApiPublicAiStatusRoute
   '/api/public/notify-leave': typeof ApiPublicNotifyLeaveRoute
   '/api/public/ocr': typeof ApiPublicOcrRoute
   '/api/public/provision-employee': typeof ApiPublicProvisionEmployeeRoute
@@ -444,6 +452,7 @@ export interface FileRoutesById {
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/companies_/$id': typeof AuthenticatedCompaniesIdRoute
   '/_authenticated/workforce_/$slug': typeof AuthenticatedWorkforceSlugRoute
+  '/api/public/ai-status': typeof ApiPublicAiStatusRoute
   '/api/public/notify-leave': typeof ApiPublicNotifyLeaveRoute
   '/api/public/ocr': typeof ApiPublicOcrRoute
   '/api/public/provision-employee': typeof ApiPublicProvisionEmployeeRoute
@@ -495,6 +504,7 @@ export interface FileRouteTypes {
     | '/workforce'
     | '/companies/$id'
     | '/workforce/$slug'
+    | '/api/public/ai-status'
     | '/api/public/notify-leave'
     | '/api/public/ocr'
     | '/api/public/provision-employee'
@@ -544,6 +554,7 @@ export interface FileRouteTypes {
     | '/'
     | '/companies/$id'
     | '/workforce/$slug'
+    | '/api/public/ai-status'
     | '/api/public/notify-leave'
     | '/api/public/ocr'
     | '/api/public/provision-employee'
@@ -594,6 +605,7 @@ export interface FileRouteTypes {
     | '/_authenticated/'
     | '/_authenticated/companies_/$id'
     | '/_authenticated/workforce_/$slug'
+    | '/api/public/ai-status'
     | '/api/public/notify-leave'
     | '/api/public/ocr'
     | '/api/public/provision-employee'
@@ -610,6 +622,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ApiPublicAiStatusRoute: typeof ApiPublicAiStatusRoute
   ApiPublicNotifyLeaveRoute: typeof ApiPublicNotifyLeaveRoute
   ApiPublicOcrRoute: typeof ApiPublicOcrRoute
   ApiPublicProvisionEmployeeRoute: typeof ApiPublicProvisionEmployeeRoute
@@ -947,6 +960,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicNotifyLeaveRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/ai-status': {
+      id: '/api/public/ai-status'
+      path: '/api/public/ai-status'
+      fullPath: '/api/public/ai-status'
+      preLoaderRoute: typeof ApiPublicAiStatusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/workforce_/$slug': {
       id: '/_authenticated/workforce_/$slug'
       path: '/workforce/$slug'
@@ -1046,6 +1066,7 @@ const AuthenticatedRouteRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  ApiPublicAiStatusRoute: ApiPublicAiStatusRoute,
   ApiPublicNotifyLeaveRoute: ApiPublicNotifyLeaveRoute,
   ApiPublicOcrRoute: ApiPublicOcrRoute,
   ApiPublicProvisionEmployeeRoute: ApiPublicProvisionEmployeeRoute,
