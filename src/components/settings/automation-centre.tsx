@@ -58,7 +58,7 @@ export function AutomationCentre() {
             <div>
               <h3 className="font-medium text-foreground">অটোমেশন সেন্টার</h3>
               <p className="text-sm text-muted-foreground">
-                জবগুলো প্রতিদিন সিডিউলে চলে। এখান থেকে হাতে-কলমে টেস্ট বা তৎক্ষণাৎ রান করা যায়।
+                শিডিউল: প্রতিদিন সকাল ৮টা (SGT) — ডেটাবেস cron থেকে অটো চলে। এখান থেকে হাতে-কলমে টেস্ট বা তৎক্ষণাৎ রান করাও যায়।
               </p>
             </div>
           </div>
@@ -78,6 +78,11 @@ export function AutomationCentre() {
 
         {result && (
           <div className="mt-5 space-y-3">
+            {result.emailError && (
+              <p className="rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-sm text-foreground">
+                জব চলেছে, তবে ডাইজেস্ট ইমেইল পাঠানো যায়নি: {result.emailError}
+              </p>
+            )}
             <div className="flex items-center gap-2">
               <Badge variant={mode === "dry" ? "secondary" : "default"}>
                 {mode === "dry" ? "ড্রাই রান — কিছু লেখা হয়নি" : "লাইভ রান সম্পন্ন"}

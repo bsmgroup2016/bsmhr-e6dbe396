@@ -13,6 +13,7 @@ export interface AutomationRunResult {
   payrollDraftsCreated: number;
   payrollSkipped: number;
   sent: number;
+  emailError?: string;
 }
 
 export async function runAutomationsNow(options: {
