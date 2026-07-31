@@ -877,6 +877,9 @@ export default function WorkforcePage() {
                   </div>
                 </div>
                 <div className="flex flex-1 items-center justify-end gap-2">
+                  <Button variant="secondary" size="sm" onClick={showAllEmployees}>
+                    {availableOnly ? "Hide available workers" : "Hide deployed workers"}
+                  </Button>
                   <Button variant="outline" size="sm" asChild>
                     <Link to={availableOnly ? "/available-workers" : "/deployed-workers"}>View details</Link>
                   </Button>
