@@ -18,6 +18,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Progress } from "@/components/ui/progress";
 import { FileUpload } from "@/components/file-upload";
 import { downloadR2File, downloadR2FilesAsZip, openR2File, r2FileName } from "@/lib/r2";
+import { extractMedicalBill } from "@/lib/ocr";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
@@ -470,6 +471,8 @@ export function MedicalClaimsPanel({ employees, onChanged }: Props) {
                 onUploaded={(url) =>
                   setForm((f) => {
                     const next = [...(f.documentUrls ?? []), url];
+                    const isFirst = next.length === 1;
+                    if (isFirst) void scanBill(url);
                     return { ...f, documentUrls: next, documentUrl: next[0] };
                   })
                 }
