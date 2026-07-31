@@ -44,12 +44,6 @@ export async function restPatch(path: string, body: unknown): Promise<boolean> {
   return res.ok;
 }
 
-interface UnusedMailInput {
-  to: string | string[];
-  subject: string;
-  html: string;
-}
-
 export async function sendMail({ to, subject, html }: MailInput) {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) throw new Error("RESEND_API_KEY is not configured");
