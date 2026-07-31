@@ -61,7 +61,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { isSiteWorker } from "@/lib/workforce-split";
+import { isCountableWorker } from "@/lib/workforce-split";
 import { getEmployees, addEmployee, updateEmployee, deleteEmployee, getCurrentCompany, getCompanies, getProjects, getAssignments, getClients, getSites, addAssignment } from "@/lib/store";
 import { employeeSlugById } from "@/lib/employee-slug";
 import type { Employee, PassType, EmployeeStatus, DeploymentStatus, WorkerCategory } from "@/lib/types";
@@ -307,7 +307,7 @@ export default function WorkforcePage() {
 
   // Only real employees: records must belong to a company (admin/staff accounts
   // without a company are excluded from this page).
-  const employees = allEmployees.filter((e) => !!e.companyId && isSiteWorker(e));
+  const employees = allEmployees.filter(isCountableWorker);
   const sites = Array.from(new Set(employees.map((e) => e.site).filter(Boolean)));
   const nationalities = Array.from(new Set(employees.map((e) => e.nationality).filter(Boolean))).sort();
   const trades = Array.from(new Set(employees.map((e) => e.trade).filter(Boolean))).sort();

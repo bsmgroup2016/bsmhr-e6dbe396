@@ -59,6 +59,7 @@ import {
 } from "@/lib/store";
 import { getAssignments } from "@/lib/store";
 import { activeAssignedEmployeeIds, isEmployeeAvailable } from "@/lib/availability";
+import { isCountableWorker } from "@/lib/workforce-split";
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
@@ -124,7 +125,7 @@ function DashboardPage() {
   const allEmployees = getEmployees();
   // Only real worker records (same rule as the Workforce page), across all companies.
   const employees = allEmployees.filter(
-    (e) => !!e.companyId && (!companyId || e.companyId === companyId),
+    (e) => isCountableWorker(e) && (!companyId || e.companyId === companyId),
   );
   const sites = getSites();
   const projects = getProjects();
