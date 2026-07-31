@@ -52,7 +52,8 @@ async function expiryReminders(today: string) {
       `employee_documents?select=name,doc_type,expiry_date,employee_id&expiry_date=in.(${inList})&status=neq.Superseded&order=expiry_date.asc`,
     ),
     restGet(
-      `employees?select=id,name,employee_code,pass_expiry,work_permit_expiry_date,passport_expiry,insurance_expiry,safety_cert_expiry,medical_checkup_expiry&status=eq.Active`,
+      `employees?select=id,name,employee_code,pass_expiry,work_permit_expiry_date,passport_expiry,` +
+        `medical_insurance_expiry,skill_cert_expiry,medical_checkup_due,security_bond_expiry,ipa_expiry_date&status=eq.Active`,
     ),
   ]);
 
@@ -81,9 +82,11 @@ async function expiryReminders(today: string) {
     ["Work permit", "work_permit_expiry_date"],
     ["Work pass", "pass_expiry"],
     ["Passport", "passport_expiry"],
-    ["FWMI insurance", "insurance_expiry"],
-    ["Safety certificate", "safety_cert_expiry"],
-    ["Medical checkup", "medical_checkup_expiry"],
+    ["IPA validity", "ipa_expiry_date"],
+    ["FWMI / medical insurance", "medical_insurance_expiry"],
+    ["Skill / safety certificate", "skill_cert_expiry"],
+    ["Medical checkup", "medical_checkup_due"],
+    ["Security bond", "security_bond_expiry"],
   ];
 
   for (const e of employees as any[]) {
