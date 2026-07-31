@@ -80,10 +80,13 @@ export interface AiRequest {
 }
 
 function buildBody(provider: ProviderConfig, req: AiRequest) {
-  const userContent: unknown[] = [
-    { type: "text", text: req.context ? `${req.instruction}\n\n${req.context}` : req.instruction },
-  ];
-  if (req.dataUrl) userContent.push({ type: "image_url", image_url: { url: req.dataUrl } });
+  const prompt = req.context ? `${req.instruction}\n\n${req.context}` : req.instruction;
+  const userContent = req.dataUrl
+    ? [
+        { type: "text", text: prompt },
+        { type: "image_url", image_url: { url: req.dataUrl } },
+      ]
+    : prompt;
 
   const body: Record<string, unknown> = {
     model: provider.model,
@@ -95,7 +98,7 @@ function buildBody(provider: ProviderConfig, req: AiRequest) {
           "You read scanned Singapore HR documents and return strict JSON only. " +
             "Never invent values: omit any field you cannot read. Dates must be YYYY-MM-DD.",
       },
-      { role: "user", content: req.dataUrl ? userContent : userContent[0]!["text" as never] },
+      { role: "user", content: userContent },
     ],
   };
   // GPT-5.6 family on the gateway rejects chat requests unless reasoning is off.
