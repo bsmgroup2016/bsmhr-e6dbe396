@@ -84,6 +84,21 @@ export async function downloadTemplate(columns: ImportColumn[], filename: string
   await exportSheets([{ name: sheetName, rows: [sample] }], filename);
 }
 
+/** Template pre-filled with demo rows so the layout is obvious at a glance. */
+export async function downloadDemoSheet(
+  columns: ImportColumn[],
+  rows: Record<string, string>[],
+  filename: string,
+  sheetName = "Demo",
+) {
+  const shaped = rows.map((row) => {
+    const out: Record<string, unknown> = {};
+    for (const column of columns) out[column.label] = row[column.key] ?? "";
+    return out;
+  });
+  await exportSheets([{ name: sheetName, rows: shaped }], filename);
+}
+
 export function pick(row: Record<string, string>, column: ImportColumn) {
   return row[column.label.trim().toLowerCase()] ?? "";
 }
