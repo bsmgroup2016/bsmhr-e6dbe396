@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/table";
 import {
   downloadTemplate,
+  downloadDemoSheet,
   exportCsv,
   exportRows,
   pick,
@@ -100,6 +101,7 @@ export function ImportDialog({
   onDone,
   label = "Import",
   mappable = false,
+  demoRows,
 }: {
   title: string;
   description: string;
@@ -110,6 +112,8 @@ export function ImportDialog({
   label?: string;
   /** Show a column-mapping step so any spreadsheet layout can be imported. */
   mappable?: boolean;
+  /** Optional pre-filled example rows offered as a downloadable demo sheet. */
+  demoRows?: Record<string, string>[];
 }) {
   const [open, setOpen] = useState(false);
   const [rows, setRows] = useState<Record<string, string>[]>([]);
@@ -265,6 +269,19 @@ export function ImportDialog({
               <FileSpreadsheet className="mr-1 h-4 w-4" />
               Download template
             </Button>
+            {demoRows?.length ? (
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() =>
+                  downloadDemoSheet(columns, demoRows, `${templateName}_demo.xlsx`, "Demo")
+                }
+              >
+                <FileDown className="mr-1 h-4 w-4" />
+                Download demo sheet (filled)
+              </Button>
+            ) : null}
             <span className="text-xs text-muted-foreground">
               Required columns: {columns.filter((c) => c.required).map((c) => c.label).join(", ")}
             </span>
