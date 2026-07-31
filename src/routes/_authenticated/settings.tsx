@@ -289,9 +289,11 @@ export default function SettingsPage() {
             </div>
           </TabsContent>
 
-          <TabsContent value="health" className="mt-4 space-y-4">
-            <SystemHealth />
+          <TabsContent value="automation" className="mt-4 space-y-4">
+            <AutomationCentre />
           </TabsContent>
+
+          <TabsContent value="health" className="mt-4 space-y-4">
             <SystemHealth />
           </TabsContent>
         </Tabs>
