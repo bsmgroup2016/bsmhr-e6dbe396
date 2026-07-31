@@ -145,6 +145,40 @@ export default function DocumentsPage() {
   const expiringCount = documents.filter((d) => d.status === "Expiring Soon").length;
   const expiredCount = documents.filter((d) => d.status === "Expired").length;
 
+  const selectionMode = showSuperseded || statusFilter === "Superseded";
+  const supersededRows = filtered.filter((d) => d.status === "Superseded");
+  const selectableIds = supersededRows.filter((d) => d.fileUrl).map((d) => d.id);
+  const selected = selectedIds.filter((id) => selectableIds.includes(id));
+  const allSelected = selectableIds.length > 0 && selected.length === selectableIds.length;
+
+  function toggleRow(id: string) {
+    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  }
+
+  function toggleAll() {
+    setSelectedIds(allSelected ? [] : selectableIds);
+  }
+
+  async function handleBulkDownload() {
+    const docs = supersededRows.filter((d) => selected.includes(d.id) && d.fileUrl);
+    if (docs.length === 0) return;
+    setZipping(true);
+    const toastId = toast.loading(`Preparing ${docs.length} old versions…`);
+    try {
+      const { added, failed } = await downloadR2FilesAsZip(
+        docs.map((d) => d.fileUrl as string),
+        `superseded-documents-${new Date().toISOString().slice(0, 10)}.zip`,
+      );
+      if (added === 0) toast.error("No files could be downloaded", { id: toastId });
+      else if (failed.length > 0) toast.warning(`${added} files zipped, ${failed.length} could not be read`, { id: toastId });
+      else toast.success(`${added} old versions downloaded as ZIP`, { id: toastId });
+    } catch {
+      toast.error("Bulk download failed", { id: toastId });
+    } finally {
+      setZipping(false);
+    }
+  }
+
   function refresh() {
     setDocuments(getDocuments());
   }
