@@ -74,6 +74,29 @@ export function MedicalClaimsPanel({ employees, onChanged }: Props) {
 
   const set = (patch: Form) => setForm((f) => ({ ...f, ...patch }));
 
+  /**
+   * Reads the first uploaded bill and pre-fills the empty fields.
+   * Anything already typed is kept — OCR never overwrites manual entry.
+   */
+  const scanBill = async (ref: string) => {
+    const toastId = toast.loading("Reading the bill…");
+    const result = await extractMedicalBill(ref);
+    if (!result.ok) {
+      toast.error(result.reason, { id: toastId });
+      return;
+    }
+    const bill = result.data;
+    setForm((f) => ({
+      ...f,
+      provider: f.provider || bill.clinicName || undefined,
+      treatmentDate: f.treatmentDate || bill.visitDate || undefined,
+      diagnosis: f.diagnosis || bill.diagnosis || undefined,
+      claimNo: f.claimNo || bill.billNumber || undefined,
+      totalAmount: Number(f.totalAmount ?? 0) > 0 ? f.totalAmount : (bill.amount ?? 0),
+    }));
+    toast.success("Bill read — check the amount and date before saving", { id: toastId });
+  };
+
   const downloadBill = (ref: string) => {
     void downloadR2File(ref).catch((e) =>
       toast.error(e instanceof Error ? e.message : "Download failed"),
