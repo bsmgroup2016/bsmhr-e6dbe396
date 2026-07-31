@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { toast } from "sonner";
 import { createFileRoute } from "@tanstack/react-router";
 import {
   Plus,
@@ -24,6 +25,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table,
   TableBody,
@@ -63,7 +65,7 @@ import {
 } from "@/components/ui/sheet";
 import { getDocuments, getEmployees, addDocument, updateDocument, deleteDocument, getCurrentCompany } from "@/lib/store";
 import { computeDocumentStatus, daysUntil, DEFAULT_REMINDER_DAYS } from "@/lib/compliance";
-import { openR2File } from "@/lib/r2";
+import { openR2File, downloadR2FilesAsZip } from "@/lib/r2";
 import { FileUpload } from "@/components/file-upload";
 import type { EmployeeDocument, DocumentType, DocumentStatus } from "@/lib/types";
 
@@ -119,6 +121,8 @@ export default function DocumentsPage() {
   const [deleteTarget, setDeleteTarget] = useState<EmployeeDocument | null>(null);
   const [renewSource, setRenewSource] = useState<EmployeeDocument | null>(null);
   const [showSuperseded, setShowSuperseded] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [zipping, setZipping] = useState(false);
 
   const filtered = documents.filter((d) => {
     const q = search.toLowerCase();
@@ -140,6 +144,40 @@ export default function DocumentsPage() {
   const validCount = documents.filter((d) => d.status === "Valid").length;
   const expiringCount = documents.filter((d) => d.status === "Expiring Soon").length;
   const expiredCount = documents.filter((d) => d.status === "Expired").length;
+
+  const selectionMode = showSuperseded || statusFilter === "Superseded";
+  const supersededRows = filtered.filter((d) => d.status === "Superseded");
+  const selectableIds = supersededRows.filter((d) => d.fileUrl).map((d) => d.id);
+  const selected = selectedIds.filter((id) => selectableIds.includes(id));
+  const allSelected = selectableIds.length > 0 && selected.length === selectableIds.length;
+
+  function toggleRow(id: string) {
+    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  }
+
+  function toggleAll() {
+    setSelectedIds(allSelected ? [] : selectableIds);
+  }
+
+  async function handleBulkDownload() {
+    const docs = supersededRows.filter((d) => selected.includes(d.id) && d.fileUrl);
+    if (docs.length === 0) return;
+    setZipping(true);
+    const toastId = toast.loading(`Preparing ${docs.length} old versions…`);
+    try {
+      const { added, failed } = await downloadR2FilesAsZip(
+        docs.map((d) => d.fileUrl as string),
+        `superseded-documents-${new Date().toISOString().slice(0, 10)}.zip`,
+      );
+      if (added === 0) toast.error("No files could be downloaded", { id: toastId });
+      else if (failed.length > 0) toast.warning(`${added} files zipped, ${failed.length} could not be read`, { id: toastId });
+      else toast.success(`${added} old versions downloaded as ZIP`, { id: toastId });
+    } catch {
+      toast.error("Bulk download failed", { id: toastId });
+    } finally {
+      setZipping(false);
+    }
+  }
 
   function refresh() {
     setDocuments(getDocuments());
@@ -267,15 +305,46 @@ export default function DocumentsPage() {
                   ))}
                 </SelectContent>
               </Select>
-              <Button variant={showSuperseded ? "secondary" : "outline"} size="sm" className="h-9 w-full whitespace-nowrap sm:col-span-2 lg:col-span-1 lg:w-auto" onClick={() => setShowSuperseded((v) => !v)}>
+              <Button variant={showSuperseded ? "secondary" : "outline"} size="sm" className="h-9 w-full whitespace-nowrap sm:col-span-2 lg:col-span-1 lg:w-auto" onClick={() => { setShowSuperseded((v) => !v); setSelectedIds([]); }}>
                 {showSuperseded ? "Hide old versions" : "Show old versions"}
               </Button>
           </div>
+
+          {selectionMode && (
+            <div className="mt-3 flex flex-wrap items-center gap-3 rounded-lg border border-dashed bg-muted/30 px-3 py-2">
+              <span className="text-xs text-muted-foreground">
+                {selectableIds.length === 0
+                  ? "No superseded files available to download"
+                  : `${selected.length} of ${selectableIds.length} old versions selected`}
+              </span>
+              <div className="ml-auto flex items-center gap-2">
+                {selectableIds.length > 0 && (
+                  <Button variant="ghost" size="sm" className="h-8" onClick={toggleAll}>
+                    {allSelected ? "Clear selection" : "Select all old versions"}
+                  </Button>
+                )}
+                <Button size="sm" className="h-8" disabled={selected.length === 0 || zipping} onClick={handleBulkDownload}>
+                  <Download className="mr-1.5 h-3.5 w-3.5" />
+                  {zipping ? "Preparing ZIP…" : `Download ZIP (${selected.length})`}
+                </Button>
+              </div>
+            </div>
+          )}
 
           <div className="mt-4 overflow-hidden rounded-lg border">
             <Table>
               <TableHeader>
                 <TableRow>
+                  {selectionMode && (
+                    <TableHead className="w-10">
+                      <Checkbox
+                        checked={allSelected}
+                        disabled={selectableIds.length === 0}
+                        onCheckedChange={toggleAll}
+                        aria-label="Select all old versions"
+                      />
+                    </TableHead>
+                  )}
                   <TableHead>Employee</TableHead>
                   <TableHead>Document</TableHead>
                   <TableHead>Number</TableHead>
@@ -288,7 +357,7 @@ export default function DocumentsPage() {
               <TableBody>
                 {filtered.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="h-32 text-center">
+                    <TableCell colSpan={selectionMode ? 8 : 7} className="h-32 text-center">
                       <EmptyState className="bg-transparent border-0" icon={<FileText className="h-5 w-5" />} title="No documents found" description="Add a document to track expiry." />
                     </TableCell>
                   </TableRow>
@@ -297,6 +366,16 @@ export default function DocumentsPage() {
                     const emp = employees.find((e) => e.id === d.employeeId);
                     return (
                       <TableRow key={d.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setViewingDoc(d)}>
+                        {selectionMode && (
+                          <TableCell onClick={(evt) => evt.stopPropagation()}>
+                            <Checkbox
+                              checked={selected.includes(d.id)}
+                              disabled={d.status !== "Superseded" || !d.fileUrl}
+                              onCheckedChange={() => toggleRow(d.id)}
+                              aria-label={`Select ${d.name}`}
+                            />
+                          </TableCell>
+                        )}
                         <TableCell>
                           <div className="font-medium">{emp?.name}</div>
                           <div className="text-xs text-muted-foreground">{emp?.employeeCode}</div>
