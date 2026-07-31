@@ -278,6 +278,27 @@ export default function WorkforcePage() {
   const [showFilters, setShowFilters] = useState(false);
   const [availableOnly, setAvailableOnly] = useState(routeSearch.available === true);
   const [deployedOnly, setDeployedOnly] = useState(routeSearch.deployed === true);
+  const navigate = useNavigate();
+
+  /**
+   * Leaves the Available / Deployed focus mode: clears the toggle, the URL
+   * params, search text and every filter so the full employee list returns.
+   */
+  function showAllEmployees() {
+    setAvailableOnly(false);
+    setDeployedOnly(false);
+    setSearch("");
+    setCompanyFilter("all");
+    setTradeFilter("all");
+    setSiteFilter("all");
+    setStatusFilter("all");
+    setPassFilter("all");
+    setCategoryFilter("all");
+    setDeployFilter("all");
+    setNationalityFilter("all");
+    setPage(1);
+    void navigate({ to: "/workforce", search: {}, replace: true });
+  }
   const activeFilterCount = [
     companyFilter,
     tradeFilter,
