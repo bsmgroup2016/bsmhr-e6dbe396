@@ -429,6 +429,10 @@ export default function WorkforcePage() {
         paymentMethod: (get("paymentMethod") || undefined) as Employee["paymentMethod"],
         skillLevel: (get("skillLevel") || undefined) as Employee["skillLevel"],
         remarks: get("remarks") || undefined,
+        companyId:
+          (companyFilter !== "all" ? companyFilter : undefined) ??
+          getCurrentCompany() ??
+          companies[0]?.id,
       };
 
       const code = get("employeeCode").trim();
