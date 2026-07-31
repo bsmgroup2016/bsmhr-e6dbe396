@@ -278,7 +278,6 @@ export default function DocumentsPage() {
                 <TableRow>
                   <TableHead>Employee</TableHead>
                   <TableHead>Document</TableHead>
-                  <TableHead>Type</TableHead>
                   <TableHead>Number</TableHead>
                   <TableHead>Expiry</TableHead>
                   <TableHead>Status</TableHead>
@@ -289,7 +288,7 @@ export default function DocumentsPage() {
               <TableBody>
                 {filtered.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="h-32 text-center">
+                    <TableCell colSpan={7} className="h-32 text-center">
                       <EmptyState className="bg-transparent border-0" icon={<FileText className="h-5 w-5" />} title="No documents found" description="Add a document to track expiry." />
                     </TableCell>
                   </TableRow>
@@ -303,7 +302,6 @@ export default function DocumentsPage() {
                           <div className="text-xs text-muted-foreground">{emp?.employeeCode}</div>
                         </TableCell>
                         <TableCell>{d.name}</TableCell>
-                        <TableCell>{d.type}</TableCell>
                         <TableCell className="font-mono text-xs">{d.docNumber || "—"}</TableCell>
                         <TableCell>
                           <div className="flex items-center gap-1.5">
