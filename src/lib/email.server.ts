@@ -27,6 +27,23 @@ export interface MailInput {
   html: string;
 }
 
+/** Service-role REST write (server only). Returns true on success. */
+export async function restPatch(path: string, body: unknown): Promise<boolean> {
+  const key = serviceKey();
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+    method: "PATCH",
+    headers: {
+      apikey: key,
+      Authorization: `Bearer ${key}`,
+      "Content-Type": "application/json",
+      Prefer: "return=minimal",
+    },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) console.error("restPatch failed", res.status, await res.text());
+  return res.ok;
+}
+
 export async function sendMail({ to, subject, html }: MailInput) {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) throw new Error("RESEND_API_KEY is not configured");
