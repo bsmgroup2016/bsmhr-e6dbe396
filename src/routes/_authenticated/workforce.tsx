@@ -62,7 +62,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { isSiteWorker } from "@/lib/workforce-split";
-import { getEmployees, addEmployee, updateEmployee, deleteEmployee, getCurrentCompany, getCompanies, getProjects, getAssignments } from "@/lib/store";
+import { getEmployees, addEmployee, updateEmployee, deleteEmployee, getCurrentCompany, getCompanies, getProjects, getAssignments, getClients, getSites, addAssignment } from "@/lib/store";
 import { employeeSlugById } from "@/lib/employee-slug";
 import type { Employee, PassType, EmployeeStatus, DeploymentStatus, WorkerCategory } from "@/lib/types";
 import { pick, type ImportColumn } from "@/lib/xlsx";
@@ -120,6 +120,7 @@ const EMPLOYEE_IMPORT_COLUMNS: ImportColumn[] = [
   { key: "passType", label: "Pass Type", example: "Work Permit" },
   { key: "passExpiry", label: "Pass Expiry", example: "2027-05-31" },
   { key: "workPermitNumber", label: "Work Permit Number", example: "0-1234567" },
+  { key: "workPermitExpiry", label: "Work Permit Expiry", example: "2027-05-31" },
   { key: "branch", label: "Branch", example: "BSM Engineering" },
   { key: "department", label: "Department", example: "Construction" },
   { key: "trade", label: "Designation", example: "Welder" },
@@ -134,6 +135,8 @@ const EMPLOYEE_IMPORT_COLUMNS: ImportColumn[] = [
   { key: "contractStart", label: "Contract Start", example: "2025-01-15" },
   { key: "contractEnd", label: "Contract End", example: "2027-01-14" },
   { key: "site", label: "Site", example: "Tuas Yard" },
+  { key: "projectName", label: "Project Name", example: "Tuas Mega Port Package 2" },
+  { key: "clientName", label: "Client Name", example: "Sembcorp Marine" },
   { key: "phone", label: "Phone", example: "+65 8123 4567" },
   { key: "altPhone", label: "Alt Phone", example: "+880 1712 345678" },
   { key: "email", label: "Email", example: "worker@bsm.sg" },
@@ -148,6 +151,12 @@ const EMPLOYEE_IMPORT_COLUMNS: ImportColumn[] = [
   { key: "levyRate", label: "Levy Rate", example: "300" },
   { key: "dormitory", label: "Dormitory", example: "Kranji Dorm B" },
   { key: "skillLevel", label: "Skill Level", example: "Higher Skilled" },
+  { key: "skillCertType", label: "Skill Cert Type", example: "SEC(K)" },
+  { key: "skillCertNo", label: "Skill Cert No", example: "SEC-88213" },
+  { key: "skillCertExpiry", label: "Skill Cert Expiry", example: "2028-06-30" },
+  { key: "safetyCourseType", label: "SCOS / CSOC Type", example: "CSOC" },
+  { key: "safetyCourseNo", label: "SCOS / CSOC No", example: "CSOC-7781" },
+  { key: "safetyCourseExpiry", label: "SCOS / CSOC Expiry", example: "2028-03-15" },
   { key: "remarks", label: "Remarks", example: "Rejoined worker" },
 ];
 
@@ -158,48 +167,62 @@ const EMPLOYEE_DEMO_ROWS: Record<string, string>[] = [
     passportNumber: "BX0912345", passportExpiry: "2030-04-12", nationality: "Bangladesh",
     dateOfBirth: "1995-03-08", gender: "Male", maritalStatus: "Single",
     passType: "Work Permit", passExpiry: "2027-05-31", workPermitNumber: "0-1234567",
+    workPermitExpiry: "2027-05-31",
     branch: "BSM Engineering", department: "Construction", trade: "Welder",
     workerCategory: "Skilled", employmentType: "Full-Time", status: "Active",
     basicSalary: "22", otRate: "33", normalHours: "8", declaredSalary: "1600",
     joinedOn: "2025-01-15", contractStart: "2025-01-15", contractEnd: "2027-01-14",
-    site: "Tuas Yard", phone: "+65 8123 4567", altPhone: "+880 1712 345678",
+    site: "Tuas Yard", projectName: "Tuas Mega Port Package 2", clientName: "Sembcorp Marine",
+    phone: "+65 8123 4567", altPhone: "+880 1712 345678",
     email: "shahin@bsm.sg", address: "12 Kranji Road, Singapore", postalCode: "739566",
     emergencyContact: "Abdul Karim", emergencyPhone: "+880 1811 223344",
     emergencyRelation: "Brother", bankName: "DBS", bankAccount: "0123456789",
     paymentMethod: "Bank Transfer", levyRate: "300", dormitory: "Kranji Dorm B",
-    skillLevel: "Higher Skilled", remarks: "",
+    skillLevel: "Higher Skilled", skillCertType: "Skills Evaluation (SEC(K))",
+    skillCertNo: "SEC-88213", skillCertExpiry: "2028-06-30",
+    safetyCourseType: "CSOC", safetyCourseNo: "CSOC-7781", safetyCourseExpiry: "2028-03-15",
+    remarks: "",
   },
   {
     employeeCode: "V-045", name: "Kumar Suresh", fin: "G7654321M",
     passportNumber: "N2345678", passportExpiry: "2029-11-02", nationality: "India",
     dateOfBirth: "1990-07-21", gender: "Male", maritalStatus: "Married",
     passType: "S Pass", passExpiry: "2028-02-28", workPermitNumber: "",
+    workPermitExpiry: "",
     branch: "VRL Engineering", department: "Construction", trade: "Site Supervisor",
     workerCategory: "Supervisor", employmentType: "Full-Time", status: "Active",
     basicSalary: "26", otRate: "39", normalHours: "8", declaredSalary: "3300",
     joinedOn: "2024-06-01", contractStart: "2024-06-01", contractEnd: "2026-05-31",
-    site: "Jurong Site", phone: "+65 8234 5678", altPhone: "",
+    site: "Jurong Site", projectName: "Jurong Island Turnaround", clientName: "Shell Singapore",
+    phone: "+65 8234 5678", altPhone: "",
     email: "suresh@vrl.sg", address: "45 Jurong West St 41, Singapore", postalCode: "649412",
     emergencyContact: "Lakshmi Kumar", emergencyPhone: "+91 98400 11223",
     emergencyRelation: "Wife", bankName: "OCBC", bankAccount: "5566778899",
     paymentMethod: "GIRO", levyRate: "650", dormitory: "Jurong Dorm A",
-    skillLevel: "Higher Skilled", remarks: "Lifting supervisor certified",
+    skillLevel: "Higher Skilled", skillCertType: "Multi-Skilling (MSC)",
+    skillCertNo: "MSC-40219", skillCertExpiry: "2027-12-31",
+    safetyCourseType: "SOC (Supervisor)", safetyCourseNo: "SOC-3312",
+    safetyCourseExpiry: "2027-08-20", remarks: "Lifting supervisor certified",
   },
   {
     employeeCode: "P-018", name: "Ali Hossain", fin: "G2233445K",
     passportNumber: "BW7788990", passportExpiry: "2031-01-19", nationality: "Bangladesh",
     dateOfBirth: "1998-12-05", gender: "Male", maritalStatus: "Single",
     passType: "Work Permit", passExpiry: "2027-09-15", workPermitNumber: "0-7654321",
+    workPermitExpiry: "2027-09-15",
     branch: "Pluto Engineering", department: "Construction", trade: "General Worker",
     workerCategory: "General Worker", employmentType: "Full-Time", status: "Active",
     basicSalary: "18", otRate: "27", normalHours: "8", declaredSalary: "1200",
     joinedOn: "2026-02-10", contractStart: "2026-02-10", contractEnd: "2028-02-09",
-    site: "", phone: "+65 8345 6789", altPhone: "",
+    site: "", projectName: "Sungei Kadut Workshop Upgrade", clientName: "JTC Corporation",
+    phone: "+65 8345 6789", altPhone: "",
     email: "", address: "8 Sungei Kadut Loop, Singapore", postalCode: "729509",
     emergencyContact: "Jamila Begum", emergencyPhone: "+880 1911 556677",
     emergencyRelation: "Mother", bankName: "UOB", bankAccount: "3344556677",
     paymentMethod: "Bank Transfer", levyRate: "300", dormitory: "Sungei Kadut Dorm",
-    skillLevel: "Basic Skilled", remarks: "New joiner",
+    skillLevel: "Basic Skilled", skillCertType: "", skillCertNo: "", skillCertExpiry: "",
+    safetyCourseType: "CSOC", safetyCourseNo: "CSOC-9014", safetyCourseExpiry: "2029-01-31",
+    remarks: "New joiner",
   },
 ];
 
@@ -370,6 +393,30 @@ export default function WorkforcePage() {
     let imported = 0;
     let updated = 0;
     const existing = getEmployees();
+    const allProjects = getProjects();
+    const allClients = getClients();
+    const allSites = getSites();
+    const allAssignments = getAssignments();
+    const linkProject = (employeeId: string, projectName: string, clientName: string, start: string) => {
+      const lcP = projectName.trim().toLowerCase();
+      const lcC = clientName.trim().toLowerCase();
+      const client = lcC ? allClients.find((c) => c.name.toLowerCase() === lcC) : undefined;
+      const project =
+        (lcP ? allProjects.find((p) => p.name.toLowerCase() === lcP || (p.code ?? "").toLowerCase() === lcP) : undefined) ??
+        (client ? allProjects.find((p) => p.clientId === client.id) : undefined);
+      if (!project) return;
+      const active = allAssignments.some(
+        (a) => a.employeeId === employeeId && a.projectId === project.id && (a.status === "Active" || a.status === "Approved"),
+      );
+      if (active) return;
+      addAssignment({
+        employeeId,
+        projectId: project.id,
+        siteId: allSites.find((s) => s.projectId === project.id)?.id ?? "",
+        startDate: start,
+        status: "Active",
+      });
+    };
 
     rows.forEach((row, index) => {
       const get = (key: string) => {
@@ -388,17 +435,20 @@ export default function WorkforcePage() {
         return;
       }
 
+      const joined = normalizeDate(get("joinedOn")) || new Date().toISOString().slice(0, 10);
+      const passExpiry =
+        normalizeDate(get("passExpiry")) || normalizeDate(get("workPermitExpiry")) || "-";
       const payload = {
         name: get("name"),
         nationality: get("nationality"),
         fin,
         passType,
-        passExpiry: normalizeDate(get("passExpiry")) || "-",
+        passExpiry,
         trade: get("trade") || "General Worker",
         site: get("site") || null,
         status,
         basicSalary: salary || 0,
-        joinedOn: normalizeDate(get("joinedOn")) || new Date().toISOString().slice(0, 10),
+        joinedOn: joined,
         phone: get("phone"),
         levyRate: Number(get("levyRate").replace(/[^0-9.-]/g, "")) || 0,
         dormitory: get("dormitory"),
@@ -428,6 +478,12 @@ export default function WorkforcePage() {
         bankAccount: get("bankAccount") || undefined,
         paymentMethod: (get("paymentMethod") || undefined) as Employee["paymentMethod"],
         skillLevel: (get("skillLevel") || undefined) as Employee["skillLevel"],
+        skillCertType: (get("skillCertType") || undefined) as Employee["skillCertType"],
+        skillCertNo: get("skillCertNo") || undefined,
+        skillCertExpiry: normalizeDate(get("skillCertExpiry")) || undefined,
+        safetyCourseType: get("safetyCourseType") || undefined,
+        safetyCourseNo: get("safetyCourseNo") || undefined,
+        safetyCourseExpiry: normalizeDate(get("safetyCourseExpiry")) || undefined,
         remarks: get("remarks") || undefined,
         companyId:
           (companyFilter !== "all" ? companyFilter : undefined) ??
@@ -442,12 +498,14 @@ export default function WorkforcePage() {
         : undefined;
       if (byCode) {
         updateEmployee(byCode.id, payload);
+        linkProject(byCode.id, get("projectName"), get("clientName"), joined);
         updated += 1;
         imported += 1;
         return;
       }
       if (code) {
-        addEmployee({ ...payload, employeeCode: code } as never);
+        const created = addEmployee({ ...payload, employeeCode: code } as never);
+        if (created) linkProject(created.id, get("projectName"), get("clientName"), joined);
         imported += 1;
         return;
       }
@@ -455,9 +513,11 @@ export default function WorkforcePage() {
       const match = fin ? existing.find((e) => e.fin.toUpperCase() === fin) : undefined;
       if (match) {
         updateEmployee(match.id, payload);
+        linkProject(match.id, get("projectName"), get("clientName"), joined);
         updated += 1;
       } else {
-        addEmployee(payload);
+        const created = addEmployee(payload);
+        if (created) linkProject(created.id, get("projectName"), get("clientName"), joined);
       }
       imported += 1;
     });
