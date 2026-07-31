@@ -9,6 +9,25 @@
 import { supabase } from "@/integrations/supabase/client";
 
 const OCR_URL = "/api/public/ocr";
+const AI_STATUS_URL = "/api/public/ai-status";
+
+export interface AiStatus {
+  providers: { name: string; model: string }[];
+  primary: string | null;
+  fallback: string | null;
+  configured: boolean;
+}
+
+/** Admin-only: which AI provider is live and which is the backup. */
+export async function checkAiStatus(): Promise<AiStatus> {
+  const { data: session } = await supabase.auth.getSession();
+  const token = session.session?.access_token;
+  const res = await fetch(AI_STATUS_URL, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  if (!res.ok) throw new Error("AI status needs an admin account");
+  return (await res.json()) as AiStatus;
+}
 
 type OcrPayload =
   | { kind: "ipa" | "timecard" | "passport" | "medical"; ref: string }

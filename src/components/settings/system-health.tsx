@@ -4,6 +4,7 @@ import { Activity, CheckCircle2, AlertTriangle, XCircle, RefreshCw } from "lucid
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { checkR2Status } from "@/lib/r2";
+import { checkAiStatus } from "@/lib/ocr";
 
 type Status = "ok" | "warn" | "fail";
 type Check = { label: string; status: Status; detail: string };
@@ -73,6 +74,23 @@ export function SystemHealth() {
       });
     } catch {
       result.push({ label: "File storage (R2)", status: "warn", detail: "Storage check unavailable." });
+    }
+
+    try {
+      const ai = await checkAiStatus();
+      const names: Record<string, string> = { lovable: "Lovable AI", openai: "OpenAI" };
+      const label = (n: string | null) => (n ? (names[n] ?? n) : "none");
+      result.push({
+        label: "AI / OCR provider",
+        status: ai.configured ? (ai.fallback ? "ok" : "warn") : "fail",
+        detail: ai.configured
+          ? `Primary: ${label(ai.primary)} · Backup: ${label(ai.fallback)}${
+              ai.fallback ? "" : " — add an OPENAI_API_KEY for automatic failover."
+            }`
+          : "No AI key configured — OCR and AI automation are off.",
+      });
+    } catch {
+      result.push({ label: "AI / OCR provider", status: "warn", detail: "AI check needs an admin account." });
     }
 
     setChecks(result);
