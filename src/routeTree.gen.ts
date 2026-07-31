@@ -55,6 +55,7 @@ import { Route as ApiPublicR2DeleteRouteImport } from './routes/api/public/r2-de
 import { Route as ApiPublicProvisionEmployeeRouteImport } from './routes/api/public/provision-employee'
 import { Route as ApiPublicOcrRouteImport } from './routes/api/public/ocr'
 import { Route as ApiPublicNotifyLeaveRouteImport } from './routes/api/public/notify-leave'
+import { Route as ApiPublicAutomationRunRouteImport } from './routes/api/public/automation-run'
 import { Route as ApiPublicAiStatusRouteImport } from './routes/api/public/ai-status'
 import { Route as AuthenticatedWorkforceSlugRouteImport } from './routes/_authenticated/workforce_.$slug'
 import { Route as AuthenticatedCompaniesIdRouteImport } from './routes/_authenticated/companies_.$id'
@@ -295,6 +296,11 @@ const ApiPublicNotifyLeaveRoute = ApiPublicNotifyLeaveRouteImport.update({
   path: '/api/public/notify-leave',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicAutomationRunRoute = ApiPublicAutomationRunRouteImport.update({
+  id: '/api/public/automation-run',
+  path: '/api/public/automation-run',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicAiStatusRoute = ApiPublicAiStatusRouteImport.update({
   id: '/api/public/ai-status',
   path: '/api/public/ai-status',
@@ -351,6 +357,7 @@ export interface FileRoutesByFullPath {
   '/companies/$id': typeof AuthenticatedCompaniesIdRoute
   '/workforce/$slug': typeof AuthenticatedWorkforceSlugRoute
   '/api/public/ai-status': typeof ApiPublicAiStatusRoute
+  '/api/public/automation-run': typeof ApiPublicAutomationRunRoute
   '/api/public/notify-leave': typeof ApiPublicNotifyLeaveRoute
   '/api/public/ocr': typeof ApiPublicOcrRoute
   '/api/public/provision-employee': typeof ApiPublicProvisionEmployeeRoute
@@ -401,6 +408,7 @@ export interface FileRoutesByTo {
   '/companies/$id': typeof AuthenticatedCompaniesIdRoute
   '/workforce/$slug': typeof AuthenticatedWorkforceSlugRoute
   '/api/public/ai-status': typeof ApiPublicAiStatusRoute
+  '/api/public/automation-run': typeof ApiPublicAutomationRunRoute
   '/api/public/notify-leave': typeof ApiPublicNotifyLeaveRoute
   '/api/public/ocr': typeof ApiPublicOcrRoute
   '/api/public/provision-employee': typeof ApiPublicProvisionEmployeeRoute
@@ -453,6 +461,7 @@ export interface FileRoutesById {
   '/_authenticated/companies_/$id': typeof AuthenticatedCompaniesIdRoute
   '/_authenticated/workforce_/$slug': typeof AuthenticatedWorkforceSlugRoute
   '/api/public/ai-status': typeof ApiPublicAiStatusRoute
+  '/api/public/automation-run': typeof ApiPublicAutomationRunRoute
   '/api/public/notify-leave': typeof ApiPublicNotifyLeaveRoute
   '/api/public/ocr': typeof ApiPublicOcrRoute
   '/api/public/provision-employee': typeof ApiPublicProvisionEmployeeRoute
@@ -505,6 +514,7 @@ export interface FileRouteTypes {
     | '/companies/$id'
     | '/workforce/$slug'
     | '/api/public/ai-status'
+    | '/api/public/automation-run'
     | '/api/public/notify-leave'
     | '/api/public/ocr'
     | '/api/public/provision-employee'
@@ -555,6 +565,7 @@ export interface FileRouteTypes {
     | '/companies/$id'
     | '/workforce/$slug'
     | '/api/public/ai-status'
+    | '/api/public/automation-run'
     | '/api/public/notify-leave'
     | '/api/public/ocr'
     | '/api/public/provision-employee'
@@ -606,6 +617,7 @@ export interface FileRouteTypes {
     | '/_authenticated/companies_/$id'
     | '/_authenticated/workforce_/$slug'
     | '/api/public/ai-status'
+    | '/api/public/automation-run'
     | '/api/public/notify-leave'
     | '/api/public/ocr'
     | '/api/public/provision-employee'
@@ -623,6 +635,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   ApiPublicAiStatusRoute: typeof ApiPublicAiStatusRoute
+  ApiPublicAutomationRunRoute: typeof ApiPublicAutomationRunRoute
   ApiPublicNotifyLeaveRoute: typeof ApiPublicNotifyLeaveRoute
   ApiPublicOcrRoute: typeof ApiPublicOcrRoute
   ApiPublicProvisionEmployeeRoute: typeof ApiPublicProvisionEmployeeRoute
@@ -960,6 +973,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicNotifyLeaveRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/automation-run': {
+      id: '/api/public/automation-run'
+      path: '/api/public/automation-run'
+      fullPath: '/api/public/automation-run'
+      preLoaderRoute: typeof ApiPublicAutomationRunRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/ai-status': {
       id: '/api/public/ai-status'
       path: '/api/public/ai-status'
@@ -1067,6 +1087,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   ApiPublicAiStatusRoute: ApiPublicAiStatusRoute,
+  ApiPublicAutomationRunRoute: ApiPublicAutomationRunRoute,
   ApiPublicNotifyLeaveRoute: ApiPublicNotifyLeaveRoute,
   ApiPublicOcrRoute: ApiPublicOcrRoute,
   ApiPublicProvisionEmployeeRoute: ApiPublicProvisionEmployeeRoute,
@@ -1082,13 +1103,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
