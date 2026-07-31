@@ -536,8 +536,39 @@ export default function DocumentsPage() {
 }
 
 function DocumentForm({ employees, document, onSubmit, submitLabel }: { employees: ReturnType<typeof getEmployees>; document?: EmployeeDocument; onSubmit: (data: FormData) => void; submitLabel?: string }) {
+  const formRef = useRef<HTMLFormElement>(null);
+  const [uploadedUrl, setUploadedUrl] = useState(document?.fileUrl ?? "");
+  const [scanning, setScanning] = useState(false);
+
+  const fill = (field: string, value?: string) => {
+    if (!value) return;
+    const el = formRef.current?.querySelector<HTMLInputElement>(`[name="${field}"]`);
+    if (el && !el.value) el.value = value;
+  };
+
+  const handleScan = async () => {
+    if (!uploadedUrl) {
+      toast.error("Upload the document file first");
+      return;
+    }
+    setScanning(true);
+    const result = await extractPassportData(uploadedUrl);
+    setScanning(false);
+    if (!result.ok) {
+      toast.error(result.reason);
+      return;
+    }
+    fill("docNumber", result.data.documentNumber || result.data.fin);
+    fill("issueDate", result.data.issueDate);
+    fill("expiryDate", result.data.expiryDate);
+    fill("issuingAuthority", result.data.docKind === "Passport" ? "Immigration" : "MOM");
+    fill("name", result.data.docKind && result.data.name ? `${result.data.docKind} — ${result.data.name}` : undefined);
+    toast.success("Scanned — check the dates before saving");
+  };
+
   return (
     <form
+      ref={formRef}
       onSubmit={(e) => {
         e.preventDefault();
         onSubmit(new FormData(e.currentTarget));
@@ -624,7 +655,17 @@ function DocumentForm({ employees, document, onSubmit, submitLabel }: { employee
         label="Document file"
         folder="documents"
         defaultValue={document?.fileUrl}
+        onUploaded={(url) => setUploadedUrl(url)}
       />
+      <div className="flex flex-wrap items-center gap-2 rounded-md border border-dashed p-3">
+        <Button type="button" variant="outline" size="sm" onClick={() => void handleScan()} disabled={scanning || !uploadedUrl}>
+          <ScanLine className={scanning ? "mr-2 h-4 w-4 animate-pulse" : "mr-2 h-4 w-4"} />
+          {scanning ? "Reading…" : "Scan passport / work permit"}
+        </Button>
+        <span className="text-xs text-muted-foreground">
+          Reads the document number and expiry date automatically. Empty fields only — nothing you typed is overwritten.
+        </span>
+      </div>
       <DialogFooter>
         <Button type="submit">{submitLabel ?? (document ? "Save changes" : "Add document")}</Button>
       </DialogFooter>
