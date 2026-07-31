@@ -692,13 +692,17 @@ export default function WorkforcePage() {
                 className="gap-1.5"
                 aria-pressed={availableOnly}
                 onClick={() => {
-                  setAvailableOnly((v) => !v);
+                  if (availableOnly) {
+                    showAllEmployees();
+                    return;
+                  }
+                  setAvailableOnly(true);
                   setDeployedOnly(false);
                   setPage(1);
                 }}
               >
                 <UserCheck className="h-4 w-4" />
-                Available workers
+                {availableOnly ? "Hide available workers" : "Available workers"}
                 <span
                   className={cn(
                     "ml-1 rounded-full px-1.5 text-[11px] font-semibold",
@@ -716,13 +720,17 @@ export default function WorkforcePage() {
                 className="gap-1.5"
                 aria-pressed={deployedOnly}
                 onClick={() => {
-                  setDeployedOnly((v) => !v);
+                  if (deployedOnly) {
+                    showAllEmployees();
+                    return;
+                  }
+                  setDeployedOnly(true);
                   setAvailableOnly(false);
                   setPage(1);
                 }}
               >
                 <Briefcase className="h-4 w-4" />
-                Deployed workers
+                {deployedOnly ? "Hide deployed workers" : "Deployed workers"}
                 <span
                   className={cn(
                     "ml-1 rounded-full px-1.5 text-[11px] font-semibold",
