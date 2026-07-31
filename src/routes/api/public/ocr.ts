@@ -2,10 +2,18 @@ import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { canAccessKey, keyFromRef, verifyUser } from "@/lib/r2.server";
 
-const bodySchema = z.object({
-  kind: z.enum(["ipa", "timecard"]),
+const fileSchema = z.object({
+  kind: z.enum(["ipa", "timecard", "passport", "medical"]),
   ref: z.string().min(1).max(2048),
 });
+
+const columnsSchema = z.object({
+  kind: z.literal("columns"),
+  headers: z.array(z.string().min(1).max(120)).min(1).max(80),
+  fields: z.array(z.string().min(1).max(60)).min(1).max(120),
+});
+
+const bodySchema = z.union([fileSchema, columnsSchema]);
 
 export const Route = createFileRoute("/api/public/ocr")({
   server: {
@@ -21,18 +29,30 @@ export const Route = createFileRoute("/api/public/ocr")({
           return new Response("Invalid request", { status: 400 });
         }
 
-        // Only objects in our own R2 bucket may be read — never an arbitrary URL.
-        const key = keyFromRef(parsed.ref);
-        if (!key || /^https?:/i.test(key)) {
-          return new Response("Invalid file reference", { status: 400 });
-        }
-        if (!(await canAccessKey(userId, key))) {
-          return new Response("Not found", { status: 404 });
-        }
-
         try {
-          const { readIpa, readTimeCard } = await import("@/lib/ocr.server");
-          const data = parsed.kind === "ipa" ? await readIpa(key) : await readTimeCard(key);
+          const ocr = await import("@/lib/ocr.server");
+
+          if (parsed.kind === "columns") {
+            return Response.json({ data: await ocr.mapColumns(parsed.headers, parsed.fields) });
+          }
+
+          // Only objects in our own R2 bucket may be read — never an arbitrary URL.
+          const key = keyFromRef(parsed.ref);
+          if (!key || /^https?:/i.test(key)) {
+            return new Response("Invalid file reference", { status: 400 });
+          }
+          if (!(await canAccessKey(userId, key))) {
+            return new Response("Not found", { status: 404 });
+          }
+
+          const data =
+            parsed.kind === "ipa"
+              ? await ocr.readIpa(key)
+              : parsed.kind === "timecard"
+                ? await ocr.readTimeCard(key)
+                : parsed.kind === "passport"
+                  ? await ocr.readPassport(key)
+                  : await ocr.readMedicalBill(key);
           return Response.json({ data });
         } catch (e) {
           console.error("ocr failed", e);
