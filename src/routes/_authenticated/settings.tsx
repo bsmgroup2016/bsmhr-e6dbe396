@@ -292,6 +292,8 @@ export default function SettingsPage() {
           <TabsContent value="health" className="mt-4 space-y-4">
             <SystemHealth />
           </TabsContent>
+            <SystemHealth />
+          </TabsContent>
         </Tabs>
       </div>
     </AppShell>
