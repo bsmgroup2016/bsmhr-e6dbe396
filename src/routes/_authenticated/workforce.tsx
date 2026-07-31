@@ -406,6 +406,29 @@ export default function WorkforcePage() {
         branch: get("branch") || undefined,
         passportNumber: get("passportNumber") || undefined,
         workPermitNumber: get("workPermitNumber") || undefined,
+        passportExpiry: normalizeDate(get("passportExpiry")) || undefined,
+        dateOfBirth: normalizeDate(get("dateOfBirth")) || undefined,
+        gender: (get("gender") || undefined) as Employee["gender"],
+        maritalStatus: (get("maritalStatus") || undefined) as Employee["maritalStatus"],
+        department: get("department") || undefined,
+        workerCategory: (get("workerCategory") || undefined) as Employee["workerCategory"],
+        employmentType: (get("employmentType") || undefined) as Employee["employmentType"],
+        otRate: Number(get("otRate").replace(/[^0-9.-]/g, "")) || undefined,
+        normalHours: Number(get("normalHours").replace(/[^0-9.-]/g, "")) || undefined,
+        declaredSalary: Number(get("declaredSalary").replace(/[^0-9.-]/g, "")) || undefined,
+        contractStart: normalizeDate(get("contractStart")) || undefined,
+        contractEnd: normalizeDate(get("contractEnd")) || undefined,
+        altPhone: get("altPhone") || undefined,
+        address: get("address") || undefined,
+        postalCode: get("postalCode") || undefined,
+        emergencyContact: get("emergencyContact") || undefined,
+        emergencyPhone: get("emergencyPhone") || undefined,
+        emergencyRelation: get("emergencyRelation") || undefined,
+        bankName: get("bankName") || undefined,
+        bankAccount: get("bankAccount") || undefined,
+        paymentMethod: (get("paymentMethod") || undefined) as Employee["paymentMethod"],
+        skillLevel: (get("skillLevel") || undefined) as Employee["skillLevel"],
+        remarks: get("remarks") || undefined,
       };
 
       const code = get("employeeCode").trim();
@@ -636,6 +659,7 @@ export default function WorkforcePage() {
                 onImport={handleImport}
                 onDone={refresh}
                 mappable
+                demoRows={EMPLOYEE_DEMO_ROWS}
                 label="Upload XLSX"
               />
               <ExportButton rows={filtered.map(toEmployeeRow)} baseName="employees" sheetName="Employees" />
