@@ -67,6 +67,7 @@ import {
 import { getDocuments, getEmployees, addDocument, updateDocument, deleteDocument, getCurrentCompany } from "@/lib/store";
 import { computeDocumentStatus, daysUntil, DEFAULT_REMINDER_DAYS } from "@/lib/compliance";
 import { openR2File, downloadR2FilesAsZip } from "@/lib/r2";
+import { extractPassportData } from "@/lib/ocr";
 import { FileUpload } from "@/components/file-upload";
 import type { EmployeeDocument, DocumentType, DocumentStatus } from "@/lib/types";
 
