@@ -62,7 +62,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { isSiteWorker } from "@/lib/workforce-split";
-import { getEmployees, addEmployee, updateEmployee, deleteEmployee, getCurrentCompany, getCompanies, getProjects, getAssignments } from "@/lib/store";
+import { getEmployees, addEmployee, updateEmployee, deleteEmployee, getCurrentCompany, getCompanies, getProjects, getAssignments, getClients, getSites, addAssignment } from "@/lib/store";
 import { employeeSlugById } from "@/lib/employee-slug";
 import type { Employee, PassType, EmployeeStatus, DeploymentStatus, WorkerCategory } from "@/lib/types";
 import { pick, type ImportColumn } from "@/lib/xlsx";
