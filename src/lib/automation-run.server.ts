@@ -153,6 +153,8 @@ export interface AutomationRunResult {
   payrollDraftsCreated: number;
   payrollSkipped: number;
   sent: number;
+  /** Set when the digest email could not be delivered; the jobs still ran. */
+  emailError?: string;
 }
 
 /** Runs every automation job once and (unless dry) emails the back-office digest. */
@@ -227,13 +229,19 @@ export async function runAutomations(options: {
   const recipients = await backOfficeRecipients();
   if (recipients.length === 0) return result;
 
-  await sendMail({
-    to: recipients,
-    subject:
-      `BSM automation — ${reminders.count} expiry notice(s), ${noPunch.count} missing clock-in` +
-      (payroll && payroll.created > 0 ? `, ${payroll.created} payroll draft(s)` : "") +
-      (ir21.count > 0 ? `, ${ir21.count} IR21` : ""),
-    html: layout(`Automation run — ${today}`, blocks.join("")),
-  });
+  try {
+    await sendMail({
+      to: recipients,
+      subject:
+        `BSM automation — ${reminders.count} expiry notice(s), ${noPunch.count} missing clock-in` +
+        (payroll && payroll.created > 0 ? `, ${payroll.created} payroll draft(s)` : "") +
+        (ir21.count > 0 ? `, ${ir21.count} IR21` : ""),
+      html: layout(`Automation run — ${today}`, blocks.join("")),
+    });
+  } catch (e) {
+    // A mail-delivery problem must not fail the whole automation run.
+    console.error("automation digest email failed", e);
+    return { ...result, emailError: e instanceof Error ? e.message : "Email send failed" };
+  }
   return { ...result, sent: recipients.length };
 }
