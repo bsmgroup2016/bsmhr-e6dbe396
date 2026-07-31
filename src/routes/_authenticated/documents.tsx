@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { createFileRoute } from "@tanstack/react-router";
 import {
@@ -16,6 +16,7 @@ import {
   User,
   RefreshCw,
   BadgeCheck,
+  ScanLine,
 } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
