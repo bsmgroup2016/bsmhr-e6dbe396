@@ -26,6 +26,7 @@ import {
 import { getEmployees, getAssignments, getCompanies } from "@/lib/store";
 import { activeAssignedEmployeeIds, isEmployeeAvailable } from "@/lib/availability";
 import { employeeSlugById } from "@/lib/employee-slug";
+import { isCountableWorker } from "@/lib/workforce-split";
 
 export const Route = createFileRoute("/_authenticated/available-workers")({
   head: () => ({
@@ -40,7 +41,7 @@ export const Route = createFileRoute("/_authenticated/available-workers")({
 });
 
 function AvailableWorkersPage() {
-  const employees = getEmployees().filter((e) => !!e.companyId);
+  const employees = getEmployees().filter(isCountableWorker);
   const companies = getCompanies();
   const assignedIds = activeAssignedEmployeeIds(getAssignments());
   const available = employees.filter((e) => isEmployeeAvailable(e, assignedIds));

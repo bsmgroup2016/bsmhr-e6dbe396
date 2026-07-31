@@ -44,6 +44,7 @@ const has = (list: string[], v?: string | null) =>
 
 /** `trade` is the employee designation column. */
 type Person = { department?: string | null; trade?: string | null };
+type WorkerRecord = Person & { companyId?: string | null };
 
 /**
  * Department is authoritative (Construction always belongs to the worker
@@ -56,6 +57,11 @@ export function isSiteWorker(p: Person): boolean {
   if (has(SITE_DESIGNATIONS, p.trade)) return true;
   if (has(STAFF_DESIGNATIONS, p.trade)) return false;
   return false;
+}
+
+/** Shared population rule for every worker count and worker-only screen. */
+export function isCountableWorker(p: WorkerRecord): boolean {
+  return Boolean(p.companyId) && isSiteWorker(p);
 }
 
 /** True for office / administrative staff (everyone not on site). */
