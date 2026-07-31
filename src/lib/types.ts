@@ -163,6 +163,10 @@ export interface Employee {
   skillCertType?: SkillCertType;
   skillCertNo?: string;
   skillCertExpiry?: string;
+  /** Safety course (SCOS / CSOC / SOC) details. */
+  safetyCourseType?: string;
+  safetyCourseNo?: string;
+  safetyCourseExpiry?: string;
   /** MYE (Man-Year Entitlement) allocation reference from the prior project. */
   myeRef?: string;
   /** Man-years consumed by this worker under the MYE allocation. */
