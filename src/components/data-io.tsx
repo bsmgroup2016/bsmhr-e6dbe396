@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Download, Upload, FileSpreadsheet, FileDown, CheckCircle2, AlertTriangle } from "lucide-react";
+import { Download, Upload, FileSpreadsheet, FileDown, CheckCircle2, AlertTriangle, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -35,6 +35,7 @@ import {
   timestampedName,
   type ImportColumn,
 } from "@/lib/xlsx";
+import { autoMapColumns } from "@/lib/ocr";
 
 export function ExportButton({
   rows,
@@ -117,6 +118,29 @@ export function ImportDialog({
   const [busy, setBusy] = useState(false);
   const [headers, setHeaders] = useState<string[]>([]);
   const [mapping, setMapping] = useState<Record<string, string>>({});
+  const [aiMapping, setAiMapping] = useState(false);
+
+  /** Ask the AI to match the spreadsheet headers to our fields. */
+  async function runAiMapping() {
+    if (!headers.length) return;
+    setAiMapping(true);
+    const result = await autoMapColumns(headers, columns.map((c) => c.key));
+    setAiMapping(false);
+    if (!result.ok) {
+      toast.error(result.reason);
+      return;
+    }
+    const valid: Record<string, string> = {};
+    for (const [key, header] of Object.entries(result.data)) {
+      if (columns.some((c) => c.key === key) && headers.includes(header)) valid[key] = header;
+    }
+    if (!Object.keys(valid).length) {
+      toast.error("Could not match the columns — map them manually");
+      return;
+    }
+    setMapping((prev) => ({ ...prev, ...valid }));
+    toast.success(`${Object.keys(valid).length} column(s) matched — please review`);
+  }
 
   function reset() {
     setRows([]);
@@ -261,9 +285,21 @@ export function ImportDialog({
 
           {mappable && headers.length ? (
             <div className="rounded-lg border p-3">
-              <p className="mb-2 text-xs font-medium text-muted-foreground">
-                Map spreadsheet columns → system fields
-              </p>
+              <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                <p className="text-xs font-medium text-muted-foreground">
+                  Map spreadsheet columns → system fields
+                </p>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  disabled={aiMapping}
+                  onClick={() => void runAiMapping()}
+                >
+                  <Sparkles className={aiMapping ? "mr-1 h-4 w-4 animate-pulse" : "mr-1 h-4 w-4"} />
+                  {aiMapping ? "Matching…" : "AI auto-map"}
+                </Button>
+              </div>
               <div className="grid gap-2 sm:grid-cols-2">
                 {columns.map((column) => (
                   <label key={column.key} className="flex items-center gap-2 text-xs">
