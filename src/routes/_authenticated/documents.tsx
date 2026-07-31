@@ -223,14 +223,13 @@ export default function DocumentsPage() {
         </div>
 
         <div className="rounded-xl border bg-card p-4 shadow-sm">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-            <div className="relative w-full min-w-0 lg:max-w-sm">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-[minmax(220px,280px)_minmax(155px,1fr)_minmax(125px,140px)_minmax(125px,140px)_auto] lg:items-center">
+            <div className="relative min-w-0 sm:col-span-2 lg:col-span-1">
               <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input type="search" placeholder="Search documents..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full pl-9" />
             </div>
-            <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
               <Select value={employeeFilter} onValueChange={(v) => setEmployeeFilter(v)}>
-                <SelectTrigger className="w-full sm:w-40">
+                <SelectTrigger className="w-full min-w-0">
                   <SelectValue placeholder="All employees" />
                 </SelectTrigger>
                 <SelectContent>
@@ -243,7 +242,7 @@ export default function DocumentsPage() {
                 </SelectContent>
               </Select>
               <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as DocumentType | "all")}>
-                <SelectTrigger className="w-full sm:w-36">
+                <SelectTrigger className="w-full min-w-0">
                   <SelectValue placeholder="Type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -256,7 +255,7 @@ export default function DocumentsPage() {
                 </SelectContent>
               </Select>
               <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as DocumentStatus | "all")}>
-                <SelectTrigger className="w-full sm:w-36">
+                <SelectTrigger className="w-full min-w-0">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -268,10 +267,9 @@ export default function DocumentsPage() {
                   ))}
                 </SelectContent>
               </Select>
-              <Button variant={showSuperseded ? "secondary" : "outline"} size="sm" className="col-span-2 w-full sm:col-auto sm:w-auto" onClick={() => setShowSuperseded((v) => !v)}>
+              <Button variant={showSuperseded ? "secondary" : "outline"} size="sm" className="h-9 w-full whitespace-nowrap sm:col-span-2 lg:col-span-1 lg:w-auto" onClick={() => setShowSuperseded((v) => !v)}>
                 {showSuperseded ? "Hide old versions" : "Show old versions"}
               </Button>
-            </div>
           </div>
 
           <div className="mt-4 overflow-hidden rounded-lg border">
