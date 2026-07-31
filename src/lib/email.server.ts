@@ -45,6 +45,31 @@ export async function restPatch(path: string, body: unknown): Promise<boolean> {
 }
 
 export async function sendMail({ to, subject, html }: MailInput) {
+  return sendMailInternal({ to, subject, html });
+}
+
+/** Service-role REST insert (server only). Returns inserted row count. */
+export async function restPost(path: string, rows: unknown[]): Promise<number> {
+  if (rows.length === 0) return 0;
+  const key = serviceKey();
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+    method: "POST",
+    headers: {
+      apikey: key,
+      Authorization: `Bearer ${key}`,
+      "Content-Type": "application/json",
+      Prefer: "return=minimal",
+    },
+    body: JSON.stringify(rows),
+  });
+  if (!res.ok) {
+    console.error("restPost failed", res.status, await res.text());
+    return 0;
+  }
+  return rows.length;
+}
+
+async function sendMailInternal({ to, subject, html }: MailInput) {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) throw new Error("RESEND_API_KEY is not configured");
   const from = process.env.RESEND_FROM || "BSM Workforce <onboarding@resend.dev>";

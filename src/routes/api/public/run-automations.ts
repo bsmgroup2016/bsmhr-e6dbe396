@@ -1,5 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { esc, layout, list, restGet, restPatch, sendMail } from "@/lib/email.server";
+import {
+  generatePayrollDrafts,
+  ir21Triggers,
+  payrollTargetMonth,
+  quotaWarnings,
+} from "@/lib/automation.server";
 
 /**
  * Scheduled automation runner.
@@ -9,8 +15,11 @@ import { esc, layout, list, restGet, restPatch, sendMail } from "@/lib/email.ser
  * 2. Sends tiered expiry reminders at 90 / 60 / 30 / 7 days for work passes,
  *    passports, FWMI insurance, safety certs and medical checkups.
  * 3. Flags active workers who have not clocked in today.
+ * 4. Generates the month-end payroll draft (1st–7th of the month).
+ * 5. Flags IR21 tax clearance for leavers and warns on DRC quota / levy.
  *
  * Add `?dry=1` to compute without sending or writing.
+ * Add `?payroll=1` to force the payroll draft outside the 1st–7th window.
  */
 const TIERS = [90, 60, 30, 7] as const;
 
@@ -138,12 +147,23 @@ export const Route = createFileRoute("/api/public/run-automations")({
           return new Response("Unauthorized", { status: 401 });
         }
         const dryRun = new URL(request.url).searchParams.get("dry") === "1";
+        const params = new URL(request.url).searchParams;
         const today = iso(new Date());
 
         try {
           const expired = await expireDocuments(today, dryRun);
           const reminders = await expiryReminders(today);
           const noPunch = await missingClockIn(today);
+          const ir21 = await ir21Triggers(today, dryRun);
+          const quota = await quotaWarnings();
+
+          // Payroll drafts run in the first week of each month for the month
+          // that just closed, unless forced with ?payroll=1.
+          const dayOfMonth = new Date().getUTCDate();
+          const runPayroll = params.get("payroll") === "1" || dayOfMonth <= 7;
+          const payroll = runPayroll
+            ? await generatePayrollDrafts(payrollTargetMonth(), dryRun)
+            : null;
 
           const blocks: string[] = [];
           if (reminders.count > 0) {
@@ -154,6 +174,24 @@ export const Route = createFileRoute("/api/public/run-automations")({
           if (noPunch.count > 0) {
             blocks.push(
               `<h2 style="font-size:16px;margin:16px 0 4px">No clock-in today (${noPunch.count})</h2>${noPunch.html}`,
+            );
+          }
+          if (ir21.count > 0) {
+            blocks.push(
+              `<h2 style="font-size:16px;margin:16px 0 4px">IR21 tax clearance pending (${ir21.count})</h2>${ir21.html}`,
+            );
+          }
+          if (quota.count > 0) {
+            blocks.push(
+              `<h2 style="font-size:16px;margin:16px 0 4px">Quota &amp; levy warnings (${quota.count})</h2>${quota.html}`,
+            );
+          }
+          if (payroll && payroll.created > 0) {
+            blocks.push(
+              `<h2 style="font-size:16px;margin:16px 0 4px">Payroll drafts created for ${esc(
+                payroll.month,
+              )} (${payroll.created})</h2>${payroll.html}
+               <p style="color:#64748b">Review and approve them in Payroll before paying.</p>`,
             );
           }
           if (expired > 0) {
@@ -167,6 +205,12 @@ export const Route = createFileRoute("/api/public/run-automations")({
             documentsExpired: expired,
             remindersQueued: reminders.count,
             missingClockIn: noPunch.count,
+            ir21Pending: ir21.count,
+            ir21Flagged: ir21.flagged,
+            quotaWarnings: quota.count,
+            payrollMonth: payroll?.month ?? null,
+            payrollDraftsCreated: payroll?.created ?? 0,
+            payrollSkipped: payroll?.skipped ?? 0,
             sent: 0,
           };
 
@@ -177,7 +221,10 @@ export const Route = createFileRoute("/api/public/run-automations")({
 
           await sendMail({
             to: recipients,
-            subject: `BSM automation — ${reminders.count} expiry notice(s), ${noPunch.count} missing clock-in`,
+            subject:
+              `BSM automation — ${reminders.count} expiry notice(s), ${noPunch.count} missing clock-in` +
+              (payroll && payroll.created > 0 ? `, ${payroll.created} payroll draft(s)` : "") +
+              (ir21.count > 0 ? `, ${ir21.count} IR21` : ""),
             html: layout(`Automation run — ${today}`, blocks.join("")),
           });
           return Response.json({ ...result, sent: recipients.length });
