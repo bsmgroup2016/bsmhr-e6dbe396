@@ -46,6 +46,7 @@ import { Route as AuthenticatedAlertsRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedAccommodationRouteImport } from './routes/_authenticated/accommodation'
 import { Route as ApiPublicUserAdminRouteImport } from './routes/api/public/user-admin'
 import { Route as ApiPublicSendAlertsRouteImport } from './routes/api/public/send-alerts'
+import { Route as ApiPublicRunAutomationsRouteImport } from './routes/api/public/run-automations'
 import { Route as ApiPublicR2UploadRouteImport } from './routes/api/public/r2-upload'
 import { Route as ApiPublicR2StatusRouteImport } from './routes/api/public/r2-status'
 import { Route as ApiPublicR2SignedRouteImport } from './routes/api/public/r2-signed'
@@ -247,6 +248,11 @@ const ApiPublicSendAlertsRoute = ApiPublicSendAlertsRouteImport.update({
   path: '/api/public/send-alerts',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicRunAutomationsRoute = ApiPublicRunAutomationsRouteImport.update({
+  id: '/api/public/run-automations',
+  path: '/api/public/run-automations',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicR2UploadRoute = ApiPublicR2UploadRouteImport.update({
   id: '/api/public/r2-upload',
   path: '/api/public/r2-upload',
@@ -346,6 +352,7 @@ export interface FileRoutesByFullPath {
   '/api/public/r2-signed': typeof ApiPublicR2SignedRoute
   '/api/public/r2-status': typeof ApiPublicR2StatusRoute
   '/api/public/r2-upload': typeof ApiPublicR2UploadRoute
+  '/api/public/run-automations': typeof ApiPublicRunAutomationsRoute
   '/api/public/send-alerts': typeof ApiPublicSendAlertsRoute
   '/api/public/user-admin': typeof ApiPublicUserAdminRoute
 }
@@ -394,6 +401,7 @@ export interface FileRoutesByTo {
   '/api/public/r2-signed': typeof ApiPublicR2SignedRoute
   '/api/public/r2-status': typeof ApiPublicR2StatusRoute
   '/api/public/r2-upload': typeof ApiPublicR2UploadRoute
+  '/api/public/run-automations': typeof ApiPublicRunAutomationsRoute
   '/api/public/send-alerts': typeof ApiPublicSendAlertsRoute
   '/api/public/user-admin': typeof ApiPublicUserAdminRoute
 }
@@ -444,6 +452,7 @@ export interface FileRoutesById {
   '/api/public/r2-signed': typeof ApiPublicR2SignedRoute
   '/api/public/r2-status': typeof ApiPublicR2StatusRoute
   '/api/public/r2-upload': typeof ApiPublicR2UploadRoute
+  '/api/public/run-automations': typeof ApiPublicRunAutomationsRoute
   '/api/public/send-alerts': typeof ApiPublicSendAlertsRoute
   '/api/public/user-admin': typeof ApiPublicUserAdminRoute
 }
@@ -494,6 +503,7 @@ export interface FileRouteTypes {
     | '/api/public/r2-signed'
     | '/api/public/r2-status'
     | '/api/public/r2-upload'
+    | '/api/public/run-automations'
     | '/api/public/send-alerts'
     | '/api/public/user-admin'
   fileRoutesByTo: FileRoutesByTo
@@ -542,6 +552,7 @@ export interface FileRouteTypes {
     | '/api/public/r2-signed'
     | '/api/public/r2-status'
     | '/api/public/r2-upload'
+    | '/api/public/run-automations'
     | '/api/public/send-alerts'
     | '/api/public/user-admin'
   id:
@@ -591,6 +602,7 @@ export interface FileRouteTypes {
     | '/api/public/r2-signed'
     | '/api/public/r2-status'
     | '/api/public/r2-upload'
+    | '/api/public/run-automations'
     | '/api/public/send-alerts'
     | '/api/public/user-admin'
   fileRoutesById: FileRoutesById
@@ -606,6 +618,7 @@ export interface RootRouteChildren {
   ApiPublicR2SignedRoute: typeof ApiPublicR2SignedRoute
   ApiPublicR2StatusRoute: typeof ApiPublicR2StatusRoute
   ApiPublicR2UploadRoute: typeof ApiPublicR2UploadRoute
+  ApiPublicRunAutomationsRoute: typeof ApiPublicRunAutomationsRoute
   ApiPublicSendAlertsRoute: typeof ApiPublicSendAlertsRoute
   ApiPublicUserAdminRoute: typeof ApiPublicUserAdminRoute
 }
@@ -871,6 +884,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicSendAlertsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/run-automations': {
+      id: '/api/public/run-automations'
+      path: '/api/public/run-automations'
+      fullPath: '/api/public/run-automations'
+      preLoaderRoute: typeof ApiPublicRunAutomationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/r2-upload': {
       id: '/api/public/r2-upload'
       path: '/api/public/r2-upload'
@@ -1034,6 +1054,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicR2SignedRoute: ApiPublicR2SignedRoute,
   ApiPublicR2StatusRoute: ApiPublicR2StatusRoute,
   ApiPublicR2UploadRoute: ApiPublicR2UploadRoute,
+  ApiPublicRunAutomationsRoute: ApiPublicRunAutomationsRoute,
   ApiPublicSendAlertsRoute: ApiPublicSendAlertsRoute,
   ApiPublicUserAdminRoute: ApiPublicUserAdminRoute,
 }
