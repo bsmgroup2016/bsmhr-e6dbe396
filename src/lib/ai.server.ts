@@ -10,7 +10,7 @@
  * OpenAI the primary instead.
  */
 
-export type AiProviderName = "lovable" | "openai" | "gemini";
+export type AiProviderName = "lovable" | "openai";
 
 interface ProviderConfig {
   name: AiProviderName;
@@ -21,21 +21,16 @@ interface ProviderConfig {
 
 const GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 const OPENAI_URL = "https://api.openai.com/v1/chat/completions";
-/** Google AI Studio exposes an OpenAI-compatible chat endpoint. */
-const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
 
 /** Gateway model id must come from the Lovable model catalog. */
 const GATEWAY_MODEL = "openai/gpt-5.6-sol";
 /** The user's own OpenAI account — model id is theirs to choose. */
 const OPENAI_DEFAULT_MODEL = "gpt-4o";
-/** Free-tier friendly Gemini vision model. */
-const GEMINI_DEFAULT_MODEL = "gemini-2.0-flash";
 
 function configured(): ProviderConfig[] {
   const list: ProviderConfig[] = [];
   const lovableKey = process.env.LOVABLE_API_KEY;
   const openaiKey = process.env.OPENAI_API_KEY;
-  const geminiKey = process.env.GEMINI_API_KEY;
 
   if (lovableKey) {
     list.push({
@@ -53,18 +48,10 @@ function configured(): ProviderConfig[] {
       model: process.env.OPENAI_MODEL || OPENAI_DEFAULT_MODEL,
     });
   }
-  if (geminiKey) {
-    list.push({
-      name: "gemini",
-      url: GEMINI_URL,
-      apiKey: geminiKey,
-      model: process.env.GEMINI_MODEL || GEMINI_DEFAULT_MODEL,
-    });
-  }
 
   // Explicit preference wins; otherwise gateway first, OpenAI as backup.
   const preferred = (process.env.AI_PROVIDER || "").trim().toLowerCase();
-  if (preferred === "openai" || preferred === "lovable" || preferred === "gemini") {
+  if (preferred === "openai" || preferred === "lovable") {
     list.sort((a, b) => (a.name === preferred ? -1 : b.name === preferred ? 1 : 0));
   }
   return list;
