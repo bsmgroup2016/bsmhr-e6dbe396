@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { toast } from "sonner";
 import { createFileRoute } from "@tanstack/react-router";
 import {
   Plus,
@@ -24,6 +25,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table,
   TableBody,
@@ -63,7 +65,7 @@ import {
 } from "@/components/ui/sheet";
 import { getDocuments, getEmployees, addDocument, updateDocument, deleteDocument, getCurrentCompany } from "@/lib/store";
 import { computeDocumentStatus, daysUntil, DEFAULT_REMINDER_DAYS } from "@/lib/compliance";
-import { openR2File } from "@/lib/r2";
+import { openR2File, downloadR2FilesAsZip } from "@/lib/r2";
 import { FileUpload } from "@/components/file-upload";
 import type { EmployeeDocument, DocumentType, DocumentStatus } from "@/lib/types";
 
@@ -119,6 +121,8 @@ export default function DocumentsPage() {
   const [deleteTarget, setDeleteTarget] = useState<EmployeeDocument | null>(null);
   const [renewSource, setRenewSource] = useState<EmployeeDocument | null>(null);
   const [showSuperseded, setShowSuperseded] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [zipping, setZipping] = useState(false);
 
   const filtered = documents.filter((d) => {
     const q = search.toLowerCase();
