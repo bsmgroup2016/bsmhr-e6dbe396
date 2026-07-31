@@ -10,14 +10,18 @@ import { supabase } from "@/integrations/supabase/client";
 
 const OCR_URL = "/api/public/ocr";
 
-async function callOcr(kind: "ipa" | "timecard", ref: string): Promise<unknown> {
+type OcrPayload =
+  | { kind: "ipa" | "timecard" | "passport" | "medical"; ref: string }
+  | { kind: "columns"; headers: string[]; fields: string[] };
+
+async function callOcr(payload: OcrPayload): Promise<unknown> {
   const { data: session } = await supabase.auth.getSession();
   const token = session.session?.access_token;
   if (!token) throw new Error("Sign in again to use OCR");
   const res = await fetch(OCR_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ kind, ref }),
+    body: JSON.stringify(payload),
   });
   if (!res.ok) {
     let message = OCR_NOT_CONFIGURED;
@@ -64,12 +68,83 @@ export type TimeCardExtractRow = {
   checkOut?: string;
 };
 
+export type PassportExtract = {
+  docKind?: string;
+  name?: string;
+  documentNumber?: string;
+  fin?: string;
+  nationality?: string;
+  dateOfBirth?: string;
+  issueDate?: string;
+  expiryDate?: string;
+  occupation?: string;
+  employerName?: string;
+};
+
+export type MedicalBillExtract = {
+  patientName?: string;
+  clinicName?: string;
+  billNumber?: string;
+  visitDate?: string;
+  amount?: number;
+  gstAmount?: number;
+  diagnosis?: string;
+  billType?: string;
+};
+
 /** Reads a Singapore IPA / work-pass file and returns the fields to auto-fill. */
 export async function extractIpaData(fileUrl: string): Promise<OcrResult<IpaExtract>> {
   if (!fileUrl) return { ok: false, reason: "Upload the IPA copy first" };
   try {
-    const data = (await callOcr("ipa", fileUrl)) as IpaExtract;
+    const data = (await callOcr({ kind: "ipa", ref: fileUrl })) as IpaExtract;
     if (!data || Object.keys(data).length === 0) return { ok: false, reason: OCR_NOT_CONFIGURED };
+    return { ok: true, data };
+  } catch (e) {
+    return { ok: false, reason: e instanceof Error ? e.message : OCR_NOT_CONFIGURED };
+  }
+}
+
+/** Reads a passport bio page or WP / S-Pass card — mainly for the expiry date. */
+export async function extractPassportData(
+  fileUrl: string,
+): Promise<OcrResult<PassportExtract>> {
+  if (!fileUrl) return { ok: false, reason: "Upload the document first" };
+  try {
+    const data = (await callOcr({ kind: "passport", ref: fileUrl })) as PassportExtract;
+    if (!data || Object.keys(data).length === 0) return { ok: false, reason: OCR_NOT_CONFIGURED };
+    return { ok: true, data };
+  } catch (e) {
+    return { ok: false, reason: e instanceof Error ? e.message : OCR_NOT_CONFIGURED };
+  }
+}
+
+/** Reads a clinic bill / receipt so a medical claim pre-fills. */
+export async function extractMedicalBill(
+  fileUrl: string,
+): Promise<OcrResult<MedicalBillExtract>> {
+  if (!fileUrl) return { ok: false, reason: "Upload the bill first" };
+  try {
+    const data = (await callOcr({ kind: "medical", ref: fileUrl })) as MedicalBillExtract;
+    if (!data || Object.keys(data).length === 0) return { ok: false, reason: OCR_NOT_CONFIGURED };
+    if (data.amount != null) data.amount = Number(data.amount) || 0;
+    if (data.gstAmount != null) data.gstAmount = Number(data.gstAmount) || 0;
+    return { ok: true, data };
+  } catch (e) {
+    return { ok: false, reason: e instanceof Error ? e.message : OCR_NOT_CONFIGURED };
+  }
+}
+
+/** AI column auto-mapping for XLSX bulk import: header -> our field name. */
+export async function autoMapColumns(
+  headers: string[],
+  fields: string[],
+): Promise<OcrResult<Record<string, string>>> {
+  if (headers.length === 0) return { ok: false, reason: "No columns found in the file" };
+  try {
+    const data = (await callOcr({ kind: "columns", headers, fields })) as Record<string, string>;
+    if (!data || Object.keys(data).length === 0) {
+      return { ok: false, reason: "Could not match the columns — map them manually" };
+    }
     return { ok: true, data };
   } catch (e) {
     return { ok: false, reason: e instanceof Error ? e.message : OCR_NOT_CONFIGURED };
@@ -85,7 +160,7 @@ export async function extractTimeCardData(
 ): Promise<OcrResult<TimeCardExtractRow[]>> {
   if (!fileUrl) return { ok: false, reason: "Upload the time card first" };
   try {
-    const rows = (await callOcr("timecard", fileUrl)) as TimeCardExtractRow[];
+    const rows = (await callOcr({ kind: "timecard", ref: fileUrl })) as TimeCardExtractRow[];
     const clean = (rows ?? []).filter((r) => r && typeof r.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(r.date));
     if (clean.length === 0) return { ok: false, reason: OCR_NOT_CONFIGURED };
     return { ok: true, data: clean };
