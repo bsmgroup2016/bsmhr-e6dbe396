@@ -112,6 +112,7 @@ export default function DocumentsPage() {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<DocumentType | "all">("all");
   const [statusFilter, setStatusFilter] = useState<DocumentStatus | "all">("all");
+  const [employeeFilter, setEmployeeFilter] = useState<string>("all");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingDoc, setEditingDoc] = useState<EmployeeDocument | null>(null);
   const [viewingDoc, setViewingDoc] = useState<EmployeeDocument | null>(null);
@@ -128,7 +129,12 @@ export default function DocumentsPage() {
       emp?.name.toLowerCase().includes(q) ||
       emp?.employeeCode.toLowerCase().includes(q);
     if (!showSuperseded && d.status === "Superseded" && statusFilter !== "Superseded") return false;
-    return matchesSearch && (typeFilter === "all" || d.type === typeFilter) && (statusFilter === "all" || d.status === statusFilter);
+    return (
+      matchesSearch &&
+      (typeFilter === "all" || d.type === typeFilter) &&
+      (statusFilter === "all" || d.status === statusFilter) &&
+      (employeeFilter === "all" || d.employeeId === employeeFilter)
+    );
   });
 
   const validCount = documents.filter((d) => d.status === "Valid").length;
