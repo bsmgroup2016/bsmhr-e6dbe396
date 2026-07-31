@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { activeAssignedEmployeeIds, isEmployeeAvailable } from "@/lib/availability";
 import {
   Plus,
@@ -278,6 +278,27 @@ export default function WorkforcePage() {
   const [showFilters, setShowFilters] = useState(false);
   const [availableOnly, setAvailableOnly] = useState(routeSearch.available === true);
   const [deployedOnly, setDeployedOnly] = useState(routeSearch.deployed === true);
+  const navigate = useNavigate();
+
+  /**
+   * Leaves the Available / Deployed focus mode: clears the toggle, the URL
+   * params, search text and every filter so the full employee list returns.
+   */
+  function showAllEmployees() {
+    setAvailableOnly(false);
+    setDeployedOnly(false);
+    setSearch("");
+    setCompanyFilter("all");
+    setTradeFilter("all");
+    setSiteFilter("all");
+    setStatusFilter("all");
+    setPassFilter("all");
+    setCategoryFilter("all");
+    setDeployFilter("all");
+    setNationalityFilter("all");
+    setPage(1);
+    void navigate({ to: "/workforce", search: {}, replace: true });
+  }
   const activeFilterCount = [
     companyFilter,
     tradeFilter,
@@ -671,13 +692,17 @@ export default function WorkforcePage() {
                 className="gap-1.5"
                 aria-pressed={availableOnly}
                 onClick={() => {
-                  setAvailableOnly((v) => !v);
+                  if (availableOnly) {
+                    showAllEmployees();
+                    return;
+                  }
+                  setAvailableOnly(true);
                   setDeployedOnly(false);
                   setPage(1);
                 }}
               >
                 <UserCheck className="h-4 w-4" />
-                Available workers
+                {availableOnly ? "Hide available workers" : "Available workers"}
                 <span
                   className={cn(
                     "ml-1 rounded-full px-1.5 text-[11px] font-semibold",
@@ -695,13 +720,17 @@ export default function WorkforcePage() {
                 className="gap-1.5"
                 aria-pressed={deployedOnly}
                 onClick={() => {
-                  setDeployedOnly((v) => !v);
+                  if (deployedOnly) {
+                    showAllEmployees();
+                    return;
+                  }
+                  setDeployedOnly(true);
                   setAvailableOnly(false);
                   setPage(1);
                 }}
               >
                 <Briefcase className="h-4 w-4" />
-                Deployed workers
+                {deployedOnly ? "Hide deployed workers" : "Deployed workers"}
                 <span
                   className={cn(
                     "ml-1 rounded-full px-1.5 text-[11px] font-semibold",
@@ -848,6 +877,9 @@ export default function WorkforcePage() {
                   </div>
                 </div>
                 <div className="flex flex-1 items-center justify-end gap-2">
+                  <Button variant="secondary" size="sm" onClick={showAllEmployees}>
+                    {availableOnly ? "Hide available workers" : "Hide deployed workers"}
+                  </Button>
                   <Button variant="outline" size="sm" asChild>
                     <Link to={availableOnly ? "/available-workers" : "/deployed-workers"}>View details</Link>
                   </Button>
