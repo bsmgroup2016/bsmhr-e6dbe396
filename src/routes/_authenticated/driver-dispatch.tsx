@@ -192,7 +192,7 @@ function DriverDispatchPage() {
           <SummaryCard title="Active tasks" value={active.length.toString()} icon={<Truck className="h-5 w-5" />} variant="primary" caption="On the road now" compact />
           <SummaryCard title="Waiting acceptance" value={pending.toString()} icon={<Bell className="h-5 w-5" />} variant="warning" caption="Driver not accepted yet" compact />
           <SummaryCard title="Completed" value={doneToday.toString()} icon={<Send className="h-5 w-5" />} variant="success" caption="Back at office" compact />
-          <SummaryCard title="Route alerts" value={flagged.length.toString()} icon={<AlertTriangle className="h-5 w-5" />} variant={flagged.length ? "danger" : "info"} caption="Detour / long stop detected" compact />
+          <SummaryCard title="Route alerts" value={flagged.length.toString()} icon={<AlertTriangle className="h-5 w-5" />} variant={flagged.length ? "destructive" : "info"} caption="Detour / long stop detected" compact />
         </div>
 
         <Tabs defaultValue="board">
@@ -284,7 +284,7 @@ function DriverDispatchPage() {
                       {analyses[t.id] && analyses[t.id]!.pings.length > 1 ? (
                         <div className="mt-2 flex flex-wrap items-center gap-2">
                           <StatusBadge
-                            variant={analyses[t.id]!.risk === "suspicious" ? "danger" : analyses[t.id]!.risk === "review" ? "warning" : "success"}
+                            variant={analyses[t.id]!.risk === "suspicious" ? "destructive" : analyses[t.id]!.risk === "review" ? "warning" : "success"}
                             label={
                               analyses[t.id]!.risk === "suspicious" ? "Unusual route" :
                               analyses[t.id]!.risk === "review" ? "Needs review" : "Route normal"
