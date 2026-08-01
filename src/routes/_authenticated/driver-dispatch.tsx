@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { AlertTriangle, Bell, MapPin, Plus, RefreshCw, Route as RouteIcon, Send, ShieldCheck, Smartphone, Trash2, Truck } from "lucide-react";
+import { AlertTriangle, Bell, History, MapPin, Plus, RefreshCw, Route as RouteIcon, Send, ShieldCheck, Smartphone, Trash2, Truck } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/app-shell";
@@ -26,7 +26,7 @@ import {
   pushDriverLocation, statusTone, updateTaskStatus, type DriverTask,
 } from "@/lib/driver-tasks";
 import {
-  analyseTrail, listPingsForTasks, recordPing, type TrailAnalysis, type TrailPing,
+  analyseTrail, listPingsForTasks, recordPing, splitLegs, type TrailAnalysis, type TrailPing,
 } from "@/lib/driver-trail";
 
 export const Route = createFileRoute("/_authenticated/driver-dispatch")({
@@ -112,6 +112,25 @@ function DriverDispatchPage() {
   const flagged = scoped.filter((t) => analyses[t.id]?.risk === "suspicious");
   const replayTask = scoped.find((t) => t.id === replayId) ?? null;
   const replay = replayTask ? analyses[replayTask.id] : undefined;
+  const replayLegs = replay ? splitLegs(replay.pings, replay.idleStops) : [];
+
+  const [historyDriver, setHistoryDriver] = useState("all");
+  const [historyFrom, setHistoryFrom] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 30);
+    return d.toISOString().slice(0, 10);
+  });
+  const [historyTo, setHistoryTo] = useState(() => new Date().toISOString().slice(0, 10));
+
+  const history = scoped
+    .filter((t) => historyDriver === "all" || t.driverEmployeeId === historyDriver)
+    .filter((t) => {
+      const day = t.scheduledAt.slice(0, 10);
+      return day >= historyFrom && day <= historyTo;
+    })
+    .slice()
+    .sort((a, b) => b.scheduledAt.localeCompare(a.scheduledAt));
+  const clock = (iso: string) => new Date(iso).toLocaleTimeString("en-SG", { hour: "2-digit", minute: "2-digit", hour12: true });
 
   const points: MapPoint[] = scoped
     .filter((t) => t.lastLat != null && t.lastLng != null)
