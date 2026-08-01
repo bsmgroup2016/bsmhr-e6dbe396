@@ -89,27 +89,22 @@ const navGroups: { label: string; items: NavItem[] }[] = [
     ],
   },
   {
-    label: "Staff Management",
-    items: [
-      { title: "Staff Directory", url: "/staff-management", icon: Briefcase },
-      { title: "Staff Attendance", url: "/staff-attendance", icon: CalendarClock },
-      { title: "Staff Payroll", url: "/staff-payroll", icon: Wallet },
-    ],
-  },
-  {
-    label: "Driver & Transport",
+    label: "Driver Management",
     items: [
       { title: "Driver Roster", url: "/drivers", icon: IdCard },
       { title: "Daily Duty & Trips", url: "/driver-duty", icon: CalendarClock },
-      { title: "Vehicle Logs & Fuel", url: "/driver-compliance", icon: Fuel },
-      { title: "Fleet Management", url: "/transport", icon: Truck },
+      { title: "Compliance & Fuel", url: "/driver-compliance", icon: Fuel },
     ],
   },
   {
     label: "Business & HR",
     items: [
+      { title: "Staff Directory", url: "/staff-management", icon: Briefcase },
+      { title: "Staff Attendance", url: "/staff-attendance", icon: CalendarClock },
+      { title: "Staff Payroll", url: "/staff-payroll", icon: Wallet },
       { title: "Foreign Recruitment", url: "/recruitment", icon: UserPlus },
-      { title: "Finance & Accounts", url: "/finance", icon: Wallet },
+      { title: "Finance & Accounts", url: "/finance", icon: Landmark },
+      { title: "Company Assets", url: "/assets", icon: Boxes },
     ],
   },
   {
@@ -117,7 +112,14 @@ const navGroups: { label: string; items: NavItem[] }[] = [
     items: [
       { title: "Accommodation", url: "/accommodation", icon: BedDouble },
       { title: "Assets & PPE", url: "/assets", icon: Boxes },
-      { title: "Inventory", url: "/inventory", icon: Package },
+      { title: "Inventory & Stock", url: "/inventory", icon: Package },
+    ],
+  },
+  {
+    label: "Logistics",
+    items: [
+      { title: "Accommodation (Dorm)", url: "/accommodation", icon: BedDouble },
+      { title: "Fleet Management", url: "/transport", icon: Truck },
     ],
   },
 ];
