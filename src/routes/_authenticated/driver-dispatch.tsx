@@ -104,6 +104,15 @@ function DriverDispatchPage() {
   const doneToday = scoped.filter((t) => t.status === "Back at office").length;
   const pending = scoped.filter((t) => t.status === "Assigned").length;
 
+  const analyses = useMemo(() => {
+    const out: Record<string, TrailAnalysis> = {};
+    for (const t of tasks) out[t.id] = analyseTrail(trails[t.id] ?? []);
+    return out;
+  }, [tasks, trails]);
+  const flagged = scoped.filter((t) => analyses[t.id]?.risk === "suspicious");
+  const replayTask = scoped.find((t) => t.id === replayId) ?? null;
+  const replay = replayTask ? analyses[replayTask.id] : undefined;
+
   const points: MapPoint[] = scoped
     .filter((t) => t.lastLat != null && t.lastLng != null)
     .map((t) => ({
@@ -139,6 +148,12 @@ function DriverDispatchPage() {
       note: note || task.driverNote || undefined,
       ...(loc ? { lat: loc.lat, lng: loc.lng } : {}),
     });
+    if (loc) {
+      await recordPing({
+        taskId: task.id, driverEmployeeId: task.driverEmployeeId,
+        lat: loc.lat, lng: loc.lng, status: next,
+      });
+    }
     setNote("");
     await reload();
     toast.success(`Status updated: ${next}${loc ? " · location shared" : ""}`);
@@ -148,6 +163,10 @@ function DriverDispatchPage() {
     const loc = await capturePoint();
     if (!loc) return toast.error("Location permission denied on this phone");
     await pushDriverLocation(task.id, loc.lat, loc.lng);
+    await recordPing({
+      taskId: task.id, driverEmployeeId: task.driverEmployeeId,
+      lat: loc.lat, lng: loc.lng, status: task.status,
+    });
     await reload();
     toast.success(`Live location sent — ${loc.address}`);
   }
