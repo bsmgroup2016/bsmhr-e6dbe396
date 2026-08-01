@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { AlertTriangle, Bell, History, MapPin, Plus, RefreshCw, Route as RouteIcon, Send, ShieldCheck, Smartphone, Trash2, Truck } from "lucide-react";
+import { AlertTriangle, Bell, History, MapPin, Plane, Plus, RefreshCw, Route as RouteIcon, Send, ShieldCheck, Smartphone, Trash2, Truck } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/app-shell";
@@ -18,12 +18,12 @@ import {
 } from "@/components/ui/dialog";
 import { LocationMap, type MapPoint } from "@/components/location-map";
 import { RouteTrailMap } from "@/components/route-trail-map";
-import { getEmployees, getVehicles, getSites, getCurrentCompany } from "@/lib/store";
+import { getEmployees, getVehicles, getSites, getCurrentCompany, getDriverProfiles } from "@/lib/store";
 import { isDriver } from "@/lib/workforce-split";
 import { capturePoint } from "@/lib/geo";
 import {
-  createDriverTask, deleteDriverTask, listDriverTasks, minutesAgo, nextStatus,
-  pushDriverLocation, statusTone, updateTaskStatus, type DriverTask,
+  createDriverTask, deleteDriverTask, driverAvailability, listDriverTasks, minutesAgo, nextStatus,
+  pushDriverLocation, statusTone, updateTaskStatus, TASK_TYPES, type DriverTask, type TaskType,
 } from "@/lib/driver-tasks";
 import {
   analyseTrail, listPingsForTasks, recordPing, splitLegs, type TrailAnalysis, type TrailPing,
@@ -54,6 +54,7 @@ function DriverDispatchPage() {
   const employees = getEmployees();
   const vehicles = getVehicles();
   const sites = getSites();
+  const driverProfiles = getDriverProfiles();
 
   const drivers = useMemo(
     () => employees.filter((e) => isDriver(e) && (!companyId || !e.companyId || e.companyId === companyId)),
@@ -69,6 +70,8 @@ function DriverDispatchPage() {
   const [note, setNote] = useState("");
   const [form, setForm] = useState({
     driverEmployeeId: "", vehicleId: "", siteId: "", title: "Worker transport",
+    taskType: "Worker transport" as TaskType, flightNo: "", terminal: "", arrivingWorkers: "",
+    expectedMinutes: 60,
     instruction: "", pickup: "", dropoff: "", passengers: 0, scheduledAt: nowLocal(),
   });
 
@@ -192,6 +195,19 @@ function DriverDispatchPage() {
 
   const actorTasks = scoped.filter((t) => t.driverEmployeeId === actor);
 
+  const assignedPlate = (driverId: string) => {
+    const prof = driverProfiles.find((p) => p.employeeId === driverId);
+    if (prof?.assignedVehicleId) return plate(prof.assignedVehicleId);
+    const v = vehicles.find((x) => x.driverEmployeeId === driverId);
+    return v?.plateNo ?? "—";
+  };
+  const assignedVehicleId = (driverId: string) =>
+    driverProfiles.find((p) => p.employeeId === driverId)?.assignedVehicleId ??
+    vehicles.find((x) => x.driverEmployeeId === driverId)?.id ??
+    "";
+  const availability = drivers.map((d) => ({ driver: d, av: driverAvailability(d.id, scoped) }));
+  const freeNow = availability.filter((a) => a.av.available);
+
   return (
     <AppShell>
       <div className="w-full space-y-6">
@@ -227,6 +243,50 @@ function DriverDispatchPage() {
 
           <TabsContent value="board" className="space-y-4">
             <div className="rounded-xl border bg-card p-4 shadow-sm">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h2 className="text-sm font-medium text-muted-foreground">Driver availability &amp; vehicle assignment</h2>
+                <StatusBadge variant={freeNow.length ? "success" : "warning"} label={`${freeNow.length} of ${drivers.length} available now`} dot />
+              </div>
+              <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {availability.map(({ driver, av }) => (
+                  <div key={driver.id} className="rounded-lg border bg-muted/20 p-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="truncate font-medium">{driver.name}</p>
+                        <p className="text-xs text-muted-foreground">{driver.employeeCode} · Vehicle {assignedPlate(driver.id)}</p>
+                      </div>
+                      <StatusBadge variant={av.available ? "success" : "warning"} label={av.available ? "Available" : "On trip"} dot />
+                    </div>
+                    {av.available ? (
+                      <p className="mt-2 text-xs text-muted-foreground">At office — can be assigned now.</p>
+                    ) : (
+                      <div className="mt-2 space-y-1 text-xs text-muted-foreground">
+                        <p className="truncate">{av.currentTask?.title} · {av.currentTask?.status}</p>
+                        <p className="font-medium text-foreground">
+                          Free at approx {av.freeAt ? clock(av.freeAt) : "—"}
+                          {av.freeInMinutes != null ? ` (~${av.freeInMinutes} min)` : ""}
+                        </p>
+                      </div>
+                    )}
+                    {av.available ? (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="mt-3 w-full"
+                        onClick={() => {
+                          setForm({ ...form, driverEmployeeId: driver.id, vehicleId: assignedVehicleId(driver.id) });
+                          setOpen(true);
+                        }}
+                      >
+                        <Send className="mr-1 h-4 w-4" /> Assign task
+                      </Button>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-xl border bg-card p-4 shadow-sm">
               <div className="flex items-center justify-between gap-2">
                 <h2 className="text-sm font-medium text-muted-foreground">Instructions &amp; live status</h2>
                 <Dialog open={open} onOpenChange={setOpen}>
@@ -241,12 +301,42 @@ function DriverDispatchPage() {
                       <DialogDescription>The driver receives this as a task with a push notification on his phone.</DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-3 sm:grid-cols-2">
+                      <div className="sm:col-span-2">
+                        <Label>Task type</Label>
+                        <Select
+                          value={form.taskType}
+                          onValueChange={(v) => {
+                            const type = v as TaskType;
+                            setForm({
+                              ...form,
+                              taskType: type,
+                              title: type === "Airport worker pickup" ? "Airport pickup — new worker arrival" : type,
+                              ...(type === "Airport worker pickup"
+                                ? { pickup: "Changi Airport", dropoff: "Kaki Bukit Dorm", expectedMinutes: 150 }
+                                : { expectedMinutes: 60 }),
+                            });
+                          }}
+                        >
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            {TASK_TYPES.map((t) => (<SelectItem key={t} value={t}>{t}</SelectItem>))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                       <div>
                         <Label>Driver</Label>
-                        <Select value={form.driverEmployeeId} onValueChange={(v) => setForm({ ...form, driverEmployeeId: v })}>
+                        <Select
+                          value={form.driverEmployeeId}
+                          onValueChange={(v) => setForm({ ...form, driverEmployeeId: v, vehicleId: assignedVehicleId(v) || form.vehicleId })}
+                        >
                           <SelectTrigger><SelectValue placeholder="Select driver" /></SelectTrigger>
                           <SelectContent>
-                            {drivers.map((d) => (<SelectItem key={d.id} value={d.id}>{d.name} — {d.employeeCode}</SelectItem>))}
+                            {availability.map(({ driver: d, av }) => (
+                              <SelectItem key={d.id} value={d.id}>
+                                {d.name} — {assignedPlate(d.id)} ·{" "}
+                                {av.available ? "Available" : `On trip, free ~${av.freeAt ? clock(av.freeAt) : "—"}`}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </div>
@@ -273,6 +363,30 @@ function DriverDispatchPage() {
                       <div><Label>Drop-off point</Label><Input value={form.dropoff} onChange={(e) => setForm({ ...form, dropoff: e.target.value })} placeholder="Site Gate B" /></div>
                       <div><Label>Passengers</Label><Input type="number" value={form.passengers} onChange={(e) => setForm({ ...form, passengers: Number(e.target.value) })} /></div>
                       <div><Label>Schedule</Label><Input type="datetime-local" value={form.scheduledAt} onChange={(e) => setForm({ ...form, scheduledAt: e.target.value })} /></div>
+                      {form.taskType === "Airport worker pickup" ? (
+                        <>
+                          <div><Label>Flight no</Label><Input value={form.flightNo} onChange={(e) => setForm({ ...form, flightNo: e.target.value })} placeholder="SQ 449" /></div>
+                          <div>
+                            <Label>Terminal</Label>
+                            <Select value={form.terminal} onValueChange={(v) => setForm({ ...form, terminal: v })}>
+                              <SelectTrigger><SelectValue placeholder="Select terminal" /></SelectTrigger>
+                              <SelectContent>
+                                {["Terminal 1", "Terminal 2", "Terminal 3", "Terminal 4"].map((t) => (
+                                  <SelectItem key={t} value={t}>{t}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="sm:col-span-2">
+                            <Label>Arriving worker name(s) / passport</Label>
+                            <Textarea rows={2} value={form.arrivingWorkers} onChange={(e) => setForm({ ...form, arrivingWorkers: e.target.value })} placeholder="Md Rasel Hossain (BX0912345), Sujon Mia (BX0998877)" />
+                          </div>
+                        </>
+                      ) : null}
+                      <div>
+                        <Label>Expected duration (min)</Label>
+                        <Input type="number" value={form.expectedMinutes} onChange={(e) => setForm({ ...form, expectedMinutes: Number(e.target.value) })} />
+                      </div>
                       <div className="sm:col-span-2">
                         <Label>Instruction</Label>
                         <Textarea rows={3} value={form.instruction} onChange={(e) => setForm({ ...form, instruction: e.target.value })} placeholder="Pick 14 workers from the dorm and drop at site gate B by 7:30 AM." />
@@ -319,6 +433,12 @@ function DriverDispatchPage() {
                         </div>
                       ) : null}
                       <p className="mt-2 text-sm">{t.instruction}</p>
+                      {t.taskType === "Airport worker pickup" ? (
+                        <p className="mt-1 flex items-center gap-1 text-xs font-medium text-foreground">
+                          <Plane className="h-3.5 w-3.5" /> {t.flightNo || "Flight —"} · {t.terminal || "Terminal —"}
+                          {t.arrivingWorkers ? ` · ${t.arrivingWorkers}` : ""}
+                        </p>
+                      ) : null}
                       <p className="mt-1 text-xs text-muted-foreground">
                         {t.pickup || "—"} → {t.dropoff || "—"} · {t.passengers} pax ·{" "}
                         {new Date(t.scheduledAt).toLocaleString("en-SG", { hour12: true })}
