@@ -620,6 +620,16 @@ export default function TimeManagementPage() {
           )}
         </div>
 
+        <div className="rounded-xl border bg-card p-4 shadow-sm">
+          <div className="mb-3">
+            <h2 className="text-base font-semibold">QR site attendance</h2>
+            <p className="text-sm text-muted-foreground">
+              Print a per-site QR poster — workers scan it to clock in and out with GPS evidence.
+            </p>
+          </div>
+          <QrAttendancePanel />
+        </div>
+
         <Dialog open={!!mapRecord} onOpenChange={(open) => !open && setMapRecord(null)}>
           <DialogContent className="sm:max-w-lg">
             <DialogHeader>
