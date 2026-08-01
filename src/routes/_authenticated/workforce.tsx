@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { activeAssignedEmployeeIds, isEmployeeAvailable } from "@/lib/availability";
 import {
   Plus,
@@ -13,6 +13,8 @@ import {
   HardHat,
   SlidersHorizontal,
   ChevronDown,
+  UserCheck,
+  Briefcase,
 } from "lucide-react";
 import { ChevronLeft, ChevronRight, Mail, Phone } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -77,6 +79,8 @@ const statuses: EmployeeStatus[] = [
 export const Route = createFileRoute("/_authenticated/workforce")({
   validateSearch: (search: Record<string, unknown>) => ({
     new: search.new === "1" || search.new === true ? true : undefined,
+    available: search.available === "1" || search.available === true ? true : undefined,
+    deployed: search.deployed === "1" || search.deployed === true ? true : undefined,
     company: typeof search.company === "string" ? search.company : undefined,
   }),
   head: () => ({
@@ -274,6 +278,29 @@ export default function WorkforcePage() {
   const [companyFilter, setCompanyFilter] = useState<string>(routeSearch.company ?? "all");
   const [tradeFilter, setTradeFilter] = useState<string>("all");
   const [showFilters, setShowFilters] = useState(false);
+  const [availableOnly, setAvailableOnly] = useState(routeSearch.available === true);
+  const [deployedOnly, setDeployedOnly] = useState(routeSearch.deployed === true);
+  const navigate = useNavigate();
+
+  /**
+   * Leaves the Available / Deployed focus mode: clears the toggle, the URL
+   * params, search text and every filter so the full employee list returns.
+   */
+  function showAllEmployees() {
+    setAvailableOnly(false);
+    setDeployedOnly(false);
+    setSearch("");
+    setCompanyFilter("all");
+    setTradeFilter("all");
+    setSiteFilter("all");
+    setStatusFilter("all");
+    setPassFilter("all");
+    setCategoryFilter("all");
+    setDeployFilter("all");
+    setNationalityFilter("all");
+    setPage(1);
+    void navigate({ to: "/workforce", search: {}, replace: true });
+  }
   const activeFilterCount = [
     companyFilter,
     tradeFilter,
@@ -331,11 +358,14 @@ export default function WorkforcePage() {
       (deployFilter === "all" || (e.deploymentStatus ?? "Available") === deployFilter) &&
       (nationalityFilter === "all" || e.nationality === nationalityFilter) &&
       (companyFilter === "all" || e.companyId === companyFilter) &&
-      (tradeFilter === "all" || e.trade === tradeFilter)
+      (tradeFilter === "all" || e.trade === tradeFilter) &&
+      (!availableOnly || isAvailable(e)) &&
+      (!deployedOnly || assignedIds.has(e.id))
     );
   });
 
   const availableCount = employees.filter(isAvailable).length;
+  const deployedWorkerCount = employees.filter((e) => assignedIds.has(e.id)).length;
 
   const pageSize = Number(perPage);
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
@@ -660,28 +690,59 @@ export default function WorkforcePage() {
               </Button>
               <Button
                 size="sm"
-                variant="outline"
+                variant={availableOnly ? "default" : "outline"}
                 className="gap-1.5"
-                asChild
+                aria-pressed={availableOnly}
+                onClick={() => {
+                  if (availableOnly) {
+                    showAllEmployees();
+                    return;
+                  }
+                  setAvailableOnly(true);
+                  setDeployedOnly(false);
+                  setPage(1);
+                }}
               >
-                <Link to="/available-workers">
-                  <HardHat className="h-4 w-4" />
-                  Available workers
-                  <span className="ml-1 rounded-full bg-muted px-1.5 text-[11px] font-semibold text-muted-foreground">
-                    {availableCount}
-                  </span>
-                </Link>
+                <UserCheck className="h-4 w-4" />
+                {availableOnly ? "Hide available workers" : "Available workers"}
+                <span
+                  className={cn(
+                    "ml-1 rounded-full px-1.5 text-[11px] font-semibold",
+                    availableOnly
+                      ? "bg-primary-foreground/20 text-primary-foreground"
+                      : "bg-muted text-muted-foreground",
+                  )}
+                >
+                  {availableCount}
+                </span>
               </Button>
               <Button
                 size="sm"
-                variant="outline"
+                variant={deployedOnly ? "default" : "outline"}
                 className="gap-1.5"
-                asChild
+                aria-pressed={deployedOnly}
+                onClick={() => {
+                  if (deployedOnly) {
+                    showAllEmployees();
+                    return;
+                  }
+                  setDeployedOnly(true);
+                  setAvailableOnly(false);
+                  setPage(1);
+                }}
               >
-                <Link to="/deployed-workers">
-                  <Users className="h-4 w-4" />
-                  Deployed workers
-                </Link>
+                <Briefcase className="h-4 w-4" />
+                {deployedOnly ? "Hide deployed workers" : "Deployed workers"}
+                <span
+                  className={cn(
+                    "ml-1 rounded-full px-1.5 text-[11px] font-semibold",
+                    deployedOnly
+                      ? "bg-primary-foreground/20 text-primary-foreground"
+                      : "bg-muted text-muted-foreground",
+                  )}
+                >
+                  {deployedWorkerCount}
+                </span>
               </Button>
             </div>
             <div className="flex flex-wrap items-center gap-2">
@@ -697,6 +758,12 @@ export default function WorkforcePage() {
                 label="Upload XLSX"
               />
               <ExportButton rows={filtered.map(toEmployeeRow)} baseName="employees" sheetName="Employees" />
+              {availableOnly && (
+                <PFileBulkDownloadButton
+                  people={filtered}
+                  zipBaseName="Available-Workers-P-Files"
+                />
+              )}
             </div>
           </div>
 
@@ -792,31 +859,67 @@ export default function WorkforcePage() {
 
           {/* Records per page + search */}
           <div className="flex flex-col gap-3 rounded-lg border bg-muted/20 p-3 lg:flex-row lg:items-center">
-            <>
-              <div className="flex items-center gap-2">
-                <Select value={perPage} onValueChange={(v) => { setPerPage(v); setPage(1); }}>
-                  <SelectTrigger className="h-9 w-20"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {["10", "25", "50", "100"].map((n) => (<SelectItem key={n} value={n}>{n}</SelectItem>))}
-                  </SelectContent>
-                </Select>
-                <span className="text-sm text-muted-foreground">records per page</span>
-              </div>
-              <div className="flex flex-1 items-center justify-end gap-2">
-                <Label htmlFor="wf-search" className="text-sm text-muted-foreground">Search</Label>
-                <div className="relative w-full max-w-sm">
-                  <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    id="wf-search"
-                    type="search"
-                    placeholder="Name, P-File, FIN, project, designation…"
-                    value={search}
-                    onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-                    className="h-9 pl-9"
-                  />
+            {availableOnly || deployedOnly ? (
+              <>
+                <div className="flex flex-1 items-center gap-2 lg:justify-start">
+                  <Select value={perPage} onValueChange={(v) => { setPerPage(v); setPage(1); }}>
+                    <SelectTrigger className="h-9 w-20"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {["10", "25", "50", "100"].map((n) => (<SelectItem key={n} value={n}>{n}</SelectItem>))}
+                    </SelectContent>
+                  </Select>
+                  <span className="text-sm text-muted-foreground">records per page</span>
                 </div>
-              </div>
-            </>
+                <div className="flex flex-1 items-center justify-center gap-2">
+                  <Label htmlFor="wf-search" className="text-sm text-muted-foreground">Search</Label>
+                  <div className="relative w-full max-w-sm">
+                    <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      id="wf-search"
+                      type="search"
+                      placeholder="Name, P-File, FIN, project, designation…"
+                      value={search}
+                      onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+                      className="h-9 pl-9"
+                    />
+                  </div>
+                </div>
+                <div className="flex flex-1 items-center justify-end gap-2">
+                  <Button variant="secondary" size="sm" onClick={showAllEmployees}>
+                    {availableOnly ? "Hide available workers" : "Hide deployed workers"}
+                  </Button>
+                  <Button variant="outline" size="sm" asChild>
+                    <Link to={availableOnly ? "/available-workers" : "/deployed-workers"}>View details</Link>
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="flex items-center gap-2">
+                  <Select value={perPage} onValueChange={(v) => { setPerPage(v); setPage(1); }}>
+                    <SelectTrigger className="h-9 w-20"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {["10", "25", "50", "100"].map((n) => (<SelectItem key={n} value={n}>{n}</SelectItem>))}
+                    </SelectContent>
+                  </Select>
+                  <span className="text-sm text-muted-foreground">records per page</span>
+                </div>
+                <div className="flex flex-1 items-center justify-end gap-2">
+                  <Label htmlFor="wf-search" className="text-sm text-muted-foreground">Search</Label>
+                  <div className="relative w-full max-w-sm">
+                    <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      id="wf-search"
+                      type="search"
+                      placeholder="Name, P-File, FIN, project, designation…"
+                      value={search}
+                      onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+                      className="h-9 pl-9"
+                    />
+                  </div>
+                </div>
+              </>
+            )}
           </div>
 
 
