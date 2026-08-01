@@ -212,6 +212,19 @@ function MomPage() {
           </TabsContent>
 
           <TabsContent value="quota" className="mt-4 space-y-4">
+            {alertLevel !== "ok" && (
+              <div
+                className={`rounded-xl border p-3 text-xs ${
+                  alertLevel === "breach"
+                    ? "border-destructive/40 bg-destructive/10 text-destructive"
+                    : "border-warning/40 bg-warning/10 text-warning-foreground"
+                }`}
+              >
+                {alertLevel === "breach"
+                  ? "Quota breached — no further foreign hiring until local headcount rises or foreign headcount drops."
+                  : `Quota nearing its limit (90%+ used). Foreign headroom ${quota.foreignHeadroom}, S Pass headroom ${quota.sPassHeadroom}.`}
+              </div>
+            )}
             <div className="grid gap-4 lg:grid-cols-2">
               <div className="rounded-xl border bg-card p-4 shadow-sm">
                 <h2 className="text-sm font-medium">Dependency Ratio Ceiling</h2>
@@ -250,6 +263,100 @@ function MomPage() {
                     Quota exceeded. Hire more local staff or reduce foreign headcount before the next work pass renewal.
                   </p>
                 )}
+              </div>
+            </div>
+
+            <div className="rounded-xl border bg-card p-4 shadow-sm">
+              <h2 className="text-sm font-medium">Hiring simulator</h2>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Add planned headcount to see the projected quota position — nothing is saved.
+              </p>
+              <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                {([
+                  ["local", "Local (SG/PR)"],
+                  ["workPermit", "Work Permit"],
+                  ["sPass", "S Pass"],
+                ] as const).map(([key, label]) => (
+                  <div key={key} className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">{label}</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      value={plan[key]}
+                      onChange={(e) =>
+                        setPlan((p) => ({ ...p, [key]: Math.max(0, Number(e.target.value) || 0) }))
+                      }
+                    />
+                  </div>
+                ))}
+              </div>
+              <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                <div className="rounded-lg border p-3">
+                  <div className="text-xs text-muted-foreground">Projected foreign</div>
+                  <div className="text-lg font-semibold">
+                    {projected.foreign} / {projected.foreignAllowed}
+                  </div>
+                  <div className="text-xs text-muted-foreground">DRC {pct(projected.drcUsage)}</div>
+                </div>
+                <div className="rounded-lg border p-3">
+                  <div className="text-xs text-muted-foreground">Projected S Pass</div>
+                  <div className="text-lg font-semibold">
+                    {projected.sPass} / {projected.sPassAllowed}
+                  </div>
+                  <div className="text-xs text-muted-foreground">Sub-quota {pct(projected.sPassUsage)}</div>
+                </div>
+                <div className="rounded-lg border p-3">
+                  <div className="text-xs text-muted-foreground">Verdict</div>
+                  <div className="mt-1">
+                    <StatusBadge variant={projected.overQuota ? "destructive" : "success"}>
+                      {projected.overQuota ? "Not allowed" : "Within quota"}
+                    </StatusBadge>
+                  </div>
+                  <div className="mt-1 text-xs text-muted-foreground">
+                    Headroom {projected.foreignHeadroom} · S Pass {projected.sPassHeadroom}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-xl border bg-card p-4 shadow-sm">
+              <h2 className="text-sm font-medium">Quota by company</h2>
+              <div className="mt-3 overflow-hidden rounded-lg border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Company</TableHead>
+                      <TableHead className="text-right">Local</TableHead>
+                      <TableHead className="text-right">Foreign</TableHead>
+                      <TableHead className="text-right">Allowed</TableHead>
+                      <TableHead className="text-right">DRC used</TableHead>
+                      <TableHead className="text-right">S Pass</TableHead>
+                      <TableHead className="text-right">Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {perCompany.map(({ company: c, quota: q }) => {
+                      const level = quotaAlertLevel(q);
+                      return (
+                        <TableRow key={c.id}>
+                          <TableCell className="font-medium">{c.name}</TableCell>
+                          <TableCell className="text-right">{q.local}</TableCell>
+                          <TableCell className="text-right">{q.foreign}</TableCell>
+                          <TableCell className="text-right">{q.foreignAllowed}</TableCell>
+                          <TableCell className="text-right">{pct(q.drcUsage)}</TableCell>
+                          <TableCell className="text-right">{q.sPass} / {q.sPassAllowed}</TableCell>
+                          <TableCell className="text-right">
+                            <StatusBadge
+                              variant={level === "breach" ? "destructive" : level === "warning" ? "warning" : "success"}
+                            >
+                              {level === "breach" ? "Over quota" : level === "warning" ? "Near limit" : "Healthy"}
+                            </StatusBadge>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
               </div>
             </div>
           </TabsContent>
