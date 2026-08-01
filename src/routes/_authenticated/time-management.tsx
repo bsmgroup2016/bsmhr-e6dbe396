@@ -632,12 +632,13 @@ export default function TimeManagementPage() {
                     <TableHead className="text-right">Normal hrs</TableHead>
                     <TableHead className="text-right">OT hrs</TableHead>
                     <TableHead className="text-right">Total hrs</TableHead>
+                    <TableHead className="w-20 text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {monthRows.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={8} className="h-32 text-center">
+                      <TableCell colSpan={9} className="h-32 text-center">
                         <EmptyState
                           className="border-0 bg-transparent"
                           icon={<Calendar className="h-5 w-5" />}
@@ -662,6 +663,16 @@ export default function TimeManagementPage() {
                           <TableCell className="text-right">{r.normalHours}</TableCell>
                           <TableCell className="text-right">{r.otHours}</TableCell>
                           <TableCell className="text-right font-semibold">{r.totalHours}</TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              title={`Download ${summaryMonth} attendance`}
+                              onClick={() => exportEmployeeMonth(r.employeeId)}
+                            >
+                              <Download className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
                         </TableRow>
                       );
                     })
