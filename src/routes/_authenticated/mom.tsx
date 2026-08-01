@@ -308,9 +308,10 @@ function MomPage() {
                 <div className="rounded-lg border p-3">
                   <div className="text-xs text-muted-foreground">Verdict</div>
                   <div className="mt-1">
-                    <StatusBadge variant={projected.overQuota ? "destructive" : "success"}>
-                      {projected.overQuota ? "Not allowed" : "Within quota"}
-                    </StatusBadge>
+                    <StatusBadge
+                      variant={projected.overQuota ? "destructive" : "success"}
+                      label={projected.overQuota ? "Not allowed" : "Within quota"}
+                    />
                   </div>
                   <div className="mt-1 text-xs text-muted-foreground">
                     Headroom {projected.foreignHeadroom} · S Pass {projected.sPassHeadroom}
@@ -348,9 +349,8 @@ function MomPage() {
                           <TableCell className="text-right">
                             <StatusBadge
                               variant={level === "breach" ? "destructive" : level === "warning" ? "warning" : "success"}
-                            >
-                              {level === "breach" ? "Over quota" : level === "warning" ? "Near limit" : "Healthy"}
-                            </StatusBadge>
+                              label={level === "breach" ? "Over quota" : level === "warning" ? "Near limit" : "Healthy"}
+                            />
                           </TableCell>
                         </TableRow>
                       );
