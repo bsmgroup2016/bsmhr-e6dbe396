@@ -160,7 +160,9 @@ function EmployeeProfilePage() {
               <p className="text-muted-foreground">{staff ? "Fixed Salary" : "Basic"}</p>
               <p className="text-lg font-semibold">
                 ${employee.basicSalary.toLocaleString()}
-                {staff ? <span className="text-xs font-normal text-muted-foreground">/month</span> : null}
+                <span className="text-xs font-normal text-muted-foreground">
+                  {staff ? "/month" : "/day"}
+                </span>
               </p>
               {!staff ? (
                 <p className="text-xs text-muted-foreground">OT rate ${(employee.otRate ?? 0).toFixed(2)}/hr</p>
@@ -339,7 +341,7 @@ function EmployeeProfilePage() {
           <TabsContent value="pay" className="mt-4">
             <Grid>
               <Item
-                label={staff ? "Fixed salary / month" : "Basic rate"}
+                label={staff ? "Fixed salary / month" : "Basic rate / day"}
                 value={`$${employee.basicSalary.toLocaleString()}`}
               />
               {!staff ? (

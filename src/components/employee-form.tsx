@@ -555,7 +555,7 @@ export function EmployeeForm({
 
         <TabsContent value="pay" className="mt-4 space-y-4">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Field label={staff ? "Monthly salary ($)" : "Basic rate / hour ($)"}>
+            <Field label={staff ? "Monthly salary ($)" : "Basic rate / day ($)"}>
               <Input name="basicSalary" type="number" step="0.01" defaultValue={employee?.basicSalary ?? 0} required />
             </Field>
             {staff ? null : (
