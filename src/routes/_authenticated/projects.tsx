@@ -249,18 +249,18 @@ export default function ProjectsPage() {
             </Select>
           </div>
 
-          <div className="mt-4 overflow-hidden rounded-lg border">
-            <Table>
+          <div className="mt-4 overflow-x-auto rounded-lg border">
+            <Table className="min-w-[1120px]">
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-10"></TableHead>
-                  <TableHead>Code</TableHead>
-                  <TableHead>Project / Client</TableHead>
-                  <TableHead>Location</TableHead>
-                  <TableHead>Start date</TableHead>
-                  <TableHead>End date</TableHead>
-                  <TableHead>Manpower</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead className="w-24 whitespace-nowrap">Code</TableHead>
+                  <TableHead className="min-w-[15rem]">Project / Client</TableHead>
+                  <TableHead className="min-w-[11rem]">Location</TableHead>
+                  <TableHead className="w-[10.5rem] whitespace-nowrap">Start date</TableHead>
+                  <TableHead className="w-[10.5rem] whitespace-nowrap">End date</TableHead>
+                  <TableHead className="w-32 whitespace-nowrap">Manpower</TableHead>
+                  <TableHead className="w-28 whitespace-nowrap">Status</TableHead>
                   <TableHead className="w-12"></TableHead>
                 </TableRow>
               </TableHeader>
@@ -278,8 +278,8 @@ export default function ProjectsPage() {
                     const client = clients.find((c) => c.id === p.clientId);
                     return (
                       <>
-                        <TableRow key={p.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setViewingProject(p)}>
-                          <TableCell>
+                        <TableRow key={p.id} className="cursor-pointer align-middle hover:bg-muted/50" onClick={() => setViewingProject(p)}>
+                          <TableCell className="align-middle">
                             <Button
                               variant="ghost"
                               size="icon"
@@ -295,17 +295,17 @@ export default function ProjectsPage() {
                               {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                             </Button>
                           </TableCell>
-                          <TableCell className="font-medium">{p.code}</TableCell>
-                          <TableCell>
-                            <div className="font-medium">{p.name}</div>
-                            <div className="text-xs text-muted-foreground">{client?.name}</div>
+                          <TableCell className="whitespace-nowrap align-middle font-medium">{p.code}</TableCell>
+                          <TableCell className="align-middle">
+                            <div className="font-medium leading-tight">{p.name}</div>
+                            <div className="mt-0.5 text-xs text-muted-foreground">{client?.name}</div>
                           </TableCell>
-                          <TableCell>{p.location}</TableCell>
-                          <TableCell onClick={(evt) => evt.stopPropagation()}>
+                          <TableCell className="align-middle text-sm text-muted-foreground">{p.location}</TableCell>
+                          <TableCell className="align-middle" onClick={(evt) => evt.stopPropagation()}>
                             <Input
                               type="date"
                               aria-label={`Start date for ${p.name}`}
-                              className="h-8 w-[9.5rem]"
+                              className="h-8 w-full text-sm"
                               value={p.startDate ?? ""}
                               onChange={(evt) => {
                                 updateProject(p.id, { startDate: evt.target.value || undefined });
@@ -313,11 +313,11 @@ export default function ProjectsPage() {
                               }}
                             />
                           </TableCell>
-                          <TableCell onClick={(evt) => evt.stopPropagation()}>
+                          <TableCell className="align-middle" onClick={(evt) => evt.stopPropagation()}>
                             <Input
                               type="date"
                               aria-label={`End date for ${p.name}`}
-                              className="h-8 w-[9.5rem]"
+                              className="h-8 w-full text-sm"
                               value={p.endDate ?? ""}
                               onChange={(evt) => {
                                 updateProject(p.id, { endDate: evt.target.value || undefined });
@@ -325,12 +325,12 @@ export default function ProjectsPage() {
                               }}
                             />
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="align-middle">
                             {(() => {
                               const f = projectFulfilment(p, sites, assignments);
                               return (
                                 <div
-                                  className="min-w-24 cursor-pointer"
+                                  className="cursor-pointer"
                                   title="Manage workers"
                                   onClick={(evt) => {
                                     evt.stopPropagation();
@@ -353,7 +353,7 @@ export default function ProjectsPage() {
                               );
                             })()}
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="align-middle">
                             <StatusBadge
                               variant={p.status === "Active" ? "success" : p.status === "Planning" ? "warning" : p.status === "On Hold" ? "warning" : "ghost"}
                               label={p.status}
