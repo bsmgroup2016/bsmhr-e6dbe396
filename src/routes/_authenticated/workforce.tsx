@@ -1038,6 +1038,11 @@ export default function WorkforcePage() {
                           >
                             <Eye className="h-3.5 w-3.5" />
                           </Button>
+                          <PFileDownloadButton
+                            pFileUrl={e.pFileUrl}
+                            name={e.name}
+                            code={e.employeeCode}
+                          />
                           <Button
                             size="icon"
                             variant="outline"
