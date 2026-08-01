@@ -333,14 +333,11 @@ export default function WorkforcePage() {
       (deployFilter === "all" || (e.deploymentStatus ?? "Available") === deployFilter) &&
       (nationalityFilter === "all" || e.nationality === nationalityFilter) &&
       (companyFilter === "all" || e.companyId === companyFilter) &&
-      (tradeFilter === "all" || e.trade === tradeFilter) &&
-      (!availableOnly || isAvailable(e)) &&
-      (!deployedOnly || assignedIds.has(e.id))
+      (tradeFilter === "all" || e.trade === tradeFilter)
     );
   });
 
   const availableCount = employees.filter(isAvailable).length;
-  const deployedWorkerCount = employees.filter((e) => assignedIds.has(e.id)).length;
 
   const pageSize = Number(perPage);
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
