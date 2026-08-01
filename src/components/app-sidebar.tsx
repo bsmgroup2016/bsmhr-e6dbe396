@@ -64,7 +64,8 @@ const navGroups: { label: string; items: NavItem[] }[] = [
     label: "Workforce",
     items: [
       { title: "Employee/Workers", url: "/workforce", icon: Users },
-      { title: "Staff Management", url: "/staff-management", icon: Briefcase, sub: true },
+      { title: "Staff Management", url: "/staff-management", icon: Briefcase },
+      { title: "Staff Attendance", url: "/staff-attendance", icon: CalendarClock, sub: true },
       { title: "Documents", url: "/documents", icon: FileText },
       { title: "Compliance", url: "/compliance", icon: ShieldCheck },
       { title: "MOM Levy & Quota", url: "/mom", icon: Landmark },

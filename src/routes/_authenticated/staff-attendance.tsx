@@ -37,7 +37,7 @@ import { isOfficeStaff } from "@/lib/workforce-split";
 import { exportRows, timestampedName } from "@/lib/xlsx";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/_authenticated/staff-management")({
+export const Route = createFileRoute("/_authenticated/staff-attendance")({
   head: () => ({
     meta: [
       { title: "Staff Attendance — BSM Management" },
@@ -106,6 +106,7 @@ function StaffAttendancePage() {
       "Status": item.record.status,
       "Check In": item.record.checkIn || "—",
       "Check Out": item.record.checkOut || "—",
+      "Notes": (item.record as any).notes || "—",
     }));
     await exportRows(rows, timestampedName(`staff_attendance_${date}`, "xlsx"), "Staff");
     toast.success("Attendance report exported");
@@ -221,7 +222,7 @@ function StaffAttendancePage() {
                       <TableCell>{record.checkIn || "—"}</TableCell>
                       <TableCell>{record.checkOut || "—"}</TableCell>
                       <TableCell className="max-w-[200px] truncate text-xs text-muted-foreground">
-                        {record.notes || "—"}
+                        {(record as any).notes || "—"}
                       </TableCell>
                     </TableRow>
                   ))
