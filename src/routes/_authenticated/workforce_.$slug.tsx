@@ -454,10 +454,6 @@ function SimpleTable({
   rows,
   empty,
 }: {
-  headers,
-  rows,
-  empty,
-}: {
   headers: string[];
   rows: (string | number)[][];
   empty: string;
