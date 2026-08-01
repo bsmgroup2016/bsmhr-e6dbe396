@@ -242,11 +242,22 @@ function MomPage() {
                   <h2 className="text-sm font-medium">Estimated monthly levy bill</h2>
                   <p className="text-xs text-muted-foreground">
                     Work Permit {money(levy.workPermitLevy)} · S Pass {money(levy.sPassLevy)}
+                    {useCustomLevy && levy.customCount > 0
+                      ? ` · ${levy.customCount} custom rate${levy.customCount > 1 ? "s" : ""} (statutory would be ${money(levy.statutoryTotal)})`
+                      : ""}
                   </p>
                 </div>
-                <Button size="sm" variant="outline" onClick={exportLevy} disabled={!levy.perWorker.length}>
-                  <Download className="mr-1 h-4 w-4" /> Export
-                </Button>
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <Switch id="custom-levy" checked={useCustomLevy} onCheckedChange={setUseCustomLevy} />
+                    <Label htmlFor="custom-levy" className="text-xs text-muted-foreground">
+                      Use custom levy rates
+                    </Label>
+                  </div>
+                  <Button size="sm" variant="outline" onClick={exportLevy} disabled={!levy.perWorker.length}>
+                    <Download className="mr-1 h-4 w-4" /> Export
+                  </Button>
+                </div>
               </div>
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
                 {levy.byTier.map((t) => (
@@ -264,6 +275,7 @@ function MomPage() {
                       <TableHead>Employee</TableHead>
                       <TableHead>Pass type</TableHead>
                       <TableHead>Levy tier</TableHead>
+                      <TableHead className="text-right">Statutory</TableHead>
                       <TableHead className="text-right">Monthly levy</TableHead>
                       <TableHead className="w-12"></TableHead>
                     </TableRow>
@@ -271,7 +283,7 @@ function MomPage() {
                   <TableBody>
                     {levy.perWorker.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={5} className="h-32 text-center">
+                        <TableCell colSpan={6} className="h-32 text-center">
                           <EmptyState className="border-0 bg-transparent" icon={<Landmark className="h-5 w-5" />} title="No levy payable" description="No Work Permit or S Pass holders in this company." />
                         </TableCell>
                       </TableRow>
@@ -284,7 +296,13 @@ function MomPage() {
                           </TableCell>
                           <TableCell>{r.employee.passType}</TableCell>
                           <TableCell>{r.tier}</TableCell>
-                          <TableCell className="text-right font-medium">{money(r.levy)}</TableCell>
+                          <TableCell className="text-right text-xs text-muted-foreground">{money(r.statutory)}</TableCell>
+                          <TableCell className="text-right font-medium">
+                            <div className="flex items-center justify-end gap-2">
+                              {r.custom ? <Badge variant="secondary" className="text-[10px]">Custom</Badge> : null}
+                              {money(r.levy)}
+                            </div>
+                          </TableCell>
                           <TableCell>
                             <Button size="icon" variant="ghost" asChild title="Open profile">
                               <Link to="/workforce/$slug" params={{ slug: employeeSlugById(r.employee.id) }}><Eye className="h-4 w-4" /></Link>
