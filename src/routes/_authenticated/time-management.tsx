@@ -789,6 +789,9 @@ export default function TimeManagementPage() {
           <DialogContent className="sm:max-w-lg">
             <DialogHeader>
               <DialogTitle>Attendance location</DialogTitle>
+          <DialogContent className="sm:max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Attendance location</DialogTitle>
               <DialogDescription>
                 {mapRecord
                   ? `${employees.find((e) => e.id === mapRecord.employeeId)?.name ?? ""} — ${mapRecord.date}`
