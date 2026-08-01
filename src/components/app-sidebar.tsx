@@ -108,8 +108,12 @@ const navGroups: { label: string; items: NavItem[] }[] = [
   {
     label: "Business & HR",
     items: [
+      { title: "Staff Directory", url: "/staff-management", icon: Briefcase },
+      { title: "Staff Attendance", url: "/staff-attendance", icon: CalendarClock },
+      { title: "Staff Payroll", url: "/staff-payroll", icon: Wallet },
       { title: "Foreign Recruitment", url: "/recruitment", icon: UserPlus },
-      { title: "Finance & Accounts", url: "/finance", icon: Wallet },
+      { title: "Finance & Accounts", url: "/finance", icon: Landmark },
+      { title: "Company Assets", url: "/assets", icon: Boxes },
     ],
   },
   {
