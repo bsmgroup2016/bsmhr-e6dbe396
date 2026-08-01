@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
-  getEmployees, getVehicles, getCurrentCompany, getDriverProfiles,
+  getEmployees, getVehicles, getDriverProfiles,
   upsertDriverProfile, deleteDriverProfile, driverLicenceAlerts,
 } from "@/lib/store";
 import { isDriver } from "@/lib/workforce-split";
@@ -71,7 +71,6 @@ function ExpiryCell({ date }: { date?: string }) {
 }
 
 function DriversPage() {
-  const companyId = getCurrentCompany();
   const [profiles, setProfiles] = useState(getDriverProfiles());
   const employees = getEmployees();
   const vehicles = getVehicles();
@@ -82,7 +81,7 @@ function DriversPage() {
   const refresh = () => setProfiles(getDriverProfiles());
 
   const driverEmployees = employees.filter(
-    (e) => isDriver(e) && (!companyId || !e.companyId || e.companyId === companyId),
+    (e) => isDriver(e),
   );
   const emp = (id: string) => employees.find((e) => e.id === id);
   const plate = (id?: string) => (id ? vehicles.find((v) => v.id === id)?.plateNo ?? "—" : "—");
