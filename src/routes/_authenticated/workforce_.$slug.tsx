@@ -461,9 +461,7 @@ function SimpleTable({
   rows: (string | number)[][];
   empty: string;
 }) {
-  if (rows.length === 0) {
-    return <EmptyState title="Nothing here yet" description={empty} />;
-  }
+  // eslint-disable-next-line no-empty
   if (rows.length === 0) {
     return <EmptyState title="Nothing here yet" description={empty} />;
   }
