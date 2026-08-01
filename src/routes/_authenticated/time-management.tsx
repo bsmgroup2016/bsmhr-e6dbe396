@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   Plus,
@@ -53,7 +53,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { getEmployees, getSites, getAttendance, addAttendance, saveDailySheet, getCurrentCompany } from "@/lib/store";
+import {
+  getEmployees,
+  getSites,
+  getAttendance,
+  addAttendance,
+  saveDailySheet,
+  getCurrentCompany,
+  getCompanies,
+} from "@/lib/store";
+import { isSiteWorker } from "@/lib/workforce-split";
 import { GeoCapture } from "@/components/geo-capture";
 import { QrAttendancePanel } from "@/components/qr-attendance-panel";
 import { LocationMap } from "@/components/location-map";
@@ -104,8 +113,57 @@ export default function TimeManagementPage() {
   const [noLocationOnly, setNoLocationOnly] = useState(false);
   const [mapRecord, setMapRecord] = useState<Attendance | null>(null);
   const companyId = getCurrentCompany();
+  const companies = getCompanies();
+  const [companyFilter, setCompanyFilter] = useState<string>(companyId || "all");
+  const [groupFilter, setGroupFilter] = useState<"all" | "workers" | "staff">("all");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [designationFilter, setDesignationFilter] = useState<string>("all");
+  const [viewMode, setViewMode] = useState<"day" | "month">("day");
   const companyEmployees = employees.filter(
     (e) => (!companyId || e.companyId === companyId) && e.status !== "Inactive",
+  );
+
+  const empById = useMemo(() => new Map(employees.map((e) => [e.id, e])), [employees]);
+
+  const designations = useMemo(
+    () => [...new Set(employees.map((e) => e.trade).filter(Boolean) as string[])].sort(),
+    [employees],
+  );
+
+  /** Shared people filter (company / worker-staff / designation / search). */
+  const matchesPerson = (employeeId: string) => {
+    const emp = empById.get(employeeId);
+    if (!emp) return false;
+    if (companyFilter !== "all" && emp.companyId !== companyFilter) return false;
+    if (groupFilter === "workers" && !isSiteWorker(emp)) return false;
+    if (groupFilter === "staff" && isSiteWorker(emp)) return false;
+    if (designationFilter !== "all" && emp.trade !== designationFilter) return false;
+    const q = search.trim().toLowerCase();
+    if (
+      q &&
+      !emp.name.toLowerCase().includes(q) &&
+      !emp.employeeCode.toLowerCase().includes(q)
+    )
+      return false;
+    return true;
+  };
+
+  const scopedEmployeeIds = useMemo(
+    () => employees.filter((e) => matchesPerson(e.id)).map((e) => e.id),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [employees, companyFilter, groupFilter, designationFilter, search],
+  );
+
+  const monthRows = useMemo(
+    () =>
+      viewMode === "month"
+        ? monthlyAttendanceSummary(attendance, summaryMonth, scopedEmployeeIds).sort((a, b) =>
+            (empById.get(a.employeeId)?.employeeCode ?? "").localeCompare(
+              empById.get(b.employeeId)?.employeeCode ?? "",
+            ),
+          )
+        : [],
+    [viewMode, attendance, summaryMonth, scopedEmployeeIds, empById],
   );
 
   async function exportMonthlySummary() {
@@ -136,11 +194,11 @@ export default function TimeManagementPage() {
   }
 
   const filtered = attendance.filter((a) => {
-    const q = search.toLowerCase();
-    const emp = employees.find((e) => e.id === a.employeeId);
     const hasLocation = a.checkInLat != null || a.checkOutLat != null;
     if (noLocationOnly && hasLocation) return false;
-    return a.date === date && (emp?.name.toLowerCase().includes(q) || emp?.employeeCode.toLowerCase().includes(q));
+    if (a.date !== date) return false;
+    if (statusFilter !== "all" && a.status !== statusFilter) return false;
+    return matchesPerson(a.employeeId);
   });
 
   const present = filtered.filter((a) => a.status === "Present" || a.status === "Half Day").length;
