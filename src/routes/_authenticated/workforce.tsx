@@ -601,7 +601,7 @@ export default function WorkforcePage() {
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <SummaryCard title="Total employees" value={employees.length.toString()} icon={<Users className="h-5 w-5" />} variant="primary" caption="33 + 14 ki 55 hoy? vul keno\\" compact />
+          <SummaryCard title="Total employees" value={employees.length.toString()} icon={<Users className="h-5 w-5" />} variant="primary" caption="ami bolesi jodi available worker 14, deployed workers 33 hoy tahole , total employees 55 hoy kivabe? kothay vul koreso? total worker vul ase kno" compact />
           <Link to="/available-workers" className="block h-full">
             <SummaryCard title="Available workers" value={availableCount.toString()} icon={<HardHat className="h-5 w-5" />} variant="success" caption="Not assigned to any project" compact />
           </Link>
