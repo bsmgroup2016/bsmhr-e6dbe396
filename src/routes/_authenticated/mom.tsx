@@ -8,6 +8,9 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -60,7 +63,11 @@ function MomPage() {
   }, [companyId]);
 
   const quota = useMemo(() => computeQuota(employees, sector), [employees, sector]);
-  const levy = useMemo(() => levySummary(employees, sector), [employees, sector]);
+  const [useCustomLevy, setUseCustomLevy] = useState(true);
+  const levy = useMemo(
+    () => levySummary(employees, sector, useCustomLevy),
+    [employees, sector, useCustomLevy],
+  );
   const insurance = useMemo(() => insuranceItems(employees), [employees]);
   const insuranceRisk = insurance.filter((i) => i.severity !== "ok").length;
 
@@ -73,6 +80,8 @@ function MomPage() {
         "Pass type": r.employee.passType,
         Sector: sector,
         "Levy tier": r.tier,
+        "Statutory levy ($)": r.statutory,
+        "Custom rate": r.custom ? "Yes" : "No",
         "Monthly levy ($)": r.levy,
       })),
       "mom-levy-summary", "Levy",
