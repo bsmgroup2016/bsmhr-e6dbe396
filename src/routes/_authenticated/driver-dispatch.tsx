@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { Bell, MapPin, Plus, RefreshCw, Send, Smartphone, Trash2, Truck } from "lucide-react";
+import { AlertTriangle, Bell, MapPin, Plus, RefreshCw, Route as RouteIcon, Send, ShieldCheck, Smartphone, Trash2, Truck } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/app-shell";
@@ -17,6 +17,7 @@ import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
 import { LocationMap, type MapPoint } from "@/components/location-map";
+import { RouteTrailMap } from "@/components/route-trail-map";
 import { getEmployees, getVehicles, getSites, getCurrentCompany } from "@/lib/store";
 import { isDriver } from "@/lib/workforce-split";
 import { capturePoint } from "@/lib/geo";
@@ -24,6 +25,9 @@ import {
   createDriverTask, deleteDriverTask, listDriverTasks, minutesAgo, nextStatus,
   pushDriverLocation, statusTone, updateTaskStatus, type DriverTask,
 } from "@/lib/driver-tasks";
+import {
+  analyseTrail, listPingsForTasks, recordPing, type TrailAnalysis, type TrailPing,
+} from "@/lib/driver-trail";
 
 export const Route = createFileRoute("/_authenticated/driver-dispatch")({
   head: () => ({
@@ -57,6 +61,8 @@ function DriverDispatchPage() {
   );
 
   const [tasks, setTasks] = useState<DriverTask[]>([]);
+  const [trails, setTrails] = useState<Record<string, TrailPing[]>>({});
+  const [replayId, setReplayId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [actor, setActor] = useState("");
@@ -68,7 +74,9 @@ function DriverDispatchPage() {
 
   const reload = async () => {
     try {
-      setTasks(await listDriverTasks());
+      const list = await listDriverTasks();
+      setTasks(list);
+      setTrails(await listPingsForTasks(list.map((t) => t.id)));
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Could not load tasks");
     } finally {
