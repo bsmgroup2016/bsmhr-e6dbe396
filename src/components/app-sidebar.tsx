@@ -77,11 +77,15 @@ const navGroups: { label: string; items: NavItem[] }[] = [
     ],
   },
   {
-    label: "Operations",
+    label: "Project & Clients",
     items: [
       { title: "Clients", url: "/clients", icon: Handshake },
+      { title: "Client CRM", url: "/crm", icon: BadgeDollarSign },
       { title: "Projects & Sites", url: "/projects", icon: FolderKanban },
-      { title: "Deployment", url: "/operations", icon: Layers },
+      { title: "Manpower Deployment", url: "/operations", icon: Layers },
+      { title: "Deployed Workers", url: "/deployed-workers", icon: HardHat },
+      { title: "Available Workers", url: "/available-workers", icon: Users },
+      { title: "Billing & Invoicing", url: "/billing", icon: Receipt },
     ],
   },
   {
@@ -105,8 +109,6 @@ const navGroups: { label: string; items: NavItem[] }[] = [
     label: "Business",
     items: [
       { title: "Recruitment", url: "/recruitment", icon: UserPlus },
-      { title: "Client CRM", url: "/crm", icon: BadgeDollarSign },
-      { title: "Billing & Invoicing", url: "/billing", icon: Receipt },
       { title: "Finance", url: "/finance", icon: Wallet },
     ],
   },
