@@ -118,6 +118,7 @@ export default function TimeManagementPage() {
   const [groupFilter, setGroupFilter] = useState<"all" | "workers" | "staff">("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [designationFilter, setDesignationFilter] = useState<string>("all");
+  const [employeeFilter, setEmployeeFilter] = useState<string>("all");
   const [viewMode, setViewMode] = useState<"day" | "month">("day");
   const companyEmployees = employees.filter(
     (e) => (!companyId || e.companyId === companyId) && e.status !== "Inactive",
@@ -130,6 +131,17 @@ export default function TimeManagementPage() {
     [employees],
   );
 
+  /** Employee dropdown options, scoped to company / group / designation. */
+  const employeeOptions = useMemo(
+    () =>
+      employees
+        .filter((e) => companyFilter === "all" || e.companyId === companyFilter)
+        .filter((e) => groupFilter === "all" || (groupFilter === "workers" ? isSiteWorker(e) : !isSiteWorker(e)))
+        .filter((e) => designationFilter === "all" || e.trade === designationFilter)
+        .sort((a, b) => a.name.localeCompare(b.name)),
+    [employees, companyFilter, groupFilter, designationFilter],
+  );
+
   /** Shared people filter (company / worker-staff / designation / search). */
   const matchesPerson = (employeeId: string) => {
     const emp = empById.get(employeeId);
@@ -138,6 +150,7 @@ export default function TimeManagementPage() {
     if (groupFilter === "workers" && !isSiteWorker(emp)) return false;
     if (groupFilter === "staff" && isSiteWorker(emp)) return false;
     if (designationFilter !== "all" && emp.trade !== designationFilter) return false;
+    if (employeeFilter !== "all" && emp.id !== employeeFilter) return false;
     const q = search.trim().toLowerCase();
     if (
       q &&
@@ -151,7 +164,7 @@ export default function TimeManagementPage() {
   const scopedEmployeeIds = useMemo(
     () => employees.filter((e) => matchesPerson(e.id)).map((e) => e.id),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [employees, companyFilter, groupFilter, designationFilter, search],
+    [employees, companyFilter, groupFilter, designationFilter, employeeFilter, search],
   );
 
   const monthRows = useMemo(
@@ -400,7 +413,7 @@ export default function TimeManagementPage() {
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div className="relative w-full max-w-sm">
               <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input type="search" placeholder="Search worker..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+              <Input type="search" placeholder="Employee name / P-File No..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
             </div>
             <div className="flex items-center gap-2">
               <Calendar className="h-4 w-4 text-muted-foreground" />
@@ -435,6 +448,19 @@ export default function TimeManagementPage() {
           </div>
 
           <div className="mt-3 flex flex-wrap items-center gap-2">
+            <Select value={employeeFilter} onValueChange={setEmployeeFilter}>
+              <SelectTrigger className="w-56">
+                <SelectValue placeholder="Employee" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All employees</SelectItem>
+                {employeeOptions.map((e) => (
+                  <SelectItem key={e.id} value={e.id}>
+                    {e.name} · {e.employeeCode}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Select value={companyFilter} onValueChange={setCompanyFilter}>
               <SelectTrigger className="w-44">
                 <SelectValue placeholder="Company" />
@@ -499,6 +525,7 @@ export default function TimeManagementPage() {
                 setGroupFilter("all");
                 setDesignationFilter("all");
                 setStatusFilter("all");
+                setEmployeeFilter("all");
                 setSearch("");
               }}
             >
