@@ -105,9 +105,9 @@ function daysUntil(iso: string): number | null {
 function expiryBadge(e: { workPermitExpiryDate?: string; passExpiry?: string }) {
   const days = daysUntil(e.workPermitExpiryDate || e.passExpiry || "");
   if (days === null) return null;
-  if (days < 0) return <StatusBadge variant="destructive" label="WP expired" dot />;
-  if (days <= 60) return <StatusBadge variant="warning" label={`WP ${days}d left`} dot />;
-  return <StatusBadge variant="success" label={`WP ${days}d left`} dot />;
+  if (days < 0) return <StatusBadge variant="destructive" label="Expired" dot />;
+  if (days <= 60) return <StatusBadge variant="warning" label={`${days} days left`} dot />;
+  return <StatusBadge variant="success" label={`${days} days left`} dot />;
 }
 
 const EMPLOYEE_IMPORT_COLUMNS: ImportColumn[] = [
