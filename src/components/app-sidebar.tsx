@@ -93,6 +93,7 @@ const navGroups: { label: string; items: NavItem[] }[] = [
     items: [
       { title: "Driver Roster", url: "/drivers", icon: IdCard },
       { title: "Daily Duty & Trips", url: "/driver-duty", icon: CalendarClock },
+      { title: "Fleet Management", url: "/transport", icon: Truck },
       { title: "Compliance & Fuel", url: "/driver-compliance", icon: Fuel },
     ],
   },
@@ -106,7 +107,6 @@ const navGroups: { label: string; items: NavItem[] }[] = [
       { title: "Finance & Accounts", url: "/finance", icon: Landmark },
       { title: "Company Assets", url: "/assets", icon: Boxes },
       { title: "Accommodation (Dorm)", url: "/accommodation", icon: BedDouble },
-      { title: "Fleet Management", url: "/transport", icon: Truck },
     ],
   },
 ];
