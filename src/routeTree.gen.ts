@@ -34,6 +34,7 @@ import { Route as AuthenticatedLeaveRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedInventoryRouteImport } from './routes/_authenticated/inventory'
 import { Route as AuthenticatedFinanceRouteImport } from './routes/_authenticated/finance'
 import { Route as AuthenticatedDriversRouteImport } from './routes/_authenticated/drivers'
+import { Route as AuthenticatedDriverDutyRouteImport } from './routes/_authenticated/driver-duty'
 import { Route as AuthenticatedDocumentsRouteImport } from './routes/_authenticated/documents'
 import { Route as AuthenticatedDeployedWorkersRouteImport } from './routes/_authenticated/deployed-workers'
 import { Route as AuthenticatedCrmRouteImport } from './routes/_authenticated/crm'
@@ -190,6 +191,11 @@ const AuthenticatedFinanceRoute = AuthenticatedFinanceRouteImport.update({
 const AuthenticatedDriversRoute = AuthenticatedDriversRouteImport.update({
   id: '/drivers',
   path: '/drivers',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedDriverDutyRoute = AuthenticatedDriverDutyRouteImport.update({
+  id: '/driver-duty',
+  path: '/driver-duty',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedDocumentsRoute = AuthenticatedDocumentsRouteImport.update({
@@ -355,6 +361,7 @@ export interface FileRoutesByFullPath {
   '/crm': typeof AuthenticatedCrmRoute
   '/deployed-workers': typeof AuthenticatedDeployedWorkersRoute
   '/documents': typeof AuthenticatedDocumentsRoute
+  '/driver-duty': typeof AuthenticatedDriverDutyRoute
   '/drivers': typeof AuthenticatedDriversRoute
   '/finance': typeof AuthenticatedFinanceRoute
   '/inventory': typeof AuthenticatedInventoryRoute
@@ -408,6 +415,7 @@ export interface FileRoutesByTo {
   '/crm': typeof AuthenticatedCrmRoute
   '/deployed-workers': typeof AuthenticatedDeployedWorkersRoute
   '/documents': typeof AuthenticatedDocumentsRoute
+  '/driver-duty': typeof AuthenticatedDriverDutyRoute
   '/drivers': typeof AuthenticatedDriversRoute
   '/finance': typeof AuthenticatedFinanceRoute
   '/inventory': typeof AuthenticatedInventoryRoute
@@ -464,6 +472,7 @@ export interface FileRoutesById {
   '/_authenticated/crm': typeof AuthenticatedCrmRoute
   '/_authenticated/deployed-workers': typeof AuthenticatedDeployedWorkersRoute
   '/_authenticated/documents': typeof AuthenticatedDocumentsRoute
+  '/_authenticated/driver-duty': typeof AuthenticatedDriverDutyRoute
   '/_authenticated/drivers': typeof AuthenticatedDriversRoute
   '/_authenticated/finance': typeof AuthenticatedFinanceRoute
   '/_authenticated/inventory': typeof AuthenticatedInventoryRoute
@@ -521,6 +530,7 @@ export interface FileRouteTypes {
     | '/crm'
     | '/deployed-workers'
     | '/documents'
+    | '/driver-duty'
     | '/drivers'
     | '/finance'
     | '/inventory'
@@ -574,6 +584,7 @@ export interface FileRouteTypes {
     | '/crm'
     | '/deployed-workers'
     | '/documents'
+    | '/driver-duty'
     | '/drivers'
     | '/finance'
     | '/inventory'
@@ -629,6 +640,7 @@ export interface FileRouteTypes {
     | '/_authenticated/crm'
     | '/_authenticated/deployed-workers'
     | '/_authenticated/documents'
+    | '/_authenticated/driver-duty'
     | '/_authenticated/drivers'
     | '/_authenticated/finance'
     | '/_authenticated/inventory'
@@ -864,6 +876,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDriversRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/driver-duty': {
+      id: '/_authenticated/driver-duty'
+      path: '/driver-duty'
+      fullPath: '/driver-duty'
+      preLoaderRoute: typeof AuthenticatedDriverDutyRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/documents': {
       id: '/_authenticated/documents'
       path: '/documents'
@@ -1077,6 +1096,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCrmRoute: typeof AuthenticatedCrmRoute
   AuthenticatedDeployedWorkersRoute: typeof AuthenticatedDeployedWorkersRoute
   AuthenticatedDocumentsRoute: typeof AuthenticatedDocumentsRoute
+  AuthenticatedDriverDutyRoute: typeof AuthenticatedDriverDutyRoute
   AuthenticatedDriversRoute: typeof AuthenticatedDriversRoute
   AuthenticatedFinanceRoute: typeof AuthenticatedFinanceRoute
   AuthenticatedInventoryRoute: typeof AuthenticatedInventoryRoute
@@ -1118,6 +1138,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCrmRoute: AuthenticatedCrmRoute,
   AuthenticatedDeployedWorkersRoute: AuthenticatedDeployedWorkersRoute,
   AuthenticatedDocumentsRoute: AuthenticatedDocumentsRoute,
+  AuthenticatedDriverDutyRoute: AuthenticatedDriverDutyRoute,
   AuthenticatedDriversRoute: AuthenticatedDriversRoute,
   AuthenticatedFinanceRoute: AuthenticatedFinanceRoute,
   AuthenticatedInventoryRoute: AuthenticatedInventoryRoute,
