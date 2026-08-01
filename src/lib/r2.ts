@@ -190,6 +190,8 @@ export async function downloadR2File(ref: string, fileName?: string): Promise<vo
 export async function downloadR2FilesAsZip(
   refs: string[],
   zipName = "files.zip",
+  /** Optional per-ref file names inside the ZIP. */
+  names?: Record<string, string>,
 ): Promise<{ added: number; failed: string[] }> {
   const { default: JSZip } = await import("jszip");
   const zip = new JSZip();
@@ -203,7 +205,7 @@ export async function downloadR2FilesAsZip(
       const res = await fetch(url);
       if (!res.ok) throw new Error(String(res.status));
       const blob = await res.blob();
-      let name = r2FileName(ref);
+      let name = names?.[ref] ?? r2FileName(ref);
       if (used.has(name)) {
         const dot = name.lastIndexOf(".");
         const base = dot > 0 ? name.slice(0, dot) : name;
