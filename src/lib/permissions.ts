@@ -43,6 +43,8 @@ export const ROUTE_ROLES: Record<string, AppAuthRole[]> = {
   "/clients": BACK_OFFICE,
   "/projects": STAFF,
   "/operations": STAFF,
+  "/deployed-workers": STAFF,
+  "/available-workers": STAFF,
   "/recruitment": BACK_OFFICE,
   "/crm": ["admin", "manager"],
   "/billing": ["admin", "manager"],
