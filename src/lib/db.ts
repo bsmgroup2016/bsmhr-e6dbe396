@@ -730,6 +730,9 @@ export interface LoadedData {
   loanRepayments: LoanRepayment[];
   departments: Department[];
   designations: Designation[];
+  driverProfiles: DriverProfile[];
+  driverIncidents: DriverIncident[];
+  fuelLogs: FuelLog[];
 }
 
 /* ---------- organisation: departments & designations ---------- */
@@ -912,6 +915,12 @@ export async function loadAll(): Promise<LoadedData> {
   const [departmentRows, designationRows] = await Promise.all([
     all("departments"),
     all("designations"),
+  ]);
+
+  const [driverProfileRows, driverIncidentRows, fuelLogRows] = await Promise.all([
+    all("driver_profiles"),
+    all("driver_incidents"),
+    all("driver_fuel_logs"),
   ]);
 
   const roleByUser = new Map<string, string>();
