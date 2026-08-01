@@ -18,6 +18,7 @@ import { Route as AuthenticatedTransportRouteImport } from './routes/_authentica
 import { Route as AuthenticatedTrainingRouteImport } from './routes/_authenticated/training'
 import { Route as AuthenticatedTimeManagementRouteImport } from './routes/_authenticated/time-management'
 import { Route as AuthenticatedTimeCardsRouteImport } from './routes/_authenticated/time-cards'
+import { Route as AuthenticatedStaffPayrollRouteImport } from './routes/_authenticated/staff-payroll'
 import { Route as AuthenticatedStaffManagementRouteImport } from './routes/_authenticated/staff-management'
 import { Route as AuthenticatedStaffAttendanceRouteImport } from './routes/_authenticated/staff-attendance'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
@@ -106,6 +107,12 @@ const AuthenticatedTimeCardsRoute = AuthenticatedTimeCardsRouteImport.update({
   path: '/time-cards',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedStaffPayrollRoute =
+  AuthenticatedStaffPayrollRouteImport.update({
+    id: '/staff-payroll',
+    path: '/staff-payroll',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedStaffManagementRoute =
   AuthenticatedStaffManagementRouteImport.update({
     id: '/staff-management',
@@ -356,6 +363,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AuthenticatedSettingsRoute
   '/staff-attendance': typeof AuthenticatedStaffAttendanceRoute
   '/staff-management': typeof AuthenticatedStaffManagementRoute
+  '/staff-payroll': typeof AuthenticatedStaffPayrollRoute
   '/time-cards': typeof AuthenticatedTimeCardsRoute
   '/time-management': typeof AuthenticatedTimeManagementRoute
   '/training': typeof AuthenticatedTrainingRoute
@@ -407,6 +415,7 @@ export interface FileRoutesByTo {
   '/settings': typeof AuthenticatedSettingsRoute
   '/staff-attendance': typeof AuthenticatedStaffAttendanceRoute
   '/staff-management': typeof AuthenticatedStaffManagementRoute
+  '/staff-payroll': typeof AuthenticatedStaffPayrollRoute
   '/time-cards': typeof AuthenticatedTimeCardsRoute
   '/time-management': typeof AuthenticatedTimeManagementRoute
   '/training': typeof AuthenticatedTrainingRoute
@@ -461,6 +470,7 @@ export interface FileRoutesById {
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/staff-attendance': typeof AuthenticatedStaffAttendanceRoute
   '/_authenticated/staff-management': typeof AuthenticatedStaffManagementRoute
+  '/_authenticated/staff-payroll': typeof AuthenticatedStaffPayrollRoute
   '/_authenticated/time-cards': typeof AuthenticatedTimeCardsRoute
   '/_authenticated/time-management': typeof AuthenticatedTimeManagementRoute
   '/_authenticated/training': typeof AuthenticatedTrainingRoute
@@ -516,6 +526,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/staff-attendance'
     | '/staff-management'
+    | '/staff-payroll'
     | '/time-cards'
     | '/time-management'
     | '/training'
@@ -567,6 +578,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/staff-attendance'
     | '/staff-management'
+    | '/staff-payroll'
     | '/time-cards'
     | '/time-management'
     | '/training'
@@ -620,6 +632,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings'
     | '/_authenticated/staff-attendance'
     | '/_authenticated/staff-management'
+    | '/_authenticated/staff-payroll'
     | '/_authenticated/time-cards'
     | '/_authenticated/time-management'
     | '/_authenticated/training'
@@ -725,6 +738,13 @@ declare module '@tanstack/react-router' {
       path: '/time-cards'
       fullPath: '/time-cards'
       preLoaderRoute: typeof AuthenticatedTimeCardsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/staff-payroll': {
+      id: '/_authenticated/staff-payroll'
+      path: '/staff-payroll'
+      fullPath: '/staff-payroll'
+      preLoaderRoute: typeof AuthenticatedStaffPayrollRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/staff-management': {
@@ -1052,6 +1072,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedStaffAttendanceRoute: typeof AuthenticatedStaffAttendanceRoute
   AuthenticatedStaffManagementRoute: typeof AuthenticatedStaffManagementRoute
+  AuthenticatedStaffPayrollRoute: typeof AuthenticatedStaffPayrollRoute
   AuthenticatedTimeCardsRoute: typeof AuthenticatedTimeCardsRoute
   AuthenticatedTimeManagementRoute: typeof AuthenticatedTimeManagementRoute
   AuthenticatedTrainingRoute: typeof AuthenticatedTrainingRoute
@@ -1091,6 +1112,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedStaffAttendanceRoute: AuthenticatedStaffAttendanceRoute,
   AuthenticatedStaffManagementRoute: AuthenticatedStaffManagementRoute,
+  AuthenticatedStaffPayrollRoute: AuthenticatedStaffPayrollRoute,
   AuthenticatedTimeCardsRoute: AuthenticatedTimeCardsRoute,
   AuthenticatedTimeManagementRoute: AuthenticatedTimeManagementRoute,
   AuthenticatedTrainingRoute: AuthenticatedTrainingRoute,
