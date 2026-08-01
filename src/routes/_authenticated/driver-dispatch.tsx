@@ -243,6 +243,50 @@ function DriverDispatchPage() {
 
           <TabsContent value="board" className="space-y-4">
             <div className="rounded-xl border bg-card p-4 shadow-sm">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h2 className="text-sm font-medium text-muted-foreground">Driver availability &amp; vehicle assignment</h2>
+                <StatusBadge variant={freeNow.length ? "success" : "warning"} label={`${freeNow.length} of ${drivers.length} available now`} dot />
+              </div>
+              <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {availability.map(({ driver, av }) => (
+                  <div key={driver.id} className="rounded-lg border bg-muted/20 p-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="truncate font-medium">{driver.name}</p>
+                        <p className="text-xs text-muted-foreground">{driver.employeeCode} · Vehicle {assignedPlate(driver.id)}</p>
+                      </div>
+                      <StatusBadge variant={av.available ? "success" : "warning"} label={av.available ? "Available" : "On trip"} dot />
+                    </div>
+                    {av.available ? (
+                      <p className="mt-2 text-xs text-muted-foreground">At office — can be assigned now.</p>
+                    ) : (
+                      <div className="mt-2 space-y-1 text-xs text-muted-foreground">
+                        <p className="truncate">{av.currentTask?.title} · {av.currentTask?.status}</p>
+                        <p className="font-medium text-foreground">
+                          Free at approx {av.freeAt ? clock(av.freeAt) : "—"}
+                          {av.freeInMinutes != null ? ` (~${av.freeInMinutes} min)` : ""}
+                        </p>
+                      </div>
+                    )}
+                    {av.available ? (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="mt-3 w-full"
+                        onClick={() => {
+                          setForm({ ...form, driverEmployeeId: driver.id, vehicleId: assignedVehicleId(driver.id) });
+                          setOpen(true);
+                        }}
+                      >
+                        <Send className="mr-1 h-4 w-4" /> Assign task
+                      </Button>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-xl border bg-card p-4 shadow-sm">
               <div className="flex items-center justify-between gap-2">
                 <h2 className="text-sm font-medium text-muted-foreground">Instructions &amp; live status</h2>
                 <Dialog open={open} onOpenChange={setOpen}>
