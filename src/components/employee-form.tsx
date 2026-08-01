@@ -137,6 +137,12 @@ export function employeeFromForm(fd: FormData): Partial<Employee> {
     ipaDocumentUrl: s("ipaDocumentUrl") || undefined,
     pFileUrl: s("pFileUrl") || undefined,
   };
+  // Drop keys whose input was not rendered in this form, so a partial form
+  // never overwrites existing data with blanks.
+  for (const k of Object.keys(out)) {
+    if (!fd.has(k) && out[k] === undefined) delete out[k];
+  }
+  return out as Partial<Employee>;
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
