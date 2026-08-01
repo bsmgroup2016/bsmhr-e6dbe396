@@ -69,7 +69,7 @@ function DriverCompliancePage() {
     setFuel(getFuelLogs());
   }
 
-  const drivers = employees.filter((e) => isDriver(e) && (!companyId || !e.companyId || e.companyId === companyId));
+  const drivers = employees.filter((e) => isDriver(e));
   const scopedVehicles = vehicles.filter((v) => !companyId || !v.companyId || v.companyId === companyId);
   const vehicleIds = new Set(scopedVehicles.map((v) => v.id));
   const empName = (id?: string) => (id ? employees.find((e) => e.id === id)?.name ?? "—" : "—");

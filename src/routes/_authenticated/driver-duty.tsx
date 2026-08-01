@@ -68,7 +68,7 @@ function DriverDutyPage() {
 
   const refresh = () => setTrips(getTrips());
 
-  const drivers = employees.filter((e) => isDriver(e) && (!companyId || !e.companyId || e.companyId === companyId));
+  const drivers = employees.filter((e) => isDriver(e));
   const driverIds = new Set(drivers.map((d) => d.id));
   const empName = (id?: string) => (id ? employees.find((e) => e.id === id)?.name ?? "—" : "Unassigned");
   const plate = (id: string) => vehicles.find((v) => v.id === id)?.plateNo ?? "—";

@@ -82,7 +82,7 @@ function DriversPage() {
   const refresh = () => setProfiles(getDriverProfiles());
 
   const driverEmployees = employees.filter(
-    (e) => isDriver(e) && (!companyId || !e.companyId || e.companyId === companyId),
+    (e) => isDriver(e),
   );
   const emp = (id: string) => employees.find((e) => e.id === id);
   const plate = (id?: string) => (id ? vehicles.find((v) => v.id === id)?.plateNo ?? "—" : "—");
