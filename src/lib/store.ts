@@ -35,6 +35,8 @@ import { toContract } from "@/lib/db";
 import { toMedicalClaim, toLoan, toLoanRepayment } from "@/lib/db";
 import { toDepartment, toDesignation } from "@/lib/db";
 import type { Department, Designation } from "@/lib/types";
+import type { DriverProfile, DriverIncident, FuelLog } from "@/lib/types";
+import { toDriverProfile, toDriverIncident, toFuelLog } from "@/lib/db";
 
 export interface AppState {
   employees: Employee[];
@@ -79,6 +81,9 @@ export interface AppState {
   loanRepayments: LoanRepayment[];
   departments: Department[];
   designations: Designation[];
+  driverProfiles: DriverProfile[];
+  driverIncidents: DriverIncident[];
+  fuelLogs: FuelLog[];
   branches: AppBranch[];
   currentBranch: string;
   companies: Company[];
@@ -108,6 +113,7 @@ const emptyState: AppState = {
   medicalClaims: [],
   loans: [], loanRepayments: [],
   departments: [], designations: [],
+  driverProfiles: [], driverIncidents: [], fuelLogs: [],
   branches: defaultBranches, currentBranch: "hq",
   companies: [], currentCompany: "", currentUser: null,
 };
@@ -1356,6 +1362,123 @@ export function deleteTrip(id: string): boolean {
 }
 
 /** Vehicle documents (road tax / insurance / inspection) expiring within `days`. */
+/* ---------------- driver management ---------------- */
+export function getDriverProfiles(): DriverProfile[] { return getState().driverProfiles; }
+export function getDriverProfile(employeeId: string): DriverProfile | undefined {
+  return getState().driverProfiles.find((p) => p.employeeId === employeeId);
+}
+export function getDriverIncidents(): DriverIncident[] { return getState().driverIncidents; }
+export function getFuelLogs(): FuelLog[] { return getState().fuelLogs; }
+
+export function upsertDriverProfile(x: Omit<DriverProfile, "id" | "createdAt" | "updatedAt">): DriverProfile {
+  const s = getState();
+  const now = new Date().toISOString();
+  const existing = s.driverProfiles.find((p) => p.employeeId === x.employeeId);
+  if (existing) {
+    const updated: DriverProfile = { ...existing, ...x, updatedAt: now };
+    setState({ ...s, driverProfiles: s.driverProfiles.map((p) => (p.id === existing.id ? updated : p)) });
+    void supabase.from("driver_profiles").update(toDriverProfile(updated)).eq("id", existing.id)
+      .then(({ error }) => fail("driver_profiles", error));
+    addAuditLog("UPDATE", "DriverProfile", existing.id, "Updated driver profile");
+    return updated;
+  }
+  const row: DriverProfile = { ...x, id: newId(), createdAt: now, updatedAt: now };
+  setState({ ...s, driverProfiles: [row, ...s.driverProfiles] });
+  void supabase.from("driver_profiles").insert({ id: row.id, ...toDriverProfile(row) })
+    .then(({ error }) => fail("driver_profiles", error));
+  addAuditLog("CREATE", "DriverProfile", row.id, "Created driver profile");
+  return row;
+}
+
+export function deleteDriverProfile(id: string): boolean {
+  const s = getState();
+  if (!s.driverProfiles.some((p) => p.id === id)) return false;
+  setState({ ...s, driverProfiles: s.driverProfiles.filter((p) => p.id !== id) });
+  void supabase.from("driver_profiles").delete().eq("id", id).then(({ error }) => fail("driver_profiles", error));
+  addAuditLog("DELETE", "DriverProfile", id, "Deleted driver profile");
+  return true;
+}
+
+export function addDriverIncident(x: Omit<DriverIncident, "id" | "createdAt" | "updatedAt">): DriverIncident {
+  const s = getState();
+  const now = new Date().toISOString();
+  const row: DriverIncident = { ...x, id: newId(), createdAt: now, updatedAt: now };
+  const profiles = s.driverProfiles.map((p) =>
+    p.employeeId === row.employeeId
+      ? { ...p, demeritPoints: p.demeritPoints + row.demeritPoints, updatedAt: now }
+      : p,
+  );
+  setState({ ...s, driverIncidents: [row, ...s.driverIncidents], driverProfiles: profiles });
+  void supabase.from("driver_incidents").insert({ id: row.id, ...toDriverIncident(row) })
+    .then(({ error }) => fail("driver_incidents", error));
+  const prof = profiles.find((p) => p.employeeId === row.employeeId);
+  if (prof && row.demeritPoints) {
+    void supabase.from("driver_profiles").update({ demerit_points: prof.demeritPoints }).eq("id", prof.id)
+      .then(({ error }) => fail("driver_profiles", error));
+  }
+  addAuditLog("CREATE", "DriverIncident", row.id, `Logged ${row.incidentType}`);
+  return row;
+}
+
+export function updateDriverIncident(id: string, updates: Partial<DriverIncident>): DriverIncident | undefined {
+  const s = getState();
+  const existing = s.driverIncidents.find((i) => i.id === id);
+  if (!existing) return undefined;
+  const updated: DriverIncident = { ...existing, ...updates, updatedAt: new Date().toISOString() };
+  setState({ ...s, driverIncidents: s.driverIncidents.map((i) => (i.id === id ? updated : i)) });
+  void supabase.from("driver_incidents").update(toDriverIncident(updated)).eq("id", id)
+    .then(({ error }) => fail("driver_incidents", error));
+  addAuditLog("UPDATE", "DriverIncident", id, `Incident set to ${updated.status}`);
+  return updated;
+}
+
+export function deleteDriverIncident(id: string): boolean {
+  const s = getState();
+  if (!s.driverIncidents.some((i) => i.id === id)) return false;
+  setState({ ...s, driverIncidents: s.driverIncidents.filter((i) => i.id !== id) });
+  void supabase.from("driver_incidents").delete().eq("id", id).then(({ error }) => fail("driver_incidents", error));
+  addAuditLog("DELETE", "DriverIncident", id, "Deleted incident");
+  return true;
+}
+
+export function addFuelLog(x: Omit<FuelLog, "id" | "createdAt" | "updatedAt">): FuelLog {
+  const s = getState();
+  const now = new Date().toISOString();
+  const row: FuelLog = { ...x, id: newId(), createdAt: now, updatedAt: now };
+  setState({ ...s, fuelLogs: [row, ...s.fuelLogs] });
+  void supabase.from("driver_fuel_logs").insert({ id: row.id, ...toFuelLog(row) })
+    .then(({ error }) => fail("driver_fuel_logs", error));
+  addAuditLog("CREATE", "FuelLog", row.id, `Fuel log ${row.date}`);
+  return row;
+}
+
+export function deleteFuelLog(id: string): boolean {
+  const s = getState();
+  if (!s.fuelLogs.some((f) => f.id === id)) return false;
+  setState({ ...s, fuelLogs: s.fuelLogs.filter((f) => f.id !== id) });
+  void supabase.from("driver_fuel_logs").delete().eq("id", id).then(({ error }) => fail("driver_fuel_logs", error));
+  addAuditLog("DELETE", "FuelLog", id, "Deleted fuel log");
+  return true;
+}
+
+/** Driving / vocational licence expiries within `days`. */
+export function driverLicenceAlerts(days = 60) {
+  const today = new Date().toISOString().slice(0, 10);
+  const limit = new Date(Date.now() + days * 86400000).toISOString().slice(0, 10);
+  const out: { profile: DriverProfile; label: string; date: string; expired: boolean }[] = [];
+  for (const p of getState().driverProfiles) {
+    const checks: [string, string | undefined][] = [
+      ["Driving licence", p.licenceExpiry],
+      ["Vocational licence", p.vocationalLicenceExpiry],
+      ["Medical checkup", p.medicalCheckupDue],
+    ];
+    for (const [label, date] of checks) {
+      if (date && date <= limit) out.push({ profile: p, label, date, expired: date < today });
+    }
+  }
+  return out.sort((a, b) => a.date.localeCompare(b.date));
+}
+
 export function vehicleExpiryAlerts(days = 60) {
   const today = new Date().toISOString().slice(0, 10);
   const limit = new Date(Date.now() + days * 86400000).toISOString().slice(0, 10);

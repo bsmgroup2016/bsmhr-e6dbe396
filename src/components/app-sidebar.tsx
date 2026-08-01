@@ -10,7 +10,9 @@ import {
   ScanLine,
   ChevronRight,
   ClipboardList,
+  Fuel,
   FileText,
+  IdCard,
   FolderKanban,
   Gauge,
   GraduationCap,
@@ -91,6 +93,15 @@ const navGroups: { label: string; items: NavItem[] }[] = [
     ],
   },
   {
+    label: "Driver Management",
+    items: [
+      { title: "Driver Directory", url: "/drivers", icon: IdCard },
+      { title: "Duty Roster", url: "/driver-duty", icon: CalendarClock },
+      { title: "Compliance & Fuel", url: "/driver-compliance", icon: Fuel },
+      { title: "Vehicles & Trips", url: "/transport", icon: Truck },
+    ],
+  },
+  {
     label: "Business",
     items: [
       { title: "Recruitment", url: "/recruitment", icon: UserPlus },
@@ -103,7 +114,6 @@ const navGroups: { label: string; items: NavItem[] }[] = [
     label: "Resources",
     items: [
       { title: "Accommodation", url: "/accommodation", icon: BedDouble },
-      { title: "Transport & Drivers", url: "/transport", icon: Truck },
       { title: "Assets & PPE", url: "/assets", icon: Boxes },
       { title: "Inventory", url: "/inventory", icon: Package },
     ],

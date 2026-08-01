@@ -716,6 +716,58 @@ export interface Trip {
 }
 
 /* ---------- Phase 8: assets & PPE ---------- */
+export type DriverStatus = "Active" | "Suspended" | "Inactive";
+export type DriverIncidentType = "Traffic Offence" | "Accident" | "Damage" | "Summons" | "Other";
+
+export interface DriverProfile {
+  id: string;
+  employeeId: string;
+  licenceNo?: string;
+  licenceClasses?: string;
+  licenceIssueDate?: string;
+  licenceExpiry?: string;
+  vocationalLicenceType?: string;
+  vocationalLicenceNo?: string;
+  vocationalLicenceExpiry?: string;
+  yearsExperience: number;
+  demeritPoints: number;
+  assignedVehicleId?: string;
+  medicalCheckupDue?: string;
+  status: DriverStatus;
+  remarks?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DriverIncident {
+  id: string;
+  employeeId: string;
+  vehicleId?: string;
+  date: string;
+  incidentType: DriverIncidentType;
+  description: string;
+  demeritPoints: number;
+  fineAmount: number;
+  paidBy: "Company" | "Driver";
+  status: "Open" | "Settled" | "Appealed";
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface FuelLog {
+  id: string;
+  vehicleId: string;
+  employeeId?: string;
+  date: string;
+  odometer: number;
+  litres: number;
+  amount: number;
+  station?: string;
+  remarks?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export type AssetCategory = "PPE" | "Tool" | "Equipment" | "Machinery" | "IT" | "Vehicle Part" | "Other";
 export type AssetStatus = "Available" | "Issued" | "Under Repair" | "Lost" | "Damaged" | "Retired";
 export type IssuanceStatus = "Issued" | "Returned" | "Lost" | "Damaged";
