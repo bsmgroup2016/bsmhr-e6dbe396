@@ -1030,7 +1030,7 @@ export default function WorkforcePage() {
                             label={e.status}
                             dot
                           />
-                          {expiryBadge(e.passExpiry)}
+                          {expiryBadge(e)}
                         </div>
                       </TableCell>
                       <TableCell>
@@ -1174,7 +1174,7 @@ function EmployeeDetail({ employee, onEdit }: { employee: Employee; onEdit: () =
               label={employee.status}
               dot
             />
-            {expiryBadge(employee.passExpiry)}
+            {expiryBadge(employee)}
           </div>
         </div>
       </div>
