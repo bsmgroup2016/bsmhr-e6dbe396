@@ -159,3 +159,29 @@ export function analyseTrail(pings: TrailPing[]): TrailAnalysis {
 
   return { pings, distanceKm, straightKm, detourRatio, minutes: totalMin, maxSpeed, idleStops, maxOffRouteM: maxOff, flags, risk };
 }
+
+/** Bulk trail load for the dispatch board (one query for all visible tasks). */
+export async function listPingsForTasks(taskIds: string[]): Promise<Record<string, TrailPing[]>> {
+  if (!taskIds.length) return {};
+  const { data, error } = await supabase
+    .from("driver_task_pings")
+    .select("*")
+    .in("task_id", taskIds)
+    .order("recorded_at", { ascending: true });
+  if (error) throw error;
+  const out: Record<string, TrailPing[]> = {};
+  for (const r of (data ?? []) as Record<string, unknown>[]) {
+    const ping: TrailPing = {
+      id: r['id'] as string,
+      taskId: r['task_id'] as string,
+      driverEmployeeId: r['driver_employee_id'] as string,
+      lat: Number(r['lat']),
+      lng: Number(r['lng']),
+      status: (r['status'] as string) ?? null,
+      speedKmh: r['speed_kmh'] == null ? null : Number(r['speed_kmh']),
+      recordedAt: r['recorded_at'] as string,
+    };
+    (out[ping.taskId] ??= []).push(ping);
+  }
+  return out;
+}
