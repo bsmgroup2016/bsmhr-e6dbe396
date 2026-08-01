@@ -758,12 +758,12 @@ export default function WorkforcePage() {
                 label="Upload XLSX"
               />
               <ExportButton rows={filtered.map(toEmployeeRow)} baseName="employees" sheetName="Employees" />
-              <PFileBulkDownloadButton
-                people={filtered}
-                zipBaseName={
-                  availableOnly ? "Available-Workers-P-Files" : deployedOnly ? "Deployed-Workers-P-Files" : "Workers-P-Files"
-                }
-              />
+              {availableOnly && (
+                <PFileBulkDownloadButton
+                  people={filtered}
+                  zipBaseName="Available-Workers-P-Files"
+                />
+              )}
             </div>
           </div>
 
