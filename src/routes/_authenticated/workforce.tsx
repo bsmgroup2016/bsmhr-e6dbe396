@@ -130,7 +130,7 @@ const EMPLOYEE_IMPORT_COLUMNS: ImportColumn[] = [
   { key: "workerCategory", label: "Worker Category", example: "Skilled" },
   { key: "employmentType", label: "Employment Type", example: "Full-Time" },
   { key: "status", label: "Status", example: "Active" },
-  { key: "basicSalary", label: "Basic Rate / Salary", example: "18" },
+  { key: "basicSalary", label: "Basic Rate / day (or Salary)", example: "18" },
   { key: "otRate", label: "OT Rate", example: "27" },
   { key: "normalHours", label: "Normal Hours", example: "8" },
   { key: "declaredSalary", label: "Declared Salary", example: "1400" },
@@ -991,7 +991,7 @@ export default function WorkforcePage() {
                             </Link>
                             <div>P-File No: {e.employeeCode}</div>
                             <div>FIN: {e.fin || "—"}</div>
-                            <div>Basic Rate: ${e.basicSalary.toLocaleString()}</div>
+                            <div>Basic Rate: ${e.basicSalary.toLocaleString()}/day</div>
                           </div>
                         </div>
                       </TableCell>
