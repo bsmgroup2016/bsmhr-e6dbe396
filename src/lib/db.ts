@@ -20,6 +20,7 @@ import type { ClientContract } from "@/lib/types";
 import type { MedicalClaim } from "@/lib/types";
 import type { EmployeeLoan, LoanRepayment } from "@/lib/types";
 import type { Department, Designation } from "@/lib/types";
+import type { DriverProfile, DriverIncident, FuelLog } from "@/lib/types";
 
 type Row = Record<string, any>;
 
@@ -568,6 +569,58 @@ export const toTrip = (x: Partial<Trip>): Row => ({
 });
 
 /* ---------- assets & PPE ---------- */
+export const fromDriverProfile = (r: Row): DriverProfile => ({
+  id: r.id, employeeId: r.employee_id, licenceNo: r.licence_no ?? undefined,
+  licenceClasses: r.licence_classes ?? undefined, licenceIssueDate: d(r.licence_issue_date),
+  licenceExpiry: d(r.licence_expiry), vocationalLicenceType: r.vocational_licence_type ?? undefined,
+  vocationalLicenceNo: r.vocational_licence_no ?? undefined,
+  vocationalLicenceExpiry: d(r.vocational_licence_expiry),
+  yearsExperience: Number(r.years_experience ?? 0), demeritPoints: Number(r.demerit_points ?? 0),
+  assignedVehicleId: r.assigned_vehicle_id ?? undefined, medicalCheckupDue: d(r.medical_checkup_due),
+  status: (r.status ?? "Active") as DriverProfile["status"], remarks: r.remarks ?? undefined,
+  createdAt: r.created_at, updatedAt: r.updated_at,
+});
+
+export const toDriverProfile = (x: Partial<DriverProfile>): Row => ({
+  employee_id: x.employeeId, licence_no: x.licenceNo ?? null,
+  licence_classes: x.licenceClasses ?? null, licence_issue_date: nullDate(x.licenceIssueDate),
+  licence_expiry: nullDate(x.licenceExpiry), vocational_licence_type: x.vocationalLicenceType ?? null,
+  vocational_licence_no: x.vocationalLicenceNo ?? null,
+  vocational_licence_expiry: nullDate(x.vocationalLicenceExpiry),
+  years_experience: x.yearsExperience ?? 0, demerit_points: x.demeritPoints ?? 0,
+  assigned_vehicle_id: x.assignedVehicleId || null, medical_checkup_due: nullDate(x.medicalCheckupDue),
+  status: x.status ?? "Active", remarks: x.remarks ?? null,
+});
+
+export const fromDriverIncident = (r: Row): DriverIncident => ({
+  id: r.id, employeeId: r.employee_id, vehicleId: r.vehicle_id ?? undefined,
+  date: d(r.date) ?? "", incidentType: (r.incident_type ?? "Traffic Offence") as DriverIncident["incidentType"],
+  description: r.description ?? "", demeritPoints: Number(r.demerit_points ?? 0),
+  fineAmount: Number(r.fine_amount ?? 0), paidBy: (r.paid_by ?? "Company") as DriverIncident["paidBy"],
+  status: (r.status ?? "Open") as DriverIncident["status"],
+  createdAt: r.created_at, updatedAt: r.updated_at,
+});
+
+export const toDriverIncident = (x: Partial<DriverIncident>): Row => ({
+  employee_id: x.employeeId, vehicle_id: x.vehicleId || null, date: nullDate(x.date),
+  incident_type: x.incidentType, description: x.description ?? "",
+  demerit_points: x.demeritPoints ?? 0, fine_amount: x.fineAmount ?? 0,
+  paid_by: x.paidBy ?? "Company", status: x.status ?? "Open",
+});
+
+export const fromFuelLog = (r: Row): FuelLog => ({
+  id: r.id, vehicleId: r.vehicle_id, employeeId: r.employee_id ?? undefined,
+  date: d(r.date) ?? "", odometer: Number(r.odometer ?? 0), litres: Number(r.litres ?? 0),
+  amount: Number(r.amount ?? 0), station: r.station ?? undefined, remarks: r.remarks ?? undefined,
+  createdAt: r.created_at, updatedAt: r.updated_at,
+});
+
+export const toFuelLog = (x: Partial<FuelLog>): Row => ({
+  vehicle_id: x.vehicleId, employee_id: x.employeeId || null, date: nullDate(x.date),
+  odometer: x.odometer ?? 0, litres: x.litres ?? 0, amount: x.amount ?? 0,
+  station: x.station ?? null, remarks: x.remarks ?? null,
+});
+
 export const fromAsset = (r: Row): Asset => ({
   id: r.id, companyId: r.company_id ?? undefined, assetCode: r.asset_code ?? "",
   name: r.name, category: (r.category ?? "Tool") as Asset["category"],
