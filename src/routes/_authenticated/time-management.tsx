@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   Plus,
@@ -53,7 +53,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { getEmployees, getSites, getAttendance, addAttendance, saveDailySheet, getCurrentCompany } from "@/lib/store";
+import {
+  getEmployees,
+  getSites,
+  getAttendance,
+  addAttendance,
+  saveDailySheet,
+  getCurrentCompany,
+  getCompanies,
+} from "@/lib/store";
+import { isSiteWorker } from "@/lib/workforce-split";
 import { GeoCapture } from "@/components/geo-capture";
 import { QrAttendancePanel } from "@/components/qr-attendance-panel";
 import { LocationMap } from "@/components/location-map";
@@ -104,8 +113,57 @@ export default function TimeManagementPage() {
   const [noLocationOnly, setNoLocationOnly] = useState(false);
   const [mapRecord, setMapRecord] = useState<Attendance | null>(null);
   const companyId = getCurrentCompany();
+  const companies = getCompanies();
+  const [companyFilter, setCompanyFilter] = useState<string>(companyId || "all");
+  const [groupFilter, setGroupFilter] = useState<"all" | "workers" | "staff">("all");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [designationFilter, setDesignationFilter] = useState<string>("all");
+  const [viewMode, setViewMode] = useState<"day" | "month">("day");
   const companyEmployees = employees.filter(
     (e) => (!companyId || e.companyId === companyId) && e.status !== "Inactive",
+  );
+
+  const empById = useMemo(() => new Map(employees.map((e) => [e.id, e])), [employees]);
+
+  const designations = useMemo(
+    () => [...new Set(employees.map((e) => e.trade).filter(Boolean) as string[])].sort(),
+    [employees],
+  );
+
+  /** Shared people filter (company / worker-staff / designation / search). */
+  const matchesPerson = (employeeId: string) => {
+    const emp = empById.get(employeeId);
+    if (!emp) return false;
+    if (companyFilter !== "all" && emp.companyId !== companyFilter) return false;
+    if (groupFilter === "workers" && !isSiteWorker(emp)) return false;
+    if (groupFilter === "staff" && isSiteWorker(emp)) return false;
+    if (designationFilter !== "all" && emp.trade !== designationFilter) return false;
+    const q = search.trim().toLowerCase();
+    if (
+      q &&
+      !emp.name.toLowerCase().includes(q) &&
+      !emp.employeeCode.toLowerCase().includes(q)
+    )
+      return false;
+    return true;
+  };
+
+  const scopedEmployeeIds = useMemo(
+    () => employees.filter((e) => matchesPerson(e.id)).map((e) => e.id),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [employees, companyFilter, groupFilter, designationFilter, search],
+  );
+
+  const monthRows = useMemo(
+    () =>
+      viewMode === "month"
+        ? monthlyAttendanceSummary(attendance, summaryMonth, scopedEmployeeIds).sort((a, b) =>
+            (empById.get(a.employeeId)?.employeeCode ?? "").localeCompare(
+              empById.get(b.employeeId)?.employeeCode ?? "",
+            ),
+          )
+        : [],
+    [viewMode, attendance, summaryMonth, scopedEmployeeIds, empById],
   );
 
   async function exportMonthlySummary() {
@@ -136,11 +194,11 @@ export default function TimeManagementPage() {
   }
 
   const filtered = attendance.filter((a) => {
-    const q = search.toLowerCase();
-    const emp = employees.find((e) => e.id === a.employeeId);
     const hasLocation = a.checkInLat != null || a.checkOutLat != null;
     if (noLocationOnly && hasLocation) return false;
-    return a.date === date && (emp?.name.toLowerCase().includes(q) || emp?.employeeCode.toLowerCase().includes(q));
+    if (a.date !== date) return false;
+    if (statusFilter !== "all" && a.status !== statusFilter) return false;
+    return matchesPerson(a.employeeId);
   });
 
   const present = filtered.filter((a) => a.status === "Present" || a.status === "Half Day").length;
@@ -318,12 +376,25 @@ export default function TimeManagementPage() {
           </div>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <SummaryCard title="Present" value={present.toString()} icon={<CheckCircle2 className="h-5 w-5" />} variant="success" caption={date} />
-          <SummaryCard title="Absent / MC" value={absent.toString()} icon={<AlertCircle className="h-5 w-5" />} variant="destructive" caption={date} />
-          <SummaryCard title="Leave / Off" value={leave.toString()} icon={<Clock className="h-5 w-5" />} variant="warning" caption={date} />
-          <SummaryCard title="Total hours" value={totalHours.toFixed(1)} icon={<Clock className="h-5 w-5" />} variant="info" caption={date} />
-        </div>
+        {(() => {
+          const isMonth = viewMode === "month";
+          const caption = isMonth ? summaryMonth : date;
+          const mPresent = monthRows.reduce((s, r) => s + r.presentDays, 0);
+          const mAbsent = monthRows.reduce((s, r) => s + r.absentDays, 0);
+          const mLeave = monthRows.reduce((s, r) => s + r.leaveDays, 0);
+          const mHours = monthRows.reduce((s, r) => s + r.totalHours, 0);
+          const mOt = monthRows.reduce((s, r) => s + r.otHours, 0);
+          const ot = filtered.reduce((s, a) => s + a.overtimeHours, 0);
+          return (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+              <SummaryCard title={isMonth ? "Present days" : "Present"} value={String(isMonth ? mPresent : present)} icon={<CheckCircle2 className="h-5 w-5" />} variant="success" caption={caption} />
+              <SummaryCard title="Absent / MC" value={String(isMonth ? mAbsent : absent)} icon={<AlertCircle className="h-5 w-5" />} variant="destructive" caption={caption} />
+              <SummaryCard title="Leave / Off" value={String(isMonth ? mLeave : leave)} icon={<Clock className="h-5 w-5" />} variant="warning" caption={caption} />
+              <SummaryCard title="OT hours" value={(isMonth ? mOt : ot).toFixed(1)} icon={<Clock className="h-5 w-5" />} variant="warning" caption={caption} />
+              <SummaryCard title="Total hours" value={(isMonth ? mHours : totalHours).toFixed(1)} icon={<Clock className="h-5 w-5" />} variant="info" caption={caption} />
+            </div>
+          );
+        })()}
 
         <div className="rounded-xl border bg-card p-4 shadow-sm">
           <div className="mb-3">
@@ -343,7 +414,25 @@ export default function TimeManagementPage() {
             </div>
             <div className="flex items-center gap-2">
               <Calendar className="h-4 w-4 text-muted-foreground" />
-              <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-40" />
+              {viewMode === "day" ? (
+                <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-40" />
+              ) : (
+                <Input
+                  type="month"
+                  value={summaryMonth}
+                  onChange={(e) => setSummaryMonth(e.target.value)}
+                  className="w-40"
+                />
+              )}
+              <Select value={viewMode} onValueChange={(v) => setViewMode(v as "day" | "month")}>
+                <SelectTrigger className="w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="day">Daily view</SelectItem>
+                  <SelectItem value="month">Monthly view</SelectItem>
+                </SelectContent>
+              </Select>
               <Button
                 type="button"
                 size="sm"
@@ -355,6 +444,129 @@ export default function TimeManagementPage() {
             </div>
           </div>
 
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <Select value={companyFilter} onValueChange={setCompanyFilter}>
+              <SelectTrigger className="w-44">
+                <SelectValue placeholder="Company" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All companies</SelectItem>
+                {companies.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={groupFilter} onValueChange={(v) => setGroupFilter(v as typeof groupFilter)}>
+              <SelectTrigger className="w-40">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Everyone</SelectItem>
+                <SelectItem value="workers">Site workers</SelectItem>
+                <SelectItem value="staff">Office staff</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={designationFilter} onValueChange={setDesignationFilter}>
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="Designation" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All designations</SelectItem>
+                {designations.map((d) => (
+                  <SelectItem key={d} value={d}>
+                    {d}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {viewMode === "day" ? (
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All statuses</SelectItem>
+                  {statuses.map((s) => (
+                    <SelectItem key={s} value={s}>
+                      {s}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : null}
+            <span className="ml-auto text-xs text-muted-foreground">
+              {viewMode === "day"
+                ? `${filtered.length} records`
+                : `${monthRows.length} employees`}
+            </span>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                setCompanyFilter("all");
+                setGroupFilter("all");
+                setDesignationFilter("all");
+                setStatusFilter("all");
+                setSearch("");
+              }}
+            >
+              Clear filters
+            </Button>
+          </div>
+
+          {viewMode === "month" ? (
+            <div className="mt-4 overflow-hidden rounded-lg border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Employee</TableHead>
+                    <TableHead>Designation</TableHead>
+                    <TableHead className="text-right">Present</TableHead>
+                    <TableHead className="text-right">Absent / MC</TableHead>
+                    <TableHead className="text-right">Leave / Off</TableHead>
+                    <TableHead className="text-right">Normal hrs</TableHead>
+                    <TableHead className="text-right">OT hrs</TableHead>
+                    <TableHead className="text-right">Total hrs</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {monthRows.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={8} className="h-32 text-center">
+                        <EmptyState
+                          className="border-0 bg-transparent"
+                          icon={<Calendar className="h-5 w-5" />}
+                          title="No records"
+                          description={`No attendance records for ${summaryMonth}.`}
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    monthRows.map((r) => {
+                      const emp = empById.get(r.employeeId);
+                      return (
+                        <TableRow key={r.employeeId}>
+                          <TableCell>
+                            <div className="font-medium">{emp?.name}</div>
+                            <div className="text-xs text-muted-foreground">{emp?.employeeCode}</div>
+                          </TableCell>
+                          <TableCell className="text-muted-foreground">{emp?.trade || "—"}</TableCell>
+                          <TableCell className="text-right">{r.presentDays}</TableCell>
+                          <TableCell className="text-right">{r.absentDays}</TableCell>
+                          <TableCell className="text-right">{r.leaveDays}</TableCell>
+                          <TableCell className="text-right">{r.normalHours}</TableCell>
+                          <TableCell className="text-right">{r.otHours}</TableCell>
+                          <TableCell className="text-right font-semibold">{r.totalHours}</TableCell>
+                        </TableRow>
+                      );
+                    })
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          ) : (
           <div className="mt-4 overflow-hidden rounded-lg border">
             <Table>
               <TableHeader>
@@ -415,6 +627,7 @@ export default function TimeManagementPage() {
               </TableBody>
             </Table>
           </div>
+          )}
         </div>
 
         <Dialog open={!!mapRecord} onOpenChange={(open) => !open && setMapRecord(null)}>
