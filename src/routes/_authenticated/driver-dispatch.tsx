@@ -540,6 +540,22 @@ function DriverDispatchPage() {
 
                 <div className="rounded-lg border">
                   <p className="border-b px-3 py-2 text-xs font-medium text-muted-foreground">GPS timeline</p>
+                  {replayLegs.length ? (
+                    <ol className="divide-y">
+                      {replayLegs.map((leg, i) => (
+                        <li key={`leg-${i}`} className="px-3 py-2 text-xs">
+                          <p className="font-medium">{i + 1}. {leg.label}</p>
+                          <p className="text-muted-foreground">
+                            {clock(leg.from)} → {clock(leg.to)} · {leg.minutes} min · {leg.distanceKm} km
+                          </p>
+                          {leg.stops.map((s) => (
+                            <p key={s.from} className="text-warning">Stopped {s.minutes} min at {s.lat.toFixed(4)}, {s.lng.toFixed(4)}</p>
+                          ))}
+                        </li>
+                      ))}
+                    </ol>
+                  ) : null}
+                  <p className="border-y bg-muted/30 px-3 py-2 text-xs font-medium text-muted-foreground">Raw GPS pings</p>
                   <div className="max-h-56 overflow-y-auto divide-y">
                     {replay.pings.map((p, i) => (
                       <div key={p.id} className="flex items-center justify-between gap-2 px-3 py-1.5 text-xs">
