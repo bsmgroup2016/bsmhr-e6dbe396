@@ -393,7 +393,10 @@ function EmployeeProfilePage() {
           </TabsContent>
 
           <TabsContent value="documents" className="mt-4">
-            <PFilePanel employee={employee} onChange={(url) => patch({ pFileUrl: url })} />
+            <PFilePanel
+              employee={employee}
+              onChange={(url: string | undefined) => patch({ pFileUrl: url })}
+            />
             <SimpleTable
               headers={["Type", "Name", "Issued", "Expiry", "Status"]}
               rows={documents.map((d) => [d.type, d.name, d.issueDate ?? "—", d.expiryDate ?? "—", d.status])}
@@ -458,6 +461,9 @@ function SimpleTable({
   rows: (string | number)[][];
   empty: string;
 }) {
+  if (rows.length === 0) {
+    return <EmptyState title="Nothing here yet" description={empty} />;
+  }
   if (rows.length === 0) {
     return <EmptyState title="Nothing here yet" description={empty} />;
   }
