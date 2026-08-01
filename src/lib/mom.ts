@@ -156,6 +156,60 @@ export function computeQuota(employees: Employee[], sector: MomSector): QuotaRes
   };
 }
 
+/** Quota usage at or above this share triggers a warning before it is breached. */
+export const QUOTA_ALERT_THRESHOLD = 0.9;
+
+export function quotaAlertLevel(q: QuotaResult): "ok" | "warning" | "breach" {
+  if (q.overQuota) return "breach";
+  const worst = Math.max(
+    Number.isFinite(q.drcUsage) ? q.drcUsage : 1,
+    Number.isFinite(q.sPassUsage) ? q.sPassUsage : 1,
+  );
+  return worst >= QUOTA_ALERT_THRESHOLD ? "warning" : "ok";
+}
+
+export interface HiringPlan {
+  local: number;
+  workPermit: number;
+  sPass: number;
+}
+
+/**
+ * "What if we hire X more?" — recomputes the DRC / S Pass position with extra
+ * headcount added, without touching stored data.
+ */
+export function simulateHiring(
+  base: QuotaResult,
+  plan: HiringPlan,
+  sector: MomSector,
+): QuotaResult {
+  const { drc, sPassSubQuota } = DRC[sector];
+  const local = base.local + Math.max(0, plan.local);
+  const workPermit = base.workPermit + Math.max(0, plan.workPermit);
+  const sPass = base.sPass + Math.max(0, plan.sPass);
+  const foreign = workPermit + sPass;
+  const foreignAllowed = Math.floor((local * drc) / (1 - drc));
+  const total = local + foreign;
+  const sPassAllowed = Math.floor(total * sPassSubQuota);
+
+  return {
+    sector,
+    local,
+    workPermit,
+    sPass,
+    employmentPass: base.employmentPass,
+    total,
+    foreign,
+    foreignAllowed,
+    sPassAllowed,
+    drcUsage: foreignAllowed > 0 ? foreign / foreignAllowed : foreign > 0 ? Infinity : 0,
+    sPassUsage: sPassAllowed > 0 ? sPass / sPassAllowed : sPass > 0 ? Infinity : 0,
+    foreignHeadroom: foreignAllowed - foreign,
+    sPassHeadroom: sPassAllowed - sPass,
+    overQuota: foreign > foreignAllowed || sPass > sPassAllowed,
+  };
+}
+
 export interface LevySummary {
   total: number;
   /** Total using MOM statutory rates only, ignoring custom overrides. */
