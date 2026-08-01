@@ -79,13 +79,13 @@ const navGroups: { label: string; items: NavItem[] }[] = [
   {
     label: "Project & Clients",
     items: [
-      { title: "Clients", url: "/clients", icon: Handshake },
-      { title: "Client CRM", url: "/crm", icon: BadgeDollarSign },
-      { title: "Projects & Sites", url: "/projects", icon: FolderKanban },
+      { title: "Client Directory", url: "/clients", icon: Handshake },
+      { title: "Business Pipeline (CRM)", url: "/crm", icon: BadgeDollarSign },
+      { title: "Active Projects & Sites", url: "/projects", icon: FolderKanban },
       { title: "Manpower Deployment", url: "/operations", icon: Layers },
-      { title: "Deployed Workers", url: "/deployed-workers", icon: HardHat },
-      { title: "Available Workers", url: "/available-workers", icon: Users },
-      { title: "Billing & Invoicing", url: "/billing", icon: Receipt },
+      { title: "Deployed on Site", url: "/deployed-workers", icon: HardHat },
+      { title: "Available Pool", url: "/available-workers", icon: Users },
+      { title: "Billing & Progress Claim", url: "/billing", icon: Receipt },
     ],
   },
   {
