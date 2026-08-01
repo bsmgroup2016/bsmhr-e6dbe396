@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { activeAssignedEmployeeIds, isEmployeeAvailable } from "@/lib/availability";
 import {
   Plus,
@@ -13,8 +13,6 @@ import {
   HardHat,
   SlidersHorizontal,
   ChevronDown,
-  UserCheck,
-  Briefcase,
 } from "lucide-react";
 import { ChevronLeft, ChevronRight, Mail, Phone } from "lucide-react";
 import { cn } from "@/lib/utils";
