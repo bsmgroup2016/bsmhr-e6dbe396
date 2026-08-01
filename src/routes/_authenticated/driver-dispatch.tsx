@@ -433,6 +433,12 @@ function DriverDispatchPage() {
                         </div>
                       ) : null}
                       <p className="mt-2 text-sm">{t.instruction}</p>
+                      {t.taskType === "Airport worker pickup" ? (
+                        <p className="mt-1 flex items-center gap-1 text-xs font-medium text-foreground">
+                          <Plane className="h-3.5 w-3.5" /> {t.flightNo || "Flight —"} · {t.terminal || "Terminal —"}
+                          {t.arrivingWorkers ? ` · ${t.arrivingWorkers}` : ""}
+                        </p>
+                      ) : null}
                       <p className="mt-1 text-xs text-muted-foreground">
                         {t.pickup || "—"} → {t.dropoff || "—"} · {t.passengers} pax ·{" "}
                         {new Date(t.scheduledAt).toLocaleString("en-SG", { hour12: true })}
