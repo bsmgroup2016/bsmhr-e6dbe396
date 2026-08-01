@@ -106,10 +106,10 @@ const navGroups: { label: string; items: NavItem[] }[] = [
     ],
   },
   {
-    label: "Business",
+    label: "Business & HR",
     items: [
-      { title: "Recruitment", url: "/recruitment", icon: UserPlus },
-      { title: "Finance", url: "/finance", icon: Wallet },
+      { title: "Foreign Recruitment", url: "/recruitment", icon: UserPlus },
+      { title: "Finance & Accounts", url: "/finance", icon: Wallet },
     ],
   },
   {
