@@ -377,6 +377,79 @@ function DriverDispatchPage() {
             </div>
           </TabsContent>
         </Tabs>
+
+        <Dialog open={!!replayTask} onOpenChange={(o) => !o && setReplayId(null)}>
+          <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Route replay — {replayTask?.title}</DialogTitle>
+              <DialogDescription>
+                {replayTask ? `${name(replayTask.driverEmployeeId)} · ${plate(replayTask.vehicleId)} · ${replayTask.pickup || "—"} → ${replayTask.dropoff || "—"}` : ""}
+              </DialogDescription>
+            </DialogHeader>
+
+            {replay && replay.pings.length > 1 ? (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                  {[
+                    ["Distance driven", `${replay.distanceKm} km`],
+                    ["Trip time", `${replay.minutes} min`],
+                    ["Detour factor", `${replay.detourRatio}x`],
+                    ["Long stops", `${replay.idleStops.length}`],
+                  ].map(([k, v]) => (
+                    <div key={k} className="rounded-lg border bg-muted/20 p-3">
+                      <p className="text-xs text-muted-foreground">{k}</p>
+                      <p className="text-sm font-semibold">{v}</p>
+                    </div>
+                  ))}
+                </div>
+
+                <RouteTrailMap
+                  path={replay.pings.map((p) => ({ lat: p.lat, lng: p.lng, label: p.status ?? "", at: p.recordedAt }))}
+                  stops={replay.idleStops.map((s) => ({ lat: s.lat, lng: s.lng, minutes: s.minutes }))}
+                  suspicious={replay.risk === "suspicious"}
+                  className="h-80 w-full rounded-md border"
+                />
+                <p className="text-[11px] text-muted-foreground">
+                  Solid line = the road the driver actually took. Dashed grey line = direct expected path. Amber circle = vehicle stopped there.
+                </p>
+
+                {replay.flags.length ? (
+                  <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-3">
+                    <p className="flex items-center gap-1 text-sm font-medium text-destructive">
+                      <AlertTriangle className="h-4 w-4" /> Unusual activity detected
+                    </p>
+                    <ul className="mt-1 list-inside list-disc text-xs text-muted-foreground">
+                      {replay.flags.map((f) => (<li key={f}>{f}</li>))}
+                    </ul>
+                  </div>
+                ) : (
+                  <p className="flex items-center gap-1 rounded-lg border border-success/40 bg-success/5 p-3 text-sm text-success">
+                    <ShieldCheck className="h-4 w-4" /> Route looks normal — no detour or unexplained stop.
+                  </p>
+                )}
+
+                <div className="rounded-lg border">
+                  <p className="border-b px-3 py-2 text-xs font-medium text-muted-foreground">GPS timeline</p>
+                  <div className="max-h-56 overflow-y-auto divide-y">
+                    {replay.pings.map((p, i) => (
+                      <div key={p.id} className="flex items-center justify-between gap-2 px-3 py-1.5 text-xs">
+                        <span className="text-muted-foreground">
+                          {i + 1}. {new Date(p.recordedAt).toLocaleString("en-SG", { hour12: true })}
+                        </span>
+                        <span className="truncate">{p.status ?? "—"}</span>
+                        <span className="shrink-0 text-muted-foreground">
+                          {p.lat.toFixed(4)}, {p.lng.toFixed(4)}{p.speedKmh != null ? ` · ${p.speedKmh} km/h` : ""}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <EmptyState icon={<RouteIcon className="h-5 w-5" />} title="No GPS trail yet" description="The trail builds up as the driver shares location or updates trip status from his phone." />
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </AppShell>
   );
