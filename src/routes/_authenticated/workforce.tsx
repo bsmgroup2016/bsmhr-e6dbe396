@@ -601,7 +601,7 @@ export default function WorkforcePage() {
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <SummaryCard title="Total employees" value={employees.length.toString()} icon={<Users className="h-5 w-5" />} variant="primary" caption="ekhane hiseb clear, svailable worker and deployed worker. ei 2 ta jog kore total worker hbe taina? karon stuff der dashboard or part to alada. \n\navailable worker mane jara active kintu kono project e assign hoyni (without expired work permit)\n\nr deployed worker mane jader kono project e assign kora hoice. \n\naslo jodi kono worker k kono project thk bad deoa hoy, then se auto available hoye jabe. \n\nerokomi tot taina?" compact />
+          <SummaryCard title="Total employees" value={employees.length.toString()} icon={<Users className="h-5 w-5" />} variant="primary" caption="eta ki? oi madarchod khankir pola" compact />
           <Link to="/available-workers" className="block h-full">
             <SummaryCard title="Available workers" value={availableCount.toString()} icon={<HardHat className="h-5 w-5" />} variant="success" caption="Not assigned to any project" compact />
           </Link>
