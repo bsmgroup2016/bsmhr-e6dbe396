@@ -401,7 +401,25 @@ export default function TimeManagementPage() {
             </div>
             <div className="flex items-center gap-2">
               <Calendar className="h-4 w-4 text-muted-foreground" />
-              <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-40" />
+              {viewMode === "day" ? (
+                <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-40" />
+              ) : (
+                <Input
+                  type="month"
+                  value={summaryMonth}
+                  onChange={(e) => setSummaryMonth(e.target.value)}
+                  className="w-40"
+                />
+              )}
+              <Select value={viewMode} onValueChange={(v) => setViewMode(v as "day" | "month")}>
+                <SelectTrigger className="w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="day">Daily view</SelectItem>
+                  <SelectItem value="month">Monthly view</SelectItem>
+                </SelectContent>
+              </Select>
               <Button
                 type="button"
                 size="sm"
@@ -413,6 +431,129 @@ export default function TimeManagementPage() {
             </div>
           </div>
 
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <Select value={companyFilter} onValueChange={setCompanyFilter}>
+              <SelectTrigger className="w-44">
+                <SelectValue placeholder="Company" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All companies</SelectItem>
+                {companies.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={groupFilter} onValueChange={(v) => setGroupFilter(v as typeof groupFilter)}>
+              <SelectTrigger className="w-40">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Everyone</SelectItem>
+                <SelectItem value="workers">Site workers</SelectItem>
+                <SelectItem value="staff">Office staff</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={designationFilter} onValueChange={setDesignationFilter}>
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="Designation" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All designations</SelectItem>
+                {designations.map((d) => (
+                  <SelectItem key={d} value={d}>
+                    {d}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {viewMode === "day" ? (
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All statuses</SelectItem>
+                  {statuses.map((s) => (
+                    <SelectItem key={s} value={s}>
+                      {s}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : null}
+            <span className="ml-auto text-xs text-muted-foreground">
+              {viewMode === "day"
+                ? `${filtered.length} records`
+                : `${monthRows.length} employees`}
+            </span>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                setCompanyFilter("all");
+                setGroupFilter("all");
+                setDesignationFilter("all");
+                setStatusFilter("all");
+                setSearch("");
+              }}
+            >
+              Clear filters
+            </Button>
+          </div>
+
+          {viewMode === "month" ? (
+            <div className="mt-4 overflow-hidden rounded-lg border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Employee</TableHead>
+                    <TableHead>Designation</TableHead>
+                    <TableHead className="text-right">Present</TableHead>
+                    <TableHead className="text-right">Absent / MC</TableHead>
+                    <TableHead className="text-right">Leave / Off</TableHead>
+                    <TableHead className="text-right">Normal hrs</TableHead>
+                    <TableHead className="text-right">OT hrs</TableHead>
+                    <TableHead className="text-right">Total hrs</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {monthRows.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={8} className="h-32 text-center">
+                        <EmptyState
+                          className="border-0 bg-transparent"
+                          icon={<Calendar className="h-5 w-5" />}
+                          title="No records"
+                          description={`No attendance records for ${summaryMonth}.`}
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    monthRows.map((r) => {
+                      const emp = empById.get(r.employeeId);
+                      return (
+                        <TableRow key={r.employeeId}>
+                          <TableCell>
+                            <div className="font-medium">{emp?.name}</div>
+                            <div className="text-xs text-muted-foreground">{emp?.employeeCode}</div>
+                          </TableCell>
+                          <TableCell className="text-muted-foreground">{emp?.trade || "—"}</TableCell>
+                          <TableCell className="text-right">{r.presentDays}</TableCell>
+                          <TableCell className="text-right">{r.absentDays}</TableCell>
+                          <TableCell className="text-right">{r.leaveDays}</TableCell>
+                          <TableCell className="text-right">{r.normalHours}</TableCell>
+                          <TableCell className="text-right">{r.otHours}</TableCell>
+                          <TableCell className="text-right font-semibold">{r.totalHours}</TableCell>
+                        </TableRow>
+                      );
+                    })
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          ) : (
           <div className="mt-4 overflow-hidden rounded-lg border">
             <Table>
               <TableHeader>
@@ -473,6 +614,7 @@ export default function TimeManagementPage() {
               </TableBody>
             </Table>
           </div>
+          )}
         </div>
 
         <Dialog open={!!mapRecord} onOpenChange={(open) => !open && setMapRecord(null)}>
