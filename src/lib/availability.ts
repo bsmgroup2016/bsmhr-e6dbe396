@@ -1,10 +1,20 @@
 import type { Employee } from "@/lib/types";
 
+/** Work permit / pass expired (or expiring today) — worker cannot be deployed. */
+export function hasExpiredWorkPermit(e: Employee) {
+  const expiry = e.workPermitExpiryDate;
+  if (!expiry) return false;
+  const t = new Date(`${expiry}T23:59:59+08:00`).getTime();
+  if (Number.isNaN(t)) return false;
+  return t < Date.now();
+}
+
 /**
  * Shared "available worker" definition used by the dashboard and the
  * workforce page so both always show the same count.
  * A worker is available when they are not assigned to an active/approved
- * project, not blocked/deployed, and their record is Active / On Leave.
+ * project, not blocked/deployed, not on leave, their work permit is valid,
+ * and their record is Active.
  */
 export function isEmployeeAvailable(e: Employee, assignedIds: Set<string>) {
   const deploy = e.deploymentStatus ?? "Available";
@@ -13,7 +23,9 @@ export function isEmployeeAvailable(e: Employee, assignedIds: Set<string>) {
     deploy !== "Blocked" &&
     deploy !== "Not Deployable" &&
     deploy !== "Deployed" &&
-    (e.status === "Active" || e.status === "On Leave")
+    deploy !== "On Leave" &&
+    e.status === "Active" &&
+    !hasExpiredWorkPermit(e)
   );
 }
 
