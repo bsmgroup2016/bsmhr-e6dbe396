@@ -69,7 +69,7 @@ export function employeeFromForm(fd: FormData): Partial<Employee> {
   const s = (k: string) => ((fd.get(k) as string) || "").trim();
   const n = (k: string) => Number((fd.get(k) as string) || 0) || 0;
   const date = (k: string) => s(k) || undefined;
-  return {
+  const out: Record<string, unknown> = {
     employeeCode: s("employeeCode") || undefined,
     name: s("name"),
     preferredName: s("preferredName") || undefined,
@@ -137,6 +137,12 @@ export function employeeFromForm(fd: FormData): Partial<Employee> {
     ipaDocumentUrl: s("ipaDocumentUrl") || undefined,
     pFileUrl: s("pFileUrl") || undefined,
   };
+  // Drop keys whose input was not rendered in this form, so a partial form
+  // never overwrites existing data with blanks.
+  for (const k of Object.keys(out)) {
+    if (!fd.has(k) && out[k] === undefined) delete out[k];
+  }
+  return out as Partial<Employee>;
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
@@ -305,7 +311,7 @@ export function EmployeeForm({
           <TabsTrigger value="pay">Compensation</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="personal" className="mt-4 space-y-4">
+        <TabsContent forceMount value="personal" className="mt-4 space-y-4 data-[state=inactive]:hidden">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label="Full legal name">
               <Input name="name" defaultValue={employee?.name} required />
@@ -378,7 +384,7 @@ export function EmployeeForm({
           />
         </TabsContent>
 
-        <TabsContent value="employment" className="mt-4 space-y-4">
+        <TabsContent forceMount value="employment" className="mt-4 space-y-4 data-[state=inactive]:hidden">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label="Department">
               <Input name="department" defaultValue={employee?.department ?? ""} />
@@ -437,7 +443,7 @@ export function EmployeeForm({
           </Field>
         </TabsContent>
 
-        <TabsContent value="pass" className="mt-4 space-y-4">
+        <TabsContent forceMount value="pass" className="mt-4 space-y-4 data-[state=inactive]:hidden">
           <div className="rounded-lg border p-3">
             <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
               <p className="text-sm font-medium">IPA copy (In-Principle Approval)</p>
@@ -553,7 +559,7 @@ export function EmployeeForm({
           </div>
         </TabsContent>
 
-        <TabsContent value="pay" className="mt-4 space-y-4">
+        <TabsContent forceMount value="pay" className="mt-4 space-y-4 data-[state=inactive]:hidden">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label={staff ? "Monthly salary ($)" : "Basic rate / day ($)"}>
               <Input name="basicSalary" type="number" step="0.01" defaultValue={employee?.basicSalary ?? 0} required />
