@@ -13,6 +13,7 @@ import {
   ClipboardList,
   FileSpreadsheet,
   MapPin,
+  Download,
 } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
@@ -58,6 +59,8 @@ import {
   getSites,
   getAttendance,
   addAttendance,
+  updateAttendance,
+  deleteAttendance,
   saveDailySheet,
   getCurrentCompany,
   getCompanies,
@@ -112,6 +115,7 @@ export default function TimeManagementPage() {
   const [summaryMonth, setSummaryMonth] = useState(() => new Date().toISOString().slice(0, 7));
   const [noLocationOnly, setNoLocationOnly] = useState(false);
   const [mapRecord, setMapRecord] = useState<Attendance | null>(null);
+  const [editRecord, setEditRecord] = useState<Attendance | null>(null);
   const companyId = getCurrentCompany();
   const companies = getCompanies();
   const [companyFilter, setCompanyFilter] = useState<string>(companyId || "all");
@@ -221,6 +225,84 @@ export default function TimeManagementPage() {
 
   function refresh() {
     setAttendance(getAttendance());
+  }
+
+  /** Download one attendance record as XLSX. */
+  async function exportSingle(record: Attendance) {
+    const emp = empById.get(record.employeeId);
+    await exportRows(
+      [attendanceRow(record)],
+      timestampedName(`attendance_${emp?.employeeCode ?? "record"}_${record.date}`, "xlsx"),
+      "Attendance",
+    );
+    toast.success("Record downloaded");
+  }
+
+  /** Download every daily record of one employee for the selected month. */
+  async function exportEmployeeMonth(employeeId: string) {
+    const emp = empById.get(employeeId);
+    const rows = attendance
+      .filter((a) => a.employeeId === employeeId && a.date.startsWith(summaryMonth))
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .map(attendanceRow);
+    if (!rows.length) {
+      toast.error(`No records for ${emp?.name ?? "employee"} in ${summaryMonth}`);
+      return;
+    }
+    await exportRows(
+      rows,
+      timestampedName(`attendance_${emp?.employeeCode ?? "employee"}_${summaryMonth}`, "xlsx"),
+      "Attendance",
+    );
+    toast.success("Attendance downloaded");
+  }
+
+  /** Bulk download: all daily records of the filtered employees for the month. */
+  async function exportMonthlyDetail() {
+    const ids = new Set(scopedEmployeeIds);
+    const rows = attendance
+      .filter((a) => ids.has(a.employeeId) && a.date.startsWith(summaryMonth))
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .map(attendanceRow);
+    if (!rows.length) {
+      toast.error(`No attendance records for ${summaryMonth}`);
+      return;
+    }
+    await exportRows(rows, timestampedName(`attendance_detail_${summaryMonth}`, "xlsx"), "Attendance");
+    toast.success(`${rows.length} records exported`);
+  }
+
+  function handleEdit(formData: FormData) {
+    if (!editRecord) return;
+    const num = (k: string) => {
+      const v = Number(formData.get(k));
+      return Number.isFinite(v) && formData.get(k) !== "" ? v : undefined;
+    };
+    updateAttendance(editRecord.id, {
+      employeeId: formData.get("employeeId") as string,
+      date: formData.get("date") as string,
+      siteId: (formData.get("siteId") as string) || undefined,
+      status: formData.get("status") as AttendanceStatus,
+      checkIn: (formData.get("checkIn") as string) || undefined,
+      checkOut: (formData.get("checkOut") as string) || undefined,
+      hoursWorked: Number(formData.get("hoursWorked") || 0),
+      overtimeHours: Number(formData.get("overtimeHours") || 0),
+      notes: (formData.get("notes") as string) || undefined,
+      checkInLat: num("checkInLat") ?? editRecord.checkInLat,
+      checkInLng: num("checkInLng") ?? editRecord.checkInLng,
+      checkOutLat: num("checkOutLat") ?? editRecord.checkOutLat,
+      checkOutLng: num("checkOutLng") ?? editRecord.checkOutLng,
+    });
+    setEditRecord(null);
+    refresh();
+    toast.success("Attendance updated");
+  }
+
+  function handleDelete(record: Attendance) {
+    if (!window.confirm("Delete this attendance record?")) return;
+    deleteAttendance(record.id);
+    refresh();
+    toast.success("Record deleted");
   }
 
   function attendanceRow(record: (typeof attendance)[number]) {
@@ -371,6 +453,10 @@ export default function TimeManagementPage() {
               <Button size="sm" variant="outline" onClick={exportMonthlySummary}>
                 <FileSpreadsheet className="mr-1 h-4 w-4" />
                 Monthly summary
+              </Button>
+              <Button size="sm" variant="outline" onClick={exportMonthlyDetail}>
+                <Download className="mr-1 h-4 w-4" />
+                Monthly detail (bulk)
               </Button>
             </div>
             <ImportDialog
@@ -546,12 +632,13 @@ export default function TimeManagementPage() {
                     <TableHead className="text-right">Normal hrs</TableHead>
                     <TableHead className="text-right">OT hrs</TableHead>
                     <TableHead className="text-right">Total hrs</TableHead>
+                    <TableHead className="w-20 text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {monthRows.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={8} className="h-32 text-center">
+                      <TableCell colSpan={9} className="h-32 text-center">
                         <EmptyState
                           className="border-0 bg-transparent"
                           icon={<Calendar className="h-5 w-5" />}
@@ -576,6 +663,16 @@ export default function TimeManagementPage() {
                           <TableCell className="text-right">{r.normalHours}</TableCell>
                           <TableCell className="text-right">{r.otHours}</TableCell>
                           <TableCell className="text-right font-semibold">{r.totalHours}</TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              title={`Download ${summaryMonth} attendance`}
+                              onClick={() => exportEmployeeMonth(r.employeeId)}
+                            >
+                              <Download className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
                         </TableRow>
                       );
                     })
@@ -596,12 +693,13 @@ export default function TimeManagementPage() {
                   <TableHead>Hours</TableHead>
                   <TableHead>OT</TableHead>
                   <TableHead>Location</TableHead>
+                  <TableHead className="w-20 text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filtered.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="h-32 text-center">
+                    <TableCell colSpan={9} className="h-32 text-center">
                       <EmptyState className="bg-transparent border-0" icon={<Calendar className="h-5 w-5" />} title="No records" description={`No attendance records for ${date}.`} />
                     </TableCell>
                   </TableRow>
@@ -636,6 +734,36 @@ export default function TimeManagementPage() {
                           ) : (
                             <span className="text-xs text-muted-foreground">Not captured</span>
                           )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button size="icon" variant="ghost">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => setEditRecord(a)}>
+                                <Pencil className="mr-2 h-4 w-4" />
+                                Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => exportSingle(a)}>
+                                <Download className="mr-2 h-4 w-4" />
+                                Download record
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => exportEmployeeMonth(a.employeeId)}>
+                                <FileSpreadsheet className="mr-2 h-4 w-4" />
+                                Download month ({summaryMonth})
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                className="text-destructive"
+                                onClick={() => handleDelete(a)}
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </TableCell>
                       </TableRow>
                     );
@@ -682,6 +810,27 @@ export default function TimeManagementPage() {
                 <p className="text-xs text-muted-foreground">In: {mapRecord.checkInAddress ?? "—"}</p>
                 <p className="text-xs text-muted-foreground">Out: {mapRecord.checkOutAddress ?? "—"}</p>
               </div>
+            ) : null}
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={!!editRecord} onOpenChange={(open) => !open && setEditRecord(null)}>
+          <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
+            <DialogHeader>
+              <DialogTitle>Edit attendance</DialogTitle>
+              <DialogDescription>
+                {editRecord
+                  ? `${empById.get(editRecord.employeeId)?.name ?? ""} — ${editRecord.date}`
+                  : ""}
+              </DialogDescription>
+            </DialogHeader>
+            {editRecord ? (
+              <AttendanceForm
+                employees={employees}
+                sites={sites}
+                record={editRecord}
+                onSubmit={handleEdit}
+              />
             ) : null}
           </DialogContent>
         </Dialog>
@@ -852,7 +1001,7 @@ function DailySheet({
   );
 }
 
-function AttendanceForm({ employees, sites, onSubmit }: { employees: ReturnType<typeof getEmployees>; sites: ReturnType<typeof getSites>; onSubmit: (data: FormData) => void }) {
+function AttendanceForm({ employees, sites, onSubmit, record }: { employees: ReturnType<typeof getEmployees>; sites: ReturnType<typeof getSites>; onSubmit: (data: FormData) => void; record?: Attendance }) {
   return (
     <form
       onSubmit={(e) => {
@@ -864,7 +1013,7 @@ function AttendanceForm({ employees, sites, onSubmit }: { employees: ReturnType<
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="employeeId">Employee</Label>
-          <Select name="employeeId" defaultValue={employees[0]?.id}>
+          <Select name="employeeId" defaultValue={record?.employeeId ?? employees[0]?.id}>
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
@@ -879,11 +1028,11 @@ function AttendanceForm({ employees, sites, onSubmit }: { employees: ReturnType<
         </div>
         <div className="space-y-2">
           <Label htmlFor="date">Date</Label>
-          <Input id="date" name="date" type="date" defaultValue={new Date().toISOString().split("T")[0]} required />
+          <Input id="date" name="date" type="date" defaultValue={record?.date ?? new Date().toISOString().split("T")[0]} required />
         </div>
         <div className="space-y-2">
           <Label htmlFor="siteId">Site</Label>
-          <Select name="siteId">
+          <Select name="siteId" defaultValue={record?.siteId}>
             <SelectTrigger>
               <SelectValue placeholder="Select site" />
             </SelectTrigger>
@@ -899,7 +1048,7 @@ function AttendanceForm({ employees, sites, onSubmit }: { employees: ReturnType<
         </div>
         <div className="space-y-2">
           <Label htmlFor="status">Status</Label>
-          <Select name="status" defaultValue="Present">
+          <Select name="status" defaultValue={record?.status ?? "Present"}>
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
@@ -914,24 +1063,24 @@ function AttendanceForm({ employees, sites, onSubmit }: { employees: ReturnType<
         </div>
         <div className="space-y-2">
           <Label htmlFor="checkIn">Check in</Label>
-          <Input id="checkIn" name="checkIn" type="time" />
+          <Input id="checkIn" name="checkIn" type="time" defaultValue={record?.checkIn ?? ""} />
         </div>
         <div className="space-y-2">
           <Label htmlFor="checkOut">Check out</Label>
-          <Input id="checkOut" name="checkOut" type="time" />
+          <Input id="checkOut" name="checkOut" type="time" defaultValue={record?.checkOut ?? ""} />
         </div>
         <div className="space-y-2">
           <Label htmlFor="hoursWorked">Hours worked</Label>
-          <Input id="hoursWorked" name="hoursWorked" type="number" step="0.5" defaultValue={0} />
+          <Input id="hoursWorked" name="hoursWorked" type="number" step="0.5" defaultValue={record?.hoursWorked ?? 0} />
         </div>
         <div className="space-y-2">
           <Label htmlFor="overtimeHours">Overtime</Label>
-          <Input id="overtimeHours" name="overtimeHours" type="number" step="0.5" defaultValue={0} />
+          <Input id="overtimeHours" name="overtimeHours" type="number" step="0.5" defaultValue={record?.overtimeHours ?? 0} />
         </div>
       </div>
       <div className="space-y-2">
         <Label htmlFor="notes">Notes</Label>
-        <Input id="notes" name="notes" placeholder="Optional notes" />
+        <Input id="notes" name="notes" placeholder="Optional notes" defaultValue={record?.notes ?? ""} />
       </div>
       <div className="grid gap-3 rounded-lg border p-3 sm:grid-cols-2">
         <GeoCapture label="Capture clock-in location" prefix="checkIn" />
@@ -942,7 +1091,7 @@ function AttendanceForm({ employees, sites, onSubmit }: { employees: ReturnType<
         </p>
       </div>
       <DialogFooter>
-        <Button type="submit">Save attendance</Button>
+        <Button type="submit">{record ? "Update attendance" : "Save attendance"}</Button>
       </DialogFooter>
     </form>
   );

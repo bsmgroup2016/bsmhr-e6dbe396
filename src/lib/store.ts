@@ -535,6 +535,18 @@ export function updateAttendance(id: string, updates: Partial<Attendance>): Atte
 }
 
 /** Insert or update the single attendance record for an employee on a date. */
+export function deleteAttendance(id: string): boolean {
+  const s = getState();
+  const existing = s.attendance.find((a) => a.id === id);
+  if (!existing) return false;
+  setState({ ...s, attendance: s.attendance.filter((a) => a.id !== id) });
+  void supabase.from("attendance").delete().eq("id", id)
+    .then(({ error }) => fail("attendance", error));
+  addAuditLog("DELETE", "Attendance", id, `Attendance deleted for ${existing.date}`);
+  return true;
+}
+
+/** Insert or update the single attendance record for an employee on a date. */
 export function upsertAttendance(record: Omit<Attendance, "id" | "createdAt" | "updatedAt">): Attendance {
   const existing = getState().attendance.find(
     (a) => a.employeeId === record.employeeId && a.date === record.date,
