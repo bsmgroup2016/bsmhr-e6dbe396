@@ -101,12 +101,13 @@ function daysUntil(iso: string): number | null {
   return Math.round((target.getTime() - today.getTime()) / 86_400_000);
 }
 
-function expiryBadge(passExpiry: string) {
-  const days = daysUntil(passExpiry);
+/** Work Permit / pass expiry: WP expiry date first, pass expiry as fallback. */
+function expiryBadge(e: { workPermitExpiryDate?: string; passExpiry?: string }) {
+  const days = daysUntil(e.workPermitExpiryDate || e.passExpiry || "");
   if (days === null) return null;
-  if (days < 0) return <StatusBadge variant="destructive" label="Expired" dot />;
-  if (days <= 60) return <StatusBadge variant="warning" label={`${days}d left`} dot />;
-  return <StatusBadge variant="success" label={`${days}d left`} dot />;
+  if (days < 0) return <StatusBadge variant="destructive" label="WP expired" dot />;
+  if (days <= 60) return <StatusBadge variant="warning" label={`WP ${days}d left`} dot />;
+  return <StatusBadge variant="success" label={`WP ${days}d left`} dot />;
 }
 
 const EMPLOYEE_IMPORT_COLUMNS: ImportColumn[] = [
@@ -1029,7 +1030,7 @@ export default function WorkforcePage() {
                             label={e.status}
                             dot
                           />
-                          {expiryBadge(e.passExpiry)}
+                          {expiryBadge(e)}
                         </div>
                       </TableCell>
                       <TableCell>
@@ -1173,7 +1174,7 @@ function EmployeeDetail({ employee, onEdit }: { employee: Employee; onEdit: () =
               label={employee.status}
               dot
             />
-            {expiryBadge(employee.passExpiry)}
+            {expiryBadge(employee)}
           </div>
         </div>
       </div>
