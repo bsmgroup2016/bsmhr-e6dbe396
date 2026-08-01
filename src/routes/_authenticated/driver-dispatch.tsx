@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { AlertTriangle, Bell, History, MapPin, Plus, RefreshCw, Route as RouteIcon, Send, ShieldCheck, Smartphone, Trash2, Truck } from "lucide-react";
+import { AlertTriangle, Bell, History, MapPin, Plane, Plus, RefreshCw, Route as RouteIcon, Send, ShieldCheck, Smartphone, Trash2, Truck } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/app-shell";
@@ -18,12 +18,12 @@ import {
 } from "@/components/ui/dialog";
 import { LocationMap, type MapPoint } from "@/components/location-map";
 import { RouteTrailMap } from "@/components/route-trail-map";
-import { getEmployees, getVehicles, getSites, getCurrentCompany } from "@/lib/store";
+import { getEmployees, getVehicles, getSites, getCurrentCompany, getDriverProfiles } from "@/lib/store";
 import { isDriver } from "@/lib/workforce-split";
 import { capturePoint } from "@/lib/geo";
 import {
-  createDriverTask, deleteDriverTask, listDriverTasks, minutesAgo, nextStatus,
-  pushDriverLocation, statusTone, updateTaskStatus, type DriverTask,
+  createDriverTask, deleteDriverTask, driverAvailability, listDriverTasks, minutesAgo, nextStatus,
+  pushDriverLocation, statusTone, updateTaskStatus, TASK_TYPES, type DriverTask, type TaskType,
 } from "@/lib/driver-tasks";
 import {
   analyseTrail, listPingsForTasks, recordPing, splitLegs, type TrailAnalysis, type TrailPing,
@@ -54,6 +54,7 @@ function DriverDispatchPage() {
   const employees = getEmployees();
   const vehicles = getVehicles();
   const sites = getSites();
+  const driverProfiles = getDriverProfiles();
 
   const drivers = useMemo(
     () => employees.filter((e) => isDriver(e) && (!companyId || !e.companyId || e.companyId === companyId)),
@@ -69,6 +70,8 @@ function DriverDispatchPage() {
   const [note, setNote] = useState("");
   const [form, setForm] = useState({
     driverEmployeeId: "", vehicleId: "", siteId: "", title: "Worker transport",
+    taskType: "Worker transport" as TaskType, flightNo: "", terminal: "", arrivingWorkers: "",
+    expectedMinutes: 60,
     instruction: "", pickup: "", dropoff: "", passengers: 0, scheduledAt: nowLocal(),
   });
 
