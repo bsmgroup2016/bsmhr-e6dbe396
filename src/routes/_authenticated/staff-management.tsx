@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
-  Briefcase, Building2, CalendarOff, IdCard, Pencil, Plane, Search, Trash2, Users, Wallet,
+  Briefcase, Building2, CalendarOff, Eye, IdCard, Pencil, Plane, Search, Trash2, Users, Wallet,
 } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
