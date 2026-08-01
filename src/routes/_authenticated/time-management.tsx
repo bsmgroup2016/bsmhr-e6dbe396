@@ -1001,7 +1001,7 @@ function DailySheet({
   );
 }
 
-function AttendanceForm({ employees, sites, onSubmit }: { employees: ReturnType<typeof getEmployees>; sites: ReturnType<typeof getSites>; onSubmit: (data: FormData) => void }) {
+function AttendanceForm({ employees, sites, onSubmit, record }: { employees: ReturnType<typeof getEmployees>; sites: ReturnType<typeof getSites>; onSubmit: (data: FormData) => void; record?: Attendance }) {
   return (
     <form
       onSubmit={(e) => {
@@ -1013,7 +1013,7 @@ function AttendanceForm({ employees, sites, onSubmit }: { employees: ReturnType<
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="employeeId">Employee</Label>
-          <Select name="employeeId" defaultValue={employees[0]?.id}>
+          <Select name="employeeId" defaultValue={record?.employeeId ?? employees[0]?.id}>
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
@@ -1028,11 +1028,11 @@ function AttendanceForm({ employees, sites, onSubmit }: { employees: ReturnType<
         </div>
         <div className="space-y-2">
           <Label htmlFor="date">Date</Label>
-          <Input id="date" name="date" type="date" defaultValue={new Date().toISOString().split("T")[0]} required />
+          <Input id="date" name="date" type="date" defaultValue={record?.date ?? new Date().toISOString().split("T")[0]} required />
         </div>
         <div className="space-y-2">
           <Label htmlFor="siteId">Site</Label>
-          <Select name="siteId">
+          <Select name="siteId" defaultValue={record?.siteId}>
             <SelectTrigger>
               <SelectValue placeholder="Select site" />
             </SelectTrigger>
@@ -1048,7 +1048,7 @@ function AttendanceForm({ employees, sites, onSubmit }: { employees: ReturnType<
         </div>
         <div className="space-y-2">
           <Label htmlFor="status">Status</Label>
-          <Select name="status" defaultValue="Present">
+          <Select name="status" defaultValue={record?.status ?? "Present"}>
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
@@ -1063,24 +1063,24 @@ function AttendanceForm({ employees, sites, onSubmit }: { employees: ReturnType<
         </div>
         <div className="space-y-2">
           <Label htmlFor="checkIn">Check in</Label>
-          <Input id="checkIn" name="checkIn" type="time" />
+          <Input id="checkIn" name="checkIn" type="time" defaultValue={record?.checkIn ?? ""} />
         </div>
         <div className="space-y-2">
           <Label htmlFor="checkOut">Check out</Label>
-          <Input id="checkOut" name="checkOut" type="time" />
+          <Input id="checkOut" name="checkOut" type="time" defaultValue={record?.checkOut ?? ""} />
         </div>
         <div className="space-y-2">
           <Label htmlFor="hoursWorked">Hours worked</Label>
-          <Input id="hoursWorked" name="hoursWorked" type="number" step="0.5" defaultValue={0} />
+          <Input id="hoursWorked" name="hoursWorked" type="number" step="0.5" defaultValue={record?.hoursWorked ?? 0} />
         </div>
         <div className="space-y-2">
           <Label htmlFor="overtimeHours">Overtime</Label>
-          <Input id="overtimeHours" name="overtimeHours" type="number" step="0.5" defaultValue={0} />
+          <Input id="overtimeHours" name="overtimeHours" type="number" step="0.5" defaultValue={record?.overtimeHours ?? 0} />
         </div>
       </div>
       <div className="space-y-2">
         <Label htmlFor="notes">Notes</Label>
-        <Input id="notes" name="notes" placeholder="Optional notes" />
+        <Input id="notes" name="notes" placeholder="Optional notes" defaultValue={record?.notes ?? ""} />
       </div>
       <div className="grid gap-3 rounded-lg border p-3 sm:grid-cols-2">
         <GeoCapture label="Capture clock-in location" prefix="checkIn" />
@@ -1091,7 +1091,7 @@ function AttendanceForm({ employees, sites, onSubmit }: { employees: ReturnType<
         </p>
       </div>
       <DialogFooter>
-        <Button type="submit">Save attendance</Button>
+        <Button type="submit">{record ? "Update attendance" : "Save attendance"}</Button>
       </DialogFooter>
     </form>
   );
