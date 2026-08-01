@@ -789,9 +789,6 @@ export default function TimeManagementPage() {
           <DialogContent className="sm:max-w-lg">
             <DialogHeader>
               <DialogTitle>Attendance location</DialogTitle>
-          <DialogContent className="sm:max-w-lg">
-            <DialogHeader>
-              <DialogTitle>Attendance location</DialogTitle>
               <DialogDescription>
                 {mapRecord
                   ? `${employees.find((e) => e.id === mapRecord.employeeId)?.name ?? ""} — ${mapRecord.date}`
@@ -813,6 +810,27 @@ export default function TimeManagementPage() {
                 <p className="text-xs text-muted-foreground">In: {mapRecord.checkInAddress ?? "—"}</p>
                 <p className="text-xs text-muted-foreground">Out: {mapRecord.checkOutAddress ?? "—"}</p>
               </div>
+            ) : null}
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={!!editRecord} onOpenChange={(open) => !open && setEditRecord(null)}>
+          <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
+            <DialogHeader>
+              <DialogTitle>Edit attendance</DialogTitle>
+              <DialogDescription>
+                {editRecord
+                  ? `${empById.get(editRecord.employeeId)?.name ?? ""} — ${editRecord.date}`
+                  : ""}
+              </DialogDescription>
+            </DialogHeader>
+            {editRecord ? (
+              <AttendanceForm
+                employees={employees}
+                sites={sites}
+                record={editRecord}
+                onSubmit={handleEdit}
+              />
             ) : null}
           </DialogContent>
         </Dialog>
