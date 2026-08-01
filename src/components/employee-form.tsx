@@ -135,6 +135,7 @@ export function employeeFromForm(fd: FormData): Partial<Employee> {
     internalNotes: s("internalNotes") || undefined,
     photoUrl: s("photoUrl") || undefined,
     ipaDocumentUrl: s("ipaDocumentUrl") || undefined,
+    pFileUrl: s("pFileUrl") || undefined,
   };
 }
 
@@ -366,6 +367,14 @@ export function EmployeeForm({
             label="Profile photo (stored in Cloudflare R2)"
             folder="photos"
             defaultValue={employee?.photoUrl || ""}
+          />
+          <FileUpload
+            name="pFileUrl"
+            label="P-File document (PDF)"
+            folder="p-files"
+            accept=".pdf"
+            hint="Upload the employee's scanned P-File as a PDF"
+            defaultValue={employee?.pFileUrl || ""}
           />
         </TabsContent>
 
