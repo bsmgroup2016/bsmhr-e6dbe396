@@ -13,6 +13,7 @@ import {
   Fuel,
   FileText,
   IdCard,
+  MapPin,
   FolderKanban,
   Gauge,
   GraduationCap,
