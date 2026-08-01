@@ -247,8 +247,8 @@ export function ProjectCrewSheet({
             <div className="border-b p-3">
               <p className="text-sm font-medium">Deployed on this project ({crew.length})</p>
             </div>
-            <ScrollArea className="h-[26rem]">
-              <div className="space-y-1 p-3">
+            <ScrollArea className="h-[26rem] w-full">
+              <div className="space-y-1 overflow-hidden p-3">
                 {crew.length === 0 ? (
                   <p className="py-6 text-center text-sm text-muted-foreground">
                     No worker deployed yet.
@@ -257,9 +257,9 @@ export function ProjectCrewSheet({
                   crew.map((r) => (
                     <div
                       key={r.assignment.id}
-                      className="flex items-center gap-3 rounded-md border p-2"
+                      className="flex w-full items-center gap-2 rounded-md border p-2"
                     >
-                      <div className="min-w-0 flex-1">
+                      <div className="min-w-0 flex-1 overflow-hidden">
                         <p className="truncate text-sm font-medium">{r.employee?.name}</p>
                         <p className="flex items-center gap-1 truncate text-xs text-muted-foreground">
                           {r.employee?.employeeCode} · {r.employee?.trade ?? "—"}
@@ -271,16 +271,19 @@ export function ProjectCrewSheet({
                           ) : null}
                         </p>
                       </div>
-                      <StatusBadge variant="success" label={r.assignment.status} />
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-destructive"
-                        title="Remove from project"
-                        onClick={() => removeOne(r.assignment.id, r.employee)}
-                      >
-                        <UserMinus className="h-4 w-4" />
-                      </Button>
+                      <div className="flex shrink-0 items-center gap-1">
+                        <StatusBadge variant="success" label={r.assignment.status} />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-8 shrink-0 gap-1 text-destructive hover:bg-destructive/10"
+                          title="Remove from project"
+                          onClick={() => removeOne(r.assignment.id, r.employee)}
+                        >
+                          <UserMinus className="h-4 w-4" />
+                          <span className="hidden sm:inline">Remove</span>
+                        </Button>
+                      </div>
                     </div>
                   ))
                 )}
