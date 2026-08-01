@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { Bell, MapPin, Plus, RefreshCw, Send, Smartphone, Trash2, Truck } from "lucide-react";
+import { AlertTriangle, Bell, MapPin, Plus, RefreshCw, Route as RouteIcon, Send, ShieldCheck, Smartphone, Trash2, Truck } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/app-shell";
@@ -17,6 +17,7 @@ import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
 import { LocationMap, type MapPoint } from "@/components/location-map";
+import { RouteTrailMap } from "@/components/route-trail-map";
 import { getEmployees, getVehicles, getSites, getCurrentCompany } from "@/lib/store";
 import { isDriver } from "@/lib/workforce-split";
 import { capturePoint } from "@/lib/geo";
@@ -24,6 +25,9 @@ import {
   createDriverTask, deleteDriverTask, listDriverTasks, minutesAgo, nextStatus,
   pushDriverLocation, statusTone, updateTaskStatus, type DriverTask,
 } from "@/lib/driver-tasks";
+import {
+  analyseTrail, listPingsForTasks, recordPing, type TrailAnalysis, type TrailPing,
+} from "@/lib/driver-trail";
 
 export const Route = createFileRoute("/_authenticated/driver-dispatch")({
   head: () => ({
@@ -57,6 +61,8 @@ function DriverDispatchPage() {
   );
 
   const [tasks, setTasks] = useState<DriverTask[]>([]);
+  const [trails, setTrails] = useState<Record<string, TrailPing[]>>({});
+  const [replayId, setReplayId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [actor, setActor] = useState("");
@@ -68,7 +74,9 @@ function DriverDispatchPage() {
 
   const reload = async () => {
     try {
-      setTasks(await listDriverTasks());
+      const list = await listDriverTasks();
+      setTasks(list);
+      setTrails(await listPingsForTasks(list.map((t) => t.id)));
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Could not load tasks");
     } finally {
@@ -95,6 +103,15 @@ function DriverDispatchPage() {
   const active = scoped.filter((t) => t.status !== "Back at office" && t.status !== "Cancelled");
   const doneToday = scoped.filter((t) => t.status === "Back at office").length;
   const pending = scoped.filter((t) => t.status === "Assigned").length;
+
+  const analyses = useMemo(() => {
+    const out: Record<string, TrailAnalysis> = {};
+    for (const t of tasks) out[t.id] = analyseTrail(trails[t.id] ?? []);
+    return out;
+  }, [tasks, trails]);
+  const flagged = scoped.filter((t) => analyses[t.id]?.risk === "suspicious");
+  const replayTask = scoped.find((t) => t.id === replayId) ?? null;
+  const replay = replayTask ? analyses[replayTask.id] : undefined;
 
   const points: MapPoint[] = scoped
     .filter((t) => t.lastLat != null && t.lastLng != null)
@@ -131,6 +148,12 @@ function DriverDispatchPage() {
       note: note || task.driverNote || undefined,
       ...(loc ? { lat: loc.lat, lng: loc.lng } : {}),
     });
+    if (loc) {
+      await recordPing({
+        taskId: task.id, driverEmployeeId: task.driverEmployeeId,
+        lat: loc.lat, lng: loc.lng, status: next,
+      });
+    }
     setNote("");
     await reload();
     toast.success(`Status updated: ${next}${loc ? " · location shared" : ""}`);
@@ -140,6 +163,10 @@ function DriverDispatchPage() {
     const loc = await capturePoint();
     if (!loc) return toast.error("Location permission denied on this phone");
     await pushDriverLocation(task.id, loc.lat, loc.lng);
+    await recordPing({
+      taskId: task.id, driverEmployeeId: task.driverEmployeeId,
+      lat: loc.lat, lng: loc.lng, status: task.status,
+    });
     await reload();
     toast.success(`Live location sent — ${loc.address}`);
   }
@@ -165,7 +192,7 @@ function DriverDispatchPage() {
           <SummaryCard title="Active tasks" value={active.length.toString()} icon={<Truck className="h-5 w-5" />} variant="primary" caption="On the road now" compact />
           <SummaryCard title="Waiting acceptance" value={pending.toString()} icon={<Bell className="h-5 w-5" />} variant="warning" caption="Driver not accepted yet" compact />
           <SummaryCard title="Completed" value={doneToday.toString()} icon={<Send className="h-5 w-5" />} variant="success" caption="Back at office" compact />
-          <SummaryCard title="Live pings" value={points.length.toString()} icon={<MapPin className="h-5 w-5" />} variant="info" caption="Drivers sharing GPS" compact />
+          <SummaryCard title="Route alerts" value={flagged.length.toString()} icon={<AlertTriangle className="h-5 w-5" />} variant={flagged.length ? "destructive" : "info"} caption="Detour / long stop detected" compact />
         </div>
 
         <Tabs defaultValue="board">
@@ -254,6 +281,21 @@ function DriverDispatchPage() {
                         </div>
                         <StatusBadge variant={statusTone(t.status)} label={t.status} dot />
                       </div>
+                      {analyses[t.id] && analyses[t.id]!.pings.length > 1 ? (
+                        <div className="mt-2 flex flex-wrap items-center gap-2">
+                          <StatusBadge
+                            variant={analyses[t.id]!.risk === "suspicious" ? "destructive" : analyses[t.id]!.risk === "review" ? "warning" : "success"}
+                            label={
+                              analyses[t.id]!.risk === "suspicious" ? "Unusual route" :
+                              analyses[t.id]!.risk === "review" ? "Needs review" : "Route normal"
+                            }
+                            dot
+                          />
+                          <span className="text-xs text-muted-foreground">
+                            {analyses[t.id]!.distanceKm} km driven · {analyses[t.id]!.minutes} min · {analyses[t.id]!.idleStops.length} long stop(s)
+                          </span>
+                        </div>
+                      ) : null}
                       <p className="mt-2 text-sm">{t.instruction}</p>
                       <p className="mt-1 text-xs text-muted-foreground">
                         {t.pickup || "—"} → {t.dropoff || "—"} · {t.passengers} pax ·{" "}
@@ -264,9 +306,14 @@ function DriverDispatchPage() {
                         <span className="text-xs text-muted-foreground">
                           {t.lastLocationAt ? `GPS ${minutesAgo(t.lastLocationAt)} min ago` : "No GPS ping yet"}
                         </span>
-                        <Button size="icon" variant="ghost" title="Delete task" onClick={() => void deleteDriverTask(t.id).then(reload)}>
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
+                        <div className="flex items-center gap-1">
+                          <Button size="sm" variant="outline" onClick={() => setReplayId(t.id)}>
+                            <RouteIcon className="mr-1 h-4 w-4" /> Route replay
+                          </Button>
+                          <Button size="icon" variant="ghost" title="Delete task" onClick={() => void deleteDriverTask(t.id).then(reload)}>
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -330,6 +377,79 @@ function DriverDispatchPage() {
             </div>
           </TabsContent>
         </Tabs>
+
+        <Dialog open={!!replayTask} onOpenChange={(o) => !o && setReplayId(null)}>
+          <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Route replay — {replayTask?.title}</DialogTitle>
+              <DialogDescription>
+                {replayTask ? `${name(replayTask.driverEmployeeId)} · ${plate(replayTask.vehicleId)} · ${replayTask.pickup || "—"} → ${replayTask.dropoff || "—"}` : ""}
+              </DialogDescription>
+            </DialogHeader>
+
+            {replay && replay.pings.length > 1 ? (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                  {[
+                    ["Distance driven", `${replay.distanceKm} km`],
+                    ["Trip time", `${replay.minutes} min`],
+                    ["Detour factor", `${replay.detourRatio}x`],
+                    ["Long stops", `${replay.idleStops.length}`],
+                  ].map(([k, v]) => (
+                    <div key={k} className="rounded-lg border bg-muted/20 p-3">
+                      <p className="text-xs text-muted-foreground">{k}</p>
+                      <p className="text-sm font-semibold">{v}</p>
+                    </div>
+                  ))}
+                </div>
+
+                <RouteTrailMap
+                  path={replay.pings.map((p) => ({ lat: p.lat, lng: p.lng, label: p.status ?? "", at: p.recordedAt }))}
+                  stops={replay.idleStops.map((s) => ({ lat: s.lat, lng: s.lng, minutes: s.minutes }))}
+                  suspicious={replay.risk === "suspicious"}
+                  className="h-80 w-full rounded-md border"
+                />
+                <p className="text-[11px] text-muted-foreground">
+                  Solid line = the road the driver actually took. Dashed grey line = direct expected path. Amber circle = vehicle stopped there.
+                </p>
+
+                {replay.flags.length ? (
+                  <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-3">
+                    <p className="flex items-center gap-1 text-sm font-medium text-destructive">
+                      <AlertTriangle className="h-4 w-4" /> Unusual activity detected
+                    </p>
+                    <ul className="mt-1 list-inside list-disc text-xs text-muted-foreground">
+                      {replay.flags.map((f) => (<li key={f}>{f}</li>))}
+                    </ul>
+                  </div>
+                ) : (
+                  <p className="flex items-center gap-1 rounded-lg border border-success/40 bg-success/5 p-3 text-sm text-success">
+                    <ShieldCheck className="h-4 w-4" /> Route looks normal — no detour or unexplained stop.
+                  </p>
+                )}
+
+                <div className="rounded-lg border">
+                  <p className="border-b px-3 py-2 text-xs font-medium text-muted-foreground">GPS timeline</p>
+                  <div className="max-h-56 overflow-y-auto divide-y">
+                    {replay.pings.map((p, i) => (
+                      <div key={p.id} className="flex items-center justify-between gap-2 px-3 py-1.5 text-xs">
+                        <span className="text-muted-foreground">
+                          {i + 1}. {new Date(p.recordedAt).toLocaleString("en-SG", { hour12: true })}
+                        </span>
+                        <span className="truncate">{p.status ?? "—"}</span>
+                        <span className="shrink-0 text-muted-foreground">
+                          {p.lat.toFixed(4)}, {p.lng.toFixed(4)}{p.speedKmh != null ? ` · ${p.speedKmh} km/h` : ""}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <EmptyState icon={<RouteIcon className="h-5 w-5" />} title="No GPS trail yet" description="The trail builds up as the driver shares location or updates trip status from his phone." />
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </AppShell>
   );
