@@ -249,7 +249,111 @@ export default function ProjectsPage() {
             </Select>
           </div>
 
-          <div className="mt-4 overflow-x-auto rounded-lg border">
+          {/* Mobile card list */}
+          <div className="mt-4 space-y-3 lg:hidden">
+            {filtered.length === 0 ? (
+              <EmptyState icon={<Building2 className="h-5 w-5" />} title="No projects found" description="Add a project to get started." />
+            ) : (
+              filtered.map((p) => {
+                const client = clients.find((c) => c.id === p.clientId);
+                const f = projectFulfilment(p, sites, assignments);
+                const projectSites = sites.filter((s) => s.projectId === p.id);
+                return (
+                  <div key={`m-${p.id}`} className="rounded-lg border bg-card p-3">
+                    <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
+                      <div className="min-w-0">
+                        <div className="truncate font-medium leading-tight">{p.name}</div>
+                        <div className="mt-0.5 truncate text-xs text-muted-foreground">
+                          {p.code} · {client?.name}
+                        </div>
+                        <div className="mt-0.5 truncate text-xs text-muted-foreground">{p.location}</div>
+                      </div>
+                      <div className="flex shrink-0 items-center gap-1">
+                        <StatusBadge
+                          variant={p.status === "Active" ? "success" : p.status === "Planning" ? "warning" : p.status === "On Hold" ? "warning" : "ghost"}
+                          label={p.status}
+                          dot
+                        />
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => setViewingProject(p)}>
+                              <Eye className="mr-2 h-4 w-4" />
+                              View
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setEditingProject(p)}>
+                              <Pencil className="mr-2 h-4 w-4" />
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setCrewProject(p)}>
+                              <Users className="mr-2 h-4 w-4" />
+                              Manage workers
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setAddSiteProject(p)}>
+                              <Plus className="mr-2 h-4 w-4" />
+                              Add site
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="text-destructive" onClick={() => setDeleteTarget(p)}>
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </div>
+
+                    <div className="mt-3 grid grid-cols-2 gap-2">
+                      <div className="min-w-0">
+                        <label className="text-[11px] text-muted-foreground">Start date</label>
+                        <Input
+                          type="date"
+                          aria-label={`Start date for ${p.name}`}
+                          className="mt-1 h-9 w-full text-sm"
+                          value={p.startDate ?? ""}
+                          onChange={(evt) => {
+                            updateProject(p.id, { startDate: evt.target.value || undefined });
+                            refresh();
+                          }}
+                        />
+                      </div>
+                      <div className="min-w-0">
+                        <label className="text-[11px] text-muted-foreground">End date</label>
+                        <Input
+                          type="date"
+                          aria-label={`End date for ${p.name}`}
+                          className="mt-1 h-9 w-full text-sm"
+                          value={p.endDate ?? ""}
+                          onChange={(evt) => {
+                            updateProject(p.id, { endDate: evt.target.value || undefined });
+                            refresh();
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="mt-3 flex items-center justify-between gap-3">
+                      <button type="button" className="min-w-0 flex-1 text-left" onClick={() => setCrewProject(p)}>
+                        <div className="text-xs text-muted-foreground">Manpower</div>
+                        <div className="text-sm font-medium">
+                          {f.deployed}/{f.required} · {f.gap > 0 ? `${f.gap} short` : "Fulfilled"}
+                        </div>
+                        <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                          <div className={`h-full rounded-full ${f.gap > 0 ? "bg-amber-500" : "bg-emerald-500"}`} style={{ width: `${f.percent}%` }} />
+                        </div>
+                      </button>
+                      <span className="shrink-0 text-xs text-muted-foreground">{projectSites.length} sites</span>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          <div className="mt-4 hidden overflow-x-auto rounded-lg border lg:block">
             <Table className="min-w-[1120px]">
               <TableHeader>
                 <TableRow>
