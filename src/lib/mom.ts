@@ -70,13 +70,34 @@ export function levyTierFor(e: Pick<Employee, "levyTier" | "workerCategory">): L
 }
 
 /** Statutory monthly levy for one employee. Locals/PRs pay CPF, not levy. */
-export function levyFor(
-  e: Pick<Employee, "passType" | "levyTier" | "workerCategory" | "levyRate">,
+export function statutoryLevyFor(
+  e: Pick<Employee, "passType" | "levyTier" | "workerCategory">,
   sector: MomSector,
 ): number {
   if (e.passType === "Singaporean/PR" || e.passType === "Employment Pass") return 0;
   if (e.passType === "S Pass") return SP_LEVY[sector];
   return WP_LEVY[sector][levyTierFor(e)];
+}
+
+/** A per-employee levy rate override entered on the employee profile. */
+export function customLevyFor(e: Pick<Employee, "levyRate">): number | null {
+  const rate = typeof e.levyRate === "number" ? e.levyRate : Number(e.levyRate ?? NaN);
+  return Number.isFinite(rate) && rate > 0 ? rate : null;
+}
+
+/**
+ * Effective monthly levy. A custom rate on the employee profile wins over the
+ * statutory sector/skill rate unless `useCustom` is disabled.
+ */
+export function levyFor(
+  e: Pick<Employee, "passType" | "levyTier" | "workerCategory" | "levyRate">,
+  sector: MomSector,
+  useCustom = true,
+): number {
+  const statutory = statutoryLevyFor(e, sector);
+  if (!useCustom) return statutory;
+  if (e.passType === "Singaporean/PR" || e.passType === "Employment Pass") return 0;
+  return customLevyFor(e) ?? statutory;
 }
 
 const INACTIVE = ["Archived", "Resigned", "Terminated", "Repatriated", "Draft"];
@@ -137,23 +158,33 @@ export function computeQuota(employees: Employee[], sector: MomSector): QuotaRes
 
 export interface LevySummary {
   total: number;
+  /** Total using MOM statutory rates only, ignoring custom overrides. */
+  statutoryTotal: number;
+  /** Number of workers billed at a custom rate. */
+  customCount: number;
   workPermitLevy: number;
   sPassLevy: number;
   byTier: { tier: LevyTier; count: number; amount: number }[];
-  perWorker: { employee: Employee; levy: number; tier: LevyTier }[];
+  perWorker: { employee: Employee; levy: number; statutory: number; custom: boolean; tier: LevyTier }[];
 }
 
 /** Monthly levy bill for a workforce. */
-export function levySummary(employees: Employee[], sector: MomSector): LevySummary {
+export function levySummary(employees: Employee[], sector: MomSector, useCustom = true): LevySummary {
   const active = employees.filter(isHeadcount);
   const perWorker = active
-    .map((employee) => ({ employee, levy: levyFor(employee, sector), tier: levyTierFor(employee) }))
+    .map((employee) => {
+      const statutory = statutoryLevyFor(employee, sector);
+      const levy = levyFor(employee, sector, useCustom);
+      return { employee, levy, statutory, custom: useCustom && levy !== statutory, tier: levyTierFor(employee) };
+    })
     .filter((r) => r.levy > 0)
     .sort((a, b) => b.levy - a.levy);
 
   const tiers: LevyTier[] = ["Higher Skilled", "Basic Skilled"];
   return {
     total: perWorker.reduce((s, r) => s + r.levy, 0),
+    statutoryTotal: perWorker.reduce((s, r) => s + r.statutory, 0),
+    customCount: perWorker.filter((r) => r.custom).length,
     workPermitLevy: perWorker
       .filter((r) => r.employee.passType === "Work Permit")
       .reduce((s, r) => s + r.levy, 0),
