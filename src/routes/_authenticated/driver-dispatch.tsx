@@ -398,9 +398,95 @@ function DriverDispatchPage() {
               </p>
             </div>
           </TabsContent>
-        </Tabs>
 
-        {/* moved inside Tabs below */}
+          <TabsContent value="history" className="space-y-4">
+            <div className="rounded-xl border bg-card p-4 shadow-sm">
+              <div className="flex flex-wrap items-end gap-3">
+                <div className="min-w-48">
+                  <Label className="text-xs text-muted-foreground">Driver</Label>
+                  <Select value={historyDriver} onValueChange={setHistoryDriver}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All drivers</SelectItem>
+                      {drivers.map((d) => (<SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">From</Label>
+                  <Input type="date" value={historyFrom} onChange={(e) => setHistoryFrom(e.target.value)} />
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">To</Label>
+                  <Input type="date" value={historyTo} onChange={(e) => setHistoryTo(e.target.value)} />
+                </div>
+              </div>
+
+              {history.length === 0 ? (
+                <EmptyState className="mt-4" icon={<History className="h-5 w-5" />} title="No trip in this period" description="Change the driver or date range." />
+              ) : (
+                <div className="mt-4 space-y-3">
+                  {history.map((t) => {
+                    const a = analyses[t.id];
+                    const legs = a ? splitLegs(a.pings, a.idleStops) : [];
+                    return (
+                      <div key={t.id} className="rounded-lg border bg-muted/20 p-4">
+                        <div className="flex flex-wrap items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="truncate font-medium">{t.title}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {new Date(t.scheduledAt).toLocaleDateString("en-SG")} · {name(t.driverEmployeeId)} · {plate(t.vehicleId)} · {t.pickup || "—"} → {t.dropoff || "—"}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <StatusBadge variant={statusTone(t.status)} label={t.status} dot />
+                            <Button size="sm" variant="outline" onClick={() => setReplayId(t.id)}>
+                              <RouteIcon className="mr-1 h-4 w-4" /> Map replay
+                            </Button>
+                          </div>
+                        </div>
+
+                        {legs.length ? (
+                          <ol className="mt-3 space-y-2 border-l pl-4">
+                            {legs.map((leg, i) => (
+                              <li key={`${t.id}-${i}`} className="relative text-xs">
+                                <span className="absolute -left-[21px] top-1 h-2 w-2 rounded-full bg-primary" />
+                                <p className="font-medium">{leg.label}</p>
+                                <p className="text-muted-foreground">
+                                  {clock(leg.from)} → {clock(leg.to)} · {leg.minutes} min · {leg.distanceKm} km
+                                </p>
+                                {leg.stops.map((s) => (
+                                  <p key={s.from} className="text-warning">
+                                    Stopped {s.minutes} min here ({s.lat.toFixed(4)}, {s.lng.toFixed(4)})
+                                  </p>
+                                ))}
+                              </li>
+                            ))}
+                          </ol>
+                        ) : (
+                          <p className="mt-3 text-xs text-muted-foreground">No GPS trail recorded for this trip.</p>
+                        )}
+
+                        {a && a.pings.length > 1 ? (
+                          <div className="mt-3 flex flex-wrap items-center gap-2">
+                            <StatusBadge
+                              variant={a.risk === "suspicious" ? "destructive" : a.risk === "review" ? "warning" : "success"}
+                              label={a.risk === "suspicious" ? "Unusual route" : a.risk === "review" ? "Needs review" : "Route normal"}
+                              dot
+                            />
+                            <span className="text-xs text-muted-foreground">
+                              Total {a.distanceKm} km · {a.minutes} min · detour {a.detourRatio}x
+                            </span>
+                          </div>
+                        ) : null}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </TabsContent>
+        </Tabs>
 
         <Dialog open={!!replayTask} onOpenChange={(o) => !o && setReplayId(null)}>
           <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
