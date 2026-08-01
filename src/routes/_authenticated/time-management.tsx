@@ -115,6 +115,7 @@ export default function TimeManagementPage() {
   const [summaryMonth, setSummaryMonth] = useState(() => new Date().toISOString().slice(0, 7));
   const [noLocationOnly, setNoLocationOnly] = useState(false);
   const [mapRecord, setMapRecord] = useState<Attendance | null>(null);
+  const [editRecord, setEditRecord] = useState<Attendance | null>(null);
   const companyId = getCurrentCompany();
   const companies = getCompanies();
   const [companyFilter, setCompanyFilter] = useState<string>(companyId || "all");
@@ -224,6 +225,84 @@ export default function TimeManagementPage() {
 
   function refresh() {
     setAttendance(getAttendance());
+  }
+
+  /** Download one attendance record as XLSX. */
+  async function exportSingle(record: Attendance) {
+    const emp = empById.get(record.employeeId);
+    await exportRows(
+      [attendanceRow(record)],
+      timestampedName(`attendance_${emp?.employeeCode ?? "record"}_${record.date}`, "xlsx"),
+      "Attendance",
+    );
+    toast.success("Record downloaded");
+  }
+
+  /** Download every daily record of one employee for the selected month. */
+  async function exportEmployeeMonth(employeeId: string) {
+    const emp = empById.get(employeeId);
+    const rows = attendance
+      .filter((a) => a.employeeId === employeeId && a.date.startsWith(summaryMonth))
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .map(attendanceRow);
+    if (!rows.length) {
+      toast.error(`No records for ${emp?.name ?? "employee"} in ${summaryMonth}`);
+      return;
+    }
+    await exportRows(
+      rows,
+      timestampedName(`attendance_${emp?.employeeCode ?? "employee"}_${summaryMonth}`, "xlsx"),
+      "Attendance",
+    );
+    toast.success("Attendance downloaded");
+  }
+
+  /** Bulk download: all daily records of the filtered employees for the month. */
+  async function exportMonthlyDetail() {
+    const ids = new Set(scopedEmployeeIds);
+    const rows = attendance
+      .filter((a) => ids.has(a.employeeId) && a.date.startsWith(summaryMonth))
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .map(attendanceRow);
+    if (!rows.length) {
+      toast.error(`No attendance records for ${summaryMonth}`);
+      return;
+    }
+    await exportRows(rows, timestampedName(`attendance_detail_${summaryMonth}`, "xlsx"), "Attendance");
+    toast.success(`${rows.length} records exported`);
+  }
+
+  function handleEdit(formData: FormData) {
+    if (!editRecord) return;
+    const num = (k: string) => {
+      const v = Number(formData.get(k));
+      return Number.isFinite(v) && formData.get(k) !== "" ? v : undefined;
+    };
+    updateAttendance(editRecord.id, {
+      employeeId: formData.get("employeeId") as string,
+      date: formData.get("date") as string,
+      siteId: (formData.get("siteId") as string) || undefined,
+      status: formData.get("status") as AttendanceStatus,
+      checkIn: (formData.get("checkIn") as string) || undefined,
+      checkOut: (formData.get("checkOut") as string) || undefined,
+      hoursWorked: Number(formData.get("hoursWorked") || 0),
+      overtimeHours: Number(formData.get("overtimeHours") || 0),
+      notes: (formData.get("notes") as string) || undefined,
+      checkInLat: num("checkInLat") ?? editRecord.checkInLat,
+      checkInLng: num("checkInLng") ?? editRecord.checkInLng,
+      checkOutLat: num("checkOutLat") ?? editRecord.checkOutLat,
+      checkOutLng: num("checkOutLng") ?? editRecord.checkOutLng,
+    });
+    setEditRecord(null);
+    refresh();
+    toast.success("Attendance updated");
+  }
+
+  function handleDelete(record: Attendance) {
+    if (!window.confirm("Delete this attendance record?")) return;
+    deleteAttendance(record.id);
+    refresh();
+    toast.success("Record deleted");
   }
 
   function attendanceRow(record: (typeof attendance)[number]) {
