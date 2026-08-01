@@ -63,6 +63,7 @@ import {
 } from "@/components/ui/sheet";
 import { getClients, getProjects, getSites, getAssignments, addProject, updateProject, addSite, updateSite, deleteProject } from "@/lib/store";
 import { projectFulfilment } from "@/lib/ops";
+import { ProjectCrewSheet } from "@/components/project-crew-sheet";
 import type { Project, Site, ProjectStatus, SiteStatus } from "@/lib/types";
 
 const projectStatuses: ProjectStatus[] = ["Planning", "Active", "On Hold", "Completed", "Cancelled"];
@@ -97,6 +98,7 @@ export default function ProjectsPage() {
   const [viewingProject, setViewingProject] = useState<Project | null>(null);
   const [addSiteProject, setAddSiteProject] = useState<Project | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Project | null>(null);
+  const [crewProject, setCrewProject] = useState<Project | null>(null);
 
   const filtered = projects.filter((p) => {
     const q = search.toLowerCase();
@@ -112,12 +114,14 @@ export default function ProjectsPage() {
   const activeProjects = projects.filter((p) => p.status === "Active").length;
   const totalRequired = projects.reduce((s, p) => s + p.requiredWorkers, 0);
   const totalSites = sites.length;
+  const [assignmentTick, setAssignmentTick] = useState(0);
   const assignments = getAssignments();
 
   function refresh() {
     setClients(getClients());
     setProjects(getProjects());
     setSites(getSites());
+    setAssignmentTick((t) => t + 1);
   }
 
   function handleCreateProject(formData: FormData) {
