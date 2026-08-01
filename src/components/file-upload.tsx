@@ -14,6 +14,10 @@ interface FileUploadProps {
   folder?: string;
   defaultValue?: string;
   className?: string;
+  /** Override the accepted file extensions, e.g. ".pdf". */
+  accept?: string;
+  /** Replaces the default helper text in the drop zone. */
+  hint?: string;
   onUploaded?: (url: string, key: string) => void;
 }
 
@@ -23,6 +27,8 @@ export function FileUpload({
   folder = "documents",
   defaultValue = "",
   className,
+  accept = ".pdf,.jpg,.jpeg,.png,.webp,.heic,.doc,.docx,.xls,.xlsx,.csv,.txt",
+  hint,
   onUploaded,
 }: FileUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -109,7 +115,7 @@ export function FileUpload({
               <Upload className="h-5 w-5 text-muted-foreground" />
               <p className="text-sm font-medium">Drop a file or click to browse</p>
               <p className="text-xs text-muted-foreground">
-                PDF, image or office file · max {Math.round(MAX_UPLOAD_BYTES / 1024 / 1024)} MB
+                {hint ?? "PDF, image or office file"} · max {Math.round(MAX_UPLOAD_BYTES / 1024 / 1024)} MB
               </p>
             </>
           )}
@@ -120,7 +126,7 @@ export function FileUpload({
         ref={inputRef}
         type="file"
         className="hidden"
-        accept=".pdf,.jpg,.jpeg,.png,.webp,.heic,.doc,.docx,.xls,.xlsx,.csv,.txt"
+        accept={accept}
         onChange={(e) => {
           const file = e.target.files?.[0];
           if (file) void handleFile(file);

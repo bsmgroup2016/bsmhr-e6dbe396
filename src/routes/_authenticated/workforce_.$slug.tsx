@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
   ArrowLeft, Pencil, Ban, LogOut, Archive, Upload, CalendarCheck, Wallet, Briefcase,
+  FileText, Download, Trash2,
 } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
@@ -21,6 +22,7 @@ import {
 import type { Employee } from "@/lib/types";
 import { findEmployeeByParam } from "@/lib/employee-slug";
 import { isOfficeStaff } from "@/lib/workforce-split";
+import { uploadToR2, deleteFromR2, openR2File, downloadR2File, r2FileName } from "@/lib/r2";
 
 export const Route = createFileRoute("/_authenticated/workforce_/$slug")({
   head: () => ({
@@ -393,6 +395,10 @@ function EmployeeProfilePage() {
           </TabsContent>
 
           <TabsContent value="documents" className="mt-4">
+            <PFilePanel
+              employee={employee}
+              onChange={(url: string | undefined) => patch({ pFileUrl: url })}
+            />
             <SimpleTable
               headers={["Type", "Name", "Issued", "Expiry", "Status"]}
               rows={documents.map((d) => [d.type, d.name, d.issueDate ?? "—", d.expiryDate ?? "—", d.status])}
@@ -457,6 +463,7 @@ function SimpleTable({
   rows: (string | number)[][];
   empty: string;
 }) {
+  // eslint-disable-next-line no-empty
   if (rows.length === 0) {
     return <EmptyState title="Nothing here yet" description={empty} />;
   }
@@ -480,6 +487,117 @@ function SimpleTable({
           ))}
         </TableBody>
       </Table>
+    </div>
+  );
+}
+
+/** Manual upload / view / delete of the employee's scanned P-File PDF. */
+function PFilePanel({
+  employee,
+  onChange,
+}: {
+  employee: Employee;
+  onChange: (url: string | undefined) => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [busy, setBusy] = useState<null | "upload" | "delete">(null);
+  const [error, setError] = useState<string | null>(null);
+  const url = employee.pFileUrl;
+
+  async function handleFile(file: File) {
+    setError(null);
+    if (!file.name.toLowerCase().endsWith(".pdf")) {
+      setError("P-File must be a PDF file.");
+      return;
+    }
+    setBusy("upload");
+    try {
+      const result = await uploadToR2(file, "p-files");
+      onChange(result.url);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Upload failed");
+    } finally {
+      setBusy(null);
+      if (inputRef.current) inputRef.current.value = "";
+    }
+  }
+
+  async function handleDelete() {
+    if (!url) return;
+    setError(null);
+    setBusy("delete");
+    try {
+      await deleteFromR2(url);
+    } catch {
+      // File may already be gone from storage — still clear the record.
+    } finally {
+      onChange(undefined);
+      setBusy(null);
+    }
+  }
+
+  return (
+    <div className="mb-4 rounded-xl border bg-card p-5 shadow-sm">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <h3 className="text-sm font-semibold">P-File (PDF)</h3>
+          <p className="text-xs text-muted-foreground">
+            {url
+              ? r2FileName(url)
+              : "No P-File uploaded yet — upload the scanned PDF for this employee."}
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          {url ? (
+            <>
+              <Button size="sm" variant="outline" onClick={() => void openR2File(url)}>
+                <FileText className="mr-1.5 h-4 w-4" />
+                View
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => void downloadR2File(url)}>
+                <Download className="mr-1.5 h-4 w-4" />
+                Download
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={busy !== null}
+                onClick={() => inputRef.current?.click()}
+              >
+                <Upload className="mr-1.5 h-4 w-4" />
+                Replace
+              </Button>
+              <Button
+                size="sm"
+                variant="destructive"
+                disabled={busy !== null}
+                onClick={() => void handleDelete()}
+              >
+                <Trash2 className="mr-1.5 h-4 w-4" />
+                Delete
+              </Button>
+            </>
+          ) : (
+            <Button size="sm" disabled={busy !== null} onClick={() => inputRef.current?.click()}>
+              <Upload className="mr-1.5 h-4 w-4" />
+              {busy === "upload" ? "Uploading…" : "Upload P-File PDF"}
+            </Button>
+          )}
+        </div>
+      </div>
+
+      <input
+        ref={inputRef}
+        type="file"
+        accept=".pdf,application/pdf"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) void handleFile(file);
+        }}
+      />
+
+      {error ? <p className="mt-2 text-xs text-destructive">{error}</p> : null}
     </div>
   );
 }

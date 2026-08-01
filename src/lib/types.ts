@@ -123,6 +123,8 @@ export interface Employee {
   dormitoryAddress?: string;
   accountHolderName?: string;
   ipaDocumentUrl?: string;
+  /** Scanned P-File (PDF) stored in Cloudflare R2. */
+  pFileUrl?: string;
   // --- Singapore statutory payroll ---
   /** Ethnic group drives the Self-Help Group fund (CDAC/MBMF/SINDA/ECF). */
   ethnicGroup?: "Chinese" | "Malay" | "Indian" | "Eurasian" | "Others";
