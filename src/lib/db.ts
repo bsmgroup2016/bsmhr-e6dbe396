@@ -985,6 +985,9 @@ export async function loadAll(): Promise<LoadedData> {
     loanRepayments: repaymentRows.map(fromLoanRepayment),
     departments: departmentRows.map(fromDepartment),
     designations: designationRows.map(fromDesignation),
+    driverProfiles: driverProfileRows.map(fromDriverProfile),
+    driverIncidents: driverIncidentRows.map(fromDriverIncident),
+    fuelLogs: fuelLogRows.map(fromFuelLog),
   };
 }
 
