@@ -89,12 +89,11 @@ const navGroups: { label: string; items: NavItem[] }[] = [
     ],
   },
   {
-    label: "Driver & Transport",
+    label: "Driver Management",
     items: [
       { title: "Driver Roster", url: "/drivers", icon: IdCard },
       { title: "Daily Duty & Trips", url: "/driver-duty", icon: CalendarClock },
-      { title: "Vehicle Logs & Fuel", url: "/driver-compliance", icon: Fuel },
-      { title: "Fleet Management", url: "/transport", icon: Truck },
+      { title: "Compliance & Fuel", url: "/driver-compliance", icon: Fuel },
     ],
   },
   {
