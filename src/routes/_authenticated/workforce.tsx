@@ -794,67 +794,31 @@ export default function WorkforcePage() {
 
           {/* Records per page + search */}
           <div className="flex flex-col gap-3 rounded-lg border bg-muted/20 p-3 lg:flex-row lg:items-center">
-            {availableOnly || deployedOnly ? (
-              <>
-                <div className="flex flex-1 items-center gap-2 lg:justify-start">
-                  <Select value={perPage} onValueChange={(v) => { setPerPage(v); setPage(1); }}>
-                    <SelectTrigger className="h-9 w-20"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {["10", "25", "50", "100"].map((n) => (<SelectItem key={n} value={n}>{n}</SelectItem>))}
-                    </SelectContent>
-                  </Select>
-                  <span className="text-sm text-muted-foreground">records per page</span>
+            <>
+              <div className="flex items-center gap-2">
+                <Select value={perPage} onValueChange={(v) => { setPerPage(v); setPage(1); }}>
+                  <SelectTrigger className="h-9 w-20"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {["10", "25", "50", "100"].map((n) => (<SelectItem key={n} value={n}>{n}</SelectItem>))}
+                  </SelectContent>
+                </Select>
+                <span className="text-sm text-muted-foreground">records per page</span>
+              </div>
+              <div className="flex flex-1 items-center justify-end gap-2">
+                <Label htmlFor="wf-search" className="text-sm text-muted-foreground">Search</Label>
+                <div className="relative w-full max-w-sm">
+                  <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    id="wf-search"
+                    type="search"
+                    placeholder="Name, P-File, FIN, project, designation…"
+                    value={search}
+                    onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+                    className="h-9 pl-9"
+                  />
                 </div>
-                <div className="flex flex-1 items-center justify-center gap-2">
-                  <Label htmlFor="wf-search" className="text-sm text-muted-foreground">Search</Label>
-                  <div className="relative w-full max-w-sm">
-                    <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                      id="wf-search"
-                      type="search"
-                      placeholder="Name, P-File, FIN, project, designation…"
-                      value={search}
-                      onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-                      className="h-9 pl-9"
-                    />
-                  </div>
-                </div>
-                <div className="flex flex-1 items-center justify-end gap-2">
-                  <Button variant="secondary" size="sm" onClick={showAllEmployees}>
-                    {availableOnly ? "Hide available workers" : "Hide deployed workers"}
-                  </Button>
-                  <Button variant="outline" size="sm" asChild>
-                    <Link to={availableOnly ? "/available-workers" : "/deployed-workers"}>View details</Link>
-                  </Button>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="flex items-center gap-2">
-                  <Select value={perPage} onValueChange={(v) => { setPerPage(v); setPage(1); }}>
-                    <SelectTrigger className="h-9 w-20"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {["10", "25", "50", "100"].map((n) => (<SelectItem key={n} value={n}>{n}</SelectItem>))}
-                    </SelectContent>
-                  </Select>
-                  <span className="text-sm text-muted-foreground">records per page</span>
-                </div>
-                <div className="flex flex-1 items-center justify-end gap-2">
-                  <Label htmlFor="wf-search" className="text-sm text-muted-foreground">Search</Label>
-                  <div className="relative w-full max-w-sm">
-                    <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                      id="wf-search"
-                      type="search"
-                      placeholder="Name, P-File, FIN, project, designation…"
-                      value={search}
-                      onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-                      className="h-9 pl-9"
-                    />
-                  </div>
-                </div>
-              </>
-            )}
+              </div>
+            </>
           </div>
 
 
