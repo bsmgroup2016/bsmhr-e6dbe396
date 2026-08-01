@@ -394,30 +394,44 @@ export default function TimeManagementPage() {
   return (
     <AppShell>
       <div className="w-full space-y-6">
-        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">Time Management</h1>
             <p className="text-sm text-muted-foreground">Daily attendance and timesheet records.</p>
           </div>
-          <Button size="sm" variant="outline" className="mt-2 sm:mt-0" asChild>
-            <Link to="/time-cards">Generate claim sheet</Link>
-          </Button>
-          <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-            <DialogTrigger asChild>
-              <Button size="sm" className="mt-2 sm:mt-0">
-                <Plus className="mr-1 h-4 w-4" />
-                Mark attendance
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
-              <DialogHeader>
-                <DialogTitle>Mark attendance</DialogTitle>
-                <DialogDescription>Record daily attendance for a worker.</DialogDescription>
-              </DialogHeader>
-              <AttendanceForm employees={employees} sites={sites} onSubmit={handleCreate} />
-            </DialogContent>
-          </Dialog>
-          <div className="mt-2 flex flex-wrap gap-2 sm:mt-0">
+          <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border/60 bg-card/60 p-2 shadow-sm backdrop-blur">
+            <Input
+              type="month"
+              value={summaryMonth}
+              onChange={(e) => setSummaryMonth(e.target.value)}
+              className="h-9 w-[130px]"
+              aria-label="Report month"
+            />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="sm" variant="outline">
+                  <FileSpreadsheet className="mr-1 h-4 w-4" />
+                  Reports
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuItem onClick={exportMonthlySummary}>
+                  <FileSpreadsheet className="mr-2 h-4 w-4" />
+                  Monthly summary
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={exportMonthlyDetail}>
+                  <Download className="mr-2 h-4 w-4" />
+                  Monthly detail (bulk)
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/time-cards">
+                    <ClipboardList className="mr-2 h-4 w-4" />
+                    Generate claim sheet
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <div className="hidden h-6 w-px bg-border sm:block" />
             <Dialog open={isSheetOpen} onOpenChange={setIsSheetOpen}>
               <DialogTrigger asChild>
                 <Button size="sm" variant="secondary">
@@ -443,22 +457,6 @@ export default function TimeManagementPage() {
                 />
               </DialogContent>
             </Dialog>
-            <div className="flex items-center gap-1">
-              <Input
-                type="month"
-                value={summaryMonth}
-                onChange={(e) => setSummaryMonth(e.target.value)}
-                className="h-9 w-36"
-              />
-              <Button size="sm" variant="outline" onClick={exportMonthlySummary}>
-                <FileSpreadsheet className="mr-1 h-4 w-4" />
-                Monthly summary
-              </Button>
-              <Button size="sm" variant="outline" onClick={exportMonthlyDetail}>
-                <Download className="mr-1 h-4 w-4" />
-                Monthly detail (bulk)
-              </Button>
-            </div>
             <ImportDialog
               title="Import timesheet"
               description="Upload daily attendance from Excel or CSV. Employees are matched by P-File number or FIN."
@@ -472,6 +470,21 @@ export default function TimeManagementPage() {
               baseName="attendance"
               sheetName="Attendance"
             />
+            <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm">
+                  <Plus className="mr-1 h-4 w-4" />
+                  Mark attendance
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
+                <DialogHeader>
+                  <DialogTitle>Mark attendance</DialogTitle>
+                  <DialogDescription>Record daily attendance for a worker.</DialogDescription>
+                </DialogHeader>
+                <AttendanceForm employees={employees} sites={sites} onSubmit={handleCreate} />
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
 
