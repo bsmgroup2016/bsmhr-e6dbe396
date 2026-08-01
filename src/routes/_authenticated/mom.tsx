@@ -11,6 +11,7 @@ import { Progress } from "@/components/ui/progress";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -21,7 +22,8 @@ import {
 import { getEmployees, getCompanies, getCurrentCompany } from "@/lib/store";
 import { severityLabel, severityVariant } from "@/lib/compliance";
 import {
-  MOM_SECTORS, DRC, computeQuota, levySummary, insuranceItems, type MomSector,
+  MOM_SECTORS, DRC, computeQuota, levySummary, insuranceItems, quotaAlertLevel,
+  simulateHiring, type MomSector,
 } from "@/lib/mom";
 import { exportRows } from "@/lib/xlsx";
 import { WpLifecyclePanel } from "@/components/wp-lifecycle-panel";
@@ -63,6 +65,23 @@ function MomPage() {
   }, [companyId]);
 
   const quota = useMemo(() => computeQuota(employees, sector), [employees, sector]);
+  const alertLevel = quotaAlertLevel(quota);
+
+  const perCompany = useMemo(
+    () =>
+      companies.map((c) => ({
+        company: c,
+        quota: computeQuota(
+          getEmployees().filter((e) => (e.companyId ?? "bsm") === c.id),
+          (MOM_SECTORS.includes(c.sector as MomSector) ? c.sector : sector) as MomSector,
+        ),
+      })),
+    [companies, sector],
+  );
+
+  const [plan, setPlan] = useState({ local: 0, workPermit: 0, sPass: 0 });
+  const projected = useMemo(() => simulateHiring(quota, plan, sector), [quota, plan, sector]);
+
   const [useCustomLevy, setUseCustomLevy] = useState(true);
   const levy = useMemo(
     () => levySummary(employees, sector, useCustomLevy),
