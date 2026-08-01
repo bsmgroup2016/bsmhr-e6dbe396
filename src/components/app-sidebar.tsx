@@ -105,20 +105,12 @@ const navGroups: { label: string; items: NavItem[] }[] = [
       { title: "Foreign Recruitment", url: "/recruitment", icon: UserPlus },
       { title: "Finance & Accounts", url: "/finance", icon: Landmark },
       { title: "Company Assets", url: "/assets", icon: Boxes },
-    ],
-  },
-  {
-    label: "Resources",
-    items: [
-      { title: "Accommodation", url: "/accommodation", icon: BedDouble },
-      { title: "Assets & PPE", url: "/assets", icon: Boxes },
-      { title: "Inventory & Stock", url: "/inventory", icon: Package },
+      { title: "Accommodation (Dorm)", url: "/accommodation", icon: BedDouble },
     ],
   },
   {
     label: "Logistics",
     items: [
-      { title: "Accommodation (Dorm)", url: "/accommodation", icon: BedDouble },
       { title: "Fleet Management", url: "/transport", icon: Truck },
     ],
   },
