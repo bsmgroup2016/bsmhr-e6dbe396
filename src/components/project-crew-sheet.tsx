@@ -255,33 +255,26 @@ export function ProjectCrewSheet({
                   </p>
                 ) : (
                   crew.map((r) => (
-                    <div
-                      key={r.assignment.id}
-                      className="flex w-full items-center gap-2 rounded-md border p-2"
-                    >
-                      <div className="min-w-0 flex-1 overflow-hidden">
-                        <p className="truncate text-sm font-medium">{r.employee?.name}</p>
-                        <p className="flex items-center gap-1 truncate text-xs text-muted-foreground">
-                          {r.employee?.employeeCode} · {r.employee?.trade ?? "—"}
-                          {r.site ? (
-                            <>
-                              {" · "}
-                              <MapPin className="h-3 w-3" /> {r.site.name}
-                            </>
-                          ) : null}
-                        </p>
-                      </div>
-                      <div className="flex shrink-0 items-center gap-1">
+                    <div key={r.assignment.id} className="w-full min-w-0 rounded-md border p-2">
+                      <div className="flex min-w-0 items-center justify-between gap-2">
+                        <p className="min-w-0 truncate text-sm font-medium">{r.employee?.name}</p>
                         <StatusBadge variant="success" label={r.assignment.status} />
+                      </div>
+                      <div className="mt-1 flex min-w-0 items-center justify-between gap-2">
+                        <p className="min-w-0 truncate text-xs text-muted-foreground">
+                          {r.employee?.employeeCode} · {r.employee?.trade ?? "—"}
+                          {r.site ? ` · ${r.site.name}` : ""}
+                        </p>
                         <Button
                           variant="outline"
                           size="sm"
-                          className="h-8 shrink-0 gap-1 text-destructive hover:bg-destructive/10"
+                          className="h-7 shrink-0 gap-1 px-2 text-destructive hover:bg-destructive/10"
                           title="Remove from project"
+                          aria-label={`Remove ${r.employee?.name ?? "worker"} from project`}
                           onClick={() => removeOne(r.assignment.id, r.employee)}
                         >
-                          <UserMinus className="h-4 w-4" />
-                          <span className="hidden sm:inline">Remove</span>
+                          <UserMinus className="h-3.5 w-3.5" />
+                          Remove
                         </Button>
                       </div>
                     </div>
