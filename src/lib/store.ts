@@ -442,7 +442,29 @@ export function updateAssignment(id: string, updates: Partial<Assignment>): Assi
   setState({ ...s, assignments: s.assignments.map((a) => (a.id === id ? updated : a)) });
   void supabase.from("assignments").update(toAssignment(updated)).eq("id", id).then(({ error }) => fail("assignments", error));
   addAuditLog("UPDATE", "Assignment", id, `Updated assignment for ${s.employees.find((e) => e.id === updated.employeeId)?.name ?? "employee"}`);
+  releaseEmployeeIfUnassigned(updated.employeeId);
   return updated;
+}
+
+/**
+ * When a worker is taken off a project (assignment ended / rejected /
+ * transferred) and has no other active assignment left, they go back to the
+ * available pool automatically.
+ */
+export function releaseEmployeeIfUnassigned(employeeId: string) {
+  const s = getState();
+  const stillAssigned = s.assignments.some(
+    (a) => a.employeeId === employeeId && (a.status === "Active" || a.status === "Approved"),
+  );
+  if (stillAssigned) return;
+  const emp = s.employees.find((e) => e.id === employeeId);
+  if (!emp) return;
+  const deploy = emp.deploymentStatus ?? "Available";
+  if (deploy === "Blocked" || deploy === "Not Deployable" || deploy === "On Leave") return;
+  const patch: Partial<Employee> = {};
+  if (deploy !== "Available") patch.deploymentStatus = "Available";
+  if (emp.status === "Deployed") patch.status = "Active";
+  if (Object.keys(patch).length) updateEmployee(employeeId, patch);
 }
 
 /* ---------------- documents ---------------- */
