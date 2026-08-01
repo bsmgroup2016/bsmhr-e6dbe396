@@ -393,6 +393,7 @@ function EmployeeProfilePage() {
           </TabsContent>
 
           <TabsContent value="documents" className="mt-4">
+            <PFilePanel employee={employee} onChange={(url) => patch({ pFileUrl: url })} />
             <SimpleTable
               headers={["Type", "Name", "Issued", "Expiry", "Status"]}
               rows={documents.map((d) => [d.type, d.name, d.issueDate ?? "—", d.expiryDate ?? "—", d.status])}
