@@ -81,3 +81,8 @@ export function idLabel(p: Person): string {
 export function payLabel(p: Person): string {
   return isOfficeStaff(p) ? "Fixed Salary" : "Basic Rate";
 }
+
+/** Drivers are staff whose designation (or worker category) is Driver. */
+export function isDriver(p: Person & { workerCategory?: string | null }): boolean {
+  return norm(p.trade) === "driver" || norm(p.workerCategory) === "driver";
+}
