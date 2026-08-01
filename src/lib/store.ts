@@ -35,6 +35,8 @@ import { toContract } from "@/lib/db";
 import { toMedicalClaim, toLoan, toLoanRepayment } from "@/lib/db";
 import { toDepartment, toDesignation } from "@/lib/db";
 import type { Department, Designation } from "@/lib/types";
+import type { DriverProfile, DriverIncident, FuelLog } from "@/lib/types";
+import { toDriverProfile, toDriverIncident, toFuelLog } from "@/lib/db";
 
 export interface AppState {
   employees: Employee[];
@@ -79,6 +81,9 @@ export interface AppState {
   loanRepayments: LoanRepayment[];
   departments: Department[];
   designations: Designation[];
+  driverProfiles: DriverProfile[];
+  driverIncidents: DriverIncident[];
+  fuelLogs: FuelLog[];
   branches: AppBranch[];
   currentBranch: string;
   companies: Company[];
@@ -108,6 +113,7 @@ const emptyState: AppState = {
   medicalClaims: [],
   loans: [], loanRepayments: [],
   departments: [], designations: [],
+  driverProfiles: [], driverIncidents: [], fuelLogs: [],
   branches: defaultBranches, currentBranch: "hq",
   companies: [], currentCompany: "", currentUser: null,
 };
