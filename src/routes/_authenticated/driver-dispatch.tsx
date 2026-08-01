@@ -220,6 +220,9 @@ function DriverDispatchPage() {
             <TabsTrigger value="phone">
               <Smartphone className="mr-1 h-4 w-4" /> Driver app (demo)
             </TabsTrigger>
+            <TabsTrigger value="history">
+              <History className="mr-1 h-4 w-4" /> Trip history
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="board" className="space-y-4">
@@ -396,6 +399,8 @@ function DriverDispatchPage() {
             </div>
           </TabsContent>
         </Tabs>
+
+        {/* moved inside Tabs below */}
 
         <Dialog open={!!replayTask} onOpenChange={(o) => !o && setReplayId(null)}>
           <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
