@@ -662,59 +662,28 @@ export default function WorkforcePage() {
               </Button>
               <Button
                 size="sm"
-                variant={availableOnly ? "default" : "outline"}
+                variant="outline"
                 className="gap-1.5"
-                aria-pressed={availableOnly}
-                onClick={() => {
-                  if (availableOnly) {
-                    showAllEmployees();
-                    return;
-                  }
-                  setAvailableOnly(true);
-                  setDeployedOnly(false);
-                  setPage(1);
-                }}
+                asChild
               >
-                <UserCheck className="h-4 w-4" />
-                {availableOnly ? "Hide available workers" : "Available workers"}
-                <span
-                  className={cn(
-                    "ml-1 rounded-full px-1.5 text-[11px] font-semibold",
-                    availableOnly
-                      ? "bg-primary-foreground/20 text-primary-foreground"
-                      : "bg-muted text-muted-foreground",
-                  )}
-                >
-                  {availableCount}
-                </span>
+                <Link to="/available-workers">
+                  <HardHat className="h-4 w-4" />
+                  Available workers
+                  <span className="ml-1 rounded-full bg-muted px-1.5 text-[11px] font-semibold text-muted-foreground">
+                    {availableCount}
+                  </span>
+                </Link>
               </Button>
               <Button
                 size="sm"
-                variant={deployedOnly ? "default" : "outline"}
+                variant="outline"
                 className="gap-1.5"
-                aria-pressed={deployedOnly}
-                onClick={() => {
-                  if (deployedOnly) {
-                    showAllEmployees();
-                    return;
-                  }
-                  setDeployedOnly(true);
-                  setAvailableOnly(false);
-                  setPage(1);
-                }}
+                asChild
               >
-                <Briefcase className="h-4 w-4" />
-                {deployedOnly ? "Hide deployed workers" : "Deployed workers"}
-                <span
-                  className={cn(
-                    "ml-1 rounded-full px-1.5 text-[11px] font-semibold",
-                    deployedOnly
-                      ? "bg-primary-foreground/20 text-primary-foreground"
-                      : "bg-muted text-muted-foreground",
-                  )}
-                >
-                  {deployedWorkerCount}
-                </span>
+                <Link to="/deployed-workers">
+                  <Users className="h-4 w-4" />
+                  Deployed workers
+                </Link>
               </Button>
             </div>
             <div className="flex flex-wrap items-center gap-2">
@@ -730,12 +699,6 @@ export default function WorkforcePage() {
                 label="Upload XLSX"
               />
               <ExportButton rows={filtered.map(toEmployeeRow)} baseName="employees" sheetName="Employees" />
-              {availableOnly && (
-                <PFileBulkDownloadButton
-                  people={filtered}
-                  zipBaseName="Available-Workers-P-Files"
-                />
-              )}
             </div>
           </div>
 
