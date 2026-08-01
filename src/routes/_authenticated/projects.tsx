@@ -307,7 +307,14 @@ export default function ProjectsPage() {
                             {(() => {
                               const f = projectFulfilment(p, sites, assignments);
                               return (
-                                <div className="min-w-24">
+                                <div
+                                  className="min-w-24 cursor-pointer"
+                                  title="Manage workers"
+                                  onClick={(evt) => {
+                                    evt.stopPropagation();
+                                    setCrewProject(p);
+                                  }}
+                                >
                                   <div className="text-sm font-medium">
                                     {f.deployed}/{f.required}
                                   </div>
