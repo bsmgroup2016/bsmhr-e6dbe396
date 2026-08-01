@@ -14,6 +14,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { EmployeeForm, employeeFromForm } from "@/components/employee-form";
+import { PFileDownloadButton } from "@/components/p-file-download-button";
 import type { Employee } from "@/lib/types";
 import { SummaryCard } from "@/components/ui/summary-card";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -397,6 +398,11 @@ function StaffManagementPage() {
                       </TableCell>
                       <TableCell className="sticky right-0 z-10 bg-card">
                         <div className="flex items-center justify-end gap-1.5">
+                          <PFileDownloadButton
+                            pFileUrl={e.pFileUrl}
+                            name={e.name}
+                            code={e.employeeCode}
+                          />
                           <Button
                             size="icon"
                             variant="outline"
