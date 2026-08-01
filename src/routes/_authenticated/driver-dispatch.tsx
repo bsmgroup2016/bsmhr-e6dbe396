@@ -192,7 +192,7 @@ function DriverDispatchPage() {
           <SummaryCard title="Active tasks" value={active.length.toString()} icon={<Truck className="h-5 w-5" />} variant="primary" caption="On the road now" compact />
           <SummaryCard title="Waiting acceptance" value={pending.toString()} icon={<Bell className="h-5 w-5" />} variant="warning" caption="Driver not accepted yet" compact />
           <SummaryCard title="Completed" value={doneToday.toString()} icon={<Send className="h-5 w-5" />} variant="success" caption="Back at office" compact />
-          <SummaryCard title="Live pings" value={points.length.toString()} icon={<MapPin className="h-5 w-5" />} variant="info" caption="Drivers sharing GPS" compact />
+          <SummaryCard title="Route alerts" value={flagged.length.toString()} icon={<AlertTriangle className="h-5 w-5" />} variant={flagged.length ? "danger" : "info"} caption="Detour / long stop detected" compact />
         </div>
 
         <Tabs defaultValue="board">
@@ -281,6 +281,21 @@ function DriverDispatchPage() {
                         </div>
                         <StatusBadge variant={statusTone(t.status)} label={t.status} dot />
                       </div>
+                      {analyses[t.id] && analyses[t.id]!.pings.length > 1 ? (
+                        <div className="mt-2 flex flex-wrap items-center gap-2">
+                          <StatusBadge
+                            variant={analyses[t.id]!.risk === "suspicious" ? "danger" : analyses[t.id]!.risk === "review" ? "warning" : "success"}
+                            label={
+                              analyses[t.id]!.risk === "suspicious" ? "Unusual route" :
+                              analyses[t.id]!.risk === "review" ? "Needs review" : "Route normal"
+                            }
+                            dot
+                          />
+                          <span className="text-xs text-muted-foreground">
+                            {analyses[t.id]!.distanceKm} km driven · {analyses[t.id]!.minutes} min · {analyses[t.id]!.idleStops.length} long stop(s)
+                          </span>
+                        </div>
+                      ) : null}
                       <p className="mt-2 text-sm">{t.instruction}</p>
                       <p className="mt-1 text-xs text-muted-foreground">
                         {t.pickup || "—"} → {t.dropoff || "—"} · {t.passengers} pax ·{" "}
@@ -291,9 +306,14 @@ function DriverDispatchPage() {
                         <span className="text-xs text-muted-foreground">
                           {t.lastLocationAt ? `GPS ${minutesAgo(t.lastLocationAt)} min ago` : "No GPS ping yet"}
                         </span>
-                        <Button size="icon" variant="ghost" title="Delete task" onClick={() => void deleteDriverTask(t.id).then(reload)}>
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
+                        <div className="flex items-center gap-1">
+                          <Button size="sm" variant="outline" onClick={() => setReplayId(t.id)}>
+                            <RouteIcon className="mr-1 h-4 w-4" /> Route replay
+                          </Button>
+                          <Button size="icon" variant="ghost" title="Delete task" onClick={() => void deleteDriverTask(t.id).then(reload)}>
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   ))}
