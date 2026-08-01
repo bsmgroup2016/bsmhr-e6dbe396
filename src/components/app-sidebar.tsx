@@ -89,14 +89,6 @@ const navGroups: { label: string; items: NavItem[] }[] = [
     ],
   },
   {
-    label: "Staff Management",
-    items: [
-      { title: "Staff Directory", url: "/staff-management", icon: Briefcase },
-      { title: "Staff Attendance", url: "/staff-attendance", icon: CalendarClock },
-      { title: "Staff Payroll", url: "/staff-payroll", icon: Wallet },
-    ],
-  },
-  {
     label: "Driver & Transport",
     items: [
       { title: "Driver Roster", url: "/drivers", icon: IdCard },
