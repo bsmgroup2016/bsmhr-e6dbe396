@@ -1185,7 +1185,10 @@ function EmployeeDetail({ employee, onEdit }: { employee: Employee; onEdit: () =
         <DetailItem label="Pass type" value={employee.passType} />
         <DetailItem label="Pass expiry" value={employee.passExpiry} />
         <DetailItem label="Basic salary" value={`$${employee.basicSalary.toLocaleString()}`} />
-        <DetailItem label="Levy rate" value={employee.levyRate ? `$${employee.levyRate}` : "—"} />
+        <DetailItem
+          label="Levy rate"
+          value={employee.levyRate ? `$${Number(employee.levyRate).toFixed(2)}` : "—"}
+        />
         <DetailItem label="Joined on" value={employee.joinedOn} />
         <DetailItem label="Site" value={employee.site || "Unassigned"} />
         <DetailItem label="Phone" value={employee.phone || "—"} />
