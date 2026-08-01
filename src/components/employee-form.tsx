@@ -69,7 +69,7 @@ export function employeeFromForm(fd: FormData): Partial<Employee> {
   const s = (k: string) => ((fd.get(k) as string) || "").trim();
   const n = (k: string) => Number((fd.get(k) as string) || 0) || 0;
   const date = (k: string) => s(k) || undefined;
-  return {
+  const out: Record<string, unknown> = {
     employeeCode: s("employeeCode") || undefined,
     name: s("name"),
     preferredName: s("preferredName") || undefined,
