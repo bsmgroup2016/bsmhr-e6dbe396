@@ -176,8 +176,8 @@ function StaffAttendancePage() {
           <AlertDescription className="text-xs">
             Office Hours: {OFFICE_START} - {OFFICE_END} | Lunch: {LUNCH_START} - {LUNCH_END} (1h) | Sundays are automatically marked as Off.
             <div className="mt-2 flex gap-2">
-              <Button size="xs" variant="secondary" onClick={() => notifyLunch('start')}>Test Lunch Start Notification</Button>
-              <Button size="xs" variant="secondary" onClick={() => notifyLunch('end')}>Test Lunch End Notification</Button>
+              <Button size="sm" variant="secondary" onClick={() => notifyLunch('start')}>Test Lunch Start Notification</Button>
+              <Button size="sm" variant="secondary" onClick={() => notifyLunch('end')}>Test Lunch End Notification</Button>
             </div>
           </AlertDescription>
         </Alert>
