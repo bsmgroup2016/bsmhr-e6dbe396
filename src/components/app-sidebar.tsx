@@ -106,11 +106,6 @@ const navGroups: { label: string; items: NavItem[] }[] = [
       { title: "Finance & Accounts", url: "/finance", icon: Landmark },
       { title: "Company Assets", url: "/assets", icon: Boxes },
       { title: "Accommodation (Dorm)", url: "/accommodation", icon: BedDouble },
-    ],
-  },
-  {
-    label: "Logistics",
-    items: [
       { title: "Fleet Management", url: "/transport", icon: Truck },
     ],
   },
