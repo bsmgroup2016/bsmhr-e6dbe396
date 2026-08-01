@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
   ArrowLeft, Pencil, Ban, LogOut, Archive, Upload, CalendarCheck, Wallet, Briefcase,
+  FileText, Download, Trash2,
 } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
@@ -21,6 +22,7 @@ import {
 import type { Employee } from "@/lib/types";
 import { findEmployeeByParam } from "@/lib/employee-slug";
 import { isOfficeStaff } from "@/lib/workforce-split";
+import { uploadToR2, deleteFromR2, openR2File, downloadR2File, r2FileName } from "@/lib/r2";
 
 export const Route = createFileRoute("/_authenticated/workforce_/$slug")({
   head: () => ({
