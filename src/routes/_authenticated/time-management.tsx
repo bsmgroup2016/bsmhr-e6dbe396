@@ -693,12 +693,13 @@ export default function TimeManagementPage() {
                   <TableHead>Hours</TableHead>
                   <TableHead>OT</TableHead>
                   <TableHead>Location</TableHead>
+                  <TableHead className="w-20 text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filtered.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="h-32 text-center">
+                    <TableCell colSpan={9} className="h-32 text-center">
                       <EmptyState className="bg-transparent border-0" icon={<Calendar className="h-5 w-5" />} title="No records" description={`No attendance records for ${date}.`} />
                     </TableCell>
                   </TableRow>
@@ -733,6 +734,36 @@ export default function TimeManagementPage() {
                           ) : (
                             <span className="text-xs text-muted-foreground">Not captured</span>
                           )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button size="icon" variant="ghost">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => setEditRecord(a)}>
+                                <Pencil className="mr-2 h-4 w-4" />
+                                Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => exportSingle(a)}>
+                                <Download className="mr-2 h-4 w-4" />
+                                Download record
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => exportEmployeeMonth(a.employeeId)}>
+                                <FileSpreadsheet className="mr-2 h-4 w-4" />
+                                Download month ({summaryMonth})
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                className="text-destructive"
+                                onClick={() => handleDelete(a)}
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </TableCell>
                       </TableRow>
                     );
