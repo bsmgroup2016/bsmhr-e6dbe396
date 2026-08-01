@@ -113,7 +113,14 @@ const navGroups: { label: string; items: NavItem[] }[] = [
     items: [
       { title: "Accommodation", url: "/accommodation", icon: BedDouble },
       { title: "Assets & PPE", url: "/assets", icon: Boxes },
-      { title: "Inventory", url: "/inventory", icon: Package },
+      { title: "Inventory & Stock", url: "/inventory", icon: Package },
+    ],
+  },
+  {
+    label: "Logistics",
+    items: [
+      { title: "Accommodation (Dorm)", url: "/accommodation", icon: BedDouble },
+      { title: "Fleet Management", url: "/transport", icon: Truck },
     ],
   },
 ];
