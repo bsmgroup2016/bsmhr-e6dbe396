@@ -301,12 +301,42 @@ function DriverDispatchPage() {
                       <DialogDescription>The driver receives this as a task with a push notification on his phone.</DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-3 sm:grid-cols-2">
+                      <div className="sm:col-span-2">
+                        <Label>Task type</Label>
+                        <Select
+                          value={form.taskType}
+                          onValueChange={(v) => {
+                            const type = v as TaskType;
+                            setForm({
+                              ...form,
+                              taskType: type,
+                              title: type === "Airport worker pickup" ? "Airport pickup — new worker arrival" : type,
+                              ...(type === "Airport worker pickup"
+                                ? { pickup: "Changi Airport", dropoff: "Kaki Bukit Dorm", expectedMinutes: 150 }
+                                : { expectedMinutes: 60 }),
+                            });
+                          }}
+                        >
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            {TASK_TYPES.map((t) => (<SelectItem key={t} value={t}>{t}</SelectItem>))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                       <div>
                         <Label>Driver</Label>
-                        <Select value={form.driverEmployeeId} onValueChange={(v) => setForm({ ...form, driverEmployeeId: v })}>
+                        <Select
+                          value={form.driverEmployeeId}
+                          onValueChange={(v) => setForm({ ...form, driverEmployeeId: v, vehicleId: assignedVehicleId(v) || form.vehicleId })}
+                        >
                           <SelectTrigger><SelectValue placeholder="Select driver" /></SelectTrigger>
                           <SelectContent>
-                            {drivers.map((d) => (<SelectItem key={d.id} value={d.id}>{d.name} — {d.employeeCode}</SelectItem>))}
+                            {availability.map(({ driver: d, av }) => (
+                              <SelectItem key={d.id} value={d.id}>
+                                {d.name} — {assignedPlate(d.id)} ·{" "}
+                                {av.available ? "Available" : `On trip, free ~${av.freeAt ? clock(av.freeAt) : "—"}`}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </div>
@@ -333,6 +363,30 @@ function DriverDispatchPage() {
                       <div><Label>Drop-off point</Label><Input value={form.dropoff} onChange={(e) => setForm({ ...form, dropoff: e.target.value })} placeholder="Site Gate B" /></div>
                       <div><Label>Passengers</Label><Input type="number" value={form.passengers} onChange={(e) => setForm({ ...form, passengers: Number(e.target.value) })} /></div>
                       <div><Label>Schedule</Label><Input type="datetime-local" value={form.scheduledAt} onChange={(e) => setForm({ ...form, scheduledAt: e.target.value })} /></div>
+                      {form.taskType === "Airport worker pickup" ? (
+                        <>
+                          <div><Label>Flight no</Label><Input value={form.flightNo} onChange={(e) => setForm({ ...form, flightNo: e.target.value })} placeholder="SQ 449" /></div>
+                          <div>
+                            <Label>Terminal</Label>
+                            <Select value={form.terminal} onValueChange={(v) => setForm({ ...form, terminal: v })}>
+                              <SelectTrigger><SelectValue placeholder="Select terminal" /></SelectTrigger>
+                              <SelectContent>
+                                {["Terminal 1", "Terminal 2", "Terminal 3", "Terminal 4"].map((t) => (
+                                  <SelectItem key={t} value={t}>{t}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="sm:col-span-2">
+                            <Label>Arriving worker name(s) / passport</Label>
+                            <Textarea rows={2} value={form.arrivingWorkers} onChange={(e) => setForm({ ...form, arrivingWorkers: e.target.value })} placeholder="Md Rasel Hossain (BX0912345), Sujon Mia (BX0998877)" />
+                          </div>
+                        </>
+                      ) : null}
+                      <div>
+                        <Label>Expected duration (min)</Label>
+                        <Input type="number" value={form.expectedMinutes} onChange={(e) => setForm({ ...form, expectedMinutes: Number(e.target.value) })} />
+                      </div>
                       <div className="sm:col-span-2">
                         <Label>Instruction</Label>
                         <Textarea rows={3} value={form.instruction} onChange={(e) => setForm({ ...form, instruction: e.target.value })} placeholder="Pick 14 workers from the dorm and drop at site gate B by 7:30 AM." />
