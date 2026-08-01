@@ -195,6 +195,19 @@ function DriverDispatchPage() {
 
   const actorTasks = scoped.filter((t) => t.driverEmployeeId === actor);
 
+  const assignedPlate = (driverId: string) => {
+    const prof = driverProfiles.find((p) => p.employeeId === driverId);
+    if (prof?.assignedVehicleId) return plate(prof.assignedVehicleId);
+    const v = vehicles.find((x) => x.driverEmployeeId === driverId);
+    return v?.plateNo ?? "—";
+  };
+  const assignedVehicleId = (driverId: string) =>
+    driverProfiles.find((p) => p.employeeId === driverId)?.assignedVehicleId ??
+    vehicles.find((x) => x.driverEmployeeId === driverId)?.id ??
+    "";
+  const availability = drivers.map((d) => ({ driver: d, av: driverAvailability(d.id, scoped) }));
+  const freeNow = availability.filter((a) => a.av.available);
+
   return (
     <AppShell>
       <div className="w-full space-y-6">
