@@ -257,7 +257,8 @@ export default function ProjectsPage() {
                   <TableHead>Code</TableHead>
                   <TableHead>Project / Client</TableHead>
                   <TableHead>Location</TableHead>
-                  <TableHead>Duration</TableHead>
+                  <TableHead>Start date</TableHead>
+                  <TableHead>End date</TableHead>
                   <TableHead>Manpower</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="w-12"></TableHead>
@@ -266,7 +267,7 @@ export default function ProjectsPage() {
               <TableBody>
                 {filtered.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="h-32 text-center">
+                    <TableCell colSpan={9} className="h-32 text-center">
                       <EmptyState className="bg-transparent border-0" icon={<Building2 className="h-5 w-5" />} title="No projects found" description="Add a project to get started." />
                     </TableCell>
                   </TableRow>
@@ -300,8 +301,29 @@ export default function ProjectsPage() {
                             <div className="text-xs text-muted-foreground">{client?.name}</div>
                           </TableCell>
                           <TableCell>{p.location}</TableCell>
-                          <TableCell>
-                            {p.startDate ? new Date(p.startDate).toLocaleDateString() : "—"} - {p.endDate ? new Date(p.endDate).toLocaleDateString() : "—"}
+                          <TableCell onClick={(evt) => evt.stopPropagation()}>
+                            <Input
+                              type="date"
+                              aria-label={`Start date for ${p.name}`}
+                              className="h-8 w-[9.5rem]"
+                              value={p.startDate ?? ""}
+                              onChange={(evt) => {
+                                updateProject(p.id, { startDate: evt.target.value || undefined });
+                                refresh();
+                              }}
+                            />
+                          </TableCell>
+                          <TableCell onClick={(evt) => evt.stopPropagation()}>
+                            <Input
+                              type="date"
+                              aria-label={`End date for ${p.name}`}
+                              className="h-8 w-[9.5rem]"
+                              value={p.endDate ?? ""}
+                              onChange={(evt) => {
+                                updateProject(p.id, { endDate: evt.target.value || undefined });
+                                refresh();
+                              }}
+                            />
                           </TableCell>
                           <TableCell>
                             {(() => {
@@ -372,7 +394,7 @@ export default function ProjectsPage() {
                         </TableRow>
                         {isExpanded && (
                           <TableRow key={`${p.id}-sites`}>
-                            <TableCell colSpan={8} className="bg-muted/30 p-0">
+                            <TableCell colSpan={9} className="bg-muted/30 p-0">
                               <div className="px-6 py-3">
                                 <p className="mb-2 text-sm font-medium text-muted-foreground">Sites</p>
                                 {projectSites.length === 0 ? (
