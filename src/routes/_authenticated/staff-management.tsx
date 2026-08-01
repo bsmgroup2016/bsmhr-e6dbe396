@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
-  Briefcase, Building2, CalendarOff, IdCard, Pencil, Plane, Search, Trash2, Users, Wallet,
+  Briefcase, Building2, CalendarOff, Eye, IdCard, Pencil, Plane, Search, Trash2, Users, Wallet,
 } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
@@ -398,11 +398,19 @@ function StaffManagementPage() {
                       </TableCell>
                       <TableCell className="sticky right-0 z-10 bg-card">
                         <div className="flex items-center justify-end gap-1.5">
-                          <PFileDownloadButton
-                            pFileUrl={e.pFileUrl}
-                            name={e.name}
-                            code={e.employeeCode}
-                          />
+                          <Button
+                            size="icon"
+                            variant="outline"
+                            className="h-8 w-8 border-blue-500/30 text-blue-600 hover:bg-blue-500/10"
+                            asChild
+                          >
+                            <Link
+                              to="/workforce/$slug"
+                              params={{ slug: employeeSlugById(e.id) }}
+                            >
+                              <Eye className="h-3.5 w-3.5" />
+                            </Link>
+                          </Button>
                           <Button
                             size="icon"
                             variant="outline"
