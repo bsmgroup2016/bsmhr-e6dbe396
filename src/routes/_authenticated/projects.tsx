@@ -394,7 +394,7 @@ export default function ProjectsPage() {
                         </TableRow>
                         {isExpanded && (
                           <TableRow key={`${p.id}-sites`}>
-                            <TableCell colSpan={8} className="bg-muted/30 p-0">
+                            <TableCell colSpan={9} className="bg-muted/30 p-0">
                               <div className="px-6 py-3">
                                 <p className="mb-2 text-sm font-medium text-muted-foreground">Sites</p>
                                 {projectSites.length === 0 ? (
