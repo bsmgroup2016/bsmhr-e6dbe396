@@ -161,6 +161,70 @@ export function analyseTrail(pings: TrailPing[]): TrailAnalysis {
 }
 
 /** Bulk trail load for the dispatch board (one query for all visible tasks). */
+export interface TrailLeg {
+  /** Human label, e.g. "Office → pickup point". */
+  label: string;
+  status: string;
+  from: string;
+  to: string;
+  minutes: number;
+  distanceKm: number;
+  stops: IdleStop[];
+  points: TrailPing[];
+}
+
+const LEG_LABEL: Record<string, string> = {
+  "Assigned": "Waiting at office",
+  "Accepted": "Left office",
+  "En route to pickup": "Office → pickup point",
+  "Workers picked up": "Pickup point → site",
+  "Workers dropped off": "At site (workers dropped)",
+  "Returning to office": "Site → office",
+  "Back at office": "Arrived office",
+};
+
+/**
+ * Splits one trip's GPS trail into legs (office → pickup → site → office) using
+ * the status recorded with each ping, so HR can read the journey step by step.
+ */
+export function splitLegs(pings: TrailPing[], stops: IdleStop[] = []): TrailLeg[] {
+  if (pings.length === 0) return [];
+  const legs: TrailLeg[] = [];
+  let bucket: TrailPing[] = [pings[0]!];
+
+  const flush = () => {
+    if (bucket.length === 0) return;
+    const first = bucket[0]!;
+    const last = bucket[bucket.length - 1]!;
+    let metres = 0;
+    for (let i = 1; i < bucket.length; i += 1) metres += distanceMeters(bucket[i - 1]!, bucket[i]!);
+    const status = first.status ?? "—";
+    legs.push({
+      label: LEG_LABEL[status] ?? status,
+      status,
+      from: first.recordedAt,
+      to: last.recordedAt,
+      minutes: Math.max(0, mins(first.recordedAt, last.recordedAt)),
+      distanceKm: Math.round((metres / 1000) * 10) / 10,
+      stops: stops.filter((s) => s.from >= first.recordedAt && s.from <= last.recordedAt),
+      points: bucket,
+    });
+  };
+
+  for (let i = 1; i < pings.length; i += 1) {
+    const p = pings[i]!;
+    if ((p.status ?? "") !== (bucket[bucket.length - 1]!.status ?? "")) {
+      bucket.push(p); // close the leg at the hand-over point
+      flush();
+      bucket = [p];
+    } else {
+      bucket.push(p);
+    }
+  }
+  flush();
+  return legs;
+}
+
 export async function listPingsForTasks(taskIds: string[]): Promise<Record<string, TrailPing[]>> {
   if (!taskIds.length) return {};
   const { data, error } = await supabase
