@@ -63,6 +63,7 @@ import {
 } from "@/components/ui/sheet";
 import { getClients, getProjects, getSites, getAssignments, addProject, updateProject, addSite, updateSite, deleteProject } from "@/lib/store";
 import { projectFulfilment } from "@/lib/ops";
+import { ProjectCrewSheet } from "@/components/project-crew-sheet";
 import type { Project, Site, ProjectStatus, SiteStatus } from "@/lib/types";
 
 const projectStatuses: ProjectStatus[] = ["Planning", "Active", "On Hold", "Completed", "Cancelled"];
@@ -97,6 +98,7 @@ export default function ProjectsPage() {
   const [viewingProject, setViewingProject] = useState<Project | null>(null);
   const [addSiteProject, setAddSiteProject] = useState<Project | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Project | null>(null);
+  const [crewProject, setCrewProject] = useState<Project | null>(null);
 
   const filtered = projects.filter((p) => {
     const q = search.toLowerCase();
@@ -112,12 +114,15 @@ export default function ProjectsPage() {
   const activeProjects = projects.filter((p) => p.status === "Active").length;
   const totalRequired = projects.reduce((s, p) => s + p.requiredWorkers, 0);
   const totalSites = sites.length;
+  const [refreshKey, setRefreshKey] = useState(0);
   const assignments = getAssignments();
+  void refreshKey;
 
   function refresh() {
     setClients(getClients());
     setProjects(getProjects());
     setSites(getSites());
+    setRefreshKey((t) => t + 1);
   }
 
   function handleCreateProject(formData: FormData) {
@@ -302,7 +307,14 @@ export default function ProjectsPage() {
                             {(() => {
                               const f = projectFulfilment(p, sites, assignments);
                               return (
-                                <div className="min-w-24">
+                                <div
+                                  className="min-w-24 cursor-pointer"
+                                  title="Manage workers"
+                                  onClick={(evt) => {
+                                    evt.stopPropagation();
+                                    setCrewProject(p);
+                                  }}
+                                >
                                   <div className="text-sm font-medium">
                                     {f.deployed}/{f.required}
                                   </div>
@@ -341,6 +353,10 @@ export default function ProjectsPage() {
                                 <DropdownMenuItem onClick={() => setEditingProject(p)}>
                                   <Pencil className="mr-2 h-4 w-4" />
                                   Edit
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => setCrewProject(p)}>
+                                  <Users className="mr-2 h-4 w-4" />
+                                  Manage workers
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => setAddSiteProject(p)}>
                                   <Plus className="mr-2 h-4 w-4" />
@@ -493,14 +509,34 @@ export default function ProjectsPage() {
                     )}
                   </div>
                 </div>
-                <Button onClick={() => { setViewingProject(null); setEditingProject(viewingProject); }}>
-                  <Pencil className="mr-2 h-4 w-4" />
-                  Edit project
-                </Button>
+                <div className="flex flex-wrap gap-2">
+                  <Button onClick={() => { setViewingProject(null); setEditingProject(viewingProject); }}>
+                    <Pencil className="mr-2 h-4 w-4" />
+                    Edit project
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      const p = viewingProject;
+                      setViewingProject(null);
+                      setCrewProject(p);
+                    }}
+                  >
+                    <Users className="mr-2 h-4 w-4" />
+                    Manage workers
+                  </Button>
+                </div>
               </div>
             )}
           </SheetContent>
         </Sheet>
+
+        <ProjectCrewSheet
+          project={crewProject}
+          open={!!crewProject}
+          onOpenChange={(open) => !open && setCrewProject(null)}
+          onChanged={refresh}
+        />
 
         <Dialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
           <DialogContent className="sm:max-w-md">
