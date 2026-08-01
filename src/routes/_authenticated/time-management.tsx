@@ -454,6 +454,10 @@ export default function TimeManagementPage() {
                 <FileSpreadsheet className="mr-1 h-4 w-4" />
                 Monthly summary
               </Button>
+              <Button size="sm" variant="outline" onClick={exportMonthlyDetail}>
+                <Download className="mr-1 h-4 w-4" />
+                Monthly detail (bulk)
+              </Button>
             </div>
             <ImportDialog
               title="Import timesheet"
