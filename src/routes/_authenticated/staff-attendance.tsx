@@ -61,8 +61,8 @@ function StaffAttendancePage() {
   const companyId = getCurrentCompany();
 
   // Office hours configuration
-  const OFFICE_START = "09:00";
-  const OFFICE_END = "18:00";
+  const OFFICE_START = "08:00";
+  const OFFICE_END = "17:00";
   const LUNCH_START = "12:00";
   const LUNCH_END = "13:00";
 
