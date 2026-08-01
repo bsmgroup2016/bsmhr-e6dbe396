@@ -118,6 +118,7 @@ export default function TimeManagementPage() {
   const [groupFilter, setGroupFilter] = useState<"all" | "workers" | "staff">("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [designationFilter, setDesignationFilter] = useState<string>("all");
+  const [employeeFilter, setEmployeeFilter] = useState<string>("all");
   const [viewMode, setViewMode] = useState<"day" | "month">("day");
   const companyEmployees = employees.filter(
     (e) => (!companyId || e.companyId === companyId) && e.status !== "Inactive",
@@ -128,6 +129,17 @@ export default function TimeManagementPage() {
   const designations = useMemo(
     () => [...new Set(employees.map((e) => e.trade).filter(Boolean) as string[])].sort(),
     [employees],
+  );
+
+  /** Employee dropdown options, scoped to company / group / designation. */
+  const employeeOptions = useMemo(
+    () =>
+      employees
+        .filter((e) => companyFilter === "all" || e.companyId === companyFilter)
+        .filter((e) => groupFilter === "all" || (groupFilter === "workers" ? isSiteWorker(e) : !isSiteWorker(e)))
+        .filter((e) => designationFilter === "all" || e.trade === designationFilter)
+        .sort((a, b) => a.name.localeCompare(b.name)),
+    [employees, companyFilter, groupFilter, designationFilter],
   );
 
   /** Shared people filter (company / worker-staff / designation / search). */
