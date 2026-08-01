@@ -164,8 +164,8 @@ function StaffManagementPage() {
           <div>
             <h1 className="text-2xl font-semibold tracking-tight">Staff Management</h1>
             <p className="text-sm text-muted-foreground">
-              Office and administrative staff — HR, Accounts, IT, Admin and QS. Staff use an
-              Employee ID and a fixed monthly salary.
+              Office and administrative staff — HR, Accounts, IT, Admin and QS. Staff use a
+              P-File Number and a fixed monthly salary.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -282,7 +282,7 @@ function StaffManagementPage() {
             <div className="relative w-full max-w-sm">
               <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="Name, Employee ID, passport, designation…"
+                placeholder="Name, P-File No, passport, designation…"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="pl-9"
@@ -333,7 +333,7 @@ function StaffManagementPage() {
             <Table>
               <TableHeader>
                 <TableRow className="[&>th]:whitespace-nowrap [&>th]:px-4">
-                  <TableHead>Staff</TableHead>
+                  <TableHead>Staff (Name & P-File No)</TableHead>
                   <TableHead>Company</TableHead>
                   <TableHead>Department</TableHead>
                   <TableHead>Designation</TableHead>
@@ -371,7 +371,7 @@ function StaffManagementPage() {
                           {e.name}
                         </Link>
                         <div className="text-xs text-muted-foreground">
-                          Employee ID: {e.employeeCode}
+                          P-File No: {e.employeeCode}
                         </div>
                       </TableCell>
                       <TableCell>
@@ -436,7 +436,7 @@ function StaffManagementPage() {
             <DialogHeader>
               <DialogTitle>Edit staff</DialogTitle>
               <DialogDescription>
-                Update details for Employee ID {editingStaff?.employeeCode}.
+                Update details for P-File No {editingStaff?.employeeCode}.
               </DialogDescription>
             </DialogHeader>
             {editingStaff && <EmployeeForm employee={editingStaff} onSubmit={handleEdit} />}
@@ -448,7 +448,7 @@ function StaffManagementPage() {
             <DialogHeader>
               <DialogTitle>Delete staff?</DialogTitle>
               <DialogDescription>
-                This will permanently remove {deleteTarget?.name} (Employee ID{" "}
+                This will permanently remove {deleteTarget?.name} (P-File No{" "}
                 {deleteTarget?.employeeCode}). This action cannot be undone.
               </DialogDescription>
             </DialogHeader>
