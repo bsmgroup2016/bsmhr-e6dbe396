@@ -376,12 +376,25 @@ export default function TimeManagementPage() {
           </div>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <SummaryCard title="Present" value={present.toString()} icon={<CheckCircle2 className="h-5 w-5" />} variant="success" caption={date} />
-          <SummaryCard title="Absent / MC" value={absent.toString()} icon={<AlertCircle className="h-5 w-5" />} variant="destructive" caption={date} />
-          <SummaryCard title="Leave / Off" value={leave.toString()} icon={<Clock className="h-5 w-5" />} variant="warning" caption={date} />
-          <SummaryCard title="Total hours" value={totalHours.toFixed(1)} icon={<Clock className="h-5 w-5" />} variant="info" caption={date} />
-        </div>
+        {(() => {
+          const isMonth = viewMode === "month";
+          const caption = isMonth ? summaryMonth : date;
+          const mPresent = monthRows.reduce((s, r) => s + r.presentDays, 0);
+          const mAbsent = monthRows.reduce((s, r) => s + r.absentDays, 0);
+          const mLeave = monthRows.reduce((s, r) => s + r.leaveDays, 0);
+          const mHours = monthRows.reduce((s, r) => s + r.totalHours, 0);
+          const mOt = monthRows.reduce((s, r) => s + r.otHours, 0);
+          const ot = filtered.reduce((s, a) => s + a.overtimeHours, 0);
+          return (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+              <SummaryCard title={isMonth ? "Present days" : "Present"} value={String(isMonth ? mPresent : present)} icon={<CheckCircle2 className="h-5 w-5" />} variant="success" caption={caption} />
+              <SummaryCard title="Absent / MC" value={String(isMonth ? mAbsent : absent)} icon={<AlertCircle className="h-5 w-5" />} variant="destructive" caption={caption} />
+              <SummaryCard title="Leave / Off" value={String(isMonth ? mLeave : leave)} icon={<Clock className="h-5 w-5" />} variant="warning" caption={caption} />
+              <SummaryCard title="OT hours" value={(isMonth ? mOt : ot).toFixed(1)} icon={<Clock className="h-5 w-5" />} variant="warning" caption={caption} />
+              <SummaryCard title="Total hours" value={(isMonth ? mHours : totalHours).toFixed(1)} icon={<Clock className="h-5 w-5" />} variant="info" caption={caption} />
+            </div>
+          );
+        })()}
 
         <div className="rounded-xl border bg-card p-4 shadow-sm">
           <div className="mb-3">
