@@ -328,24 +328,24 @@ function BillingPage() {
             <p className="text-sm text-muted-foreground">Loading billing data...</p>
           </div>
         ) : (
-          <Tabs defaultValue="overview">
-            <TabsList>
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="invoices">Invoices</TabsTrigger>
-              <TabsTrigger value="contracts">Contracts</TabsTrigger>
-              <TabsTrigger value="rates">Rate agreements</TabsTrigger>
-            </TabsList>
+        <Tabs defaultValue="overview">
+          <TabsList>
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="invoices">Invoices</TabsTrigger>
+            <TabsTrigger value="contracts">Contracts</TabsTrigger>
+            <TabsTrigger value="rates">Rate agreements</TabsTrigger>
+          </TabsList>
 
-            <TabsContent value="overview" className="mt-4">
-              <BillingOverview
-                invoices={filtered}
-                clients={clients}
-                contracts={visibleContracts}
-                onOpenInvoice={(inv) => setPreview(inv)}
-              />
-            </TabsContent>
+          <TabsContent value="overview" className="mt-4">
+            <BillingOverview
+              invoices={filtered}
+              clients={clients}
+              contracts={visibleContracts}
+              onOpenInvoice={(inv) => setPreview(inv)}
+            />
+          </TabsContent>
 
-            <TabsContent value="invoices" className="mt-4">
+          <TabsContent value="invoices" className="mt-4">
             <div className="rounded-xl border bg-card p-4 shadow-sm">
               <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                 <div className="relative w-full max-w-sm">
@@ -694,6 +694,8 @@ function BillingPage() {
             </div>
           </TabsContent>
         </Tabs>
+      </div>
+
       </div>
 
       <Dialog open={!!preview} onOpenChange={(o) => !o && setPreview(null)}>
