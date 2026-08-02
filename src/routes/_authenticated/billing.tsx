@@ -121,6 +121,8 @@ function BillingPage() {
       setInvoices(inv);
       setRates(rt);
       setContracts(ct);
+    } catch (error) {
+      console.error("Failed to load billing data:", error);
     } finally {
       setLoading(false);
     }
@@ -129,6 +131,7 @@ function BillingPage() {
   useState(() => {
     refresh();
   });
+
   const [clients] = useState(getClients());
   const [projects] = useState(getProjects());
   const [search, setSearch] = useState("");
@@ -140,12 +143,6 @@ function BillingPage() {
 
   const companyId = getCurrentCompany();
   const company = getCompanies().find((c) => c.id === companyId);
-
-  function refresh() {
-    setInvoices(getInvoices());
-    setRates(getRateAgreements());
-    setContracts(getContracts());
-  }
 
   const filtered = invoices.filter((i) => {
     const client = clients.find((c) => c.id === i.clientId);
@@ -325,31 +322,30 @@ function BillingPage() {
           </div>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <SummaryCard title="Billed" value={money(billedTotal)} icon={<FileText className="h-5 w-5" />} variant="primary" caption={`${filtered.length} invoice(s)`} />
-          <SummaryCard title="Collected" value={money(collected)} icon={<CheckCircle2 className="h-5 w-5" />} variant="success" caption="Payments received" />
-          <SummaryCard title="Outstanding" value={money(outstanding)} icon={<DollarSign className="h-5 w-5" />} variant="warning" caption="Unpaid balance" />
-          <SummaryCard title="Overdue" value={overdueCount.toString()} icon={<Clock className="h-5 w-5" />} variant="destructive" caption="Past due date" />
-        </div>
+        {loading ? (
+          <div className="flex h-64 flex-col items-center justify-center gap-4">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+            <p className="text-sm text-muted-foreground">Loading billing data...</p>
+          </div>
+        ) : (
+          <Tabs defaultValue="overview">
+            <TabsList>
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="invoices">Invoices</TabsTrigger>
+              <TabsTrigger value="contracts">Contracts</TabsTrigger>
+              <TabsTrigger value="rates">Rate agreements</TabsTrigger>
+            </TabsList>
 
-        <Tabs defaultValue="overview">
-          <TabsList>
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="invoices">Invoices</TabsTrigger>
-            <TabsTrigger value="contracts">Contracts</TabsTrigger>
-            <TabsTrigger value="rates">Rate agreements</TabsTrigger>
-          </TabsList>
+            <TabsContent value="overview" className="mt-4">
+              <BillingOverview
+                invoices={filtered}
+                clients={clients}
+                contracts={visibleContracts}
+                onOpenInvoice={(inv) => setPreview(inv)}
+              />
+            </TabsContent>
 
-          <TabsContent value="overview" className="mt-4">
-            <BillingOverview
-              invoices={filtered}
-              clients={clients}
-              contracts={visibleContracts}
-              onOpenInvoice={(inv) => setPreview(inv)}
-            />
-          </TabsContent>
-
-          <TabsContent value="invoices" className="mt-4">
+            <TabsContent value="invoices" className="mt-4">
             <div className="rounded-xl border bg-card p-4 shadow-sm">
               <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                 <div className="relative w-full max-w-sm">
