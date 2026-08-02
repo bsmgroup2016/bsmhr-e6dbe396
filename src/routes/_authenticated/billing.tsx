@@ -294,8 +294,8 @@ function BillingPage() {
             </p>
             <Button 
               variant="outline" 
-              size="xs" 
-              className="mt-2 text-[10px] opacity-50 hover:opacity-100"
+              size="sm" 
+              className="mt-2 text-[10px] h-7 opacity-50 hover:opacity-100"
               onClick={() => {
                 seedDemoBilling();
                 refresh();

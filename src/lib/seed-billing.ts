@@ -29,7 +29,16 @@ export function seedDemoBilling() {
     issueDate: now.toISOString().slice(0, 10),
     dueDate: now.toISOString().slice(0, 10),
     lines: [
-      { id: 'l1', description: 'Manpower Supply (Demo)', quantity: 22, unit: 'Daily', rate: 100, amount: 2200, createdAt: now.toISOString() }
+      { 
+        id: 'l1', 
+        invoiceId: '', // Will be updated by store
+        description: 'Manpower Supply (Demo)', 
+        quantity: 22, 
+        unit: 'Daily', 
+        rate: 100, 
+        amount: 2200, 
+        createdAt: now.toISOString() 
+      }
     ],
     gstRate: 9,
     amountPaid: 2398, // Fully paid
@@ -49,7 +58,16 @@ export function seedDemoBilling() {
     issueDate: overdueDate,
     dueDate: overdueDate,
     lines: [
-      { id: 'l2', description: 'OT Charges (Demo)', quantity: 45, unit: 'Hourly', rate: 20, amount: 900, createdAt: now.toISOString() }
+      { 
+        id: 'l2', 
+        invoiceId: '', 
+        description: 'OT Charges (Demo)', 
+        quantity: 45, 
+        unit: 'Hourly', 
+        rate: 20, 
+        amount: 900, 
+        createdAt: now.toISOString() 
+      }
     ],
     gstRate: 9,
     amountPaid: 0,
@@ -68,7 +86,16 @@ export function seedDemoBilling() {
     issueDate: now.toISOString().slice(0, 10),
     dueDate: new Date(now.getTime() + 30 * 86400000).toISOString().slice(0, 10),
     lines: [
-      { id: 'l3', description: 'Progress Claim 1', quantity: 1, unit: 'Monthly', rate: 5000, amount: 5000, createdAt: now.toISOString() }
+      { 
+        id: 'l3', 
+        invoiceId: '', 
+        description: 'Progress Claim 1', 
+        quantity: 1, 
+        unit: 'Monthly', 
+        rate: 5000, 
+        amount: 5000, 
+        createdAt: now.toISOString() 
+      }
     ],
     gstRate: 9,
     amountPaid: 0,
