@@ -105,9 +105,30 @@ export const Route = createFileRoute("/_authenticated/billing")({
 });
 
 function BillingPage() {
-  const [invoices, setInvoices] = useState(getInvoices());
-  const [rates, setRates] = useState(getRateAgreements());
-  const [contracts, setContracts] = useState(getContracts());
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [rates, setRates] = useState<RateAgreement[]>([]);
+  const [contracts, setContracts] = useState<ClientContract[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  async function refresh() {
+    setLoading(true);
+    try {
+      const [inv, rt, ct] = await Promise.all([
+        getInvoices(),
+        getRateAgreements(),
+        getContracts()
+      ]);
+      setInvoices(inv);
+      setRates(rt);
+      setContracts(ct);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useState(() => {
+    refresh();
+  });
   const [clients] = useState(getClients());
   const [projects] = useState(getProjects());
   const [search, setSearch] = useState("");
