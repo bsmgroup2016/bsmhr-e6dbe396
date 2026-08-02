@@ -15,10 +15,19 @@ import {
   Send,
   BadgeCheck,
   Calculator,
+  ChevronDown,
 } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
 import { ExportButton, ImportDialog } from "@/components/data-io";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { downloadPayslipPdf } from "@/lib/pdf";
 import { SummaryCard } from "@/components/ui/summary-card";
 import { StatusBadge } from "@/components/ui/status-badge";
