@@ -574,6 +574,54 @@ function BillingPage() {
               </div>
             </TabsContent>
 
+            <TabsContent value="payments" className="mt-4">
+              <PaymentsReceived
+                receipts={visibleReceipts}
+                invoices={invoices.filter((i) => !companyId || !i.companyId || i.companyId === companyId)}
+                clients={clients}
+                onAdd={(input) => {
+                  addReceipt({ companyId: companyId || undefined, ...input });
+                  refresh();
+                  toast.success(`Payment of ${money(input.amount)} recorded`);
+                }}
+                onDelete={(id) => {
+                  deleteReceipt(id);
+                  refresh();
+                  toast.success("Receipt removed — invoice balance restored");
+                }}
+              />
+            </TabsContent>
+
+            <TabsContent value="bills" className="mt-4">
+              <BillsAndExpenses
+                expenses={visibleExpenses}
+                onAdd={(input) => {
+                  addExpense({ ...input, companyId: companyId || undefined });
+                  refresh();
+                  toast.success("Bill recorded");
+                }}
+                onPay={(id) => {
+                  markExpensePaid(id);
+                  refresh();
+                  toast.success("Bill marked as paid");
+                }}
+                onDelete={(id) => {
+                  deleteExpense(id);
+                  refresh();
+                  toast.success("Bill deleted");
+                }}
+              />
+            </TabsContent>
+
+            <TabsContent value="reports" className="mt-4">
+              <BillingReports
+                invoices={invoices.filter((i) => !companyId || !i.companyId || i.companyId === companyId)}
+                clients={clients}
+                receipts={visibleReceipts}
+                expenses={visibleExpenses}
+              />
+            </TabsContent>
+
             <TabsContent value="contracts" className="mt-4">
               <div className="rounded-xl border bg-card p-4 shadow-sm">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
