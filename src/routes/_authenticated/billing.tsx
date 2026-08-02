@@ -672,7 +672,7 @@ function BillingPage() {
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>Invoice {preview?.invoiceNo}</DialogTitle>
-            <DialogDescription>Tax invoice preview (same as quickbook)</DialogDescription>
+            <DialogDescription>Tax invoice preview</DialogDescription>
           </DialogHeader>
           {preview && (
             <div className="space-y-4 text-sm">
