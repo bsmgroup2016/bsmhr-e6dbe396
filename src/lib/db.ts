@@ -391,7 +391,7 @@ export const fromInvoice = (r: Row): Invoice => ({
   projectId: r.project_id ?? undefined, invoiceNo: r.invoice_no ?? "",
   periodStart: d(r.period_start) ?? "", periodEnd: d(r.period_end) ?? "",
   issueDate: d(r.issue_date) ?? "", dueDate: d(r.due_date) ?? "",
-  lines: Array.isArray(r.lines) ? (r.lines as InvoiceLine[]) : [],
+  lines: Array.isArray(r.lines || r.invoice_lines) ? ((r.lines || r.invoice_lines) as InvoiceLine[]) : [],
   subtotal: Number(r.subtotal ?? 0), gstRate: Number(r.gst_rate ?? 0),
   gstAmount: Number(r.gst_amount ?? 0), total: Number(r.total ?? 0),
   amountPaid: Number(r.amount_paid ?? 0),
@@ -402,7 +402,10 @@ export const fromInvoice = (r: Row): Invoice => ({
 export const toInvoice = (i: Partial<Invoice>): Row => ({
   company_id: i.companyId || null, client_id: i.clientId, project_id: i.projectId || null,
   invoice_no: i.invoiceNo, period_start: nullDate(i.periodStart), period_end: nullDate(i.periodEnd),
-  issue_date: nullDate(i.issueDate), due_date: nullDate(i.dueDate), lines: i.lines ?? [],
+  issue_date: nullDate(i.issueDate), due_date: nullDate(i.dueDate),
+  lines: i.lines ?? [],
+  invoice_lines: i.lines ?? [],
+
   subtotal: i.subtotal ?? 0, gst_rate: i.gstRate ?? 0, gst_amount: i.gstAmount ?? 0,
   total: i.total ?? 0, amount_paid: i.amountPaid ?? 0, status: i.status, notes: i.notes ?? null,
 });
