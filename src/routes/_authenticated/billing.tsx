@@ -263,13 +263,6 @@ function BillingPage() {
     toast.success(`${inv.invoiceNo} → ${status}`);
   }
 
-  function pay(inv: Invoice) {
-    const remaining = inv.total - inv.amountPaid;
-    recordInvoicePayment(inv.id, remaining);
-    refresh();
-    toast.success(`Payment of ${money(remaining)} recorded`);
-  }
-
   function openPay(inv: Invoice) {
     setPayTarget(inv);
     setPayAmount((Math.round((inv.total - inv.amountPaid) * 100) / 100).toFixed(2));
