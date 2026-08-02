@@ -89,7 +89,7 @@
  * Roboto typography, comfortable density.
  */
 :root {
-  --font-sans: "Roboto", "ui-sans-serif", "system-ui", "-apple-system", "Segoe UI", sans-serif;
+  --font-sans: "Inter", "Roboto", "ui-sans-serif", "system-ui", "-apple-system", "Segoe UI", sans-serif;
   --radius: 0.875rem;
 
   /* Surfaces */
