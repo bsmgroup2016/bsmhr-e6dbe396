@@ -20,6 +20,7 @@ import { toast } from "sonner";
 
 import { AppShell } from "@/components/app-shell";
 import { ExportButton } from "@/components/data-io";
+import { BillingOverview } from "@/components/billing-overview";
 import { downloadInvoicePdf } from "@/lib/pdf";
 import { SummaryCard } from "@/components/ui/summary-card";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -310,12 +311,22 @@ function BillingPage() {
           <SummaryCard title="Overdue" value={overdueCount.toString()} icon={<Clock className="h-5 w-5" />} variant="destructive" caption="Past due date" />
         </div>
 
-        <Tabs defaultValue="invoices">
+        <Tabs defaultValue="overview">
           <TabsList>
+            <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="invoices">Invoices</TabsTrigger>
             <TabsTrigger value="contracts">Contracts</TabsTrigger>
             <TabsTrigger value="rates">Rate agreements</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="overview" className="mt-4">
+            <BillingOverview
+              invoices={filtered}
+              clients={clients}
+              contracts={visibleContracts}
+              onOpenInvoice={(inv) => setPreview(inv)}
+            />
+          </TabsContent>
 
           <TabsContent value="invoices" className="mt-4">
             <div className="rounded-xl border bg-card p-4 shadow-sm">
