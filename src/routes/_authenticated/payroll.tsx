@@ -431,12 +431,12 @@ export default function PayrollPage() {
   return (
     <AppShell>
       <div className="w-full space-y-6">
-        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-          <div>
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+          <div className="min-w-0">
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">Payroll</h1>
             <p className="text-sm text-muted-foreground">Monthly payroll and payslip management.</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex min-w-0 flex-wrap items-center gap-2 lg:justify-end">
             <Button size="sm" variant="outline" asChild>
               <Link to="/time-cards">Generate claim sheet</Link>
             </Button>
@@ -503,7 +503,7 @@ export default function PayrollPage() {
           </div>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
           <SummaryCard title="Net pay" value={`$${totalNetPay.toLocaleString()}`} icon={<DollarSign className="h-5 w-5" />} variant="primary" caption={month} />
           <SummaryCard title="CPF total" value={`$${Math.round(totalCpf).toLocaleString()}`} icon={<Landmark className="h-5 w-5" />} variant="info" caption="Employee + employer" />
           <SummaryCard title="Employer cost" value={`$${Math.round(totalEmployerCost).toLocaleString()}`} icon={<Calculator className="h-5 w-5" />} variant="default" caption="Gross + CPF + SDL + levy" />
@@ -585,7 +585,7 @@ export default function PayrollPage() {
             </div>
           </div>
 
-          <div className="mt-4 overflow-hidden rounded-lg border">
+          <div className="mt-4 overflow-x-auto rounded-lg border">
             <Table>
               <TableHeader>
                 <TableRow>
