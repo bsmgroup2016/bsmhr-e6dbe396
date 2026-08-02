@@ -269,7 +269,7 @@ function BillingPage() {
           <div>
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">Billing &amp; Invoicing</h1>
             <p className="text-sm text-muted-foreground">
-              Timesheet-based client billing with rate agreements, GST and payment tracking.
+              Xero বা QuickBooks এর মতো প্রফেশনাল বিলিং, রেট এগ্রিমেন্ট এবং অটো-ইনভয়েসিং সিস্টেম।
             </p>
           </div>
           <div className="mt-2 flex flex-wrap gap-2 sm:mt-0">
