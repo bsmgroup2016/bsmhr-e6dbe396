@@ -6,7 +6,7 @@ import { useAuth } from "@/lib/auth";
 import { canAccess } from "@/lib/permissions";
 
 const items = [
-  { to: "/", label: "Home", icon: LayoutDashboard },
+  { to: "/", label: "Dashboard", icon: LayoutDashboard },
   { to: "/workforce", label: "Workforce", icon: Users },
   { to: "/time-management", label: "Time", icon: CalendarClock },
   { to: "/alerts", label: "Alerts", icon: Bell },
