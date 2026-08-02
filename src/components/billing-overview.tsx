@@ -234,9 +234,9 @@ export function BillingOverview({
             {moneyFull(totalOutstanding)}
           </div>
           <div className="mt-1 text-sm text-muted-foreground">
-            এর মধ্যে{" "}
+            of which{" "}
             <span className="font-medium text-destructive">{money(overdueAmount)}</span>{" "}
-            ওভারডিউ
+            overdue
           </div>
 
           <div className="mt-4 space-y-2">
@@ -258,7 +258,7 @@ export function BillingOverview({
 
         <Panel
           title="Cashflow — billed vs collected"
-          caption="শেষ ৬ মাস"
+          caption="Last 6 months"
           className="lg:col-span-2"
           action={
             <span className="flex items-center gap-1 rounded-full bg-success/10 px-2 py-1 text-xs font-medium text-success">
@@ -318,7 +318,7 @@ export function BillingOverview({
 
       {/* aging + status */}
       <div className="grid gap-4 lg:grid-cols-3">
-        <Panel title="Receivables ageing" caption="Due date অনুযায়ী" className="lg:col-span-2">
+        <Panel title="Receivables ageing" caption="By due date" className="lg:col-span-2">
           <div className="h-48 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={aging} margin={{ top: 6, right: 6, left: -18, bottom: 0 }}>
@@ -366,9 +366,9 @@ export function BillingOverview({
           </div>
         </Panel>
 
-        <Panel title="Invoice status" caption="Value অনুযায়ী ভাগ">
+        <Panel title="Invoice status" caption="Split by value">
           {statusSplit.length === 0 ? (
-            <p className="py-10 text-center text-sm text-muted-foreground">কোনো ডেটা নেই</p>
+            <p className="py-10 text-center text-sm text-muted-foreground">No data yet</p>
           ) : (
             <>
               <div className="h-40 w-full">
@@ -414,7 +414,7 @@ export function BillingOverview({
       <div className="grid gap-4 lg:grid-cols-3">
         <Panel title="Top clients" caption="Billed value">
           {topClients.length === 0 ? (
-            <p className="py-8 text-center text-sm text-muted-foreground">কোনো ডেটা নেই</p>
+            <p className="py-8 text-center text-sm text-muted-foreground">No data yet</p>
           ) : (
             <ul className="space-y-3">
               {topClients.map((c) => (
@@ -431,7 +431,7 @@ export function BillingOverview({
                   </div>
                   {c.balance > 0.01 && (
                     <div className="mt-1 text-xs text-warning">
-                      {money(c.balance)} বাকি
+                      {money(c.balance)} outstanding
                     </div>
                   )}
                 </li>
@@ -440,10 +440,10 @@ export function BillingOverview({
           )}
         </Panel>
 
-        <Panel title="Needs attention" caption="সবচেয়ে দেরি হওয়া ইনভয়েস">
+        <Panel title="Needs attention" caption="Most overdue invoices">
           {attention.length === 0 ? (
             <p className="py-8 text-center text-sm text-muted-foreground">
-              সব ইনভয়েস আপ-টু-ডেট
+              All invoices are up to date
             </p>
           ) : (
             <ul className="divide-y">
@@ -481,7 +481,7 @@ export function BillingOverview({
         <Panel title="Upcoming contract billing" caption="Auto-invoice schedule">
           {upcoming.length === 0 ? (
             <p className="py-8 text-center text-sm text-muted-foreground">
-              কোনো শিডিউল নেই
+              No schedule
             </p>
           ) : (
             <ul className="divide-y">
@@ -508,7 +508,7 @@ export function BillingOverview({
           )}
           <div className="mt-3 flex items-center gap-1 text-xs text-muted-foreground">
             <ArrowUpRight className="h-3.5 w-3.5" />
-            Contracts ট্যাব থেকে শিডিউল পরিবর্তন করুন
+            Change the schedule from the Contracts tab
           </div>
         </Panel>
       </div>

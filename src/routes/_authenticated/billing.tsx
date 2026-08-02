@@ -141,6 +141,8 @@ function BillingPage() {
   const [isRateOpen, setIsRateOpen] = useState(false);
   const [isContractOpen, setIsContractOpen] = useState(false);
   const [preview, setPreview] = useState<Invoice | null>(null);
+  const [payTarget, setPayTarget] = useState<Invoice | null>(null);
+  const [payAmount, setPayAmount] = useState("");
 
   const companyId = getCurrentCompany();
   const company = getCompanies().find((c) => c.id === companyId);
@@ -261,11 +263,23 @@ function BillingPage() {
     toast.success(`${inv.invoiceNo} → ${status}`);
   }
 
-  function pay(inv: Invoice) {
-    const remaining = inv.total - inv.amountPaid;
-    recordInvoicePayment(inv.id, remaining);
+  function openPay(inv: Invoice) {
+    setPayTarget(inv);
+    setPayAmount((Math.round((inv.total - inv.amountPaid) * 100) / 100).toFixed(2));
+  }
+
+  function confirmPay() {
+    if (!payTarget) return;
+    const remaining = Math.round((payTarget.total - payTarget.amountPaid) * 100) / 100;
+    const amount = Math.min(Math.max(Number(payAmount) || 0, 0), remaining);
+    if (amount <= 0) {
+      toast.error("Enter a payment amount");
+      return;
+    }
+    recordInvoicePayment(payTarget.id, amount);
+    setPayTarget(null);
     refresh();
-    toast.success(`Payment of ${money(remaining)} recorded`);
+    toast.success(`Payment of ${money(amount)} recorded`);
   }
 
   const exportRows = filtered.map((i) => ({
@@ -289,7 +303,7 @@ function BillingPage() {
           <div>
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">Billing & Invoicing</h1>
             <p className="text-sm text-muted-foreground">
-              Xero বা QuickBooks এর মতো প্রফেশনাল বিলিং, রেট এগ্রিমেন্ট এবং অটো-ইনভয়েসিং সিস্টেম।
+              Professional billing, rate agreements and automated contract invoicing.
             </p>
           </div>
           <div className="mt-2 flex flex-wrap gap-2 sm:mt-0">
@@ -381,6 +395,33 @@ function BillingPage() {
                   </Select>
                 </div>
 
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {(["all", ...statuses] as (InvoiceStatus | "all")[]).map((s) => {
+                    const count =
+                      s === "all"
+                        ? invoices.filter((i) => !companyId || !i.companyId || i.companyId === companyId).length
+                        : invoices.filter(
+                            (i) => (!companyId || !i.companyId || i.companyId === companyId) && i.status === s,
+                          ).length;
+                    if (s !== "all" && count === 0) return null;
+                    return (
+                      <button
+                        key={s}
+                        type="button"
+                        onClick={() => setStatusFilter(s)}
+                        className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                          statusFilter === s
+                            ? "border-primary bg-primary/10 text-primary"
+                            : "border-border bg-muted/40 text-muted-foreground hover:bg-muted"
+                        }`}
+                      >
+                        {s === "all" ? "All" : s}
+                        <span className="ml-1.5 opacity-70">{count}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+
                 <div className="mt-4 overflow-hidden rounded-lg border">
                   <Table>
                     <TableHeader>
@@ -410,18 +451,30 @@ function BillingPage() {
                         filtered.map((i) => {
                           const client = clients.find((c) => c.id === i.clientId);
                           const balance = Math.round((i.total - i.amountPaid) * 100) / 100;
+                          const today = new Date().toISOString().slice(0, 10);
+                          const daysLate =
+                            balance > 0 && i.dueDate && i.dueDate < today
+                              ? Math.floor((Date.parse(today) - Date.parse(i.dueDate)) / 86400000)
+                              : 0;
                           return (
                             <TableRow key={i.id}>
                               <TableCell>
                                 <div className="font-medium">{i.invoiceNo}</div>
-                                <div className="text-xs text-muted-foreground">Due {i.dueDate}</div>
+                                <div className={`text-xs ${daysLate > 0 ? "text-destructive" : "text-muted-foreground"}`}>
+                                  Due {i.dueDate}
+                                  {daysLate > 0 ? ` · ${daysLate}d overdue` : ""}
+                                </div>
                               </TableCell>
                               <TableCell>{client?.name ?? "—"}</TableCell>
                               <TableCell className="text-xs text-muted-foreground">
                                 {i.periodStart} → {i.periodEnd}
                               </TableCell>
                               <TableCell className="text-right font-medium">{money(i.total)}</TableCell>
-                              <TableCell className="text-right">{money(balance)}</TableCell>
+                              <TableCell
+                                className={`text-right ${daysLate > 0 ? "font-medium text-destructive" : ""}`}
+                              >
+                                {money(balance)}
+                              </TableCell>
                               <TableCell>
                                 <StatusBadge
                                   variant={
@@ -463,9 +516,9 @@ function BillingPage() {
                                     </Button>
                                   )}
                                   {i.status !== "Paid" && i.status !== "Cancelled" && i.status !== "Draft" && (
-                                    <Button size="sm" variant="secondary" onClick={() => pay(i)}>
+                                    <Button size="sm" variant="secondary" onClick={() => openPay(i)}>
                                       <Banknote className="mr-1 h-4 w-4" />
-                                      Paid
+                                      Payment
                                     </Button>
                                   )}
                                   <Button
@@ -704,6 +757,41 @@ function BillingPage() {
           </Tabs>
         )}
       </div>
+
+      <Dialog open={!!payTarget} onOpenChange={(o) => !o && setPayTarget(null)}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Record payment</DialogTitle>
+            <DialogDescription>
+              {payTarget?.invoiceNo} · balance{" "}
+              {payTarget ? money(Math.round((payTarget.total - payTarget.amountPaid) * 100) / 100) : ""}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="payAmount">Amount received</Label>
+            <Input
+              id="payAmount"
+              type="number"
+              step="0.01"
+              min="0"
+              value={payAmount}
+              onChange={(e) => setPayAmount(e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">
+              A part payment marks the invoice as Partially Paid; the full balance marks it Paid.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" size="sm" onClick={() => setPayTarget(null)}>
+              Cancel
+            </Button>
+            <Button size="sm" onClick={confirmPay}>
+              <Banknote className="mr-1 h-4 w-4" />
+              Record payment
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={!!preview} onOpenChange={(o) => !o && setPreview(null)}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">

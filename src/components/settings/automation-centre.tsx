@@ -6,24 +6,24 @@ import { Badge } from "@/components/ui/badge";
 import { runAutomationsNow, type AutomationRunResult } from "@/lib/automation";
 
 const JOBS = [
-  { title: "ডকুমেন্ট অটো-এক্সপায়ার", detail: "মেয়াদ শেষ হওয়া পারমিট/পাসপোর্ট স্বয়ংক্রিয়ভাবে Expired হয়ে যায়।" },
-  { title: "টায়ার্ড এক্সপায়ারি রিমাইন্ডার", detail: "৯০ / ৬০ / ৩০ / ৭ দিন আগে HR-কে ইমেইল নোটিশ।" },
-  { title: "মিসিং ক্লক-ইন অ্যালার্ট", detail: "আজ পাঞ্চ না করা সাইট ওয়ার্কারদের তালিকা।" },
-  { title: "IR21 ট্যাক্স ক্লিয়ারেন্স", detail: "লিভার ফরেন এমপ্লয়ির IR21 ফ্ল্যাগ ও ডেডলাইন সতর্কতা।" },
-  { title: "DRC কোটা ও লেভি ওয়ার্নিং", detail: "কম্পানি ভিত্তিক কোটা ব্রিচ ও মাসিক লেভি এক্সপোজার।" },
-  { title: "মাস-শেষে পেরোল ড্রাফট", detail: "অ্যাটেনডেন্স থেকে OT, CPF/SDL/SHG ও লোন কেটে ড্রাফট তৈরি।" },
+  { title: "Document auto-expiry", detail: "Permits/passports past their validity are marked Expired automatically." },
+  { title: "Tiered expiry reminders", detail: "Email notices to HR at 90 / 60 / 30 / 7 days before expiry." },
+  { title: "Missing clock-in alerts", detail: "List of site workers who have not punched in today." },
+  { title: "IR21 tax clearance", detail: "Flags leaving foreign employees for IR21 and warns on deadlines." },
+  { title: "DRC quota & levy warnings", detail: "Per-company quota breaches and monthly levy exposure." },
+  { title: "Month-end payroll draft", detail: "Builds drafts from attendance with OT, CPF/SDL/SHG and loan deductions." },
 ];
 
 const rows = (r: AutomationRunResult) => [
-  ["ডকুমেন্ট Expired করা হয়েছে", r.documentsExpired],
-  ["এক্সপায়ারি রিমাইন্ডার", r.remindersQueued],
-  ["ক্লক-ইন করেনি", r.missingClockIn],
-  ["IR21 পেন্ডিং", r.ir21Pending],
-  ["IR21 নতুন ফ্ল্যাগ", r.ir21Flagged],
-  ["কোটা / লেভি ওয়ার্নিং", r.quotaWarnings],
-  [`পেরোল ড্রাফট (${r.payrollMonth ?? "—"})`, r.payrollDraftsCreated],
-  ["পেরোল স্কিপ", r.payrollSkipped],
-  ["ইমেইল পাঠানো হয়েছে", r.sent],
+  ["Documents marked expired", r.documentsExpired],
+  ["Expiry reminders", r.remindersQueued],
+  ["Missing clock-in", r.missingClockIn],
+  ["IR21 pending", r.ir21Pending],
+  ["IR21 newly flagged", r.ir21Flagged],
+  ["Quota / levy warnings", r.quotaWarnings],
+  [`Payroll drafts (${r.payrollMonth ?? "—"})`, r.payrollDraftsCreated],
+  ["Payroll skipped", r.payrollSkipped],
+  ["Emails sent", r.sent],
 ] as const;
 
 export function AutomationCentre() {
@@ -56,20 +56,20 @@ export function AutomationCentre() {
               <Bot className="h-5 w-5" />
             </span>
             <div>
-              <h3 className="font-medium text-foreground">অটোমেশন সেন্টার</h3>
+              <h3 className="font-medium text-foreground">Automation centre</h3>
               <p className="text-sm text-muted-foreground">
-                শিডিউল: প্রতিদিন সকাল ৮টা (SGT) — ডেটাবেস cron থেকে অটো চলে। এখান থেকে হাতে-কলমে টেস্ট বা তৎক্ষণাৎ রান করাও যায়।
+                Schedule: daily 08:00 SGT via database cron. You can also dry-run or run it now from here.
               </p>
             </div>
           </div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => run("dry")} disabled={busy !== null}>
               {busy === "dry" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FlaskConical className="mr-2 h-4 w-4" />}
-              ড্রাই রান
+              Dry run
             </Button>
             <Button onClick={() => run("live")} disabled={busy !== null}>
               {busy === "live" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Play className="mr-2 h-4 w-4" />}
-              এখনই চালাও
+              Run now
             </Button>
           </div>
         </div>
@@ -80,12 +80,12 @@ export function AutomationCentre() {
           <div className="mt-5 space-y-3">
             {result.emailError && (
               <p className="rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-sm text-foreground">
-                জব চলেছে, তবে ডাইজেস্ট ইমেইল পাঠানো যায়নি: {result.emailError}
+                The job ran, but the digest email could not be sent: {result.emailError}
               </p>
             )}
             <div className="flex items-center gap-2">
               <Badge variant={mode === "dry" ? "secondary" : "default"}>
-                {mode === "dry" ? "ড্রাই রান — কিছু লেখা হয়নি" : "লাইভ রান সম্পন্ন"}
+                {mode === "dry" ? "Dry run — nothing was written" : "Live run completed"}
               </Badge>
               <span className="text-xs text-muted-foreground">{result.date}</span>
             </div>

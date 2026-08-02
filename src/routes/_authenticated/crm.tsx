@@ -141,7 +141,7 @@ export default function CrmPage() {
   function convert(lead: Lead) {
     const client = convertLeadToClient(lead.id);
     refresh();
-    if (client) toast.success(`${client.name} client হিসেবে যোগ হয়েছে`);
+    if (client) toast.success(`${client.name} added as a client`);
     else toast.error("Already converted");
   }
 

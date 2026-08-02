@@ -23,7 +23,7 @@ export function LoadingState({
     <div
       role="status"
       aria-busy="true"
-      aria-label="লোড হচ্ছে"
+      aria-label="Loading"
       className={cn(
         card && "overflow-hidden rounded-xl border bg-card shadow-sm",
         className,
@@ -72,7 +72,7 @@ export function LoadingCards({
     <div
       role="status"
       aria-busy="true"
-      aria-label="লোড হচ্ছে"
+      aria-label="Loading"
       className={cn("grid gap-4 sm:grid-cols-2 lg:grid-cols-4", className)}
       {...props}
     >
@@ -103,7 +103,7 @@ export function LoadingPanel({
     <div
       role="status"
       aria-busy="true"
-      aria-label="লোড হচ্ছে"
+      aria-label="Loading"
       className={cn("rounded-xl border bg-card p-5 shadow-sm", className)}
       {...props}
     >
