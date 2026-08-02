@@ -85,7 +85,7 @@ export function AutomationCentre() {
             )}
             <div className="flex items-center gap-2">
               <Badge variant={mode === "dry" ? "secondary" : "default"}>
-                {mode === "dry" ? "Dry run — কিছু লেখা হয়নি" : "Live run completed"}
+                {mode === "dry" ? "Dry run — nothing was written" : "Live run completed"}
               </Badge>
               <span className="text-xs text-muted-foreground">{result.date}</span>
             </div>
