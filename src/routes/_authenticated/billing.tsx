@@ -335,8 +335,8 @@ function BillingPage() {
             <p className="text-sm text-muted-foreground">Loading billing data...</p>
           </div>
         ) : (
-          <Tabs defaultValue="overview">
-            <TabsList>
+          <Tabs defaultValue="overview" className="mt-6">
+            <TabsList className="grid w-full grid-cols-4 lg:w-[600px]">
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="invoices">Invoices</TabsTrigger>
               <TabsTrigger value="contracts">Contracts</TabsTrigger>
