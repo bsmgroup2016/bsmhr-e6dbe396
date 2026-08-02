@@ -213,10 +213,10 @@ export function BillingOverview({
   const collected = live.reduce((s, i) => s + i.amountPaid, 0);
   const collectRate = billedTotal > 0 ? (collected / billedTotal) * 100 : 0;
   const avgDaysToPay = useMemo(() => {
-    const paid = live.filter((i) => i.status === "Paid" && i.issueDate && i.paidDate);
+    const paid = live.filter((i) => i.status === "Paid" && i.issueDate && i.updatedAt);
     if (paid.length === 0) return null;
     const sum = paid.reduce(
-      (s, i) => s + Math.max(0, daysBetween(i.issueDate, i.paidDate as string)),
+      (s, i) => s + Math.max(0, daysBetween(i.issueDate, i.updatedAt.slice(0, 10))),
       0,
     );
     return Math.round(sum / paid.length);
