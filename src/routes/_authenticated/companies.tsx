@@ -112,7 +112,7 @@ function CompaniesPage() {
       <div className="space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Companies</h1>
+            <h1 className="text-2xl font-semibold tracking-tight">company page e egula hiseb thik ase?</h1>
             <p className="text-sm text-muted-foreground">Group entities, departments and designations in one place.</p>
           </div>
         </div>
