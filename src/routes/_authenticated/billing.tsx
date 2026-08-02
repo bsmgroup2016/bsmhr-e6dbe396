@@ -394,7 +394,7 @@ function BillingPage() {
                                     : i.status === "Sent"
                                       ? "info"
                                       : i.status === "Draft"
-                                        ? "secondary"
+                                        ? "default"
                                         : i.status === "Cancelled"
                                           ? "destructive"
                                           : "warning"
