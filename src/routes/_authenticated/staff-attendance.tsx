@@ -139,8 +139,8 @@ function StaffAttendancePage() {
   const notifyLunch = (type: 'start' | 'end') => {
     const time = type === 'start' ? LUNCH_START : LUNCH_END;
     const msg = type === 'start' 
-      ? `এটি দুপুর ${time}টা, দুপুরের খাবারের সময় শুরু হয়েছে।` 
-      : `দুপুর ${time}টা বেজেছে, দুপুরের খাবারের সময় শেষ হয়েছে।`;
+      ? `It is ${time} — lunch break has started.`
+      : `It is ${time} — lunch break has ended.`;
     
     toast.info(msg, {
       icon: <Coffee className="h-4 w-4" />,
