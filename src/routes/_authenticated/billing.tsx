@@ -765,6 +765,41 @@ function BillingPage() {
         )}
       </div>
 
+      <Dialog open={!!payTarget} onOpenChange={(o) => !o && setPayTarget(null)}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Record payment</DialogTitle>
+            <DialogDescription>
+              {payTarget?.invoiceNo} · balance{" "}
+              {payTarget ? money(Math.round((payTarget.total - payTarget.amountPaid) * 100) / 100) : ""}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="payAmount">Amount received</Label>
+            <Input
+              id="payAmount"
+              type="number"
+              step="0.01"
+              min="0"
+              value={payAmount}
+              onChange={(e) => setPayAmount(e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">
+              A part payment marks the invoice as Partially Paid; the full balance marks it Paid.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" size="sm" onClick={() => setPayTarget(null)}>
+              Cancel
+            </Button>
+            <Button size="sm" onClick={confirmPay}>
+              <Banknote className="mr-1 h-4 w-4" />
+              Record payment
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={!!preview} onOpenChange={(o) => !o && setPreview(null)}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
           <DialogHeader>
