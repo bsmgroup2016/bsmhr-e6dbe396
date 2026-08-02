@@ -322,380 +322,386 @@ function BillingPage() {
           </div>
         </div>
 
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <SummaryCard title="Billed" value={money(billedTotal)} icon={<FileText className="h-5 w-5" />} variant="primary" caption={`${filtered.length} invoice(s)`} />
+          <SummaryCard title="Collected" value={money(collected)} icon={<CheckCircle2 className="h-5 w-5" />} variant="success" caption="Payments received" />
+          <SummaryCard title="Outstanding" value={money(outstanding)} icon={<DollarSign className="h-5 w-5" />} variant="warning" caption="Unpaid balance" />
+          <SummaryCard title="Overdue" value={overdueCount.toString()} icon={<Clock className="h-5 w-5" />} variant="destructive" caption="Past due date" />
+        </div>
+
         {loading ? (
           <div className="flex h-64 flex-col items-center justify-center gap-4">
             <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
             <p className="text-sm text-muted-foreground">Loading billing data...</p>
           </div>
         ) : (
-        <Tabs defaultValue="overview">
-          <TabsList>
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="invoices">Invoices</TabsTrigger>
-            <TabsTrigger value="contracts">Contracts</TabsTrigger>
-            <TabsTrigger value="rates">Rate agreements</TabsTrigger>
-          </TabsList>
+          <Tabs defaultValue="overview">
+            <TabsList>
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="invoices">Invoices</TabsTrigger>
+              <TabsTrigger value="contracts">Contracts</TabsTrigger>
+              <TabsTrigger value="rates">Rate agreements</TabsTrigger>
+            </TabsList>
 
-          <TabsContent value="overview" className="mt-4">
-            <BillingOverview
-              invoices={filtered}
-              clients={clients}
-              contracts={visibleContracts}
-              onOpenInvoice={(inv) => setPreview(inv)}
-            />
-          </TabsContent>
+            <TabsContent value="overview" className="mt-4">
+              <BillingOverview
+                invoices={filtered}
+                clients={clients}
+                contracts={visibleContracts}
+                onOpenInvoice={(inv) => setPreview(inv)}
+              />
+            </TabsContent>
 
-          <TabsContent value="invoices" className="mt-4">
-            <div className="rounded-xl border bg-card p-4 shadow-sm">
-              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                <div className="relative w-full max-w-sm">
-                  <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    type="search"
-                    placeholder="Search invoice no or client..."
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    className="pl-9"
-                  />
+            <TabsContent value="invoices" className="mt-4">
+              <div className="rounded-xl border bg-card p-4 shadow-sm">
+                <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                  <div className="relative w-full max-w-sm">
+                    <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      type="search"
+                      placeholder="Search invoice no or client..."
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      className="pl-9"
+                    />
+                  </div>
+                  <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as InvoiceStatus | "all")}>
+                    <SelectTrigger className="w-48">
+                      <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All status</SelectItem>
+                      {statuses.map((s) => (
+                        <SelectItem key={s} value={s}>
+                          {s}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
-                <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as InvoiceStatus | "all")}>
-                  <SelectTrigger className="w-48">
-                    <SelectValue placeholder="Status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All status</SelectItem>
-                    {statuses.map((s) => (
-                      <SelectItem key={s} value={s}>
-                        {s}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
 
-              <div className="mt-4 overflow-hidden rounded-lg border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Invoice</TableHead>
-                      <TableHead>Client</TableHead>
-                      <TableHead>Period</TableHead>
-                      <TableHead className="text-right">Total</TableHead>
-                      <TableHead className="text-right">Balance</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="w-56 text-right">Action</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filtered.length === 0 ? (
+                <div className="mt-4 overflow-hidden rounded-lg border">
+                  <Table>
+                    <TableHeader>
                       <TableRow>
-                        <TableCell colSpan={7} className="h-32 text-center">
-                          <EmptyState
-                            className="border-0 bg-transparent"
-                            icon={<FileText className="h-5 w-5" />}
-                            title="No invoices yet"
-                            description="Add rate agreements, then generate an invoice from timesheets."
-                          />
-                        </TableCell>
+                        <TableHead>Invoice</TableHead>
+                        <TableHead>Client</TableHead>
+                        <TableHead>Period</TableHead>
+                        <TableHead className="text-right">Total</TableHead>
+                        <TableHead className="text-right">Balance</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="w-56 text-right">Action</TableHead>
                       </TableRow>
-                    ) : (
-                      filtered.map((i) => {
-                        const client = clients.find((c) => c.id === i.clientId);
-                        const balance = Math.round((i.total - i.amountPaid) * 100) / 100;
-                        return (
-                          <TableRow key={i.id}>
-                            <TableCell>
-                              <div className="font-medium">{i.invoiceNo}</div>
-                              <div className="text-xs text-muted-foreground">Due {i.dueDate}</div>
-                            </TableCell>
-                            <TableCell>{client?.name ?? "—"}</TableCell>
-                            <TableCell className="text-xs text-muted-foreground">
-                              {i.periodStart} → {i.periodEnd}
-                            </TableCell>
-                            <TableCell className="text-right font-medium">{money(i.total)}</TableCell>
-                            <TableCell className="text-right">{money(balance)}</TableCell>
-                            <TableCell>
-                              <StatusBadge
-                                variant={
-                                  i.status === "Paid"
-                                    ? "success"
-                                    : i.status === "Sent"
-                                      ? "info"
-                                      : i.status === "Draft"
-                                        ? "default"
-                                        : i.status === "Cancelled"
-                                          ? "destructive"
-                                          : "warning"
-                                }
-                                label={i.status}
-                                dot
-                              />
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <div className="flex justify-end gap-1">
-                                <Button size="sm" variant="ghost" onClick={() => setPreview(i)} title="View / print">
-                                  <Printer className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  title="Download PDF"
-                                  onClick={() =>
-                                    void downloadInvoicePdf(i, {
-                                      company,
-                                      clientName: client?.name,
-                                    }).then(() => toast.success("Invoice PDF downloaded"))
-                                  }
-                                >
-                                  <FileDown className="h-4 w-4" />
-                                </Button>
-                                {i.status === "Draft" && (
-                                  <Button size="sm" variant="secondary" onClick={() => setStatus(i, "Sent")}>
-                                    Send
-                                  </Button>
-                                )}
-                                {i.status !== "Paid" && i.status !== "Cancelled" && i.status !== "Draft" && (
-                                  <Button size="sm" variant="secondary" onClick={() => pay(i)}>
-                                    <Banknote className="mr-1 h-4 w-4" />
-                                    Paid
-                                  </Button>
-                                )}
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => {
-                                    deleteInvoice(i.id);
-                                    refresh();
-                                    toast.success("Invoice deleted");
-                                  }}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="contracts" className="mt-4">
-            <div className="rounded-xl border bg-card p-4 shadow-sm">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <h2 className="font-medium">Client contracts</h2>
-                  <p className="text-sm text-muted-foreground">
-                    Recurring service agreements. Due contracts are invoiced automatically when you run billing.
-                  </p>
-                </div>
-                <Dialog open={isContractOpen} onOpenChange={setIsContractOpen}>
-                  <DialogTrigger asChild>
-                    <Button size="sm">
-                      <Plus className="mr-1 h-4 w-4" />
-                      Add contract
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
-                    <DialogHeader>
-                      <DialogTitle>Add client contract</DialogTitle>
-                      <DialogDescription>
-                        Sets the billing cycle, GST and payment terms used for auto-generated invoices.
-                      </DialogDescription>
-                    </DialogHeader>
-                    <ContractForm clients={clients} projects={projects} onSubmit={handleAddContract} />
-                  </DialogContent>
-                </Dialog>
-              </div>
-
-              <div className="mt-4 overflow-hidden rounded-lg border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Contract</TableHead>
-                      <TableHead>Client</TableHead>
-                      <TableHead>Cycle</TableHead>
-                      <TableHead>Source</TableHead>
-                      <TableHead>Next invoice</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="w-40 text-right">Action</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {visibleContracts.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={7} className="h-28 text-center">
-                          <EmptyState
-                            className="border-0 bg-transparent"
-                            icon={<Repeat className="h-5 w-5" />}
-                            title="No contracts yet"
-                            description="Add a client contract to schedule recurring invoices."
-                          />
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      visibleContracts.map((c) => {
-                        const due = !!c.nextInvoiceOn && c.nextInvoiceOn <= new Date().toISOString().slice(0, 10);
-                        return (
-                          <TableRow key={c.id}>
-                            <TableCell>
-                              <div className="font-medium">{c.contractNo}</div>
-                              <div className="text-xs text-muted-foreground">{c.title || "—"}</div>
-                            </TableCell>
-                            <TableCell>{clients.find((cl) => cl.id === c.clientId)?.name ?? "—"}</TableCell>
-                            <TableCell>
-                              <div>{c.billingCycle}</div>
-                              <div className="text-xs text-muted-foreground">
-                                {c.startDate || "—"} → {c.endDate || "open"}
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              {c.billingSource === "Fixed" ? `Fixed ${money(c.fixedAmount)}` : "Timesheet"}
-                            </TableCell>
-                            <TableCell>
-                              <div className={due ? "font-medium text-destructive" : ""}>
-                                {c.nextInvoiceOn || "—"}
-                              </div>
-                              <div className="text-xs text-muted-foreground">
-                                {c.lastInvoicedOn ? `Last ${c.lastInvoicedOn}` : "Not invoiced yet"}
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <StatusBadge
-                                variant={
-                                  c.status === "Active" ? "success" : (c.status as string) === "Draft" ? "info" : "destructive"
-                                }
-                                label={c.autoInvoice ? c.status : `${c.status} (manual)`}
-                                dot
-                              />
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <div className="flex justify-end gap-1">
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => {
-                                    updateContract(c.id, { autoInvoice: !c.autoInvoice });
-                                    refresh();
-                                    toast.success(c.autoInvoice ? "Auto-invoicing paused" : "Auto-invoicing resumed");
-                                  }}
-                                >
-                                  {c.autoInvoice ? "Pause" : "Resume"}
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => {
-                                    deleteContract(c.id);
-                                    refresh();
-                                    toast.success("Contract deleted");
-                                  }}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="rates" className="mt-4">
-            <div className="rounded-xl border bg-card p-4 shadow-sm">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="font-medium">Rate agreements</h2>
-                  <p className="text-sm text-muted-foreground">
-                    Charge-out rates per client, project and trade. Use trade &quot;All&quot; as a fallback.
-                  </p>
-                </div>
-                <Dialog open={isRateOpen} onOpenChange={setIsRateOpen}>
-                  <DialogTrigger asChild>
-                    <Button size="sm">
-                      <Plus className="mr-1 h-4 w-4" />
-                      Add rate
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
-                    <DialogHeader>
-                      <DialogTitle>Add rate agreement</DialogTitle>
-                      <DialogDescription>Used to price timesheets during invoice generation.</DialogDescription>
-                    </DialogHeader>
-                    <RateForm clients={clients} projects={projects} onSubmit={handleAddRate} />
-                  </DialogContent>
-                </Dialog>
-              </div>
-
-              <div className="mt-4 overflow-hidden rounded-lg border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Client</TableHead>
-                      <TableHead>Project</TableHead>
-                      <TableHead>Designation</TableHead>
-                      <TableHead>Unit</TableHead>
-                      <TableHead className="text-right">Normal</TableHead>
-                      <TableHead className="text-right">OT / hr</TableHead>
-                      <TableHead>Effective</TableHead>
-                      <TableHead className="w-16" />
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {rates.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={8} className="h-28 text-center">
-                          <EmptyState
-                            className="border-0 bg-transparent"
-                            icon={<Percent className="h-5 w-5" />}
-                            title="No rate agreements"
-                            description="Add a charge-out rate to enable invoice generation."
-                          />
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      rates.map((r) => (
-                        <TableRow key={r.id}>
-                          <TableCell>{clients.find((c) => c.id === r.clientId)?.name ?? "—"}</TableCell>
-                          <TableCell>{projects.find((p) => p.id === r.projectId)?.name ?? "All projects"}</TableCell>
-                          <TableCell>{r.trade}</TableCell>
-                          <TableCell>{r.unit}</TableCell>
-                          <TableCell className="text-right">{money(r.normalRate)}</TableCell>
-                          <TableCell className="text-right">{money(r.otRate)}</TableCell>
-                          <TableCell className="text-xs text-muted-foreground">
-                            {r.effectiveFrom} → {r.effectiveTo || "open"}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => {
-                                deleteRateAgreement(r.id);
-                                refresh();
-                                toast.success("Rate deleted");
-                              }}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                    </TableHeader>
+                    <TableBody>
+                      {filtered.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={7} className="h-32 text-center">
+                            <EmptyState
+                              className="border-0 bg-transparent"
+                              icon={<FileText className="h-5 w-5" />}
+                              title="No invoices yet"
+                              description="Add rate agreements, then generate an invoice from timesheets."
+                            />
                           </TableCell>
                         </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
+                      ) : (
+                        filtered.map((i) => {
+                          const client = clients.find((c) => c.id === i.clientId);
+                          const balance = Math.round((i.total - i.amountPaid) * 100) / 100;
+                          return (
+                            <TableRow key={i.id}>
+                              <TableCell>
+                                <div className="font-medium">{i.invoiceNo}</div>
+                                <div className="text-xs text-muted-foreground">Due {i.dueDate}</div>
+                              </TableCell>
+                              <TableCell>{client?.name ?? "—"}</TableCell>
+                              <TableCell className="text-xs text-muted-foreground">
+                                {i.periodStart} → {i.periodEnd}
+                              </TableCell>
+                              <TableCell className="text-right font-medium">{money(i.total)}</TableCell>
+                              <TableCell className="text-right">{money(balance)}</TableCell>
+                              <TableCell>
+                                <StatusBadge
+                                  variant={
+                                    i.status === "Paid"
+                                      ? "success"
+                                      : i.status === "Sent"
+                                        ? "info"
+                                        : i.status === "Draft"
+                                          ? "default"
+                                          : i.status === "Cancelled"
+                                            ? "destructive"
+                                            : "warning"
+                                  }
+                                  label={i.status}
+                                  dot
+                                />
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex justify-end gap-1">
+                                  <Button size="sm" variant="ghost" onClick={() => setPreview(i)} title="View / print">
+                                    <Printer className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    title="Download PDF"
+                                    onClick={() =>
+                                      void downloadInvoicePdf(i, {
+                                        company,
+                                        clientName: client?.name,
+                                      }).then(() => toast.success("Invoice PDF downloaded"))
+                                    }
+                                  >
+                                    <FileDown className="h-4 w-4" />
+                                  </Button>
+                                  {i.status === "Draft" && (
+                                    <Button size="sm" variant="secondary" onClick={() => setStatus(i, "Sent")}>
+                                      Send
+                                    </Button>
+                                  )}
+                                  {i.status !== "Paid" && i.status !== "Cancelled" && i.status !== "Draft" && (
+                                    <Button size="sm" variant="secondary" onClick={() => pay(i)}>
+                                      <Banknote className="mr-1 h-4 w-4" />
+                                      Paid
+                                    </Button>
+                                  )}
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => {
+                                      deleteInvoice(i.id);
+                                      refresh();
+                                      toast.success("Invoice deleted");
+                                    }}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
               </div>
-            </div>
-          </TabsContent>
-        </Tabs>
-      </div>
+            </TabsContent>
 
+            <TabsContent value="contracts" className="mt-4">
+              <div className="rounded-xl border bg-card p-4 shadow-sm">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <h2 className="font-medium">Client contracts</h2>
+                    <p className="text-sm text-muted-foreground">
+                      Recurring service agreements. Due contracts are invoiced automatically when you run billing.
+                    </p>
+                  </div>
+                  <Dialog open={isContractOpen} onOpenChange={setIsContractOpen}>
+                    <DialogTrigger asChild>
+                      <Button size="sm">
+                        <Plus className="mr-1 h-4 w-4" />
+                        Add contract
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+                      <DialogHeader>
+                        <DialogTitle>Add client contract</DialogTitle>
+                        <DialogDescription>
+                          Sets the billing cycle, GST and payment terms used for auto-generated invoices.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <ContractForm clients={clients} projects={projects} onSubmit={handleAddContract} />
+                    </DialogContent>
+                  </Dialog>
+                </div>
+
+                <div className="mt-4 overflow-hidden rounded-lg border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Contract</TableHead>
+                        <TableHead>Client</TableHead>
+                        <TableHead>Cycle</TableHead>
+                        <TableHead>Source</TableHead>
+                        <TableHead>Next invoice</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="w-40 text-right">Action</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {visibleContracts.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={7} className="h-28 text-center">
+                            <EmptyState
+                              className="border-0 bg-transparent"
+                              icon={<Repeat className="h-5 w-5" />}
+                              title="No contracts yet"
+                              description="Add a client contract to schedule recurring invoices."
+                            />
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        visibleContracts.map((c) => {
+                          const due = !!c.nextInvoiceOn && c.nextInvoiceOn <= new Date().toISOString().slice(0, 10);
+                          return (
+                            <TableRow key={c.id}>
+                              <TableCell>
+                                <div className="font-medium">{c.contractNo}</div>
+                                <div className="text-xs text-muted-foreground">{c.title || "—"}</div>
+                              </TableCell>
+                              <TableCell>{clients.find((cl) => cl.id === c.clientId)?.name ?? "—"}</TableCell>
+                              <TableCell>
+                                <div>{c.billingCycle}</div>
+                                <div className="text-xs text-muted-foreground">
+                                  {c.startDate || "—"} → {c.endDate || "open"}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                {c.billingSource === "Fixed" ? `Fixed ${money(c.fixedAmount)}` : "Timesheet"}
+                              </TableCell>
+                              <TableCell>
+                                <div className={due ? "font-medium text-destructive" : ""}>
+                                  {c.nextInvoiceOn || "—"}
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                  {c.lastInvoicedOn ? `Last ${c.lastInvoicedOn}` : "Not invoiced yet"}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <StatusBadge
+                                  variant={
+                                    c.status === "Active" ? "success" : (c.status as string) === "Draft" ? "info" : "destructive"
+                                  }
+                                  label={c.autoInvoice ? c.status : `${c.status} (manual)`}
+                                  dot
+                                />
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex justify-end gap-1">
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => {
+                                      updateContract(c.id, { autoInvoice: !c.autoInvoice });
+                                      refresh();
+                                      toast.success(c.autoInvoice ? "Auto-invoicing paused" : "Auto-invoicing resumed");
+                                    }}
+                                  >
+                                    {c.autoInvoice ? "Pause" : "Resume"}
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => {
+                                      deleteContract(c.id);
+                                      refresh();
+                                      toast.success("Contract deleted");
+                                    }}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="rates" className="mt-4">
+              <div className="rounded-xl border bg-card p-4 shadow-sm">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="font-medium">Rate agreements</h2>
+                    <p className="text-sm text-muted-foreground">
+                      Charge-out rates per client, project and trade. Use trade &quot;All&quot; as a fallback.
+                    </p>
+                  </div>
+                  <Dialog open={isRateOpen} onOpenChange={setIsRateOpen}>
+                    <DialogTrigger asChild>
+                      <Button size="sm">
+                        <Plus className="mr-1 h-4 w-4" />
+                        Add rate
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+                      <DialogHeader>
+                        <DialogTitle>Add rate agreement</DialogTitle>
+                        <DialogDescription>Used to price timesheets during invoice generation.</DialogDescription>
+                      </DialogHeader>
+                      <RateForm clients={clients} projects={projects} onSubmit={handleAddRate} />
+                    </DialogContent>
+                  </Dialog>
+                </div>
+
+                <div className="mt-4 overflow-hidden rounded-lg border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Client</TableHead>
+                        <TableHead>Project</TableHead>
+                        <TableHead>Designation</TableHead>
+                        <TableHead>Unit</TableHead>
+                        <TableHead className="text-right">Normal</TableHead>
+                        <TableHead className="text-right">OT / hr</TableHead>
+                        <TableHead>Effective</TableHead>
+                        <TableHead className="w-16" />
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {rates.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={8} className="h-28 text-center">
+                            <EmptyState
+                              className="border-0 bg-transparent"
+                              icon={<Percent className="h-5 w-5" />}
+                              title="No rate agreements"
+                              description="Add a charge-out rate to enable invoice generation."
+                            />
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        rates.map((r) => (
+                          <TableRow key={r.id}>
+                            <TableCell>{clients.find((c) => c.id === r.clientId)?.name ?? "—"}</TableCell>
+                            <TableCell>{projects.find((p) => p.id === r.projectId)?.name ?? "All projects"}</TableCell>
+                            <TableCell>{r.trade}</TableCell>
+                            <TableCell>{r.unit}</TableCell>
+                            <TableCell className="text-right">{money(r.normalRate)}</TableCell>
+                            <TableCell className="text-right">{money(r.otRate)}</TableCell>
+                            <TableCell className="text-xs text-muted-foreground">
+                              {r.effectiveFrom} → {r.effectiveTo || "open"}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => {
+                                  deleteRateAgreement(r.id);
+                                  refresh();
+                                  toast.success("Rate deleted");
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
+        )}
       </div>
 
       <Dialog open={!!preview} onOpenChange={(o) => !o && setPreview(null)}>
