@@ -17,6 +17,8 @@ import {
   PlayCircle,
 } from "lucide-react";
 import { toast } from "sonner";
+import { seedDemoBilling } from "@/lib/seed-billing";
+
 
 import { AppShell } from "@/components/app-shell";
 import { ExportButton } from "@/components/data-io";
@@ -290,6 +292,18 @@ function BillingPage() {
             <p className="text-sm text-muted-foreground">
               Xero বা QuickBooks এর মতো প্রফেশনাল বিলিং, রেট এগ্রিমেন্ট এবং অটো-ইনভয়েসিং সিস্টেম।
             </p>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="mt-2 text-[10px] h-7 opacity-50 hover:opacity-100"
+              onClick={() => {
+                seedDemoBilling();
+                refresh();
+                toast.success("Demo invoices added to your local view");
+              }}
+            >
+              Add Demo Data
+            </Button>
           </div>
           <div className="mt-2 flex flex-wrap gap-2 sm:mt-0">
             <Button size="sm" variant="secondary" onClick={handleRunBilling}>
