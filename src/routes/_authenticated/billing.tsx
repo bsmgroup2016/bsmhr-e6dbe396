@@ -378,11 +378,14 @@ function BillingPage() {
           </div>
         ) : (
           <Tabs defaultValue="overview" className="mt-6">
-            <TabsList className="grid w-full grid-cols-4 lg:w-[600px]">
+            <TabsList className="flex w-full flex-wrap justify-start gap-1 lg:w-auto">
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="invoices">Invoices</TabsTrigger>
+              <TabsTrigger value="payments">Payments</TabsTrigger>
+              <TabsTrigger value="bills">Bills & expenses</TabsTrigger>
               <TabsTrigger value="contracts">Contracts</TabsTrigger>
               <TabsTrigger value="rates">Rate agreements</TabsTrigger>
+              <TabsTrigger value="reports">Reports</TabsTrigger>
             </TabsList>
 
             <TabsContent value="overview" className="mt-4">
