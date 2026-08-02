@@ -911,6 +911,8 @@ export function buildInvoiceLines(
     const amount = Math.round((quantity * normalRate + otHours * otRate) * 100) / 100;
 
     lines.push({
+      id: newId(),
+      invoiceId: "", // Linked later during addInvoice
       description: `${emp.name} (${emp.employeeCode}) — ${emp.trade || "Worker"}`,
       employeeId: emp.id,
       trade: emp.trade,
@@ -920,6 +922,7 @@ export function buildInvoiceLines(
       otQuantity: Math.round(otHours * 100) / 100,
       otRate,
       amount,
+      createdAt: new Date().toISOString(),
     });
   }
   return lines.sort((a, b) => b.amount - a.amount);
@@ -1066,6 +1069,8 @@ export function runContractBilling(onDate = iso(new Date())): ContractRunResult 
     let lines: InvoiceLine[];
     if (contract.billingSource === "Fixed") {
       lines = [{
+        id: newId(),
+        invoiceId: "",
         description: `${contract.title || contract.contractNo} — ${contract.billingCycle.toLowerCase()} service charge`,
         unit: "Monthly",
         quantity: 1,
@@ -1073,6 +1078,7 @@ export function runContractBilling(onDate = iso(new Date())): ContractRunResult 
         otQuantity: 0,
         otRate: 0,
         amount: contract.fixedAmount,
+        createdAt: new Date().toISOString(),
       }];
     } else {
       lines = buildInvoiceLines(contract.clientId, start, end, contract.projectId);

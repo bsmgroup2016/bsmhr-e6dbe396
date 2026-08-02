@@ -78,7 +78,7 @@ import {
 } from "@/lib/store";
 import type {
   BillingCycle, BillingSource, ClientContract,
-  Invoice, InvoiceLine, InvoiceStatus, RateUnit,
+  Invoice, InvoiceLine, InvoiceStatus, RateUnit, RateAgreement
 } from "@/lib/types";
 
 const GST_DEFAULT = 9;
@@ -391,11 +391,13 @@ function BillingPage() {
                                 variant={
                                   i.status === "Paid"
                                     ? "success"
-                                    : i.status === "Draft"
+                                    : i.status === "Sent"
                                       ? "info"
-                                      : i.status === "Cancelled"
-                                        ? "destructive"
-                                        : "warning"
+                                      : i.status === "Draft"
+                                        ? "default"
+                                        : i.status === "Cancelled"
+                                          ? "destructive"
+                                          : "warning"
                                 }
                                 label={i.status}
                                 dot
@@ -536,7 +538,7 @@ function BillingPage() {
                             <TableCell>
                               <StatusBadge
                                 variant={
-                                  c.status === "Active" ? "success" : c.status === "Draft" ? "info" : "destructive"
+                                  c.status === "Active" ? "success" : (c.status as string) === "Draft" ? "info" : "destructive"
                                 }
                                 label={c.autoInvoice ? c.status : `${c.status} (manual)`}
                                 dot
@@ -697,6 +699,7 @@ function BillingPage() {
                       <TableHead className="text-right">Qty</TableHead>
                       <TableHead className="text-right">Rate</TableHead>
                       <TableHead className="text-right">OT hrs</TableHead>
+                      <TableHead className="text-right">OT Rate</TableHead>
                       <TableHead className="text-right">Amount</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -708,7 +711,8 @@ function BillingPage() {
                           {l.quantity} {l.unit === "Hourly" ? "hr" : l.unit === "Daily" ? "day" : "mth"}
                         </TableCell>
                         <TableCell className="text-right">{money(l.rate)}</TableCell>
-                        <TableCell className="text-right">{l.otQuantity}</TableCell>
+                        <TableCell className="text-right">{l.otQuantity || 0}</TableCell>
+                        <TableCell className="text-right">{l.otRate ? money(l.otRate) : "—"}</TableCell>
                         <TableCell className="text-right">{money(l.amount)}</TableCell>
                       </TableRow>
                     ))}

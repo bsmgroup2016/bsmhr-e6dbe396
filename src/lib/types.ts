@@ -514,93 +514,12 @@ export interface Company {
 }
 
 /* ---------------- Phase 6: Billing & Invoicing ---------------- */
+// Types moved to src/lib/billing-types.ts to avoid circular deps and manage complexity.
+export type {
+  RateUnit, RateAgreement, InvoiceLine, InvoiceStatus, Invoice,
+  BillingCycle, BillingSource, ContractStatus, ClientContract
+} from "./billing-types";
 
-export type RateUnit = "Hourly" | "Daily" | "Monthly";
-
-export interface RateAgreement {
-  id: string;
-  clientId: string;
-  projectId?: string;
-  trade: string;
-  unit: RateUnit;
-  normalRate: number;
-  otRate: number;
-  effectiveFrom: string;
-  effectiveTo?: string;
-  status: "Active" | "Inactive";
-  remarks?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface InvoiceLine {
-  description: string;
-  employeeId?: string;
-  trade?: string;
-  unit: RateUnit;
-  quantity: number;
-  rate: number;
-  otQuantity: number;
-  otRate: number;
-  amount: number;
-}
-
-export type InvoiceStatus = "Draft" | "Sent" | "Partially Paid" | "Paid" | "Overdue" | "Cancelled";
-
-export interface Invoice {
-  id: string;
-  companyId: string;
-  clientId: string;
-  projectId?: string;
-  invoiceNo: string;
-  periodStart: string;
-  periodEnd: string;
-  issueDate: string;
-  dueDate: string;
-  lines: InvoiceLine[];
-  subtotal: number;
-  gstRate: number;
-  gstAmount: number;
-  total: number;
-  amountPaid: number;
-  status: InvoiceStatus;
-  notes?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-/* ---------------- Phase 7: Accommodation & Transport ---------------- */
-
-export type BillingCycle = "Weekly" | "Fortnightly" | "Monthly";
-export type BillingSource = "Timesheet" | "Fixed";
-export type ContractStatus = "Draft" | "Active" | "Expired" | "Terminated";
-
-/** Client service contract that drives recurring auto-invoicing. */
-export interface ClientContract {
-  id: string;
-  companyId?: string;
-  clientId: string;
-  projectId?: string;
-  contractNo: string;
-  title: string;
-  startDate?: string;
-  endDate?: string;
-  billingCycle: BillingCycle;
-  /** Day of month (Monthly) or day-of-cycle offset used to schedule runs. */
-  billingDay: number;
-  billingSource: BillingSource;
-  /** Flat charge per cycle when billingSource is "Fixed". */
-  fixedAmount: number;
-  gstRate: number;
-  paymentTermsDays: number;
-  autoInvoice: boolean;
-  lastInvoicedOn?: string;
-  nextInvoiceOn?: string;
-  status: ContractStatus;
-  remarks?: string;
-  createdAt: string;
-  updatedAt: string;
-}
 
 export type DormStatus = "Active" | "Inactive" | "Full";
 

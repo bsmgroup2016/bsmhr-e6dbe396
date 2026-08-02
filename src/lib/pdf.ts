@@ -96,7 +96,7 @@ export async function downloadInvoicePdf(
       `${l.quantity} ${l.unit === "Hourly" ? "hr" : l.unit === "Daily" ? "day" : "mth"}`,
       money(l.rate),
       String(l.otQuantity ?? 0),
-      money(l.otRate ?? 0),
+      l.otRate ? money(l.otRate) : "-",
       money(l.amount),
     ]),
     styles: { fontSize: 9, cellPadding: 6 },
