@@ -78,7 +78,7 @@ import {
 } from "@/lib/store";
 import type {
   BillingCycle, BillingSource, ClientContract,
-  Invoice, InvoiceLine, InvoiceStatus, RateUnit,
+  Invoice, InvoiceLine, InvoiceStatus, RateUnit, RateAgreement
 } from "@/lib/types";
 
 const GST_DEFAULT = 9;
@@ -391,11 +391,13 @@ function BillingPage() {
                                 variant={
                                   i.status === "Paid"
                                     ? "success"
-                                    : i.status === "Draft"
+                                    : i.status === "Sent"
                                       ? "info"
-                                      : i.status === "Cancelled"
-                                        ? "destructive"
-                                        : "warning"
+                                      : i.status === "Draft"
+                                        ? "secondary"
+                                        : i.status === "Cancelled"
+                                          ? "destructive"
+                                          : "warning"
                                 }
                                 label={i.status}
                                 dot
