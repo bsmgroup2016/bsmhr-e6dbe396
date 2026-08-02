@@ -71,10 +71,16 @@
  * body sizes used most in dense tables and cards. Hierarchy stays intact.
  */
 @theme {
-  --text-xs: 0.75rem;
-  --text-xs--line-height: 1.05rem;
-  --text-sm: 0.875rem;
-  --text-sm--line-height: 1.3rem;
+  --text-xs: 0.8125rem;
+  --text-xs--line-height: 1.15rem;
+  --text-sm: 0.9375rem;
+  --text-sm--line-height: 1.4rem;
+  --text-base: 1.0625rem;
+  --text-base--line-height: 1.6rem;
+  --text-lg: 1.1875rem;
+  --text-lg--line-height: 1.75rem;
+  --text-xl: 1.375rem;
+  --text-xl--line-height: 1.85rem;
 }
 
 /*
@@ -83,7 +89,7 @@
  * Roboto typography, comfortable density.
  */
 :root {
-  --font-sans: "Roboto", "ui-sans-serif", "system-ui", "-apple-system", "Segoe UI", sans-serif;
+  --font-sans: "Inter", "Roboto", "ui-sans-serif", "system-ui", "-apple-system", "Segoe UI", sans-serif;
   --radius: 0.875rem;
 
   /* Surfaces */
