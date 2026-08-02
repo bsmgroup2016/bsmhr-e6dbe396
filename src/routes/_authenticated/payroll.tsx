@@ -15,10 +15,19 @@ import {
   Send,
   BadgeCheck,
   Calculator,
+  ChevronDown,
 } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
 import { ExportButton, ImportDialog } from "@/components/data-io";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { downloadPayslipPdf } from "@/lib/pdf";
 import { SummaryCard } from "@/components/ui/summary-card";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -431,51 +440,72 @@ export default function PayrollPage() {
   return (
     <AppShell>
       <div className="w-full space-y-6">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="min-w-0">
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">Payroll</h1>
-            <p className="text-sm text-muted-foreground">Monthly payroll and payslip management.</p>
           </div>
           <div className="flex min-w-0 flex-wrap items-center gap-2 lg:justify-end">
-            <Button size="sm" variant="outline" asChild>
-              <Link to="/time-cards">Generate claim sheet</Link>
-            </Button>
             <Button size="sm" variant="outline" onClick={handleGenerate}>
               <Wand2 className="mr-1 h-4 w-4" />
               Generate {month}
             </Button>
-            <Button size="sm" variant="outline" onClick={() => bulkStatus("Pending Approval", ["Draft"])}>
-              <Send className="mr-1 h-4 w-4" />
-              Submit all
-            </Button>
-            <Button size="sm" variant="outline" onClick={() => bulkStatus("Approved", ["Pending Approval", "Draft"])}>
-              <BadgeCheck className="mr-1 h-4 w-4" />
-              Approve all
-            </Button>
-            <Button size="sm" variant="outline" onClick={() => bulkStatus("Paid", ["Approved"])}>
-              <CheckCircle2 className="mr-1 h-4 w-4" />
-              Mark paid
-            </Button>
-            <Button size="sm" variant="outline" onClick={exportBankFile}>
-              <Landmark className="mr-1 h-4 w-4" />
-              Bank file
-            </Button>
-            <Button size="sm" variant="outline" onClick={recalcStatutory}>
-              <Calculator className="mr-1 h-4 w-4" />
-              Recalc CPF
-            </Button>
-            <Button size="sm" variant="outline" onClick={exportCpfWebFile}>
-              <FileDown className="mr-1 h-4 w-4" />
-              CPF WEB file
-            </Button>
-            <Button size="sm" variant="outline" onClick={exportIrasAis}>
-              <FileDown className="mr-1 h-4 w-4" />
-              IRAS AIS (IR8A)
-            </Button>
-            <Button size="sm" variant="outline" onClick={exportCpfReport}>
-              <FileDown className="mr-1 h-4 w-4" />
-              CPF sheet
-            </Button>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="sm" variant="outline">
+                  <BadgeCheck className="mr-1 h-4 w-4" />
+                  Workflow
+                  <ChevronDown className="ml-1 h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>Bulk actions</DropdownMenuLabel>
+                <DropdownMenuItem onClick={() => bulkStatus("Pending Approval", ["Draft"])}>
+                  <Send className="mr-2 h-4 w-4" /> Submit all
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => bulkStatus("Approved", ["Pending Approval", "Draft"])}>
+                  <BadgeCheck className="mr-2 h-4 w-4" /> Approve all
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => bulkStatus("Paid", ["Approved"])}>
+                  <CheckCircle2 className="mr-2 h-4 w-4" /> Mark paid
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={recalcStatutory}>
+                  <Calculator className="mr-2 h-4 w-4" /> Recalculate CPF
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/time-cards">
+                    <Wand2 className="mr-2 h-4 w-4" /> Generate claim sheet
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="sm" variant="outline">
+                  <FileDown className="mr-1 h-4 w-4" />
+                  Statutory files
+                  <ChevronDown className="ml-1 h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>Downloads</DropdownMenuLabel>
+                <DropdownMenuItem onClick={exportBankFile}>
+                  <Landmark className="mr-2 h-4 w-4" /> Bank file (GIRO)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={exportCpfWebFile}>
+                  <FileDown className="mr-2 h-4 w-4" /> CPF WEB file
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={exportCpfReport}>
+                  <FileDown className="mr-2 h-4 w-4" /> CPF sheet
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={exportIrasAis}>
+                  <FileDown className="mr-2 h-4 w-4" /> IRAS AIS (IR8A)
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
             <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
               <DialogTrigger asChild>
                 <Button size="sm">
