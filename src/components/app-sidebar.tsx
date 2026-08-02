@@ -151,7 +151,7 @@ export function AppSidebar() {
     <Sidebar
       collapsible="icon"
       variant="sidebar"
-      className="[&>[data-sidebar=sidebar]]:bg-[image:var(--gradient-sidebar)]"
+      className="[&>[data-sidebar=sidebar]]:bg-[image:var(--gradient-sidebar)] [&>[data-sidebar=sidebar]]:backdrop-blur-xl border-r border-sidebar-border"
     >
       <SidebarHeader className="border-b border-sidebar-border">
         <div className="flex h-16 items-center gap-3 px-4">

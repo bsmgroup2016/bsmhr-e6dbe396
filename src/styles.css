@@ -120,15 +120,15 @@
   --input: oklch(0.9 0.014 280);
   --ring: oklch(0.53 0.225 277);
 
-  /* Sidebar: deepest canvas */
-  --sidebar: oklch(0.11 0.03 281);
-  --sidebar-foreground: oklch(0.88 0.015 280);
-  --sidebar-primary: oklch(0.53 0.225 277);
-  --sidebar-primary-foreground: oklch(0.98 0.01 277);
-  --sidebar-accent: oklch(0.22 0.06 279);
-  --sidebar-accent-foreground: oklch(0.97 0.01 280);
-  --sidebar-border: oklch(0.28 0.07 278 / 55%);
-  --sidebar-ring: oklch(0.53 0.225 277);
+  /* Sidebar: Midnight Glassmorphism */
+  --sidebar: oklch(0.08 0.04 285);
+  --sidebar-foreground: oklch(0.92 0.015 285);
+  --sidebar-primary: oklch(0.6 0.22 277);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.18 0.08 280 / 45%);
+  --sidebar-accent-foreground: oklch(0.98 0.01 285);
+  --sidebar-border: oklch(0.25 0.08 280 / 25%);
+  --sidebar-ring: oklch(0.6 0.22 277);
 
   /* Charts */
   --chart-1: oklch(0.58 0.22 277);
@@ -145,7 +145,7 @@
 
   --gradient-primary: linear-gradient(135deg, oklch(0.53 0.225 277), oklch(0.66 0.19 292));
   --gradient-hero: linear-gradient(120deg, oklch(0.16 0.05 281) 0%, oklch(0.28 0.11 278) 48%, oklch(0.53 0.225 277) 100%);
-  --gradient-sidebar: linear-gradient(180deg, oklch(0.12 0.035 281) 0%, oklch(0.16 0.05 279) 65%, oklch(0.19 0.07 277) 100%);
+  --gradient-sidebar: linear-gradient(180deg, oklch(0.08 0.04 285) 0%, oklch(0.12 0.06 280) 50%, oklch(0.16 0.08 275) 100%);
   --gradient-success: linear-gradient(135deg, oklch(0.62 0.15 165), oklch(0.75 0.15 150));
   --gradient-warning: linear-gradient(135deg, oklch(0.72 0.15 65), oklch(0.84 0.14 92));
   --gradient-info: linear-gradient(135deg, oklch(0.58 0.16 262), oklch(0.74 0.13 205));
