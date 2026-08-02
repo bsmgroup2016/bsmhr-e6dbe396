@@ -21,6 +21,8 @@ import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
 import { ExportButton } from "@/components/data-io";
 import { BillingOverview } from "@/components/billing-overview";
+import { PaymentsReceived, BillsAndExpenses } from "@/components/billing-payments";
+import { BillingReports } from "@/components/billing-reports";
 import { downloadInvoicePdf } from "@/lib/pdf";
 import { SummaryCard } from "@/components/ui/summary-card";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -71,6 +73,13 @@ import {
   addContract,
   updateContract,
   deleteContract,
+  getReceipts,
+  addReceipt,
+  deleteReceipt,
+  getExpenses,
+  addExpense,
+  markExpensePaid,
+  deleteExpense,
   contractsDue,
   runContractBilling,
   firstRunDate,
@@ -79,7 +88,8 @@ import {
 } from "@/lib/store";
 import type {
   BillingCycle, BillingSource, ClientContract,
-  Invoice, InvoiceLine, InvoiceStatus, RateUnit, RateAgreement
+  Invoice, InvoiceLine, InvoiceStatus, RateUnit, RateAgreement,
+  Expense, PaymentMode, PaymentReceipt,
 } from "@/lib/types";
 
 const GST_DEFAULT = 9;
@@ -108,6 +118,8 @@ function BillingPage() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [rates, setRates] = useState<RateAgreement[]>([]);
   const [contracts, setContracts] = useState<ClientContract[]>([]);
+  const [receipts, setReceipts] = useState<PaymentReceipt[]>([]);
+  const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
 
   async function refresh() {
@@ -121,6 +133,8 @@ function BillingPage() {
       setInvoices(inv);
       setRates(rt);
       setContracts(ct);
+      setReceipts(getReceipts());
+      setExpenses(getExpenses());
     } catch (error) {
       console.error("Failed to load billing data:", error);
     } finally {
