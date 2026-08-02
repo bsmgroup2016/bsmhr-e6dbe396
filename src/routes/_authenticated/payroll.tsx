@@ -503,7 +503,7 @@ export default function PayrollPage() {
           </div>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
           <SummaryCard title="Net pay" value={`$${totalNetPay.toLocaleString()}`} icon={<DollarSign className="h-5 w-5" />} variant="primary" caption={month} />
           <SummaryCard title="CPF total" value={`$${Math.round(totalCpf).toLocaleString()}`} icon={<Landmark className="h-5 w-5" />} variant="info" caption="Employee + employer" />
           <SummaryCard title="Employer cost" value={`$${Math.round(totalEmployerCost).toLocaleString()}`} icon={<Calculator className="h-5 w-5" />} variant="default" caption="Gross + CPF + SDL + levy" />
