@@ -42,7 +42,7 @@ import { DepartmentsPanel, DesignationsPanel } from "@/components/org/org-struct
 export const Route = createFileRoute("/_authenticated/companies")({
   head: () => ({
     meta: [
-      { title: "feature ta kothay dico? billing page e? — BSM Workforce & Operations" },
+      { title: "Companies — BSM Workforce & Operations" },
       { name: "description", content: "Manage BSM, VRL and Pluto group companies, entity details and active workforce." },
       { property: "og:title", content: "Companies — BSM Workforce & Operations" },
       { property: "og:description", content: "Manage BSM, VRL and Pluto group companies, entity details and active workforce." },
