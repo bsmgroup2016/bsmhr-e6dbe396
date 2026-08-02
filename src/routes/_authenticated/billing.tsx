@@ -847,16 +847,41 @@ function BillingPage() {
               {payTarget ? money(Math.round((payTarget.total - payTarget.amountPaid) * 100) / 100) : ""}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-2">
-            <Label htmlFor="payAmount">Amount received</Label>
-            <Input
-              id="payAmount"
-              type="number"
-              step="0.01"
-              min="0"
-              value={payAmount}
-              onChange={(e) => setPayAmount(e.target.value)}
-            />
+          <div className="space-y-3">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label htmlFor="payAmount">Amount received</Label>
+                <Input
+                  id="payAmount"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={payAmount}
+                  onChange={(e) => setPayAmount(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="payDate">Payment date</Label>
+                <Input id="payDate" type="date" value={payDate} onChange={(e) => setPayDate(e.target.value)} />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Method</Label>
+                <Select value={payMode} onValueChange={(v) => setPayMode(v as PaymentMode)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(["Bank Transfer", "GIRO", "Cheque", "Cash", "PayNow", "Other"] as PaymentMode[]).map((m) => (
+                      <SelectItem key={m} value={m}>{m}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="payRef">Reference</Label>
+                <Input id="payRef" value={payRef} onChange={(e) => setPayRef(e.target.value)} placeholder="Bank ref / cheque no" />
+              </div>
+            </div>
             <p className="text-xs text-muted-foreground">
               A part payment marks the invoice as Partially Paid; the full balance marks it Paid.
             </p>
