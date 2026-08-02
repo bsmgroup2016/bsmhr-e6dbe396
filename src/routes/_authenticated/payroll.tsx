@@ -431,12 +431,12 @@ export default function PayrollPage() {
   return (
     <AppShell>
       <div className="w-full space-y-6">
-        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-          <div>
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+          <div className="min-w-0">
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">Payroll</h1>
             <p className="text-sm text-muted-foreground">Monthly payroll and payslip management.</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex min-w-0 flex-wrap items-center gap-2 lg:justify-end">
             <Button size="sm" variant="outline" asChild>
               <Link to="/time-cards">Generate claim sheet</Link>
             </Button>
