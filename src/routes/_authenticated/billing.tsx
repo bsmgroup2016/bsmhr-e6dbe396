@@ -536,7 +536,7 @@ function BillingPage() {
                             <TableCell>
                               <StatusBadge
                                 variant={
-                                  c.status === "Active" ? "success" : c.status === "Draft" ? "info" : "destructive"
+                                  c.status === "Active" ? "success" : (c.status as string) === "Draft" ? "info" : "destructive"
                                 }
                                 label={c.autoInvoice ? c.status : `${c.status} (manual)`}
                                 dot
