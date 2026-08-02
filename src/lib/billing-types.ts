@@ -3,11 +3,14 @@ export type InvoiceStatus = "Draft" | "Sent" | "Partially Paid" | "Paid" | "Over
 export type RateUnit = "Hourly" | "Daily" | "Monthly";
 export type BillingCycle = "Weekly" | "Fortnightly" | "Monthly";
 export type BillingSource = "Timesheet" | "Fixed";
+export type ContractStatus = "Draft" | "Active" | "Expired" | "Terminated";
 
 export interface InvoiceLine {
   id: string;
   invoiceId: string;
   description: string;
+  employeeId?: string; // Kept for traceability
+  trade?: string;      // Kept for traceability
   quantity: number;
   unit: RateUnit;
   rate: number;
@@ -62,7 +65,7 @@ export interface ClientContract {
   projectId?: string;
   contractNo: string;
   title: string;
-  startDate: string;
+  startDate?: string;
   endDate?: string;
   billingCycle: BillingCycle;
   billingDay: number;
@@ -71,9 +74,11 @@ export interface ClientContract {
   gstRate: number;
   paymentTermsDays: number;
   autoInvoice: boolean;
+  lastInvoicedOn?: string;
   nextInvoiceOn?: string;
-  status: "Active" | "Expired" | "Terminated";
+  status: ContractStatus;
   remarks?: string;
   createdAt: string;
   updatedAt: string;
 }
+
