@@ -141,6 +141,8 @@ function BillingPage() {
   const [isRateOpen, setIsRateOpen] = useState(false);
   const [isContractOpen, setIsContractOpen] = useState(false);
   const [preview, setPreview] = useState<Invoice | null>(null);
+  const [payTarget, setPayTarget] = useState<Invoice | null>(null);
+  const [payAmount, setPayAmount] = useState("");
 
   const companyId = getCurrentCompany();
   const company = getCompanies().find((c) => c.id === companyId);
@@ -266,6 +268,25 @@ function BillingPage() {
     recordInvoicePayment(inv.id, remaining);
     refresh();
     toast.success(`Payment of ${money(remaining)} recorded`);
+  }
+
+  function openPay(inv: Invoice) {
+    setPayTarget(inv);
+    setPayAmount((Math.round((inv.total - inv.amountPaid) * 100) / 100).toFixed(2));
+  }
+
+  function confirmPay() {
+    if (!payTarget) return;
+    const remaining = Math.round((payTarget.total - payTarget.amountPaid) * 100) / 100;
+    const amount = Math.min(Math.max(Number(payAmount) || 0, 0), remaining);
+    if (amount <= 0) {
+      toast.error("Enter a payment amount");
+      return;
+    }
+    recordInvoicePayment(payTarget.id, amount);
+    setPayTarget(null);
+    refresh();
+    toast.success(`Payment of ${money(amount)} recorded`);
   }
 
   const exportRows = filtered.map((i) => ({
