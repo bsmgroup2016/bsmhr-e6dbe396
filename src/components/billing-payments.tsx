@@ -44,8 +44,18 @@ import type {
 
 const modes: PaymentMode[] = ["Bank Transfer", "GIRO", "Cheque", "Cash", "PayNow", "Other"];
 const categories: ExpenseCategory[] = [
-  "Levy", "Salary", "Dormitory", "Transport", "Insurance", "Medical",
-  "PPE & Assets", "Training", "Agent Fee", "Office", "Government Fee", "Other",
+  "Levy",
+  "Salary",
+  "Dormitory",
+  "Transport",
+  "Insurance",
+  "Medical",
+  "PPE & Assets",
+  "Training",
+  "Agent Fee",
+  "Office",
+  "Government Fee",
+  "Other",
 ];
 
 const money = (n: number) =>
@@ -90,7 +100,8 @@ export function PaymentsReceived({
     .filter((r) => r.receivedOn?.slice(0, 7) === today().slice(0, 7))
     .reduce((s, r) => s + r.amount, 0);
   const allTotal = receipts.reduce((s, r) => s + r.amount, 0);
-  const undeposited = receipts.filter((r) => r.paymentMode === "Cash" || r.paymentMode === "Cheque")
+  const undeposited = receipts
+    .filter((r) => r.paymentMode === "Cash" || r.paymentMode === "Cheque")
     .reduce((s, r) => s + r.amount, 0);
 
   function submit() {
@@ -126,9 +137,27 @@ export function PaymentsReceived({
   return (
     <div className="space-y-4">
       <div className="grid gap-4 sm:grid-cols-3">
-        <SummaryCard title="Received this month" value={money(monthTotal)} icon={<Banknote className="h-5 w-5" />} variant="success" caption="Deposits recorded" />
-        <SummaryCard title="All payments" value={money(allTotal)} icon={<Wallet className="h-5 w-5" />} variant="primary" caption={`${receipts.length} receipt(s)`} />
-        <SummaryCard title="Cash & cheque" value={money(undeposited)} icon={<Receipt className="h-5 w-5" />} variant="warning" caption="Verify bank deposit" />
+        <SummaryCard
+          title="Received this month"
+          value={money(monthTotal)}
+          icon={<Banknote className="h-5 w-5" />}
+          variant="success"
+          caption="Deposits recorded"
+        />
+        <SummaryCard
+          title="All payments"
+          value={money(allTotal)}
+          icon={<Wallet className="h-5 w-5" />}
+          variant="primary"
+          caption={`${receipts.length} receipt(s)`}
+        />
+        <SummaryCard
+          title="Cash & cheque"
+          value={money(undeposited)}
+          icon={<Receipt className="h-5 w-5" />}
+          variant="warning"
+          caption="Verify bank deposit"
+        />
       </div>
 
       <div className="rounded-xl border bg-card p-4 shadow-sm">
@@ -151,7 +180,9 @@ export function PaymentsReceived({
               <DialogContent className="sm:max-w-md">
                 <DialogHeader>
                   <DialogTitle>Receive payment</DialogTitle>
-                  <DialogDescription>Apply a customer payment to an open invoice.</DialogDescription>
+                  <DialogDescription>
+                    Apply a customer payment to an open invoice.
+                  </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-3">
                   <div className="space-y-1.5">
@@ -161,7 +192,10 @@ export function PaymentsReceived({
                       onValueChange={(v) => {
                         setInvoiceId(v);
                         const inv = openInvoices.find((i) => i.id === v);
-                        if (inv) setAmount((Math.round((inv.total - inv.amountPaid) * 100) / 100).toFixed(2));
+                        if (inv)
+                          setAmount(
+                            (Math.round((inv.total - inv.amountPaid) * 100) / 100).toFixed(2),
+                          );
                       }}
                     >
                       <SelectTrigger>
@@ -170,8 +204,8 @@ export function PaymentsReceived({
                       <SelectContent>
                         {openInvoices.map((i) => (
                           <SelectItem key={i.id} value={i.id}>
-                            {i.invoiceNo} · {clients.find((c) => c.id === i.clientId)?.name ?? "—"} ·{" "}
-                            {money(Math.round((i.total - i.amountPaid) * 100) / 100)}
+                            {i.invoiceNo} · {clients.find((c) => c.id === i.clientId)?.name ?? "—"}{" "}
+                            · {money(Math.round((i.total - i.amountPaid) * 100) / 100)}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -180,11 +214,23 @@ export function PaymentsReceived({
                   <div className="grid gap-3 sm:grid-cols-2">
                     <div className="space-y-1.5">
                       <Label htmlFor="rcpAmount">Amount</Label>
-                      <Input id="rcpAmount" type="number" step="0.01" min="0" value={amount} onChange={(e) => setAmount(e.target.value)} />
+                      <Input
+                        id="rcpAmount"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={amount}
+                        onChange={(e) => setAmount(e.target.value)}
+                      />
                     </div>
                     <div className="space-y-1.5">
                       <Label htmlFor="rcpDate">Payment date</Label>
-                      <Input id="rcpDate" type="date" value={receivedOn} onChange={(e) => setReceivedOn(e.target.value)} />
+                      <Input
+                        id="rcpDate"
+                        type="date"
+                        value={receivedOn}
+                        onChange={(e) => setReceivedOn(e.target.value)}
+                      />
                     </div>
                     <div className="space-y-1.5">
                       <Label>Method</Label>
@@ -194,20 +240,31 @@ export function PaymentsReceived({
                         </SelectTrigger>
                         <SelectContent>
                           {modes.map((m) => (
-                            <SelectItem key={m} value={m}>{m}</SelectItem>
+                            <SelectItem key={m} value={m}>
+                              {m}
+                            </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                     </div>
                     <div className="space-y-1.5">
                       <Label htmlFor="rcpRef">Reference</Label>
-                      <Input id="rcpRef" value={reference} onChange={(e) => setReference(e.target.value)} placeholder="Bank ref / cheque no" />
+                      <Input
+                        id="rcpRef"
+                        value={reference}
+                        onChange={(e) => setReference(e.target.value)}
+                        placeholder="Bank ref / cheque no"
+                      />
                     </div>
                   </div>
                 </div>
                 <DialogFooter>
-                  <Button size="sm" variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-                  <Button size="sm" onClick={submit}>Save payment</Button>
+                  <Button size="sm" variant="outline" onClick={() => setOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button size="sm" onClick={submit}>
+                    Save payment
+                  </Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
@@ -245,14 +302,25 @@ export function PaymentsReceived({
                     <TableCell className="font-medium">{r.receiptNo}</TableCell>
                     <TableCell className="text-xs text-muted-foreground">{r.receivedOn}</TableCell>
                     <TableCell>{clients.find((c) => c.id === r.clientId)?.name ?? "—"}</TableCell>
-                    <TableCell className="text-xs">{invoices.find((i) => i.id === r.invoiceId)?.invoiceNo ?? "—"}</TableCell>
+                    <TableCell className="text-xs">
+                      {invoices.find((i) => i.id === r.invoiceId)?.invoiceNo ?? "—"}
+                    </TableCell>
                     <TableCell>
                       <StatusBadge variant="info" label={r.paymentMode} />
-                      {r.referenceNo && <div className="mt-0.5 text-xs text-muted-foreground">{r.referenceNo}</div>}
+                      {r.referenceNo && (
+                        <div className="mt-0.5 text-xs text-muted-foreground">{r.referenceNo}</div>
+                      )}
                     </TableCell>
-                    <TableCell className="text-right font-medium text-emerald-500">{money(r.amount)}</TableCell>
+                    <TableCell className="text-right font-medium text-emerald-500">
+                      {money(r.amount)}
+                    </TableCell>
                     <TableCell className="text-right">
-                      <Button size="sm" variant="ghost" title="Delete receipt" onClick={() => onDelete(r.id)}>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        title="Delete receipt"
+                        onClick={() => onDelete(r.id)}
+                      >
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </TableCell>
@@ -290,7 +358,9 @@ export function BillsAndExpenses({
     .filter((e) => e.status === "Pending" || e.status === "Approved")
     .reduce((s, e) => s + e.amount, 0);
   const paid = expenses.filter((e) => e.status === "Paid").reduce((s, e) => s + e.amount, 0);
-  const inputGst = expenses.filter((e) => e.status !== "Rejected").reduce((s, e) => s + (e.gstAmount || 0), 0);
+  const inputGst = expenses
+    .filter((e) => e.status !== "Rejected")
+    .reduce((s, e) => s + (e.gstAmount || 0), 0);
 
   function submit(form: FormData) {
     const amount = Number(form.get("amount") ?? 0);
@@ -325,16 +395,36 @@ export function BillsAndExpenses({
   return (
     <div className="space-y-4">
       <div className="grid gap-4 sm:grid-cols-3">
-        <SummaryCard title="Unpaid bills" value={money(unpaid)} icon={<Receipt className="h-5 w-5" />} variant="warning" caption="Accounts payable" />
-        <SummaryCard title="Paid" value={money(paid)} icon={<Wallet className="h-5 w-5" />} variant="success" caption="Settled this period" />
-        <SummaryCard title="Input GST claimable" value={money(inputGst)} icon={<Banknote className="h-5 w-5" />} variant="primary" caption="Feeds the GST return" />
+        <SummaryCard
+          title="Unpaid bills"
+          value={money(unpaid)}
+          icon={<Receipt className="h-5 w-5" />}
+          variant="warning"
+          caption="Accounts payable"
+        />
+        <SummaryCard
+          title="Paid"
+          value={money(paid)}
+          icon={<Wallet className="h-5 w-5" />}
+          variant="success"
+          caption="Settled this period"
+        />
+        <SummaryCard
+          title="Input GST claimable"
+          value={money(inputGst)}
+          icon={<Banknote className="h-5 w-5" />}
+          variant="primary"
+          caption="Feeds the GST return"
+        />
       </div>
 
       <div className="rounded-xl border bg-card p-4 shadow-sm">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="font-medium">Bills & expenses</h2>
-            <p className="text-sm text-muted-foreground">Supplier bills, levy payments and operating costs.</p>
+            <p className="text-sm text-muted-foreground">
+              Supplier bills, levy payments and operating costs.
+            </p>
           </div>
           <div className="flex flex-wrap gap-2">
             <Select value={filter} onValueChange={(v) => setFilter(v as typeof filter)}>
@@ -344,7 +434,9 @@ export function BillsAndExpenses({
               <SelectContent>
                 <SelectItem value="all">All status</SelectItem>
                 {(["Pending", "Approved", "Paid", "Rejected"] as const).map((s) => (
-                  <SelectItem key={s} value={s}>{s}</SelectItem>
+                  <SelectItem key={s} value={s}>
+                    {s}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -359,7 +451,9 @@ export function BillsAndExpenses({
               <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-md">
                 <DialogHeader>
                   <DialogTitle>Add bill / expense</DialogTitle>
-                  <DialogDescription>Record a supplier bill so payables and GST stay accurate.</DialogDescription>
+                  <DialogDescription>
+                    Record a supplier bill so payables and GST stay accurate.
+                  </DialogDescription>
                 </DialogHeader>
                 <form
                   className="space-y-3"
@@ -371,7 +465,13 @@ export function BillsAndExpenses({
                   <div className="grid gap-3 sm:grid-cols-2">
                     <div className="space-y-1.5">
                       <Label htmlFor="expenseDate">Bill date</Label>
-                      <Input id="expenseDate" name="expenseDate" type="date" defaultValue={today()} required />
+                      <Input
+                        id="expenseDate"
+                        name="expenseDate"
+                        type="date"
+                        defaultValue={today()}
+                        required
+                      />
                     </div>
                     <div className="space-y-1.5">
                       <Label htmlFor="vendor">Vendor</Label>
@@ -380,7 +480,12 @@ export function BillsAndExpenses({
                   </div>
                   <div className="space-y-1.5">
                     <Label htmlFor="description">Description</Label>
-                    <Input id="description" name="description" placeholder="e.g. Foreign worker levy — August" required />
+                    <Input
+                      id="description"
+                      name="description"
+                      placeholder="e.g. Foreign worker levy — August"
+                      required
+                    />
                   </div>
                   <div className="grid gap-3 sm:grid-cols-2">
                     <div className="space-y-1.5">
@@ -391,7 +496,9 @@ export function BillsAndExpenses({
                         </SelectTrigger>
                         <SelectContent>
                           {categories.map((c) => (
-                            <SelectItem key={c} value={c}>{c}</SelectItem>
+                            <SelectItem key={c} value={c}>
+                              {c}
+                            </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
@@ -404,7 +511,9 @@ export function BillsAndExpenses({
                         </SelectTrigger>
                         <SelectContent>
                           {modes.map((m) => (
-                            <SelectItem key={m} value={m}>{m}</SelectItem>
+                            <SelectItem key={m} value={m}>
+                              {m}
+                            </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
@@ -415,7 +524,14 @@ export function BillsAndExpenses({
                     </div>
                     <div className="space-y-1.5">
                       <Label htmlFor="gstAmount">GST</Label>
-                      <Input id="gstAmount" name="gstAmount" type="number" step="0.01" min="0" defaultValue="0" />
+                      <Input
+                        id="gstAmount"
+                        name="gstAmount"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        defaultValue="0"
+                      />
                     </div>
                   </div>
                   <div className="space-y-1.5">
@@ -423,7 +539,9 @@ export function BillsAndExpenses({
                     <Input id="referenceNo" name="referenceNo" placeholder="Invoice / PO number" />
                   </div>
                   <DialogFooter>
-                    <Button type="submit" size="sm">Save bill</Button>
+                    <Button type="submit" size="sm">
+                      Save bill
+                    </Button>
                   </DialogFooter>
                 </form>
               </DialogContent>
@@ -466,12 +584,20 @@ export function BillsAndExpenses({
                     <TableCell className="text-right font-medium">
                       {money(e.amount)}
                       {e.gstAmount > 0 && (
-                        <div className="text-xs text-muted-foreground">GST {money(e.gstAmount)}</div>
+                        <div className="text-xs text-muted-foreground">
+                          GST {money(e.gstAmount)}
+                        </div>
                       )}
                     </TableCell>
                     <TableCell>
                       <StatusBadge
-                        variant={e.status === "Paid" ? "success" : e.status === "Rejected" ? "destructive" : "warning"}
+                        variant={
+                          e.status === "Paid"
+                            ? "success"
+                            : e.status === "Rejected"
+                              ? "destructive"
+                              : "warning"
+                        }
                         label={e.status}
                         dot
                       />

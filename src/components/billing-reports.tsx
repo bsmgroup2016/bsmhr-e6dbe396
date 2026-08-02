@@ -25,7 +25,8 @@ import type { Client, Expense, Invoice, PaymentReceipt } from "@/lib/types";
 const money = (n: number) =>
   `$${n.toLocaleString("en-SG", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const today = () => new Date().toISOString().slice(0, 10);
-const days = (from: string, to: string) => Math.floor((Date.parse(to) - Date.parse(from)) / 86400000);
+const days = (from: string, to: string) =>
+  Math.floor((Date.parse(to) - Date.parse(from)) / 86400000);
 
 type Bucket = "current" | "d30" | "d60" | "d90";
 
@@ -72,7 +73,11 @@ export function BillingReports({
       map.set(key, row);
     }
     return [...map.entries()]
-      .map(([clientId, row]) => ({ clientId, name: clients.find((c) => c.id === clientId)?.name ?? "—", ...row }))
+      .map(([clientId, row]) => ({
+        clientId,
+        name: clients.find((c) => c.id === clientId)?.name ?? "—",
+        ...row,
+      }))
       .sort((a, b) => b.total - a.total);
   }, [open, clients]);
 
@@ -115,12 +120,27 @@ export function BillingReports({
 
   const statementRows = useMemo(() => {
     if (!statementClient) return [];
-    const rows: { date: string; ref: string; detail: string; charge: number; credit: number }[] = [];
-    for (const inv of invoices.filter((i) => i.clientId === statementClient && i.status !== "Cancelled")) {
-      rows.push({ date: inv.issueDate, ref: inv.invoiceNo, detail: `Invoice · due ${inv.dueDate}`, charge: inv.total, credit: 0 });
+    const rows: { date: string; ref: string; detail: string; charge: number; credit: number }[] =
+      [];
+    for (const inv of invoices.filter(
+      (i) => i.clientId === statementClient && i.status !== "Cancelled",
+    )) {
+      rows.push({
+        date: inv.issueDate,
+        ref: inv.invoiceNo,
+        detail: `Invoice · due ${inv.dueDate}`,
+        charge: inv.total,
+        credit: 0,
+      });
     }
     for (const r of receipts.filter((r) => r.clientId === statementClient)) {
-      rows.push({ date: r.receivedOn, ref: r.receiptNo, detail: `Payment · ${r.paymentMode}`, charge: 0, credit: r.amount });
+      rows.push({
+        date: r.receivedOn,
+        ref: r.receiptNo,
+        detail: `Payment · ${r.paymentMode}`,
+        charge: 0,
+        credit: r.amount,
+      });
     }
     return rows.sort((a, b) => a.date.localeCompare(b.date));
   }, [statementClient, invoices, receipts]);
@@ -160,11 +180,17 @@ export function BillingReports({
           <div className="mt-4 space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <p className="flex items-center gap-2 text-sm font-medium">
-                <BarChart3 className="h-4 w-4 text-primary" /> Accounts receivable ageing as at {today()}
+                <BarChart3 className="h-4 w-4 text-primary" /> Accounts receivable ageing as at{" "}
+                {today()}
               </p>
               <ExportButton
                 rows={ageing.map((r) => ({
-                  Client: r.name, Current: r.current, "1-30": r.d30, "31-60": r.d60, "60+": r.d90, Total: r.total,
+                  Client: r.name,
+                  Current: r.current,
+                  "1-30": r.d30,
+                  "31-60": r.d60,
+                  "60+": r.d90,
+                  Total: r.total,
                 }))}
                 baseName="ar-ageing"
                 sheetName="Ageing"
@@ -185,7 +211,10 @@ export function BillingReports({
                 <TableBody>
                   {ageing.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="h-24 text-center text-sm text-muted-foreground">
+                      <TableCell
+                        colSpan={6}
+                        className="h-24 text-center text-sm text-muted-foreground"
+                      >
                         Nothing outstanding — every invoice is settled.
                       </TableCell>
                     </TableRow>
@@ -196,9 +225,15 @@ export function BillingReports({
                           <TableCell className="font-medium">{r.name}</TableCell>
                           <TableCell className="text-right">{money(r.current)}</TableCell>
                           <TableCell className="text-right">{money(r.d30)}</TableCell>
-                          <TableCell className="text-right text-amber-500">{money(r.d60)}</TableCell>
-                          <TableCell className="text-right text-destructive">{money(r.d90)}</TableCell>
-                          <TableCell className="text-right font-semibold">{money(r.total)}</TableCell>
+                          <TableCell className="text-right text-amber-500">
+                            {money(r.d60)}
+                          </TableCell>
+                          <TableCell className="text-right text-destructive">
+                            {money(r.d90)}
+                          </TableCell>
+                          <TableCell className="text-right font-semibold">
+                            {money(r.total)}
+                          </TableCell>
                         </TableRow>
                       ))}
                       <TableRow className="bg-muted/40">
@@ -228,7 +263,11 @@ export function BillingReports({
               </p>
               <ExportButton
                 rows={salesByClient.map((r) => ({
-                  Client: r.name, Invoices: r.count, Billed: r.billed, Collected: r.collected, Balance: r.balance,
+                  Client: r.name,
+                  Invoices: r.count,
+                  Billed: r.billed,
+                  Collected: r.collected,
+                  Balance: r.balance,
                 }))}
                 baseName="sales-by-customer"
                 sheetName="Sales"
@@ -254,11 +293,16 @@ export function BillingReports({
                         <TableCell className="font-medium">{r.name}</TableCell>
                         <TableCell className="text-right">{r.count}</TableCell>
                         <TableCell className="text-right font-medium">{money(r.billed)}</TableCell>
-                        <TableCell className="text-right text-emerald-500">{money(r.collected)}</TableCell>
+                        <TableCell className="text-right text-emerald-500">
+                          {money(r.collected)}
+                        </TableCell>
                         <TableCell className="text-right">{money(r.balance)}</TableCell>
                         <TableCell>
                           <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
-                            <div className="h-full rounded-full bg-primary" style={{ width: `${(r.billed / top) * 100}%` }} />
+                            <div
+                              className="h-full rounded-full bg-primary"
+                              style={{ width: `${(r.billed / top) * 100}%` }}
+                            />
                           </div>
                         </TableCell>
                       </TableRow>
@@ -275,11 +319,23 @@ export function BillingReports({
             <div className="flex flex-wrap items-end gap-3">
               <div className="space-y-1.5">
                 <Label htmlFor="gstFrom">Period from</Label>
-                <Input id="gstFrom" type="date" value={gstFrom} onChange={(e) => setGstFrom(e.target.value)} className="w-40" />
+                <Input
+                  id="gstFrom"
+                  type="date"
+                  value={gstFrom}
+                  onChange={(e) => setGstFrom(e.target.value)}
+                  className="w-40"
+                />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="gstTo">Period to</Label>
-                <Input id="gstTo" type="date" value={gstTo} onChange={(e) => setGstTo(e.target.value)} className="w-40" />
+                <Input
+                  id="gstTo"
+                  type="date"
+                  value={gstTo}
+                  onChange={(e) => setGstTo(e.target.value)}
+                  className="w-40"
+                />
               </div>
             </div>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -297,11 +353,13 @@ export function BillingReports({
             </div>
             <div className="rounded-lg border border-primary/30 bg-primary/5 p-4">
               <div className="flex items-center gap-2 text-sm font-medium">
-                <Percent className="h-4 w-4 text-primary" /> Box 8 · Net GST {gst.net >= 0 ? "payable to IRAS" : "refundable"}
+                <Percent className="h-4 w-4 text-primary" /> Box 8 · Net GST{" "}
+                {gst.net >= 0 ? "payable to IRAS" : "refundable"}
               </div>
               <div className="mt-1 text-2xl font-semibold">{money(Math.abs(gst.net))}</div>
               <p className="mt-1 text-xs text-muted-foreground">
-                Based on {gst.invoiceCount} tax invoice(s) issued in the selected period. Review before filing GST F5.
+                Based on {gst.invoiceCount} tax invoice(s) issued in the selected period. Review
+                before filing GST F5.
               </p>
             </div>
           </div>
@@ -316,7 +374,9 @@ export function BillingReports({
                 </SelectTrigger>
                 <SelectContent>
                   {clients.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.name}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -344,7 +404,10 @@ export function BillingReports({
                   <TableBody>
                     {statementRows.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={6} className="h-24 text-center text-sm text-muted-foreground">
+                        <TableCell
+                          colSpan={6}
+                          className="h-24 text-center text-sm text-muted-foreground"
+                        >
                           No transactions for this client yet.
                         </TableCell>
                       </TableRow>
@@ -353,12 +416,20 @@ export function BillingReports({
                         running = Math.round((running + r.charge - r.credit) * 100) / 100;
                         return (
                           <TableRow key={`${r.ref}-${idx}`}>
-                            <TableCell className="text-xs text-muted-foreground">{r.date}</TableCell>
+                            <TableCell className="text-xs text-muted-foreground">
+                              {r.date}
+                            </TableCell>
                             <TableCell className="font-medium">{r.ref}</TableCell>
                             <TableCell className="text-xs">{r.detail}</TableCell>
-                            <TableCell className="text-right">{r.charge ? money(r.charge) : "—"}</TableCell>
-                            <TableCell className="text-right text-emerald-500">{r.credit ? money(r.credit) : "—"}</TableCell>
-                            <TableCell className="text-right font-semibold">{money(running)}</TableCell>
+                            <TableCell className="text-right">
+                              {r.charge ? money(r.charge) : "—"}
+                            </TableCell>
+                            <TableCell className="text-right text-emerald-500">
+                              {r.credit ? money(r.credit) : "—"}
+                            </TableCell>
+                            <TableCell className="text-right font-semibold">
+                              {money(running)}
+                            </TableCell>
                           </TableRow>
                         );
                       })

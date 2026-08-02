@@ -63,7 +63,6 @@ import {
   addInvoice,
   updateInvoice,
   deleteInvoice,
-  recordInvoicePayment,
   buildInvoiceLines,
   computeInvoiceTotals,
   getRateAgreements,
@@ -87,13 +86,28 @@ import {
   getCompanies,
 } from "@/lib/store";
 import type {
-  BillingCycle, BillingSource, ClientContract,
-  Invoice, InvoiceLine, InvoiceStatus, RateUnit, RateAgreement,
-  Expense, PaymentMode, PaymentReceipt,
+  BillingCycle,
+  BillingSource,
+  ClientContract,
+  Invoice,
+  InvoiceLine,
+  InvoiceStatus,
+  RateUnit,
+  RateAgreement,
+  Expense,
+  PaymentMode,
+  PaymentReceipt,
 } from "@/lib/types";
 
 const GST_DEFAULT = 9;
-const statuses: InvoiceStatus[] = ["Draft", "Sent", "Partially Paid", "Paid", "Overdue", "Cancelled"];
+const statuses: InvoiceStatus[] = [
+  "Draft",
+  "Sent",
+  "Partially Paid",
+  "Paid",
+  "Overdue",
+  "Cancelled",
+];
 const units: RateUnit[] = ["Hourly", "Daily", "Monthly"];
 const cycles: BillingCycle[] = ["Weekly", "Fortnightly", "Monthly"];
 
@@ -104,9 +118,15 @@ export const Route = createFileRoute("/_authenticated/billing")({
   head: () => ({
     meta: [
       { title: "Billing & Invoicing — BSM Workforce & Operations" },
-      { name: "description", content: "Client billing based on deployed manpower, timesheets and rate agreements." },
+      {
+        name: "description",
+        content: "Client billing based on deployed manpower, timesheets and rate agreements.",
+      },
       { property: "og:title", content: "Billing & Invoicing — BSM Workforce & Operations" },
-      { property: "og:description", content: "Client billing based on deployed manpower, timesheets and rate agreements." },
+      {
+        property: "og:description",
+        content: "Client billing based on deployed manpower, timesheets and rate agreements.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -125,11 +145,7 @@ function BillingPage() {
   async function refresh() {
     setLoading(true);
     try {
-      const [inv, rt, ct] = await Promise.all([
-        getInvoices(),
-        getRateAgreements(),
-        getContracts()
-      ]);
+      const [inv, rt, ct] = await Promise.all([getInvoices(), getRateAgreements(), getContracts()]);
       setInvoices(inv);
       setRates(rt);
       setContracts(ct);
@@ -168,22 +184,35 @@ function BillingPage() {
     const client = clients.find((c) => c.id === i.clientId);
     const q = search.toLowerCase();
     const matchesCompany = !companyId || !i.companyId || i.companyId === companyId;
-    const matchesSearch = !q || i.invoiceNo.toLowerCase().includes(q) || client?.name.toLowerCase().includes(q);
+    const matchesSearch =
+      !q || i.invoiceNo.toLowerCase().includes(q) || client?.name.toLowerCase().includes(q);
     return matchesCompany && matchesSearch && (statusFilter === "all" || i.status === statusFilter);
   });
 
   const outstanding = filtered
     .filter((i) => i.status !== "Paid" && i.status !== "Cancelled")
     .reduce((s, i) => s + (i.total - i.amountPaid), 0);
-  const billedTotal = filtered.filter((i) => i.status !== "Cancelled").reduce((s, i) => s + i.total, 0);
+  const billedTotal = filtered
+    .filter((i) => i.status !== "Cancelled")
+    .reduce((s, i) => s + i.total, 0);
   const collected = filtered.reduce((s, i) => s + i.amountPaid, 0);
   const overdueCount = filtered.filter(
-    (i) => i.status !== "Paid" && i.status !== "Cancelled" && i.dueDate && i.dueDate < new Date().toISOString().slice(0, 10),
+    (i) =>
+      i.status !== "Paid" &&
+      i.status !== "Cancelled" &&
+      i.dueDate &&
+      i.dueDate < new Date().toISOString().slice(0, 10),
   ).length;
 
-  const visibleContracts = contracts.filter((c) => !companyId || !c.companyId || c.companyId === companyId);
-  const visibleReceipts = receipts.filter((r) => !companyId || !r.companyId || r.companyId === companyId);
-  const visibleExpenses = expenses.filter((e) => !companyId || !e.companyId || e.companyId === companyId);
+  const visibleContracts = contracts.filter(
+    (c) => !companyId || !c.companyId || c.companyId === companyId,
+  );
+  const visibleReceipts = receipts.filter(
+    (r) => !companyId || !r.companyId || r.companyId === companyId,
+  );
+  const visibleExpenses = expenses.filter(
+    (e) => !companyId || !e.companyId || e.companyId === companyId,
+  );
   const dueContracts = contractsDue();
 
   function handleGenerate(form: FormData) {
@@ -192,7 +221,12 @@ function BillingPage() {
     const periodStart = form.get("periodStart") as string;
     const periodEnd = form.get("periodEnd") as string;
     const gstRate = Number(form.get("gstRate") ?? GST_DEFAULT);
-    const lines = buildInvoiceLines(clientId, periodStart, periodEnd, projectId === "all" ? undefined : projectId);
+    const lines = buildInvoiceLines(
+      clientId,
+      periodStart,
+      periodEnd,
+      projectId === "all" ? undefined : projectId,
+    );
     if (lines.length === 0) {
       toast.error("No billable timesheet data found for this period");
       return;
@@ -216,13 +250,18 @@ function BillingPage() {
     });
     setIsGenOpen(false);
     refresh();
-    toast.success(`${created.invoiceNo} generated — ${lines.length} line(s), ${money(created.total)}`);
+    toast.success(
+      `${created.invoiceNo} generated — ${lines.length} line(s), ${money(created.total)}`,
+    );
   }
 
   function handleAddRate(form: FormData) {
     addRateAgreement({
       clientId: form.get("clientId") as string,
-      projectId: ((form.get("projectId") as string) || "all") === "all" ? undefined : (form.get("projectId") as string),
+      projectId:
+        ((form.get("projectId") as string) || "all") === "all"
+          ? undefined
+          : (form.get("projectId") as string),
       trade: (form.get("trade") as string) || "All",
       unit: form.get("unit") as RateUnit,
       normalRate: Number(form.get("normalRate") ?? 0),
@@ -244,7 +283,10 @@ function BillingPage() {
     addContract({
       companyId: companyId || undefined,
       clientId: form.get("clientId") as string,
-      projectId: ((form.get("projectId") as string) || "all") === "all" ? undefined : (form.get("projectId") as string),
+      projectId:
+        ((form.get("projectId") as string) || "all") === "all"
+          ? undefined
+          : (form.get("projectId") as string),
       contractNo: (form.get("contractNo") as string) || `CT-${Date.now().toString().slice(-6)}`,
       title: (form.get("title") as string) || "",
       startDate,
@@ -330,7 +372,9 @@ function BillingPage() {
       <div className="w-full space-y-6">
         <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Billing & Invoicing</h1>
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+              Billing & Invoicing
+            </h1>
             <p className="text-sm text-muted-foreground">
               Professional billing, rate agreements and automated contract invoicing.
             </p>
@@ -367,10 +411,34 @@ function BillingPage() {
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <SummaryCard title="Billed" value={money(billedTotal)} icon={<FileText className="h-5 w-5" />} variant="primary" caption={`${filtered.length} invoice(s)`} />
-          <SummaryCard title="Collected" value={money(collected)} icon={<CheckCircle2 className="h-5 w-5" />} variant="success" caption="Payments received" />
-          <SummaryCard title="Outstanding" value={money(outstanding)} icon={<DollarSign className="h-5 w-5" />} variant="warning" caption="Unpaid balance" />
-          <SummaryCard title="Overdue" value={overdueCount.toString()} icon={<Clock className="h-5 w-5" />} variant="destructive" caption="Past due date" />
+          <SummaryCard
+            title="Billed"
+            value={money(billedTotal)}
+            icon={<FileText className="h-5 w-5" />}
+            variant="primary"
+            caption={`${filtered.length} invoice(s)`}
+          />
+          <SummaryCard
+            title="Collected"
+            value={money(collected)}
+            icon={<CheckCircle2 className="h-5 w-5" />}
+            variant="success"
+            caption="Payments received"
+          />
+          <SummaryCard
+            title="Outstanding"
+            value={money(outstanding)}
+            icon={<DollarSign className="h-5 w-5" />}
+            variant="warning"
+            caption="Unpaid balance"
+          />
+          <SummaryCard
+            title="Overdue"
+            value={overdueCount.toString()}
+            icon={<Clock className="h-5 w-5" />}
+            variant="destructive"
+            caption="Past due date"
+          />
         </div>
 
         {loading ? (
@@ -412,7 +480,10 @@ function BillingPage() {
                       className="pl-9"
                     />
                   </div>
-                  <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as InvoiceStatus | "all")}>
+                  <Select
+                    value={statusFilter}
+                    onValueChange={(v) => setStatusFilter(v as InvoiceStatus | "all")}
+                  >
                     <SelectTrigger className="w-48">
                       <SelectValue placeholder="Status" />
                     </SelectTrigger>
@@ -431,9 +502,13 @@ function BillingPage() {
                   {(["all", ...statuses] as (InvoiceStatus | "all")[]).map((s) => {
                     const count =
                       s === "all"
-                        ? invoices.filter((i) => !companyId || !i.companyId || i.companyId === companyId).length
+                        ? invoices.filter(
+                            (i) => !companyId || !i.companyId || i.companyId === companyId,
+                          ).length
                         : invoices.filter(
-                            (i) => (!companyId || !i.companyId || i.companyId === companyId) && i.status === s,
+                            (i) =>
+                              (!companyId || !i.companyId || i.companyId === companyId) &&
+                              i.status === s,
                           ).length;
                     if (s !== "all" && count === 0) return null;
                     return (
@@ -492,7 +567,9 @@ function BillingPage() {
                             <TableRow key={i.id}>
                               <TableCell>
                                 <div className="font-medium">{i.invoiceNo}</div>
-                                <div className={`text-xs ${daysLate > 0 ? "text-destructive" : "text-muted-foreground"}`}>
+                                <div
+                                  className={`text-xs ${daysLate > 0 ? "text-destructive" : "text-muted-foreground"}`}
+                                >
                                   Due {i.dueDate}
                                   {daysLate > 0 ? ` · ${daysLate}d overdue` : ""}
                                 </div>
@@ -501,7 +578,9 @@ function BillingPage() {
                               <TableCell className="text-xs text-muted-foreground">
                                 {i.periodStart} → {i.periodEnd}
                               </TableCell>
-                              <TableCell className="text-right font-medium">{money(i.total)}</TableCell>
+                              <TableCell className="text-right font-medium">
+                                {money(i.total)}
+                              </TableCell>
                               <TableCell
                                 className={`text-right ${daysLate > 0 ? "font-medium text-destructive" : ""}`}
                               >
@@ -526,7 +605,12 @@ function BillingPage() {
                               </TableCell>
                               <TableCell className="text-right">
                                 <div className="flex justify-end gap-1">
-                                  <Button size="sm" variant="ghost" onClick={() => setPreview(i)} title="View / print">
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => setPreview(i)}
+                                    title="View / print"
+                                  >
                                     <Printer className="h-4 w-4" />
                                   </Button>
                                   <Button
@@ -543,16 +627,26 @@ function BillingPage() {
                                     <FileDown className="h-4 w-4" />
                                   </Button>
                                   {i.status === "Draft" && (
-                                    <Button size="sm" variant="secondary" onClick={() => setStatus(i, "Sent")}>
+                                    <Button
+                                      size="sm"
+                                      variant="secondary"
+                                      onClick={() => setStatus(i, "Sent")}
+                                    >
                                       Send
                                     </Button>
                                   )}
-                                  {i.status !== "Paid" && i.status !== "Cancelled" && i.status !== "Draft" && (
-                                    <Button size="sm" variant="secondary" onClick={() => openPay(i)}>
-                                      <Banknote className="mr-1 h-4 w-4" />
-                                      Payment
-                                    </Button>
-                                  )}
+                                  {i.status !== "Paid" &&
+                                    i.status !== "Cancelled" &&
+                                    i.status !== "Draft" && (
+                                      <Button
+                                        size="sm"
+                                        variant="secondary"
+                                        onClick={() => openPay(i)}
+                                      >
+                                        <Banknote className="mr-1 h-4 w-4" />
+                                        Payment
+                                      </Button>
+                                    )}
                                   <Button
                                     size="sm"
                                     variant="ghost"
@@ -579,7 +673,9 @@ function BillingPage() {
             <TabsContent value="payments" className="mt-4">
               <PaymentsReceived
                 receipts={visibleReceipts}
-                invoices={invoices.filter((i) => !companyId || !i.companyId || i.companyId === companyId)}
+                invoices={invoices.filter(
+                  (i) => !companyId || !i.companyId || i.companyId === companyId,
+                )}
                 clients={clients}
                 onAdd={(input) => {
                   addReceipt({ companyId: companyId || undefined, ...input });
@@ -617,7 +713,9 @@ function BillingPage() {
 
             <TabsContent value="reports" className="mt-4">
               <BillingReports
-                invoices={invoices.filter((i) => !companyId || !i.companyId || i.companyId === companyId)}
+                invoices={invoices.filter(
+                  (i) => !companyId || !i.companyId || i.companyId === companyId,
+                )}
                 clients={clients}
                 receipts={visibleReceipts}
                 expenses={visibleExpenses}
@@ -630,7 +728,8 @@ function BillingPage() {
                   <div>
                     <h2 className="font-medium">Client contracts</h2>
                     <p className="text-sm text-muted-foreground">
-                      Recurring service agreements. Due contracts are invoiced automatically when you run billing.
+                      Recurring service agreements. Due contracts are invoiced automatically when
+                      you run billing.
                     </p>
                   </div>
                   <Dialog open={isContractOpen} onOpenChange={setIsContractOpen}>
@@ -644,10 +743,15 @@ function BillingPage() {
                       <DialogHeader>
                         <DialogTitle>Add client contract</DialogTitle>
                         <DialogDescription>
-                          Sets the billing cycle, GST and payment terms used for auto-generated invoices.
+                          Sets the billing cycle, GST and payment terms used for auto-generated
+                          invoices.
                         </DialogDescription>
                       </DialogHeader>
-                      <ContractForm clients={clients} projects={projects} onSubmit={handleAddContract} />
+                      <ContractForm
+                        clients={clients}
+                        projects={projects}
+                        onSubmit={handleAddContract}
+                      />
                     </DialogContent>
                   </Dialog>
                 </div>
@@ -679,14 +783,20 @@ function BillingPage() {
                         </TableRow>
                       ) : (
                         visibleContracts.map((c) => {
-                          const due = !!c.nextInvoiceOn && c.nextInvoiceOn <= new Date().toISOString().slice(0, 10);
+                          const due =
+                            !!c.nextInvoiceOn &&
+                            c.nextInvoiceOn <= new Date().toISOString().slice(0, 10);
                           return (
                             <TableRow key={c.id}>
                               <TableCell>
                                 <div className="font-medium">{c.contractNo}</div>
-                                <div className="text-xs text-muted-foreground">{c.title || "—"}</div>
+                                <div className="text-xs text-muted-foreground">
+                                  {c.title || "—"}
+                                </div>
                               </TableCell>
-                              <TableCell>{clients.find((cl) => cl.id === c.clientId)?.name ?? "—"}</TableCell>
+                              <TableCell>
+                                {clients.find((cl) => cl.id === c.clientId)?.name ?? "—"}
+                              </TableCell>
                               <TableCell>
                                 <div>{c.billingCycle}</div>
                                 <div className="text-xs text-muted-foreground">
@@ -694,20 +804,28 @@ function BillingPage() {
                                 </div>
                               </TableCell>
                               <TableCell>
-                                {c.billingSource === "Fixed" ? `Fixed ${money(c.fixedAmount)}` : "Timesheet"}
+                                {c.billingSource === "Fixed"
+                                  ? `Fixed ${money(c.fixedAmount)}`
+                                  : "Timesheet"}
                               </TableCell>
                               <TableCell>
                                 <div className={due ? "font-medium text-destructive" : ""}>
                                   {c.nextInvoiceOn || "—"}
                                 </div>
                                 <div className="text-xs text-muted-foreground">
-                                  {c.lastInvoicedOn ? `Last ${c.lastInvoicedOn}` : "Not invoiced yet"}
+                                  {c.lastInvoicedOn
+                                    ? `Last ${c.lastInvoicedOn}`
+                                    : "Not invoiced yet"}
                                 </div>
                               </TableCell>
                               <TableCell>
                                 <StatusBadge
                                   variant={
-                                    c.status === "Active" ? "success" : (c.status as string) === "Draft" ? "info" : "destructive"
+                                    c.status === "Active"
+                                      ? "success"
+                                      : (c.status as string) === "Draft"
+                                        ? "info"
+                                        : "destructive"
                                   }
                                   label={c.autoInvoice ? c.status : `${c.status} (manual)`}
                                   dot
@@ -721,7 +839,11 @@ function BillingPage() {
                                     onClick={() => {
                                       updateContract(c.id, { autoInvoice: !c.autoInvoice });
                                       refresh();
-                                      toast.success(c.autoInvoice ? "Auto-invoicing paused" : "Auto-invoicing resumed");
+                                      toast.success(
+                                        c.autoInvoice
+                                          ? "Auto-invoicing paused"
+                                          : "Auto-invoicing resumed",
+                                      );
                                     }}
                                   >
                                     {c.autoInvoice ? "Pause" : "Resume"}
@@ -755,7 +877,8 @@ function BillingPage() {
                   <div>
                     <h2 className="font-medium">Rate agreements</h2>
                     <p className="text-sm text-muted-foreground">
-                      Charge-out rates per client, project and trade. Use trade &quot;All&quot; as a fallback.
+                      Charge-out rates per client, project and trade. Use trade &quot;All&quot; as a
+                      fallback.
                     </p>
                   </div>
                   <Dialog open={isRateOpen} onOpenChange={setIsRateOpen}>
@@ -768,7 +891,9 @@ function BillingPage() {
                     <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
                       <DialogHeader>
                         <DialogTitle>Add rate agreement</DialogTitle>
-                        <DialogDescription>Used to price timesheets during invoice generation.</DialogDescription>
+                        <DialogDescription>
+                          Used to price timesheets during invoice generation.
+                        </DialogDescription>
                       </DialogHeader>
                       <RateForm clients={clients} projects={projects} onSubmit={handleAddRate} />
                     </DialogContent>
@@ -804,8 +929,12 @@ function BillingPage() {
                       ) : (
                         rates.map((r) => (
                           <TableRow key={r.id}>
-                            <TableCell>{clients.find((c) => c.id === r.clientId)?.name ?? "—"}</TableCell>
-                            <TableCell>{projects.find((p) => p.id === r.projectId)?.name ?? "All projects"}</TableCell>
+                            <TableCell>
+                              {clients.find((c) => c.id === r.clientId)?.name ?? "—"}
+                            </TableCell>
+                            <TableCell>
+                              {projects.find((p) => p.id === r.projectId)?.name ?? "All projects"}
+                            </TableCell>
                             <TableCell>{r.trade}</TableCell>
                             <TableCell>{r.unit}</TableCell>
                             <TableCell className="text-right">{money(r.normalRate)}</TableCell>
@@ -844,7 +973,9 @@ function BillingPage() {
             <DialogTitle>Record payment</DialogTitle>
             <DialogDescription>
               {payTarget?.invoiceNo} · balance{" "}
-              {payTarget ? money(Math.round((payTarget.total - payTarget.amountPaid) * 100) / 100) : ""}
+              {payTarget
+                ? money(Math.round((payTarget.total - payTarget.amountPaid) * 100) / 100)
+                : ""}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
@@ -862,7 +993,12 @@ function BillingPage() {
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="payDate">Payment date</Label>
-                <Input id="payDate" type="date" value={payDate} onChange={(e) => setPayDate(e.target.value)} />
+                <Input
+                  id="payDate"
+                  type="date"
+                  value={payDate}
+                  onChange={(e) => setPayDate(e.target.value)}
+                />
               </div>
               <div className="space-y-1.5">
                 <Label>Method</Label>
@@ -871,15 +1007,31 @@ function BillingPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {(["Bank Transfer", "GIRO", "Cheque", "Cash", "PayNow", "Other"] as PaymentMode[]).map((m) => (
-                      <SelectItem key={m} value={m}>{m}</SelectItem>
+                    {(
+                      [
+                        "Bank Transfer",
+                        "GIRO",
+                        "Cheque",
+                        "Cash",
+                        "PayNow",
+                        "Other",
+                      ] as PaymentMode[]
+                    ).map((m) => (
+                      <SelectItem key={m} value={m}>
+                        {m}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="payRef">Reference</Label>
-                <Input id="payRef" value={payRef} onChange={(e) => setPayRef(e.target.value)} placeholder="Bank ref / cheque no" />
+                <Input
+                  id="payRef"
+                  value={payRef}
+                  onChange={(e) => setPayRef(e.target.value)}
+                  placeholder="Bank ref / cheque no"
+                />
               </div>
             </div>
             <p className="text-xs text-muted-foreground">
@@ -913,7 +1065,9 @@ function BillingPage() {
                   <div className="text-muted-foreground">{company?.address}</div>
                 </div>
                 <div className="text-right">
-                  <div className="font-semibold">{clients.find((c) => c.id === preview.clientId)?.name}</div>
+                  <div className="font-semibold">
+                    {clients.find((c) => c.id === preview.clientId)?.name}
+                  </div>
                   <div className="text-muted-foreground">
                     {preview.periodStart} → {preview.periodEnd}
                   </div>
@@ -938,11 +1092,14 @@ function BillingPage() {
                       <TableRow key={idx}>
                         <TableCell>{l.description}</TableCell>
                         <TableCell className="text-right">
-                          {l.quantity} {l.unit === "Hourly" ? "hr" : l.unit === "Daily" ? "day" : "mth"}
+                          {l.quantity}{" "}
+                          {l.unit === "Hourly" ? "hr" : l.unit === "Daily" ? "day" : "mth"}
                         </TableCell>
                         <TableCell className="text-right">{money(l.rate)}</TableCell>
                         <TableCell className="text-right">{l.otQuantity || 0}</TableCell>
-                        <TableCell className="text-right">{l.otRate ? money(l.otRate) : "—"}</TableCell>
+                        <TableCell className="text-right">
+                          {l.otRate ? money(l.otRate) : "—"}
+                        </TableCell>
                         <TableCell className="text-right">{money(l.amount)}</TableCell>
                       </TableRow>
                     ))}
@@ -987,7 +1144,9 @@ function BillingPage() {
 
 function Row({ label, value, bold }: { label: string; value: string; bold?: boolean }) {
   return (
-    <div className={`flex justify-between ${bold ? "font-semibold text-foreground" : "text-muted-foreground"}`}>
+    <div
+      className={`flex justify-between ${bold ? "font-semibold text-foreground" : "text-muted-foreground"}`}
+    >
       <span>{label}</span>
       <span>{value}</span>
     </div>
@@ -1004,7 +1163,9 @@ function GenerateForm({
   onSubmit: (data: FormData) => void;
 }) {
   const today = new Date();
-  const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().slice(0, 10);
+  const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
+    .toISOString()
+    .slice(0, 10);
   const [clientId, setClientId] = useState(clients[0]?.id ?? "");
   const [projectId, setProjectId] = useState("all");
   const [periodStart, setPeriodStart] = useState(firstOfMonth);
@@ -1012,7 +1173,12 @@ function GenerateForm({
   const [gstRate, setGstRate] = useState(GST_DEFAULT);
 
   const previewLines = clientId
-    ? buildInvoiceLines(clientId, periodStart, periodEnd, projectId === "all" ? undefined : projectId)
+    ? buildInvoiceLines(
+        clientId,
+        periodStart,
+        periodEnd,
+        projectId === "all" ? undefined : projectId,
+      )
     : [];
   const totals = computeInvoiceTotals(previewLines, gstRate);
 
@@ -1065,15 +1231,36 @@ function GenerateForm({
       <div className="grid gap-3 sm:grid-cols-3">
         <div className="space-y-1">
           <Label htmlFor="periodStart">From</Label>
-          <Input id="periodStart" name="periodStart" type="date" value={periodStart} onChange={(e) => setPeriodStart(e.target.value)} required />
+          <Input
+            id="periodStart"
+            name="periodStart"
+            type="date"
+            value={periodStart}
+            onChange={(e) => setPeriodStart(e.target.value)}
+            required
+          />
         </div>
         <div className="space-y-1">
           <Label htmlFor="periodEnd">To</Label>
-          <Input id="periodEnd" name="periodEnd" type="date" value={periodEnd} onChange={(e) => setPeriodEnd(e.target.value)} required />
+          <Input
+            id="periodEnd"
+            name="periodEnd"
+            type="date"
+            value={periodEnd}
+            onChange={(e) => setPeriodEnd(e.target.value)}
+            required
+          />
         </div>
         <div className="space-y-1">
           <Label htmlFor="gstRate">GST %</Label>
-          <Input id="gstRate" name="gstRate" type="number" step="0.01" value={gstRate} onChange={(e) => setGstRate(Number(e.target.value))} />
+          <Input
+            id="gstRate"
+            name="gstRate"
+            type="number"
+            step="0.01"
+            value={gstRate}
+            onChange={(e) => setGstRate(Number(e.target.value))}
+          />
         </div>
       </div>
 
@@ -1211,7 +1398,14 @@ function ContractForm({
         </div>
         <div className="space-y-1">
           <Label htmlFor="billingDay">Invoice day of month</Label>
-          <Input id="billingDay" name="billingDay" type="number" min={1} max={28} defaultValue={1} />
+          <Input
+            id="billingDay"
+            name="billingDay"
+            type="number"
+            min={1}
+            max={28}
+            defaultValue={1}
+          />
         </div>
         <div className="space-y-1">
           <Label>Billing source</Label>
@@ -1340,7 +1534,14 @@ function RateForm({
         </div>
         <div className="space-y-1">
           <Label htmlFor="normalRate">Normal rate ($)</Label>
-          <Input id="normalRate" name="normalRate" type="number" step="0.01" defaultValue={0} required />
+          <Input
+            id="normalRate"
+            name="normalRate"
+            type="number"
+            step="0.01"
+            defaultValue={0}
+            required
+          />
         </div>
         <div className="space-y-1">
           <Label htmlFor="otRate">OT rate / hr ($)</Label>
