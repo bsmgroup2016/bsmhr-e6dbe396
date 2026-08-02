@@ -86,7 +86,7 @@ const navGroups: { label: string; items: NavItem[] }[] = [
       { title: "Manpower Deployment", url: "/operations", icon: Layers },
       { title: "Deployed Workers", url: "/deployed-workers", icon: HardHat },
       { title: "Available Workers", url: "/available-workers", icon: Users },
-      { title: "Billing & Progress Claim", url: "/billing", icon: Receipt },
+      { title: "Billing & Invoicing", url: "/billing", icon: Receipt },
     ],
   },
   {

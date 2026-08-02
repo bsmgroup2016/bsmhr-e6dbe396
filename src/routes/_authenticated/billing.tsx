@@ -267,7 +267,7 @@ function BillingPage() {
       <div className="w-full space-y-6">
         <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Billing &amp; Invoicing</h1>
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Billing & Invoicing</h1>
             <p className="text-sm text-muted-foreground">
               Xero বা QuickBooks এর মতো প্রফেশনাল বিলিং, রেট এগ্রিমেন্ট এবং অটো-ইনভয়েসিং সিস্টেম।
             </p>
