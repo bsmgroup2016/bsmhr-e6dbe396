@@ -25,7 +25,7 @@ export function PFileDownloadButton({ pFileUrl, name, code }: PFileDownloadButto
       const safe = `${code ? `${code}-` : ""}${name}`.replace(/[^\w.-]+/g, "-");
       await downloadR2File(pFileUrl, `P-File-${safe}.pdf`);
     } catch {
-      toast.error("P-File ডাউনলোড করা যায়নি");
+      toast.error("Could not download P-File");
     } finally {
       setBusy(false);
     }

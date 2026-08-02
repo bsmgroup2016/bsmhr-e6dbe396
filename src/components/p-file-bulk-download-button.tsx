@@ -26,11 +26,11 @@ export function PFileBulkDownloadButton({ people, zipBaseName = "P-Files", label
 
   async function handleClick() {
     if (withFile.length === 0) {
-      toast.error("এই তালিকায় কোনো P-File আপলোড করা নেই");
+      toast.error("No P-Files uploaded for this list");
       return;
     }
     setBusy(true);
-    const id = toast.loading(`${withFile.length} টি P-File ডাউনলোড হচ্ছে…`);
+    const id = toast.loading(`Downloading ${withFile.length} P-Files…`);
     try {
       const names: Record<string, string> = {};
       for (const p of withFile) {
@@ -44,12 +44,12 @@ export function PFileBulkDownloadButton({ people, zipBaseName = "P-Files", label
         names,
       );
       toast.dismiss(id);
-      if (added === 0) toast.error("কোনো P-File ডাউনলোড করা যায়নি");
-      else if (failed.length) toast.warning(`${added} টি ডাউনলোড হয়েছে, ${failed.length} টি ব্যর্থ`);
-      else toast.success(`${added} টি P-File ZIP আকারে ডাউনলোড হয়েছে`);
+      if (added === 0) toast.error("No P-File could be downloaded");
+      else if (failed.length) toast.warning(`${added} downloaded, ${failed.length} failed`);
+      else toast.success(`${added} P-Files downloaded as ZIP`);
     } catch {
       toast.dismiss(id);
-      toast.error("ZIP তৈরি করা যায়নি");
+      toast.error("Could not create ZIP");
     } finally {
       setBusy(false);
     }
