@@ -33,7 +33,7 @@ export function AppBreadcrumbs() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const segments = pathname.split("/").filter(Boolean);
 
-  const crumbs: Crumb[] = [{ label: "amr amrk kora jayga follow koro", href: "/" }];
+  const crumbs: Crumb[] = [{ label: "Dashboard", href: "/" }];
 
   segments.forEach((segment, index) => {
     const label = routeLabels[segment] || segment.replace(/-/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
