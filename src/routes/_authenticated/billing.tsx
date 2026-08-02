@@ -182,6 +182,8 @@ function BillingPage() {
   ).length;
 
   const visibleContracts = contracts.filter((c) => !companyId || !c.companyId || c.companyId === companyId);
+  const visibleReceipts = receipts.filter((r) => !companyId || !r.companyId || r.companyId === companyId);
+  const visibleExpenses = expenses.filter((e) => !companyId || !e.companyId || e.companyId === companyId);
   const dueContracts = contractsDue();
 
   function handleGenerate(form: FormData) {
