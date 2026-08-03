@@ -2658,6 +2658,7 @@ export type TimeCardComparison = {
   systemOut?: string;
   state: "Verified" | "Mismatch" | "Missing in system" | "Missing on card";
   resolution?: TimeCard["entries"][number]["resolution"];
+  remarks?: string;
 };
 
 const hhmm = (v?: string) => (v ? v.slice(0, 5) : "");
