@@ -85,6 +85,7 @@ export type TimeCardExtractRow = {
   date: string;
   checkIn?: string;
   checkOut?: string;
+  confidence?: number;
 };
 
 export type PassportExtract = {
