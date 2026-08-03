@@ -314,7 +314,56 @@ function TimeCardsPage() {
     );
   }
 
+  async function handleImportConfirm(data: any[]) {
+    setIsImportOpen(false);
+    setImportFile(null);
+    if (!data.length) return;
+
+    setUploading(true);
+    try {
+      const { start, end } = monthRange(month);
+      // Group rows by employee to create/update multiple cards if needed
+      const byEmployee = new Map<string, any[]>();
+      data.forEach((row) => {
+        const pFile = String(row["p-file number"] || "").toLowerCase();
+        const emp = employees.find((e) => e.employeeCode.toLowerCase() === pFile);
+        if (emp) {
+          if (!byEmployee.has(emp.id)) byEmployee.set(emp.id, []);
+          byEmployee.get(emp.id)?.push(row);
+        }
+      });
+
+      let lastId: string | null = null;
+      for (const [empId, rows] of byEmployee.entries()) {
+        const entries: TimeCardEntry[] = rows.map((r) => ({
+          date: r.date,
+          checkIn: r["check in"],
+          checkOut: r["check out"],
+          confidence: 1.0, // Manual import is 100% confident
+        }));
+
+        const card = addTimeCard({
+          employeeId: empId,
+          periodStart: start,
+          periodEnd: end,
+          status: "Draft",
+          entries,
+        });
+        lastId = card.id;
+      }
+
+      refresh();
+      if (lastId) setSelectedId(lastId);
+      toast.success(`Imported ${data.length} rows for ${byEmployee.size} employee(s)`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Import failed");
+    } finally {
+      setUploading(false);
+    }
+  }
+
   return (
+
     <AppShell>
       <div className="w-full space-y-6">
         <div>
