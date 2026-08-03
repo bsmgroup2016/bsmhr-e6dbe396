@@ -130,9 +130,6 @@ export default function TransportPage() {
             <p className="text-sm text-muted-foreground max-w-2xl">Manage company vehicles, maintenance schedules, road tax/insurance renewals, and coordinate daily worker transportation (trips) between dormitories and sites.</p>
           </div>
           <div className="flex gap-2 mt-2 sm:mt-0">
-            <Button size="sm" variant="outline" onClick={() => { seedTransportDemoData(); refresh(); toast.success("Demo data seeded"); }}>
-              <Wand2 className="mr-1 h-4 w-4" /> Seed Demo
-            </Button>
             <Button size="sm" variant="outline" onClick={handleExport} disabled={filteredTrips.length === 0}>
               <Download className="mr-1 h-4 w-4" /> Export
             </Button>
