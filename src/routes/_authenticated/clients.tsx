@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   Plus,
   Search,
@@ -244,7 +244,16 @@ export default function ClientsPage() {
                     return (
                       <TableRow key={c.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setViewingClient(c)}>
                         <TableCell className="font-medium">{c.code}</TableCell>
-                        <TableCell>{c.name}</TableCell>
+                        <TableCell>
+                          <Link
+                            to="/clients/$id"
+                            params={{ id: c.id }}
+                            className="font-medium text-primary hover:underline"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {c.name}
+                          </Link>
+                        </TableCell>
                         <TableCell>{c.contactPerson}</TableCell>
                         <TableCell>{c.industry || "—"}</TableCell>
                         <TableCell>
