@@ -215,3 +215,90 @@ export async function downloadClaimSheetPdf(
   footer(doc);
   doc.save(`claim_sheet_${sheet.reference}.pdf`);
 }
+/** Client-facing quotation PDF — works for both existing clients and prospects. */
+export async function downloadQuotationPdf(
+  quote: Quotation,
+  opts: {
+    company?: { name?: string; uen?: string; address?: string; phone?: string; email?: string };
+    clientName?: string;
+    projectName?: string;
+  },
+) {
+  const { doc, autoTable } = await newDoc();
+  const y = header(doc, "QUOTATION", opts.company, [
+    quote.quoteNo,
+    `Date: ${quote.quoteDate || "-"}`,
+    quote.validUntil ? `Valid until: ${quote.validUntil}` : "",
+  ].filter(Boolean) as string[]);
+
+  const to = [
+    opts.clientName ?? quote.prospectCompany ?? "-",
+    quote.contactPerson ?? quote.prospectContact ?? "",
+    quote.prospectAddress ?? "",
+    quote.prospectEmail ?? "",
+    quote.prospectPhone ?? "",
+  ].filter(Boolean) as string[];
+
+  doc.setFontSize(10);
+  doc.setTextColor(17, 24, 39);
+  doc.text("Quotation to", 40, y + 6);
+  doc.setTextColor(MUTED[0], MUTED[1], MUTED[2]);
+  let ty = y + 20;
+  for (const line of to) {
+    doc.text(line, 40, ty);
+    ty += 13;
+  }
+  doc.setTextColor(17, 24, 39);
+  doc.text(quote.title || "Manpower supply quotation", 40, ty + 6, {
+    maxWidth: doc.internal.pageSize.getWidth() - 80,
+  });
+  if (opts.projectName) {
+    doc.setTextColor(MUTED[0], MUTED[1], MUTED[2]);
+    doc.text(`Project / site: ${opts.projectName}`, 40, ty + 20);
+  }
+
+  const unitLabel = (u: string) => (u === "Hourly" ? "hr" : u === "Daily" ? "day" : "mth");
+  autoTable(doc, {
+    startY: ty + (opts.projectName ? 34 : 20),
+    head: [["Designation", "Pax", "Rate", "OT rate", "Units", "Amount"]],
+    body: quote.lines.map((l) => [
+      l.designation + (l.description ? `\n${l.description}` : ""),
+      String(l.headcount),
+      `${money(l.normalRate)}/${unitLabel(l.unit)}`,
+      `${money(l.otRate)}/${unitLabel(l.unit)}`,
+      String(l.unitsPerPeriod),
+      money(l.amount),
+    ]),
+    styles: { fontSize: 9, cellPadding: 6 },
+    headStyles: { fillColor: BRAND, textColor: 255 },
+    columnStyles: {
+      1: { halign: "right" },
+      2: { halign: "right" },
+      3: { halign: "right" },
+      4: { halign: "right" },
+      5: { halign: "right" },
+    },
+  });
+
+  const after = doc.lastAutoTable.finalY + 26;
+  const rows: [string, string, boolean?][] = [["Subtotal", money(quote.subtotal)]];
+  if (quote.discount) rows.push(["Discount", `- ${money(quote.discount)}`]);
+  rows.push([`GST ${quote.gstRate}%`, money(quote.gstAmount)]);
+  rows.push(["Total", money(quote.total), true]);
+  let endY = totals(doc, after, rows);
+
+  doc.setFontSize(9);
+  doc.setTextColor(MUTED[0], MUTED[1], MUTED[2]);
+  doc.text(`Payment terms: ${quote.paymentTermsDays} days from invoice date`, 40, endY + 4);
+  if (quote.terms) {
+    endY += 22;
+    doc.setTextColor(17, 24, 39);
+    doc.text("Terms & conditions", 40, endY);
+    doc.setTextColor(MUTED[0], MUTED[1], MUTED[2]);
+    doc.setFontSize(8);
+    doc.text(quote.terms, 40, endY + 14, { maxWidth: doc.internal.pageSize.getWidth() - 80 });
+  }
+
+  footer(doc, "This quotation is computer generated and valid without signature.");
+  doc.save(`quotation_${quote.quoteNo}.pdf`);
+}
