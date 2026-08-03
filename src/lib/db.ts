@@ -15,6 +15,7 @@ import type { InventoryItem, StockMovement, PurchaseOrder } from "@/lib/types";
 import type {
   BranchPrefix, EmployeeCertification, TimeCard, ClaimSheet,
   TimeCardEntry, ClaimSheetRow,
+  DormitoryInvoice, DormitoryInspection, DormitoryMovement,
 } from "@/lib/types";
 import type { ClientContract } from "@/lib/types";
 import type { MedicalClaim } from "@/lib/types";

@@ -54,6 +54,9 @@ export interface AppState {
   invoices: Invoice[];
   dormitories: Dormitory[];
   allocations: BedAllocation[];
+  dormitoryInvoices: DormitoryInvoice[];
+  dormitoryInspections: DormitoryInspection[];
+  dormitoryMovements: DormitoryMovement[];
   vehicles: Vehicle[];
   trips: Trip[];
   assets: Asset[];
