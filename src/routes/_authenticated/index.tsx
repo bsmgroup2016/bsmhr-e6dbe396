@@ -490,7 +490,7 @@ function DashboardPage() {
         <div className="flex flex-col gap-4 border-b border-border/60 pb-5 sm:flex-row sm:items-end sm:justify-between">
           <div className="space-y-1">
             <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-              Dashboard
+              1 then 2 , then 3
             </h1>
             <p className="text-sm text-muted-foreground">
               Workforce, compliance and operations at a glance ·{" "}
