@@ -237,7 +237,7 @@ function QuotationsPage() {
     if (!priced.some((l) => l.designation && l.normalRate > 0)) {
       return toast.error("Add at least one designation with a rate");
     }
-    addQuotation({
+    const payload = {
       quoteNo: quoteNo.trim() || undefined,
       companyId: formCompanyId || companyId || undefined,
       clientId: clientMode === "existing" ? clientId : undefined,
@@ -254,11 +254,18 @@ function QuotationsPage() {
       lines: priced.filter((l) => l.designation),
       discount,
       gstRate,
-      status: "Draft",
       paymentTermsDays,
       terms,
       notes: notes.trim() || undefined,
-    });
+    };
+    if (editId) {
+      updateQuotation(editId, payload);
+      setOpen(false);
+      setEditId(null);
+      toast.success("Quotation updated");
+      return;
+    }
+    addQuotation({ ...payload, status: "Draft" });
     setOpen(false);
     toast.success("Quotation created");
   }
