@@ -466,7 +466,7 @@ function TimeCardsPage() {
                     </TableHeader>
                     <TableBody>
                       {comparison.map((r) => {
-                        const isMismatch = r.state === "Mismatch" || r.state === "Missing Attendance" || r.state === "Unexpected Attendance";
+                        const isMismatch = r.state === "Mismatch" || r.state === "Missing in system" || r.state === "Missing on card";
                         return (
                           <TableRow key={r.date} className={isMismatch ? "bg-destructive/5" : undefined}>
                             <TableCell className="whitespace-nowrap text-sm font-medium">{r.date}</TableCell>
