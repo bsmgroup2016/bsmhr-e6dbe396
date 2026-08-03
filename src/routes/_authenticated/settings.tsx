@@ -236,6 +236,50 @@ export default function SettingsPage() {
           </TabsContent>
 
 
+          <TabsContent value="ocr" className="mt-4 space-y-4">
+            <div className="rounded-xl border bg-card p-5 shadow-sm">
+              <div className="flex items-center gap-2 mb-4">
+                <Bot className="h-5 w-5 text-primary" />
+                <h2 className="text-lg font-semibold">OCR Settings</h2>
+              </div>
+              <p className="text-sm text-muted-foreground mb-6">
+                Configure OCR backup providers. While Lovable and OpenAI are primary, you can enable additional 
+                backups (Gemini) to ensure document processing never stops. Note: Vision capability is required 
+                for direct data import from scans.
+              </p>
+              
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 rounded-lg border bg-background/50">
+                  <div>
+                    <p className="font-medium text-sm">Vision-capable Fallback</p>
+                    <p className="text-xs text-muted-foreground">Automatically route scans to Gemini if OpenAI fails.</p>
+                  </div>
+                  <Switch defaultChecked />
+                </div>
+                
+                <div className="flex items-center justify-between p-4 rounded-lg border bg-background/50">
+                  <div>
+                    <p className="font-medium text-sm">Strict Vision Mode</p>
+                    <p className="text-xs text-muted-foreground">Only use providers that support direct image reading for high accuracy.</p>
+                  </div>
+                  <Switch defaultChecked />
+                </div>
+              </div>
+
+              <div className="mt-6 border-t pt-4">
+                <h3 className="text-sm font-semibold mb-3">Compatible OCR Backups</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {['lovable', 'openai', 'gemini'].map(name => (
+                    <div key={name} className="flex items-center justify-between p-3 rounded-md bg-muted/30 border">
+                      <span className="text-xs font-bold capitalize">{name}</span>
+                      <Badge variant="outline" className="text-[9px] bg-green-500/10 text-green-600 border-green-500/20">VISION OK</Badge>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+
           <TabsContent value="storage" className="mt-4 space-y-4">
             <div className="rounded-xl border bg-card p-5 shadow-sm">
               <div className="mb-4 flex items-center gap-2">
