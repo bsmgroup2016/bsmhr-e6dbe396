@@ -44,12 +44,12 @@ function configured(): ProviderConfig[] {
   const list: ProviderConfig[] = [];
   const env = process.env;
 
-  // Manual list for demo if keys are missing but requested in UI
   const demoKeys = {
     COPYFISH_API_KEY: "demo-key-123"
   };
 
-  const activeEnv = { ...demoKeys, ...env };
+  const activeEnv: Record<string, string | undefined> = { ...demoKeys, ...env };
+
 
 
   if (activeEnv.LOVABLE_API_KEY) {
