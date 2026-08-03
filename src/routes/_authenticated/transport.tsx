@@ -124,8 +124,8 @@ export default function TransportPage() {
       <div className="w-full space-y-6">
         <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Transport & Drivers</h1>
-            <p className="text-sm text-muted-foreground">Vehicles, drivers, daily trips and renewal alerts.</p>
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Fleet Management (Transport)</h1>
+            <p className="text-sm text-muted-foreground">Fleet management is used for managing company vehicles, maintenance schedules, road tax/insurance renewals, and coordinating daily worker transportation (trips) between dormitories and sites.</p>
           </div>
           <Button size="sm" variant="outline" className="mt-2 sm:mt-0" onClick={handleExport} disabled={filteredTrips.length === 0}>
             <Download className="mr-1 h-4 w-4" /> Export
