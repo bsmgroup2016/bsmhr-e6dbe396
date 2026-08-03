@@ -38,6 +38,7 @@ import { Route as AuthenticatedDriverDutyRouteImport } from './routes/_authentic
 import { Route as AuthenticatedDriverDispatchRouteImport } from './routes/_authenticated/driver-dispatch'
 import { Route as AuthenticatedDriverComplianceRouteImport } from './routes/_authenticated/driver-compliance'
 import { Route as AuthenticatedDocumentsRouteImport } from './routes/_authenticated/documents'
+import { Route as AuthenticatedDeploymentHistoryRouteImport } from './routes/_authenticated/deployment-history'
 import { Route as AuthenticatedDeployedWorkersRouteImport } from './routes/_authenticated/deployed-workers'
 import { Route as AuthenticatedCrmRouteImport } from './routes/_authenticated/crm'
 import { Route as AuthenticatedContractsRouteImport } from './routes/_authenticated/contracts'
@@ -219,6 +220,12 @@ const AuthenticatedDocumentsRoute = AuthenticatedDocumentsRouteImport.update({
   path: '/documents',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedDeploymentHistoryRoute =
+  AuthenticatedDeploymentHistoryRouteImport.update({
+    id: '/deployment-history',
+    path: '/deployment-history',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedDeployedWorkersRoute =
   AuthenticatedDeployedWorkersRouteImport.update({
     id: '/deployed-workers',
@@ -387,6 +394,7 @@ export interface FileRoutesByFullPath {
   '/contracts': typeof AuthenticatedContractsRoute
   '/crm': typeof AuthenticatedCrmRoute
   '/deployed-workers': typeof AuthenticatedDeployedWorkersRoute
+  '/deployment-history': typeof AuthenticatedDeploymentHistoryRoute
   '/documents': typeof AuthenticatedDocumentsRoute
   '/driver-compliance': typeof AuthenticatedDriverComplianceRoute
   '/driver-dispatch': typeof AuthenticatedDriverDispatchRoute
@@ -445,6 +453,7 @@ export interface FileRoutesByTo {
   '/contracts': typeof AuthenticatedContractsRoute
   '/crm': typeof AuthenticatedCrmRoute
   '/deployed-workers': typeof AuthenticatedDeployedWorkersRoute
+  '/deployment-history': typeof AuthenticatedDeploymentHistoryRoute
   '/documents': typeof AuthenticatedDocumentsRoute
   '/driver-compliance': typeof AuthenticatedDriverComplianceRoute
   '/driver-dispatch': typeof AuthenticatedDriverDispatchRoute
@@ -506,6 +515,7 @@ export interface FileRoutesById {
   '/_authenticated/contracts': typeof AuthenticatedContractsRoute
   '/_authenticated/crm': typeof AuthenticatedCrmRoute
   '/_authenticated/deployed-workers': typeof AuthenticatedDeployedWorkersRoute
+  '/_authenticated/deployment-history': typeof AuthenticatedDeploymentHistoryRoute
   '/_authenticated/documents': typeof AuthenticatedDocumentsRoute
   '/_authenticated/driver-compliance': typeof AuthenticatedDriverComplianceRoute
   '/_authenticated/driver-dispatch': typeof AuthenticatedDriverDispatchRoute
@@ -568,6 +578,7 @@ export interface FileRouteTypes {
     | '/contracts'
     | '/crm'
     | '/deployed-workers'
+    | '/deployment-history'
     | '/documents'
     | '/driver-compliance'
     | '/driver-dispatch'
@@ -626,6 +637,7 @@ export interface FileRouteTypes {
     | '/contracts'
     | '/crm'
     | '/deployed-workers'
+    | '/deployment-history'
     | '/documents'
     | '/driver-compliance'
     | '/driver-dispatch'
@@ -686,6 +698,7 @@ export interface FileRouteTypes {
     | '/_authenticated/contracts'
     | '/_authenticated/crm'
     | '/_authenticated/deployed-workers'
+    | '/_authenticated/deployment-history'
     | '/_authenticated/documents'
     | '/_authenticated/driver-compliance'
     | '/_authenticated/driver-dispatch'
@@ -954,6 +967,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDocumentsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/deployment-history': {
+      id: '/_authenticated/deployment-history'
+      path: '/deployment-history'
+      fullPath: '/deployment-history'
+      preLoaderRoute: typeof AuthenticatedDeploymentHistoryRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/deployed-workers': {
       id: '/_authenticated/deployed-workers'
       path: '/deployed-workers'
@@ -1174,6 +1194,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedContractsRoute: typeof AuthenticatedContractsRoute
   AuthenticatedCrmRoute: typeof AuthenticatedCrmRoute
   AuthenticatedDeployedWorkersRoute: typeof AuthenticatedDeployedWorkersRoute
+  AuthenticatedDeploymentHistoryRoute: typeof AuthenticatedDeploymentHistoryRoute
   AuthenticatedDocumentsRoute: typeof AuthenticatedDocumentsRoute
   AuthenticatedDriverComplianceRoute: typeof AuthenticatedDriverComplianceRoute
   AuthenticatedDriverDispatchRoute: typeof AuthenticatedDriverDispatchRoute
@@ -1220,6 +1241,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedContractsRoute: AuthenticatedContractsRoute,
   AuthenticatedCrmRoute: AuthenticatedCrmRoute,
   AuthenticatedDeployedWorkersRoute: AuthenticatedDeployedWorkersRoute,
+  AuthenticatedDeploymentHistoryRoute: AuthenticatedDeploymentHistoryRoute,
   AuthenticatedDocumentsRoute: AuthenticatedDocumentsRoute,
   AuthenticatedDriverComplianceRoute: AuthenticatedDriverComplianceRoute,
   AuthenticatedDriverDispatchRoute: AuthenticatedDriverDispatchRoute,
