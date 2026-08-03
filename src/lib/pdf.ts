@@ -2,7 +2,7 @@
  * Client-side PDF generation for invoices, payslips and claim sheets.
  * jsPDF + autotable are loaded lazily so they never enter the initial bundle.
  */
-import type { ClaimSheet, Employee, Invoice, PayrollEntry } from "./types";
+import type { ClaimSheet, Employee, Invoice, PayrollEntry, Quotation } from "./types";
 
 const BRAND: [number, number, number] = [37, 99, 235];
 const MUTED: [number, number, number] = [107, 114, 128];
