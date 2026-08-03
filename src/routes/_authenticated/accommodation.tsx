@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { Building2, BedDouble, Users, Plus, Search, Trash2, LogOut, Download } from "lucide-react";
+import { Building2, BedDouble, Users, Plus, Search, Trash2, LogOut, Download, FileText, ClipboardCheck, History, Eye, MapPin } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/app-shell";
@@ -20,6 +20,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   getDormitories, getAllocations, getEmployees, getCurrentCompany,
   addDormitory, deleteDormitory, addAllocation, checkOutAllocation, deleteAllocation, dormOccupancy,
+  getDormitoryInvoices, addDormitoryInvoice, updateDormitoryInvoice, deleteDormitoryInvoice,
+  getDormitoryInspections, addDormitoryInspection, updateDormitoryInspection, deleteDormitoryInspection,
+  getDormitoryMovements, addDormitoryMovement,
 } from "@/lib/store";
 import { exportRows } from "@/lib/xlsx";
 import { HousingNotificationPanel } from "@/components/housing-notification-panel";
@@ -166,9 +169,12 @@ export default function AccommodationPage() {
         </div>
 
         <Tabs defaultValue="allocations">
-          <TabsList>
+          <TabsList className="w-full justify-start overflow-x-auto">
             <TabsTrigger value="allocations">Allocations</TabsTrigger>
             <TabsTrigger value="dormitories">Dormitories</TabsTrigger>
+            <TabsTrigger value="invoices">Invoices</TabsTrigger>
+            <TabsTrigger value="inspections">Inspections</TabsTrigger>
+            <TabsTrigger value="history">Movement History</TabsTrigger>
             <TabsTrigger value="mom-address">MOM address notification</TabsTrigger>
           </TabsList>
 
