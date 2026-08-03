@@ -13,7 +13,6 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/lib/auth";
-import { initAutoSeed } from "@/lib/auto-seed";
 
 function NotFoundComponent() {
   return (
@@ -128,10 +127,6 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
-
-  useEffect(() => {
-    initAutoSeed();
-  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
