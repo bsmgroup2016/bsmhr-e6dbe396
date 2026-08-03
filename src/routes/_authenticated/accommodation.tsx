@@ -170,12 +170,12 @@ export default function AccommodationPage() {
 
         <Tabs defaultValue="allocations">
           <TabsList className="w-full justify-start overflow-x-auto">
-            <TabsTrigger value="allocations">Allocations</TabsTrigger>
+            <TabsTrigger value="allocations">Current Residents</TabsTrigger>
             <TabsTrigger value="dormitories">Dormitories</TabsTrigger>
-            <TabsTrigger value="invoices">Invoices</TabsTrigger>
+            <TabsTrigger value="invoices">Billing & Recs</TabsTrigger>
             <TabsTrigger value="inspections">Inspections</TabsTrigger>
-            <TabsTrigger value="history">Movement History</TabsTrigger>
-            <TabsTrigger value="mom-address">MOM address notification</TabsTrigger>
+            <TabsTrigger value="history">Movement Tracking</TabsTrigger>
+            <TabsTrigger value="mom-address">MOM Notification</TabsTrigger>
           </TabsList>
 
           <TabsContent value="allocations" className="mt-4">
@@ -242,9 +242,9 @@ export default function AccommodationPage() {
                       <TableHead>Worker</TableHead>
                       <TableHead>Dormitory</TableHead>
                       <TableHead>Room / Bed</TableHead>
+                      <TableHead>Days Stayed</TableHead>
                       <TableHead>Check in</TableHead>
-                      <TableHead>Check out</TableHead>
-                      <TableHead>Rent</TableHead>
+                      <TableHead>Monthly Rent</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead className="w-24"></TableHead>
                     </TableRow>
@@ -265,8 +265,18 @@ export default function AccommodationPage() {
                           </TableCell>
                           <TableCell>{dormName(a.dormitoryId)}</TableCell>
                           <TableCell>{a.roomNo}{a.bedNo ? ` / ${a.bedNo}` : ""}</TableCell>
+                          <TableCell>
+                            {a.status === "Occupied" ? (
+                              <span className="font-medium text-primary">
+                                {Math.max(0, Math.floor((new Date().getTime() - new Date(a.checkInDate).getTime()) / (1000 * 60 * 60 * 24)))} days
+                              </span>
+                            ) : a.checkOutDate ? (
+                              <span className="text-muted-foreground">
+                                {Math.max(0, Math.floor((new Date(a.checkOutDate).getTime() - new Date(a.checkInDate).getTime()) / (1000 * 60 * 60 * 24)))} days
+                              </span>
+                            ) : "—"}
+                          </TableCell>
                           <TableCell>{a.checkInDate}</TableCell>
-                          <TableCell>{a.checkOutDate ?? "—"}</TableCell>
                           <TableCell>${a.monthlyRent.toLocaleString()}</TableCell>
                           <TableCell>
                             <StatusBadge
