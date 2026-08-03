@@ -22,6 +22,7 @@ import { TripCalendar } from "@/components/trip-calendar";
 import {
   getVehicles, getTrips, getEmployees, getSites, getCurrentCompany,
   addVehicle, deleteVehicle, addTrip, updateTrip, deleteTrip, vehicleExpiryAlerts,
+  getFuelLogs, getDriverProfiles, getDriverIncidents,
 } from "@/lib/store";
 import { exportRows } from "@/lib/xlsx";
 import { daysUntil } from "@/lib/compliance";
@@ -84,6 +85,10 @@ export default function TransportPage() {
   const alerts = vehicleExpiryAlerts(60).filter((a) => vehicleIds.has(a.vehicle.id));
   const todaysTrips = scopedTrips.filter((t) => t.date === today());
   const paxToday = todaysTrips.reduce((s, t) => s + t.passengers, 0);
+
+  const fuelLogs = getFuelLogs().filter(f => vehicleIds.has(f.vehicleId));
+  const driverProfiles = getDriverProfiles();
+  const driverIncidents = getDriverIncidents();
 
   const q = search.trim().toLowerCase();
   const filteredTrips = scopedTrips.filter(
@@ -433,13 +438,29 @@ export default function TransportPage() {
                           <TableCell>
                             {veh ? <StatusBadge variant="info" label={veh.plateNo} /> : <span className="text-muted-foreground">—</span>}
                           </TableCell>
-                          <TableCell>Class 3, 4</TableCell>
                           <TableCell>
-                            <div className={cn("flex items-center gap-2", daysUntil(d.passExpiry) <= 30 && "text-destructive font-medium")}>
-                              {d.passExpiry || "—"}
-                            </div>
+                            {(() => {
+                              const profile = driverProfiles.find(p => p.employeeId === d.id);
+                              return profile?.licenceClasses || "Class 3";
+                            })()}
                           </TableCell>
-                          <TableCell>0</TableCell>
+                          <TableCell>
+                            {(() => {
+                              const profile = driverProfiles.find(p => p.employeeId === d.id);
+                              const expiry = profile?.licenceExpiry || d.passExpiry;
+                              return (
+                                <div className={cn("flex items-center gap-2", daysUntil(expiry) <= 30 && "text-destructive font-medium")}>
+                                  {expiry || "—"}
+                                </div>
+                              );
+                            })()}
+                          </TableCell>
+                          <TableCell>
+                            {(() => {
+                              const profile = driverProfiles.find(p => p.employeeId === d.id);
+                              return profile?.demeritPoints || 0;
+                            })()}
+                          </TableCell>
                           <TableCell>
                             <StatusBadge variant="success" label="Active" dot />
                           </TableCell>
@@ -469,24 +490,41 @@ export default function TransportPage() {
                       <TableHead>Distance (km)</TableHead>
                       <TableHead>Fuel (L)</TableHead>
                       <TableHead>Efficiency (km/L)</TableHead>
-                      <TableHead>Cost</TableHead>
+                      <TableHead>Total Cost</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {scopedVehicles.map(v => (
-                      <TableRow key={v.id}>
-                        <TableCell className="font-medium">{v.plateNo}</TableCell>
-                        <TableCell>August 2026</TableCell>
-                        <TableCell>1,240</TableCell>
-                        <TableCell>155</TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            8.0 <TrendingUp className="h-3 w-3 text-success" />
-                          </div>
+                    {scopedVehicles.map(v => {
+                      const vLogs = fuelLogs.filter(f => f.vehicleId === v.id);
+                      const totalLiters = vLogs.reduce((sum, l) => sum + l.litres, 0);
+                      const totalCost = vLogs.reduce((sum, l) => sum + l.amount, 0);
+                      const maxOdo = vLogs.length > 0 ? Math.max(...vLogs.map(l => l.odometer)) : 0;
+                      const minOdo = vLogs.length > 0 ? Math.min(...vLogs.map(l => l.odometer)) : 0;
+                      const distance = maxOdo - minOdo;
+                      const efficiency = totalLiters > 0 ? (distance / totalLiters).toFixed(1) : "—";
+                      
+                      return (
+                        <TableRow key={v.id}>
+                          <TableCell className="font-medium">{v.plateNo}</TableCell>
+                          <TableCell>{new Date().toLocaleString('default', { month: 'long', year: 'numeric' })}</TableCell>
+                          <TableCell>{distance.toLocaleString()} km</TableCell>
+                          <TableCell>{totalLiters.toLocaleString()} L</TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              {efficiency} {Number(efficiency) > 8 ? <TrendingUp className="h-3 w-3 text-success" /> : null}
+                            </div>
+                          </TableCell>
+                          <TableCell>${totalCost.toFixed(2)}</TableCell>
+                        </TableRow>
+                      );
+                    })}
+                    {scopedVehicles.length === 0 && (
+                       <TableRow>
+                        <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">
+                          No fuel data available for this fleet.
                         </TableCell>
-                        <TableCell>$420.00</TableCell>
                       </TableRow>
-                    ))}
+                    )}
                   </TableBody>
                 </Table>
               </div>
