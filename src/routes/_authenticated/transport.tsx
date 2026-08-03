@@ -1,6 +1,7 @@
 import { useState } from "react";
+import { cn } from "@/lib/utils";
 import { createFileRoute } from "@tanstack/react-router";
-import { Truck, Route as RouteIcon, AlertTriangle, Users, Plus, Search, Trash2, Download, CheckCircle2 } from "lucide-react";
+import { Truck, Route as RouteIcon, AlertTriangle, Users, Plus, Search, Trash2, Download, CheckCircle2, Wand2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/app-shell";
@@ -23,6 +24,7 @@ import {
 } from "@/lib/store";
 import { exportRows } from "@/lib/xlsx";
 import type { Vehicle, Trip, VehicleType } from "@/lib/types";
+import { seedTransportDemoData } from "@/lib/seed-transport";
 
 export const Route = createFileRoute("/_authenticated/transport")({
   head: () => ({
@@ -125,11 +127,16 @@ export default function TransportPage() {
         <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">Fleet Management (Transport)</h1>
-            <p className="text-sm text-muted-foreground">Fleet management is used for managing company vehicles, maintenance schedules, road tax/insurance renewals, and coordinating daily worker transportation (trips) between dormitories and sites.</p>
+            <p className="text-sm text-muted-foreground max-w-2xl">Manage company vehicles, maintenance schedules, road tax/insurance renewals, and coordinate daily worker transportation (trips) between dormitories and sites.</p>
           </div>
-          <Button size="sm" variant="outline" className="mt-2 sm:mt-0" onClick={handleExport} disabled={filteredTrips.length === 0}>
-            <Download className="mr-1 h-4 w-4" /> Export
-          </Button>
+          <div className="flex gap-2 mt-2 sm:mt-0">
+            <Button size="sm" variant="outline" onClick={() => { seedTransportDemoData(); refresh(); toast.success("Demo data seeded"); }}>
+              <Wand2 className="mr-1 h-4 w-4" /> Seed Demo
+            </Button>
+            <Button size="sm" variant="outline" onClick={handleExport} disabled={filteredTrips.length === 0}>
+              <Download className="mr-1 h-4 w-4" /> Export
+            </Button>
+          </div>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -252,7 +259,7 @@ export default function TransportPage() {
                           <TableCell>{empName(t.driverEmployeeId)}</TableCell>
                           <TableCell>
                             <div>{siteName(t.siteId)}</div>
-                            <div className="text-xs text-muted-foreground">{t.route || "—"}</div>
+                            <div className="text-xs font-medium text-primary">{t.route || "—"}</div>
                           </TableCell>
                           <TableCell className="text-xs">{t.departureTime || "—"} → {t.returnTime || "—"}</TableCell>
                           <TableCell>{t.passengers}</TableCell>
@@ -339,7 +346,7 @@ export default function TransportPage() {
                       <TableHead>Type</TableHead>
                       <TableHead>Driver</TableHead>
                       <TableHead>Capacity</TableHead>
-                      <TableHead>Road tax</TableHead>
+                      <TableHead>Road tax (Days)</TableHead>
                       <TableHead>Insurance</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead className="w-16"></TableHead>
@@ -362,7 +369,16 @@ export default function TransportPage() {
                           <TableCell>{v.type}</TableCell>
                           <TableCell>{empName(v.driverEmployeeId)}</TableCell>
                           <TableCell>{v.capacity}</TableCell>
-                          <TableCell>{v.roadTaxExpiry || "—"}</TableCell>
+                          <TableCell>
+                            <div>{v.roadTaxExpiry || "—"}</div>
+                            {v.roadTaxExpiry && (
+                              <div className={cn("text-[10px] font-bold", 
+                                Math.ceil((new Date(v.roadTaxExpiry).getTime() - new Date().getTime()) / 86400000) <= 7 ? "text-destructive" : "text-muted-foreground"
+                              )}>
+                                {Math.ceil((new Date(v.roadTaxExpiry).getTime() - new Date().getTime()) / 86400000)} days left
+                              </div>
+                            )}
+                          </TableCell>
                           <TableCell>{v.insuranceExpiry || "—"}</TableCell>
                           <TableCell><StatusBadge variant={v.status === "Active" ? "success" : v.status === "In Workshop" ? "warning" : "ghost"} label={v.status} dot /></TableCell>
                           <TableCell>
