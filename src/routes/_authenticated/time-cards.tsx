@@ -459,70 +459,93 @@ function TimeCardsPage() {
                     <TableHeader>
                       <TableRow>
                         <TableHead>Date</TableHead>
-                        <TableHead>Card in</TableHead>
-                        <TableHead>Card out</TableHead>
-                        <TableHead>System in</TableHead>
-                        <TableHead>System out</TableHead>
+                        <TableHead>Comparison (Card vs System)</TableHead>
                         <TableHead>Result</TableHead>
                         <TableHead>Decision</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {comparison.map((r) => (
-                        <TableRow key={r.date}>
-                          <TableCell className="whitespace-nowrap text-sm">{r.date}</TableCell>
-                          <TableCell>
-                            <Input
-                              type="time"
-                              className="h-8 w-28"
-                              value={r.cardIn ?? ""}
-                              onChange={(e) => setEntry(r.date, { checkIn: e.target.value })}
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <Input
-                              type="time"
-                              className="h-8 w-28"
-                              value={r.cardOut ?? ""}
-                              onChange={(e) => setEntry(r.date, { checkOut: e.target.value })}
-                            />
-                          </TableCell>
-                          <TableCell className="text-sm">{r.systemIn || "—"}</TableCell>
-                          <TableCell className="text-sm">{r.systemOut || "—"}</TableCell>
-                          <TableCell>
-                            <StatusBadge
-                              dot
-                              label={r.state}
-                              variant={
-                                r.state === "Verified"
-                                  ? "success"
-                                  : r.state === "Mismatch"
-                                    ? "destructive"
-                                    : "warning"
-                              }
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <Select
-                              value={r.resolution ?? ""}
-                              onValueChange={(v) =>
-                                setEntry(r.date, {
-                                  resolution: v as TimeCardEntry["resolution"],
-                                })
-                              }
-                            >
-                              <SelectTrigger className="h-8 w-36">
-                                <SelectValue placeholder="—" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="Accepted">Accepted</SelectItem>
-                                <SelectItem value="Corrected">Corrected</SelectItem>
-                                <SelectItem value="Ignored">Ignored</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                      {comparison.map((r) => {
+                        const isMismatch = r.state === "Mismatch" || r.state === "Missing Attendance" || r.state === "Unexpected Attendance";
+                        return (
+                          <TableRow key={r.date} className={isMismatch ? "bg-destructive/5" : undefined}>
+                            <TableCell className="whitespace-nowrap text-sm font-medium">{r.date}</TableCell>
+                            <TableCell>
+                              <div className="flex flex-col gap-2 py-1">
+                                <div className="grid grid-cols-2 gap-4 rounded border bg-muted/30 p-2 text-xs">
+                                  <div className="space-y-1">
+                                    <span className="text-[10px] font-bold uppercase text-muted-foreground">Scanned Card</span>
+                                    <div className="flex gap-1">
+                                      <Input
+                                        type="time"
+                                        className="h-7 w-24 text-[11px]"
+                                        value={r.cardIn ?? ""}
+                                        onChange={(e) => setEntry(r.date, { checkIn: e.target.value })}
+                                      />
+                                      <span className="self-center">—</span>
+                                      <Input
+                                        type="time"
+                                        className="h-7 w-24 text-[11px]"
+                                        value={r.cardOut ?? ""}
+                                        onChange={(e) => setEntry(r.date, { checkOut: e.target.value })}
+                                      />
+                                    </div>
+                                  </div>
+                                  <div className="space-y-1 border-l pl-4">
+                                    <span className="text-[10px] font-bold uppercase text-muted-foreground">System Attendance</span>
+                                    <div className="flex items-center gap-1 font-mono text-[11px]">
+                                      <span className={!r.systemIn && r.cardIn ? "text-destructive" : ""}>
+                                        {r.systemIn || "--:--"}
+                                      </span>
+                                      <span className="text-muted-foreground">—</span>
+                                      <span className={!r.systemOut && r.cardOut ? "text-destructive" : ""}>
+                                        {r.systemOut || "--:--"}
+                                      </span>
+                                      {isMismatch && (
+                                        <div className="ml-auto rounded-full bg-destructive/10 px-1.5 text-[9px] font-bold text-destructive">
+                                          DIFF
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <StatusBadge
+                                dot
+                                label={r.state}
+                                variant={
+                                  r.state === "Verified"
+                                    ? "success"
+                                    : r.state === "Mismatch"
+                                      ? "destructive"
+                                      : "warning"
+                                }
+                              />
+                            </TableCell>
+                            <TableCell>
+                              <Select
+                                value={r.resolution ?? ""}
+                                onValueChange={(v) =>
+                                  setEntry(r.date, {
+                                    resolution: v as TimeCardEntry["resolution"],
+                                  })
+                                }
+                              >
+                                <SelectTrigger className="h-8 w-36">
+                                  <SelectValue placeholder="Action Required" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="Accepted">Accept Card (Keep OCR)</SelectItem>
+                                  <SelectItem value="Corrected">Use System Time</SelectItem>
+                                  <SelectItem value="Ignored">Ignore Entry</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 </div>
