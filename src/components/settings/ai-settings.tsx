@@ -24,7 +24,7 @@ import { getAiConfig, updateAiKey, testAiProvider } from "@/lib/ai-settings.func
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 
-export function AiSettings() {
+export function AiSettings({ visionOnly = false }: { visionOnly?: boolean }) {
   const queryClient = useQueryClient();
   const fetchConfig = useServerFn(getAiConfig);
   const saveKey = useServerFn(updateAiKey);
@@ -73,14 +73,16 @@ export function AiSettings() {
 
   if (isLoading || !config) return <div className="p-8 text-center">Loading AI configuration...</div>;
 
-  const providers = config.providers;
+  const providers = visionOnly 
+    ? config.providers.filter(p => p.vision) 
+    : config.providers;
 
   return (
     <div className="space-y-6">
       <div className="rounded-xl border bg-card p-5 shadow-sm">
         <div className="flex items-center gap-2 mb-4">
           <Bot className="h-5 w-5 text-primary" />
-          <h2 className="text-lg font-semibold">AI & OCR Provider Management</h2>
+          <h2 className="text-lg font-semibold">{visionOnly ? "OCR Engine Management" : "AI & OCR Provider Management"}</h2>
         </div>
         
         <p className="text-sm text-muted-foreground mb-6">

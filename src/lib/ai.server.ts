@@ -11,7 +11,7 @@
  * For OCR (vision), the system automatically filters to Lovable, OpenAI, or Gemini.
  */
 
-export type AiProviderName = "lovable" | "openai" | "gemini" | "groq" | "cerebras";
+export type AiProviderName = "lovable" | "openai" | "gemini" | "groq" | "cerebras" | "copyfish";
 
 interface ProviderConfig {
   name: AiProviderName;
@@ -27,6 +27,7 @@ const OPENAI_URL = "https://api.openai.com/v1/chat/completions";
 const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
 const CEREBRAS_URL = "https://api.cerebras.ai/v1/chat/completions";
+const COPYFISH_URL = "https://api.ocr.space/parse/image";
 
 /** Gateway model id must come from the Lovable model catalog. */
 const GATEWAY_MODEL = "openai/gpt-5.6-sol";
@@ -36,7 +37,7 @@ const GEMINI_DEFAULT_MODEL = "gemini-2.5-flash";
 const GROQ_DEFAULT_MODEL = "llama-3.3-70b-versatile";
 const CEREBRAS_DEFAULT_MODEL = "llama-3.3-70b";
 
-const PROVIDER_ORDER: AiProviderName[] = ["lovable", "openai", "gemini", "groq", "cerebras"];
+const PROVIDER_ORDER: AiProviderName[] = ["lovable", "openai", "gemini", "groq", "cerebras", "copyfish"];
 
 function configured(): ProviderConfig[] {
   const list: ProviderConfig[] = [];
@@ -85,6 +86,15 @@ function configured(): ProviderConfig[] {
       apiKey: env.CEREBRAS_API_KEY,
       model: env.CEREBRAS_MODEL || CEREBRAS_DEFAULT_MODEL,
       vision: false,
+    });
+  }
+  if (env.COPYFISH_API_KEY) {
+    list.push({
+      name: "copyfish",
+      url: COPYFISH_URL,
+      apiKey: env.COPYFISH_API_KEY,
+      model: "ocr-space-v1",
+      vision: true,
     });
   }
 
@@ -180,6 +190,25 @@ export async function askAiJson(req: AiRequest): Promise<unknown> {
   let lastError: Error | null = null;
   for (const provider of list) {
     try {
+      if (provider.name === 'copyfish') {
+        // OCR.space (Copyfish) specific handling
+        if (!req.dataUrl) continue;
+        const formData = new FormData();
+        formData.append("apikey", provider.apiKey);
+        formData.append("base64Image", req.dataUrl);
+        formData.append("isOverlayRequired", "false");
+        
+        const res = await fetch(provider.url, {
+          method: "POST",
+          body: formData,
+        });
+        
+        const data = await res.json() as any;
+        if (data.OCRExitCode !== 1) throw new Error(`Copyfish failed: ${data.ErrorMessage?.[0] || 'Unknown error'}`);
+        // Copyfish gives text, we need to wrap it for extractJson if we want to maintain flow
+        return { text: data.ParsedResults?.[0]?.ParsedText || "" };
+      }
+
       const res = await fetch(provider.url, {
         method: "POST",
         headers: {
