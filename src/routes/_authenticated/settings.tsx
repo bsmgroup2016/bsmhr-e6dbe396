@@ -11,7 +11,9 @@ import {
   Trash2,
   Save,
   HardDrive,
+  Bot,
 } from "lucide-react";
+import { AiSettings } from "@/components/settings/ai-settings";
 
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
@@ -105,10 +107,11 @@ export default function SettingsPage() {
         </div>
 
         <Tabs defaultValue="general" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 sm:w-auto sm:grid-cols-7">
+          <TabsList className="grid w-full grid-cols-3 sm:w-auto sm:grid-cols-8">
             <TabsTrigger value="general">General</TabsTrigger>
             <TabsTrigger value="notifications">Notifications</TabsTrigger>
             <TabsTrigger value="security">Security</TabsTrigger>
+            <TabsTrigger value="ai">AI Center</TabsTrigger>
             <TabsTrigger value="storage">Storage</TabsTrigger>
             <TabsTrigger value="data">Data</TabsTrigger>
             <TabsTrigger value="automation">Automation</TabsTrigger>
@@ -226,6 +229,11 @@ export default function SettingsPage() {
               </div>
             </div>
           </TabsContent>
+
+          <TabsContent value="ai" className="mt-4 space-y-4">
+            <AiSettings />
+          </TabsContent>
+
 
           <TabsContent value="storage" className="mt-4 space-y-4">
             <div className="rounded-xl border bg-card p-5 shadow-sm">
