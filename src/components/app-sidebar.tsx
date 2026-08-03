@@ -78,25 +78,25 @@ const navGroups: { label: string; items: NavItem[] }[] = [
     ],
   },
   {
-    label: "Project & Clients",
+    label: "Clients & Deployment",
     items: [
       { title: "Client Directory", url: "/clients", icon: Handshake },
       { title: "Business Pipeline (CRM)", url: "/crm", icon: BadgeDollarSign },
-      { title: "Active Projects & Sites", url: "/projects", icon: FolderKanban },
+      { title: "Projects & Sites", url: "/projects", icon: FolderKanban },
       { title: "Manpower Deployment", url: "/operations", icon: Layers },
-      { title: "Deployed Workers", url: "/deployed-workers", icon: HardHat },
-      { title: "Available Workers", url: "/available-workers", icon: Users },
+      { title: "Deployed Workers", url: "/deployed-workers", icon: HardHat, sub: true },
+      { title: "Available Pool", url: "/available-workers", icon: Users, sub: true },
       { title: "Billing & Invoicing", url: "/billing", icon: Receipt },
     ],
   },
   {
-    label: "Driver Management",
+    label: "Drivers & Transport",
     items: [
-      { title: "Driver Roster", url: "/drivers", icon: IdCard },
       { title: "Dispatch & Live Tracking", url: "/driver-dispatch", icon: MapPin },
+      { title: "Driver Roster & Licences", url: "/drivers", icon: IdCard },
       { title: "Daily Duty & Trips", url: "/driver-duty", icon: CalendarClock },
-      { title: "Fleet Management (Transport)", url: "/transport", icon: Truck },
-      { title: "Compliance & Fuel", url: "/driver-compliance", icon: Fuel },
+      { title: "Vehicles & Fleet", url: "/transport", icon: Truck },
+      { title: "Fuel, Fines & Incidents", url: "/driver-compliance", icon: Fuel },
     ],
   },
   {
