@@ -216,6 +216,26 @@ function TimeCardsPage() {
     refresh();
   }
 
+  function bulkUpdateResolution(resolution: TimeCardEntry["resolution"]) {
+    if (!selected) return;
+    const entries = [...selected.entries];
+    filteredComparison.forEach((r) => {
+      const isMismatch =
+        r.state === "Mismatch" || r.state === "Missing in system" || r.state === "Missing on card";
+      if (isMismatch) {
+        const idx = entries.findIndex((e) => e.date === r.date);
+        if (idx > -1) {
+          entries[idx] = { ...entries[idx], resolution };
+        } else {
+          entries.push({ date: r.date, resolution });
+        }
+      }
+    });
+    updateTimeCard(selected.id, { entries });
+    refresh();
+    toast.success(`Bulk updated ${filteredComparison.length} rows to ${resolution}`);
+  }
+
   function finalize(card: TimeCard) {
     const rows = compareTimeCard(card);
     const unresolved = rows.filter((r) => r.state !== "Verified" && !r.resolution).length;
@@ -487,6 +507,26 @@ function TimeCardsPage() {
                         baseName="time_card_verification"
                         sheetName="Verification"
                       />
+                      <div className="flex gap-1 border-l pl-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8 text-xs text-success hover:text-success"
+                          onClick={() => bulkUpdateResolution("Accepted")}
+                          disabled={!filteredComparison.some(r => r.state !== "Verified")}
+                        >
+                          Bulk Accept
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8 text-xs text-warning hover:text-warning"
+                          onClick={() => bulkUpdateResolution("Corrected")}
+                          disabled={!filteredComparison.some(r => r.state !== "Verified")}
+                        >
+                          Bulk Correct
+                        </Button>
+                      </div>
                       <Button size="sm" onClick={() => finalize(selected)}>
                         <CheckCircle2 className="mr-1 h-4 w-4" />
                         Finalize
