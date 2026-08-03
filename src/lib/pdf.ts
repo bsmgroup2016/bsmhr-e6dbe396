@@ -251,17 +251,31 @@ export async function downloadClaimSheetPdf(
 export async function downloadQuotationPdf(
   quote: Quotation,
   opts: {
-    company?: { name?: string; uen?: string; address?: string; phone?: string; email?: string };
+    company?: {
+      name?: string;
+      uen?: string;
+      address?: string;
+      phone?: string;
+      email?: string;
+      logoUrl?: string;
+    };
     clientName?: string;
     projectName?: string;
   },
 ) {
   const { doc, autoTable } = await newDoc();
-  const y = header(doc, "QUOTATION", opts.company, [
-    quote.quoteNo,
-    `Date: ${quote.quoteDate || "-"}`,
-    quote.validUntil ? `Valid until: ${quote.validUntil}` : "",
-  ].filter(Boolean) as string[]);
+  const logo = await loadLogo(opts.company?.logoUrl);
+  const y = header(
+    doc,
+    "QUOTATION",
+    opts.company,
+    [
+      quote.quoteNo,
+      `Date: ${quote.quoteDate || "-"}`,
+      quote.validUntil ? `Valid until: ${quote.validUntil}` : "",
+    ].filter(Boolean) as string[],
+    logo,
+  );
 
   const to = [
     opts.clientName ?? quote.prospectCompany ?? "-",
