@@ -504,7 +504,6 @@ export const toCandidate = (x: Partial<Candidate>): Row => ({
   commission_paid_on: nullDate(x.commissionPaidOn),
 });
 
-/* ---------- bulk load ---------- */
 /* ---------- accommodation & transport ---------- */
 export const fromDormitory = (r: Row): Dormitory => ({
   id: r.id, companyId: r.company_id ?? undefined, name: r.name, address: r.address ?? "",
@@ -525,6 +524,51 @@ export const toDormitory = (x: Partial<Dormitory>): Row => ({
   floor_area_sqm: x.floorAreaSqm ?? 0, rooms: x.rooms ?? 0,
   license_expiry: nullDate(x.licenseExpiry), last_inspection: nullDate(x.lastInspection),
   status: x.status, remarks: x.remarks ?? null,
+});
+
+export const fromDormitoryInvoice = (r: Row): DormitoryInvoice => ({
+  id: r.id, companyId: r.company_id ?? undefined, dormitoryId: r.dormitory_id,
+  invoiceNo: r.invoice_no, invoiceDate: d(r.invoice_date) ?? "",
+  dueDate: d(r.due_date), totalAmount: Number(r.total_amount ?? 0),
+  amountPaid: Number(r.amount_paid ?? 0), status: (r.status ?? "Draft") as DormitoryInvoice["status"],
+  documentUrl: r.document_url ?? undefined, remarks: r.remarks ?? undefined,
+  createdAt: r.created_at, updatedAt: r.updated_at,
+});
+
+export const toDormitoryInvoice = (x: Partial<DormitoryInvoice>): Row => ({
+  company_id: x.companyId || null, dormitory_id: x.dormitoryId, invoice_no: x.invoiceNo,
+  invoice_date: nullDate(x.invoiceDate), due_date: nullDate(x.dueDate),
+  total_amount: x.totalAmount ?? 0, amount_paid: x.amountPaid ?? 0,
+  status: x.status, document_url: x.documentUrl || null, remarks: x.remarks || null,
+});
+
+export const fromDormitoryInspection = (r: Row): DormitoryInspection => ({
+  id: r.id, dormitoryId: r.dormitory_id, inspectionDate: d(r.inspection_date) ?? "",
+  inspectorName: r.inspector_name ?? undefined, findings: r.findings ?? undefined,
+  documentUrls: Array.isArray(r.document_urls) ? r.document_urls : [],
+  status: (r.status ?? "Passed") as DormitoryInspection["status"],
+  rectificationDeadline: d(r.rectification_deadline),
+  createdAt: r.created_at, updatedAt: r.updated_at,
+});
+
+export const toDormitoryInspection = (x: Partial<DormitoryInspection>): Row => ({
+  dormitory_id: x.dormitoryId, inspection_date: nullDate(x.inspectionDate),
+  inspector_name: x.inspectorName || null, findings: x.findings || null,
+  document_urls: x.documentUrls || [], status: x.status,
+  rectification_deadline: nullDate(x.rectificationDeadline),
+});
+
+export const fromDormitoryMovement = (r: Row): DormitoryMovement => ({
+  id: r.id, employeeId: r.employee_id, fromDormitoryId: r.from_dormitory_id ?? undefined,
+  toDormitoryId: r.to_dormitory_id ?? undefined, fromRoom: r.from_room ?? undefined,
+  toRoom: r.to_room ?? undefined, moveDate: d(r.move_date) ?? "",
+  reason: r.reason ?? undefined, createdAt: r.created_at,
+});
+
+export const toDormitoryMovement = (x: Partial<DormitoryMovement>): Row => ({
+  employee_id: x.employeeId, from_dormitory_id: x.fromDormitoryId || null,
+  to_dormitory_id: x.toDormitoryId || null, from_room: x.fromRoom || null,
+  to_room: x.toRoom || null, move_date: nullDate(x.moveDate), reason: x.reason || null,
 });
 
 export const fromAllocation = (r: Row): BedAllocation => ({
