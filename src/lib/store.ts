@@ -15,7 +15,7 @@ import type { Expense, PaymentReceipt } from "@/lib/types";
 import type { InventoryItem, StockMovement, PurchaseOrder } from "@/lib/types";
 import type { BranchPrefix, EmployeeCertification, TimeCard, ClaimSheet } from "@/lib/types";
 import type { ClientContract } from "@/lib/types";
-import type { MedicalClaim, EmployeeLoan, LoanRepayment } from "@/lib/types";
+import type { MedicalClaim, EmployeeLoan, LoanRepayment, ManpowerRequest, ManpowerRequestItem } from "@/lib/types";
 import { supabase } from "@/integrations/supabase/client";
 import { computeStatutory, round2 } from "@/lib/sg-payroll";
 import {
@@ -32,7 +32,7 @@ import { toExpense, toPaymentReceipt } from "@/lib/db";
 import { toItem, toMovement, toPurchaseOrder } from "@/lib/db";
 import { toBranchPrefix, toCertification, toTimeCard, toClaimSheet } from "@/lib/db";
 import { toContract } from "@/lib/db";
-import { toMedicalClaim, toLoan, toLoanRepayment } from "@/lib/db";
+import { toMedicalClaim, toLoan, toLoanRepayment, fromManpowerRequest, toManpowerRequest, fromManpowerRequestItem, toManpowerRequestItem } from "@/lib/db";
 import { toDepartment, toDesignation } from "@/lib/db";
 import type { Department, Designation } from "@/lib/types";
 import type { DriverProfile, DriverIncident, FuelLog } from "@/lib/types";
@@ -89,6 +89,7 @@ export interface AppState {
   companies: Company[];
   currentCompany: string;
   currentUser: User | null;
+  manpowerRequests: ManpowerRequest[];
 }
 
 const defaultBranches: AppBranch[] = [
@@ -115,7 +116,7 @@ const emptyState: AppState = {
   departments: [], designations: [],
   driverProfiles: [], driverIncidents: [], fuelLogs: [],
   branches: defaultBranches, currentBranch: "hq",
-  companies: [], currentCompany: "", currentUser: null,
+  companies: [], currentCompany: "", currentUser: null, manpowerRequests: [],
 };
 
 let state: AppState = emptyState;
@@ -2786,4 +2787,43 @@ export function deleteDesignation(id: string) {
   setState({ ...s, designations: s.designations.filter((d) => d.id !== id) });
   void supabase.from("designations").delete().eq("id", id).then(({ error }) => fail("designations", error));
   if (target) addAuditLog("DELETE", "Designation", id, `Deleted designation ${target.title}`);
+}
+
+/* ---------------- manpower requests ---------------- */
+export function getManpowerRequests(): ManpowerRequest[] { return getState().manpowerRequests; }
+
+export function addManpowerRequest(req: Omit<ManpowerRequest, "id" | "createdAt" | "updatedAt">): ManpowerRequest {
+  const s = getState();
+  const now = new Date().toISOString();
+  const row: ManpowerRequest = {
+    ...req,
+    id: newId(),
+    createdAt: now,
+    updatedAt: now,
+  };
+  setState({ ...s, manpowerRequests: [row, ...s.manpowerRequests] });
+  void supabase.from("manpower_requests").insert({ id: row.id, ...toManpowerRequest(row) })
+    .then(({ error }) => fail("manpower_requests", error));
+  
+  if (req.items?.length) {
+    req.items.forEach(item => {
+      const itemRow = { ...item, requestId: row.id, id: newId() };
+      void supabase.from("manpower_request_items").insert({ id: itemRow.id, ...toManpowerRequestItem(itemRow) });
+    });
+  }
+
+  addAuditLog("CREATE", "ManpowerRequest", row.id, `Created manpower request: ${row.title}`);
+  return row;
+}
+
+export function updateManpowerRequest(id: string, updates: Partial<ManpowerRequest>): ManpowerRequest | undefined {
+  const s = getState();
+  const existing = s.manpowerRequests.find(r => r.id === id);
+  if (!existing) return undefined;
+  const updated = { ...existing, ...updates, updatedAt: new Date().toISOString() };
+  setState({ ...s, manpowerRequests: s.manpowerRequests.map(r => r.id === id ? updated : r) });
+  void supabase.from("manpower_requests").update(toManpowerRequest(updated)).eq("id", id)
+    .then(({ error }) => fail("manpower_requests", error));
+  addAuditLog("UPDATE", "ManpowerRequest", id, `Updated manpower request status to ${updated.status}`);
+  return updated;
 }

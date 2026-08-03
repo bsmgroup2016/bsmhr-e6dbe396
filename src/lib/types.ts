@@ -189,6 +189,33 @@ export interface Employee {
   updatedAt: string;
 }
 
+export type ManpowerRequestStatus = "Pending" | "Partially Filled" | "Filled" | "Cancelled";
+
+export interface ManpowerRequest {
+  id: string;
+  clientId: string;
+  projectId?: string;
+  title: string;
+  startDate: string;
+  endDate?: string;
+  status: ManpowerRequestStatus;
+  requestedBy: string;
+  items: ManpowerRequestItem[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ManpowerRequestItem {
+  id: string;
+  requestId: string;
+  designation: string; // trade
+  count: number;
+  countFilled: number;
+  startDate: string;
+  endDate?: string;
+  remarks?: string;
+}
+
 export type ClientStatus = "Active" | "Inactive" | "Prospect";
 
 export interface Client {
