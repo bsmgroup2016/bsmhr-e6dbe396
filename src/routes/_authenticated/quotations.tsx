@@ -25,7 +25,7 @@ import {
 import {
   getClients, getProjects, getCurrentCompany, getQuotations, addQuotation,
   updateQuotation, deleteQuotation, convertQuotationToContract,
-  computeQuotationTotals, nextQuoteNo, subscribe, getCompany,
+  computeQuotationTotals, nextQuoteNo, subscribe, getCompany, getCompanies,
 } from "@/lib/store";
 import { exportRows, timestampedName } from "@/lib/xlsx";
 import { downloadQuotationPdf } from "@/lib/pdf";
