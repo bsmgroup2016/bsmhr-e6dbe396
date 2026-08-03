@@ -129,7 +129,12 @@ function TimeCardsPage() {
     let entries: TimeCardEntry[] = [];
     const ocr = await extractTimeCardData(uploaded.url);
     if (ocr.ok) {
-      entries = ocr.data.map((r) => ({ date: r.date, checkIn: r.checkIn, checkOut: r.checkOut }));
+      entries = ocr.data.map((r) => ({
+        date: r.date,
+        checkIn: r.checkIn,
+        checkOut: r.checkOut,
+        confidence: r.confidence,
+      }));
     }
     const card = addTimeCard({
       employeeId,
@@ -195,7 +200,12 @@ function TimeCardsPage() {
       }
       const entries = mergeEntries(
         card.entries,
-        ocr.data.map((r) => ({ date: r.date, checkIn: r.checkIn, checkOut: r.checkOut })),
+        ocr.data.map((r) => ({
+          date: r.date,
+          checkIn: r.checkIn,
+          checkOut: r.checkOut,
+          confidence: r.confidence,
+        })),
       );
       updateTimeCard(card.id, { entries });
       refresh();
@@ -554,22 +564,61 @@ function TimeCardsPage() {
                               <div className="flex flex-col gap-2 py-1">
                                 <div className="grid grid-cols-2 gap-4 rounded border bg-muted/30 p-2 text-xs">
                                   <div className="space-y-1">
-                                    <span className="text-[10px] font-bold uppercase text-muted-foreground">Scanned Card</span>
-                                    <div className="flex gap-1">
-                                      <Input
-                                        type="time"
-                                        className="h-7 w-24 text-[11px]"
-                                        value={r.cardIn ?? ""}
-                                        onChange={(e) => setEntry(r.date, { checkIn: e.target.value })}
-                                      />
-                                      <span className="self-center">—</span>
-                                      <Input
-                                        type="time"
-                                        className="h-7 w-24 text-[11px]"
-                                        value={r.cardOut ?? ""}
-                                        onChange={(e) => setEntry(r.date, { checkOut: e.target.value })}
-                                      />
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-[10px] font-bold uppercase text-muted-foreground">
+                                        Scanned Card
+                                      </span>
+                                      {r.confidence !== undefined && (
+                                        <div
+                                          className={`rounded px-1 text-[9px] font-bold ${
+                                            r.confidence > 0.8
+                                              ? "bg-success/10 text-success"
+                                              : r.confidence > 0.5
+                                                ? "bg-warning/10 text-warning"
+                                                : "bg-destructive/10 text-destructive"
+                                          }`}
+                                          title={`OCR Confidence: ${Math.round(r.confidence * 100)}%`}
+                                        >
+                                          {Math.round(r.confidence * 100)}% Conf.
+                                        </div>
+                                      )}
                                     </div>
+                                    <div className="flex gap-1">
+                                      <div className="relative">
+                                        <Input
+                                          type="time"
+                                          className={`h-7 w-24 text-[11px] ${r.confidence !== undefined && r.confidence < 0.7 ? "border-warning" : ""}`}
+                                          value={r.cardIn ?? ""}
+                                          onChange={(e) => setEntry(r.date, { checkIn: e.target.value })}
+                                        />
+                                      </div>
+                                      <span className="self-center">—</span>
+                                      <div className="relative">
+                                        <Input
+                                          type="time"
+                                          className={`h-7 w-24 text-[11px] ${r.confidence !== undefined && r.confidence < 0.7 ? "border-warning" : ""}`}
+                                          value={r.cardOut ?? ""}
+                                          onChange={(e) => setEntry(r.date, { checkOut: e.target.value })}
+                                        />
+                                      </div>
+                                    </div>
+                                    {r.suggestion && (
+                                      <div className="mt-1 flex flex-wrap gap-1 border-t border-dashed pt-1">
+                                        <span className="text-[9px] text-muted-foreground">Suggest:</span>
+                                        <Button
+                                          variant="ghost"
+                                          className="h-4 px-1 text-[9px] hover:bg-primary/10"
+                                          onClick={() =>
+                                            setEntry(r.date, {
+                                              checkIn: r.suggestion?.checkIn,
+                                              checkOut: r.suggestion?.checkOut,
+                                            })
+                                          }
+                                        >
+                                          {r.suggestion.checkIn || "??"} - {r.suggestion.checkOut || "??"}
+                                        </Button>
+                                      </div>
+                                    )}
                                   </div>
                                   <div className="space-y-1 border-l pl-4">
                                     <span className="text-[10px] font-bold uppercase text-muted-foreground">System Attendance</span>

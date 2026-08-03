@@ -2659,6 +2659,8 @@ export type TimeCardComparison = {
   state: "Verified" | "Mismatch" | "Missing in system" | "Missing on card";
   resolution?: TimeCard["entries"][number]["resolution"];
   remarks?: string;
+  confidence?: number;
+  suggestion?: { checkIn?: string; checkOut?: string };
 };
 
 const hhmm = (v?: string) => (v ? v.slice(0, 5) : "");
@@ -2684,7 +2686,18 @@ export function compareTimeCard(card: TimeCard): TimeCardComparison[] {
       else if (!entry || (!cardIn && !cardOut)) state = "Missing on card";
       else if (cardIn === systemIn && cardOut === systemOut) state = "Verified";
       else state = "Mismatch";
-      return { date, cardIn, cardOut, systemIn, systemOut, state, resolution: entry?.resolution, remarks: entry?.remarks };
+      return {
+        date,
+        cardIn,
+        cardOut,
+        systemIn,
+        systemOut,
+        state,
+        resolution: entry?.resolution,
+        remarks: entry?.remarks,
+        confidence: entry?.confidence,
+        suggestion: entry?.suggestion,
+      };
     });
 }
 
