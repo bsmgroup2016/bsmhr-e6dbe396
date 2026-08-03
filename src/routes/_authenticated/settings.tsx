@@ -40,6 +40,7 @@ import { getBranches, getCurrentBranch, setCurrentBranch, exportState, importSta
 import { checkR2Status } from "@/lib/r2";
 import { SystemHealth } from "@/components/settings/system-health";
 import { AutomationCentre } from "@/components/settings/automation-centre";
+import { CompanyLogos } from "@/components/settings/company-logos";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({
@@ -172,6 +173,8 @@ export default function SettingsPage() {
                 </div>
               </div>
             </div>
+
+            <CompanyLogos />
 
             <BranchPrefixManager />
           </TabsContent>
