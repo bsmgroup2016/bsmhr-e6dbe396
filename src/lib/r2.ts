@@ -140,6 +140,24 @@ export async function openR2File(ref: string): Promise<void> {
   window.open(url, "_blank", "noopener");
 }
 
+/**
+ * Read a stored object as a Blob through this app's own same-origin proxy.
+ * Signed R2 URLs are fine for <img> tags but cross-origin `fetch` on them is
+ * blocked, so anything that needs the bytes (PDF letterheads, ZIPs) must go
+ * through `/api/public/r2-file`.
+ */
+export async function fetchR2Blob(ref: string): Promise<Blob> {
+  const token = await accessToken();
+  const key = ref.includes("r2-file?key=")
+    ? decodeURIComponent(ref.split("key=")[1].split("&")[0])
+    : ref;
+  const res = await fetch(`/api/public/r2-file?key=${encodeURIComponent(key)}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  if (!res.ok) throw new Error(`Could not read file (${res.status})`);
+  return res.blob();
+}
+
 /** Best-effort file name from a stored reference or signed URL. */
 export function r2FileName(ref: string): string {
   const raw = ref.split("?")[0].split("/").pop() ?? "download";
