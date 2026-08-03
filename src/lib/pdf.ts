@@ -21,25 +21,57 @@ async function newDoc() {
   return { doc: doc as any, autoTable };
 }
 
+/** Fetch an R2-stored logo and return a jsPDF-friendly data URL. */
+async function loadLogo(ref?: string): Promise<{ data: string; format: string } | null> {
+  if (!ref) return null;
+  try {
+    const { getSignedUrl } = await import("./r2");
+    const url = await getSignedUrl(ref);
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    const data = await new Promise<string>((resolve, reject) => {
+      const fr = new FileReader();
+      fr.onload = () => resolve(String(fr.result));
+      fr.onerror = () => reject(new Error("read failed"));
+      fr.readAsDataURL(blob);
+    });
+    const format = blob.type.includes("png") ? "PNG" : blob.type.includes("webp") ? "WEBP" : "JPEG";
+    return { data, format };
+  } catch {
+    return null;
+  }
+}
+
 function header(
   doc: any,
   title: string,
   company: { name?: string; uen?: string; address?: string } | undefined,
   right: string[],
+  logo?: { data: string; format: string } | null,
 ) {
   doc.setFillColor(BRAND[0], BRAND[1], BRAND[2]);
   doc.rect(0, 0, doc.internal.pageSize.getWidth(), 6, "F");
+  let textX = 40;
+  if (logo) {
+    try {
+      doc.addImage(logo.data, logo.format, 40, 26, 56, 56, undefined, "FAST");
+      textX = 108;
+    } catch {
+      textX = 40;
+    }
+  }
   doc.setFontSize(18);
   doc.setTextColor(17, 24, 39);
-  doc.text(title, 40, 52);
+  doc.text(title, textX, 52);
   doc.setFontSize(10);
   doc.setTextColor(MUTED[0], MUTED[1], MUTED[2]);
-  let y = 76;
+  let y = logo ? 96 : 76;
   const left = [company?.name, company?.uen ? `UEN: ${company.uen}` : "", company?.address].filter(
     Boolean,
   ) as string[];
   for (const line of left) {
-    doc.text(line, 40, y);
+    doc.text(line, 40, y, { maxWidth: doc.internal.pageSize.getWidth() - 240 });
     y += 14;
   }
   const rx = doc.internal.pageSize.getWidth() - 40;
@@ -219,17 +251,31 @@ export async function downloadClaimSheetPdf(
 export async function downloadQuotationPdf(
   quote: Quotation,
   opts: {
-    company?: { name?: string; uen?: string; address?: string; phone?: string; email?: string };
+    company?: {
+      name?: string;
+      uen?: string;
+      address?: string;
+      phone?: string;
+      email?: string;
+      logoUrl?: string;
+    };
     clientName?: string;
     projectName?: string;
   },
 ) {
   const { doc, autoTable } = await newDoc();
-  const y = header(doc, "QUOTATION", opts.company, [
-    quote.quoteNo,
-    `Date: ${quote.quoteDate || "-"}`,
-    quote.validUntil ? `Valid until: ${quote.validUntil}` : "",
-  ].filter(Boolean) as string[]);
+  const logo = await loadLogo(opts.company?.logoUrl);
+  const y = header(
+    doc,
+    "QUOTATION",
+    opts.company,
+    [
+      quote.quoteNo,
+      `Date: ${quote.quoteDate || "-"}`,
+      quote.validUntil ? `Valid until: ${quote.validUntil}` : "",
+    ].filter(Boolean) as string[],
+    logo,
+  );
 
   const to = [
     opts.clientName ?? quote.prospectCompany ?? "-",
