@@ -941,6 +941,7 @@ export async function loadAll(): Promise<LoadedData> {
     inventory, movements, purchaseOrders,
     branchPrefixes, certifications, timeCards, claimSheets, contracts,
     medicalClaims,
+    dormInvoices, dormInspections, dormMovements,
   ] = await Promise.all([
     all("companies"), all("employees"), all("clients"), all("projects"), all("sites"),
     all("assignments"), all("employee_documents"), all("attendance"), all("payroll_entries"),
@@ -955,6 +956,7 @@ export async function loadAll(): Promise<LoadedData> {
     all("branch_prefixes"), all("employee_certifications"), all("time_cards"), all("claim_sheets"),
     all("client_contracts"),
     all("medical_claims"),
+    all("dormitory_invoices"), all("dormitory_inspections"), all("dormitory_movements"),
   ]);
 
   const [loanRows, repaymentRows] = await Promise.all([
@@ -1011,6 +1013,9 @@ export async function loadAll(): Promise<LoadedData> {
     allocations: allocations.map(fromAllocation),
     vehicles: vehicles.map(fromVehicle),
     trips: trips.map(fromTrip),
+    dormitoryInvoices: dormInvoices.map(fromDormitoryInvoice),
+    dormitoryInspections: dormInspections.map(fromDormitoryInspection),
+    dormitoryMovements: dormMovements.map(fromDormitoryMovement),
     assets: assets.map(fromAsset),
     issuances: issuances.map(fromIssuance),
     courses: courses.map(fromCourse),
