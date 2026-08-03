@@ -80,9 +80,9 @@ export function AiSettings({ visionOnly = false }: { visionOnly?: boolean }) {
 
   if (isLoading || !config) return <div className="p-8 text-center">Loading AI configuration...</div>;
 
-  const providers = visionOnly 
-    ? config.providers.filter(p => p.name === "copyfish" || p.name === "copyshish") 
-    : config.providers;
+  const providers = visionOnly
+    ? config.providers.filter(p => p.name === "copyfish" || p.name === "copyshish")
+    : config.providers.filter(p => p.name !== "copyfish" && p.name !== "copyshish");
 
   return (
     <div className="space-y-6">
