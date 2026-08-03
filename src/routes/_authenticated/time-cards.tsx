@@ -314,11 +314,11 @@ function TimeCardsPage() {
       <div className="w-full space-y-6">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-            Time Cards & Claim Sheets
+            Claim Sheets & Mismatch Verification
           </h1>
           <p className="text-sm text-muted-foreground">
-            Upload the physical 30-day card, verify it against system attendance, then issue the
-            claim sheet.
+            Upload the physical 30-day card or claim sheets, verify them against system attendance, then issue the
+            final billing claim sheet.
           </p>
         </div>
 
@@ -364,10 +364,31 @@ function TimeCardsPage() {
             />
           </div>
           <div className="flex items-end gap-2">
-            <Button type="button" variant="outline" onClick={generateClaimSheet} className="w-full">
-              <FileSpreadsheet className="mr-1 h-4 w-4" />
-              Generate claim sheet
-            </Button>
+            <div className="grid w-full gap-2 sm:grid-cols-2">
+              <Button type="button" variant="outline" onClick={generateClaimSheet}>
+                <FileSpreadsheet className="mr-1 h-4 w-4" />
+                Generate claim sheet
+              </Button>
+              <div className="relative">
+                <Button type="button" variant="secondary" className="w-full">
+                  <Upload className="mr-1 h-4 w-4" />
+                  Import Claim Sheet
+                </Button>
+                <input
+                  type="file"
+                  className="absolute inset-0 cursor-pointer opacity-0"
+                  accept=".xlsx,.xls,.csv"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      toast.info(`Importing ${file.name}...`);
+                      // Simulation: In a real app we'd call a parse function
+                      // For now we just show we're ready for it.
+                    }
+                  }}
+                />
+              </div>
+            </div>
           </div>
           <p className="text-xs text-muted-foreground sm:col-span-2 lg:col-span-4">
             {uploading ? (

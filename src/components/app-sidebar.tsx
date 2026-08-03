@@ -73,7 +73,7 @@ const navGroups: { label: string; items: NavItem[] }[] = [
       { title: "MOM Compliance", url: "/compliance", icon: ShieldCheck },
       { title: "Levy & Quota (DRC)", url: "/mom", icon: Landmark },
       { title: "Attendance & OT", url: "/time-management", icon: CalendarClock },
-      { title: "Claims & Time Cards", url: "/time-cards", icon: ScanLine },
+      { title: "Verification & Claim Sheets", url: "/time-cards", icon: ScanLine },
       { title: "Leave Management", url: "/leave", icon: CalendarClock },
       { title: "Training & WSH Safety", url: "/training", icon: GraduationCap },
       { title: "Workforce Payroll", url: "/payroll", icon: Briefcase },
