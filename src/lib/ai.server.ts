@@ -161,15 +161,24 @@ function extractJson(text: string): unknown {
 /** Ask the configured provider(s) for a JSON answer, falling back on failure. */
 export async function askAiJson(req: AiRequest): Promise<unknown> {
   let list = configured();
+
+  // Filter based on database/settings preference if implemented
+  const preferred = (process.env.AI_PROVIDER || "").trim().toLowerCase();
+  const disabledProviders = (process.env.AI_DISABLED_PROVIDERS || "").split(",").map(s => s.trim().toLowerCase());
+  
+  list = list.filter(p => !disabledProviders.includes(p.name));
+
   // Scanned documents can only go to providers that accept images.
   if (req.dataUrl) list = list.filter((p) => p.vision);
+  
   if (list.length === 0) {
     throw new Error(
       req.dataUrl
-        ? "No image-capable AI provider is configured — add an OpenAI or Google Gemini API key"
-        : "AI is not configured — add an AI provider API key or enable the Lovable AI gateway",
+        ? "No enabled image-capable AI provider is configured — check your AI Center settings"
+        : "No AI providers are currently enabled or configured — check your AI Center settings",
     );
   }
+
 
   let lastError: Error | null = null;
   for (const provider of list) {
