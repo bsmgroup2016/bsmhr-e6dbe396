@@ -422,6 +422,9 @@ function QuotationsPage() {
                         <Button size="icon" variant="ghost" title="Duplicate" onClick={() => duplicate(q)}>
                           <Copy className="h-4 w-4" />
                         </Button>
+                        <Button size="icon" variant="ghost" title="Download PDF" onClick={() => downloadPdf(q)}>
+                          <FileText className="h-4 w-4 text-primary" />
+                        </Button>
                         <Button
                           size="icon"
                           variant="ghost"
