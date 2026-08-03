@@ -42,7 +42,7 @@ function duration(start: string, end?: string) {
 }
 
 const statusVariant = (s: AssignmentStatus) =>
-  s === "Active" ? "success" : s === "Approved" || s === "Pending" ? "info" : s === "Rejected" ? "danger" : "muted";
+  s === "Active" ? "success" : s === "Approved" || s === "Pending" ? "info" : s === "Rejected" ? "destructive" : "ghost";
 
 function DeploymentHistoryPage() {
   const search = Route.useSearch();

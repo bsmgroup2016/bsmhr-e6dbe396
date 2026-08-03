@@ -105,7 +105,7 @@ function ClientProfilePage() {
             <p className="text-sm text-muted-foreground">
               {client.code} · {client.industry ?? "—"} ·{" "}
               <StatusBadge
-                variant={client.status === "Active" ? "success" : client.status === "Prospect" ? "warning" : "muted"}
+                variant={client.status === "Active" ? "success" : client.status === "Prospect" ? "warning" : "ghost"}
                 label={client.status}
                 dot
               />
@@ -292,7 +292,7 @@ function ClientProfilePage() {
                         <TableCell>{money(r.normalRate)}</TableCell>
                         <TableCell>{money(r.otRate)}</TableCell>
                         <TableCell className="text-xs">{r.effectiveFrom} → {r.effectiveTo ?? "open"}</TableCell>
-                        <TableCell><StatusBadge variant={r.status === "Active" ? "success" : "muted"} label={r.status} dot /></TableCell>
+                        <TableCell><StatusBadge variant={r.status === "Active" ? "success" : "ghost"} label={r.status} dot /></TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
