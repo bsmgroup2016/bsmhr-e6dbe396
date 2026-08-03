@@ -15,7 +15,7 @@ import type { Expense, PaymentReceipt } from "@/lib/types";
 import type { InventoryItem, StockMovement, PurchaseOrder } from "@/lib/types";
 import type { BranchPrefix, EmployeeCertification, TimeCard, ClaimSheet } from "@/lib/types";
 import type { ClientContract } from "@/lib/types";
-import type { MedicalClaim, EmployeeLoan, LoanRepayment } from "@/lib/types";
+import type { MedicalClaim, EmployeeLoan, LoanRepayment, ManpowerRequest, ManpowerRequestItem } from "@/lib/types";
 import { supabase } from "@/integrations/supabase/client";
 import { computeStatutory, round2 } from "@/lib/sg-payroll";
 import {
@@ -32,7 +32,7 @@ import { toExpense, toPaymentReceipt } from "@/lib/db";
 import { toItem, toMovement, toPurchaseOrder } from "@/lib/db";
 import { toBranchPrefix, toCertification, toTimeCard, toClaimSheet } from "@/lib/db";
 import { toContract } from "@/lib/db";
-import { toMedicalClaim, toLoan, toLoanRepayment } from "@/lib/db";
+import { toMedicalClaim, toLoan, toLoanRepayment, fromManpowerRequest, toManpowerRequest, fromManpowerRequestItem, toManpowerRequestItem } from "@/lib/db";
 import { toDepartment, toDesignation } from "@/lib/db";
 import type { Department, Designation } from "@/lib/types";
 import type { DriverProfile, DriverIncident, FuelLog } from "@/lib/types";
@@ -89,6 +89,7 @@ export interface AppState {
   companies: Company[];
   currentCompany: string;
   currentUser: User | null;
+  manpowerRequests: ManpowerRequest[];
 }
 
 const defaultBranches: AppBranch[] = [
