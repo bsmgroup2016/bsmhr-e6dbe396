@@ -358,6 +358,7 @@ function QuotationsPage() {
               size="sm"
               onClick={() => {
                 resetForm();
+                setEditId(null);
                 setOpen(true);
               }}
             >
@@ -465,6 +466,9 @@ function QuotationsPage() {
                         <Button size="icon" variant="ghost" title="Duplicate" onClick={() => duplicate(q)}>
                           <Copy className="h-4 w-4" />
                         </Button>
+                        <Button size="icon" variant="ghost" title="Edit" onClick={() => loadForm(q)}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
                         <Button size="icon" variant="ghost" title="Download PDF" onClick={() => downloadPdf(q)}>
                           <FileText className="h-4 w-4 text-primary" />
                         </Button>
@@ -490,10 +494,16 @@ function QuotationsPage() {
       </div>
 
       {/* create dialog */}
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog
+        open={open}
+        onOpenChange={(o) => {
+          setOpen(o);
+          if (!o) setEditId(null);
+        }}
+      >
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
           <DialogHeader>
-            <DialogTitle>New quotation</DialogTitle>
+            <DialogTitle>{editId ? `Edit quotation ${quoteNo}` : "New quotation"}</DialogTitle>
             <DialogDescription>Quote manpower per designation with hourly, daily or monthly rates.</DialogDescription>
           </DialogHeader>
 
@@ -756,7 +766,7 @@ function QuotationsPage() {
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-            <Button onClick={save}>Save quotation</Button>
+            <Button onClick={save}>{editId ? "Save changes" : "Save quotation"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -821,6 +831,9 @@ function QuotationsPage() {
               )}
 
               <DialogFooter>
+                <Button variant="outline" onClick={() => loadForm(detail)}>
+                  <Pencil className="mr-2 h-4 w-4" /> Edit
+                </Button>
                 <Button variant="outline" onClick={() => downloadPdf(detail)}>
                   <Download className="mr-2 h-4 w-4" /> Download PDF
                 </Button>
