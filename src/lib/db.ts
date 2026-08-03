@@ -1059,6 +1059,8 @@ export async function loadAll(): Promise<LoadedData> {
     all("driver_fuel_logs"),
   ]);
 
+  const quotationRows = await all("quotations");
+
   const roleByUser = new Map<string, string>();
   for (const r of roles) if (!roleByUser.has(r.user_id)) roleByUser.set(r.user_id, r.role);
 
@@ -1127,6 +1129,7 @@ export async function loadAll(): Promise<LoadedData> {
     driverProfiles: driverProfileRows.map(fromDriverProfile),
     driverIncidents: driverIncidentRows.map(fromDriverIncident),
     fuelLogs: fuelLogRows.map(fromFuelLog),
+    quotations: quotationRows.map(fromQuotation),
     manpowerRequests: [],
   };
 }
