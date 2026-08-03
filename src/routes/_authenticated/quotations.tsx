@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import {
   FileSignature, Plus, Search, Trash2, Send, CheckCircle2, XCircle,
-  Download, ArrowRightLeft, Copy, FileText,
+  Download, ArrowRightLeft, Copy, FileText, Pencil,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -100,6 +100,7 @@ function QuotationsPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | QuotationStatus>("all");
   const [open, setOpen] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
   const [detail, setDetail] = useState<Quotation | null>(null);
 
   // form state
@@ -148,6 +149,37 @@ function QuotationsPage() {
     setPaymentTermsDays(30);
     setNotes("");
     setLines([emptyLine()]);
+  }
+
+  /** Load an existing quotation into the form for editing. */
+  function loadForm(quote: Quotation) {
+    setEditId(quote.id);
+    setQuoteNo(quote.quoteNo);
+    setFormCompanyId(quote.companyId || companyId || companies[0]?.id || "");
+    setClientMode(quote.clientId ? "existing" : "new");
+    setClientId(quote.clientId ?? "");
+    setProspectCompany(quote.prospectCompany ?? "");
+    setProspectContact(quote.prospectContact ?? "");
+    setProspectEmail(quote.prospectEmail ?? "");
+    setProspectPhone(quote.prospectPhone ?? "");
+    setProspectAddress(quote.prospectAddress ?? "");
+    setProjectId(quote.projectId ?? "all");
+    setTitle(quote.title);
+    setContactPerson(quote.contactPerson ?? "");
+    setQuoteDate(quote.quoteDate || today());
+    setValidUntil(quote.validUntil ?? "");
+    setGstRate(quote.gstRate);
+    setDiscount(quote.discount ?? 0);
+    setPaymentTermsDays(quote.paymentTermsDays);
+    setTerms(quote.terms ?? "");
+    setNotes(quote.notes ?? "");
+    setLines(
+      quote.lines.length
+        ? quote.lines.map((l) => ({ ...l, id: l.id || lineId() }))
+        : [emptyLine()],
+    );
+    setDetail(null);
+    setOpen(true);
   }
 
   const priced: QuotationLine[] = lines.map((l) => ({
