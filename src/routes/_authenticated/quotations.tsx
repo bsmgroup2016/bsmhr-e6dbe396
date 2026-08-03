@@ -83,7 +83,12 @@ export const Route = createFileRoute("/_authenticated/quotations")({
 
 function QuotationsPage() {
   const [, force] = useState(0);
-  useEffect(() => subscribe(() => force((v) => v + 1)), []);
+  useEffect(() => {
+    const unsub = subscribe(() => force((v) => v + 1));
+    return () => {
+      unsub();
+    };
+  }, []);
 
   const clients = getClients();
   const projects = getProjects();
