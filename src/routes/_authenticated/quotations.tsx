@@ -155,14 +155,18 @@ function QuotationsPage() {
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return quotations.filter((quote) => {
-      const client = clients.find((c) => c.id === quote.clientId);
+      const clientName = quote.clientId
+        ? clients.find((c) => c.id === quote.clientId)?.name ?? ""
+        : quote.prospectCompany ?? quote.prospectContact ?? "";
       const matchesCompany = !companyId || !quote.companyId || quote.companyId === companyId;
       const matchesStatus = statusFilter === "all" || quote.status === statusFilter;
       const matchesSearch =
         !q ||
         quote.quoteNo.toLowerCase().includes(q) ||
         quote.title.toLowerCase().includes(q) ||
-        (client?.name ?? "").toLowerCase().includes(q);
+        clientName.toLowerCase().includes(q) ||
+        (quote.prospectEmail ?? "").toLowerCase().includes(q) ||
+        (quote.prospectPhone ?? "").toLowerCase().includes(q);
       return matchesCompany && matchesStatus && matchesSearch;
     });
   }, [quotations, clients, companyId, statusFilter, search]);
@@ -184,14 +188,22 @@ function QuotationsPage() {
   }, [filtered]);
 
   function save() {
-    if (!clientId) return toast.error("Select a client");
+    if (clientMode === "existing" && !clientId) return toast.error("Select a client");
+    if (clientMode === "new" && !prospectCompany.trim() && !prospectContact.trim()) {
+      return toast.error("Enter the company or contact name of the prospect");
+    }
     if (!priced.some((l) => l.designation && l.normalRate > 0)) {
       return toast.error("Add at least one designation with a rate");
     }
     addQuotation({
       quoteNo: quoteNo.trim() || undefined,
       companyId: companyId || undefined,
-      clientId,
+      clientId: clientMode === "existing" ? clientId : undefined,
+      prospectCompany: clientMode === "new" ? prospectCompany.trim() || undefined : undefined,
+      prospectContact: clientMode === "new" ? prospectContact.trim() || undefined : undefined,
+      prospectEmail: clientMode === "new" ? prospectEmail.trim() || undefined : undefined,
+      prospectPhone: clientMode === "new" ? prospectPhone.trim() || undefined : undefined,
+      prospectAddress: clientMode === "new" ? prospectAddress.trim() || undefined : undefined,
       projectId: projectId === "all" ? undefined : projectId,
       title: title.trim() || "Manpower supply quotation",
       contactPerson: contactPerson.trim() || undefined,
