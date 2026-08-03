@@ -42,6 +42,7 @@ import { checkR2Status } from "@/lib/r2";
 import { SystemHealth } from "@/components/settings/system-health";
 import { AutomationCentre } from "@/components/settings/automation-centre";
 import { CompanyLogos } from "@/components/settings/company-logos";
+import { PaymentDetails } from "@/components/settings/payment-details";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({
@@ -111,13 +112,14 @@ export default function SettingsPage() {
         </div>
 
         <Tabs defaultValue="general" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 sm:w-auto sm:grid-cols-10">
+          <TabsList className="grid w-full grid-cols-3 sm:w-auto sm:grid-cols-11">
             <TabsTrigger value="general">General</TabsTrigger>
             <TabsTrigger value="notifications">Notifications</TabsTrigger>
             <TabsTrigger value="security">Security</TabsTrigger>
             <TabsTrigger value="ai">AI Center</TabsTrigger>
             <TabsTrigger value="ocr">OCR</TabsTrigger>
             <TabsTrigger value="smtp">SMTP</TabsTrigger>
+            <TabsTrigger value="payments">Payments</TabsTrigger>
             <TabsTrigger value="storage">Storage</TabsTrigger>
             <TabsTrigger value="data">Data</TabsTrigger>
             <TabsTrigger value="automation">Automation</TabsTrigger>
