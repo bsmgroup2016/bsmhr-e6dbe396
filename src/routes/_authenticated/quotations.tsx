@@ -766,6 +766,9 @@ function QuotationsPage() {
               )}
 
               <DialogFooter>
+                <Button variant="outline" onClick={() => downloadPdf(detail)}>
+                  <Download className="mr-2 h-4 w-4" /> Download PDF
+                </Button>
                 {detail.status === "Draft" && (
                   <Button onClick={() => { setStatus(detail, "Sent"); setDetail(null); }}>Mark as sent</Button>
                 )}
