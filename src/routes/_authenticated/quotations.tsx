@@ -95,6 +95,7 @@ function QuotationsPage() {
   const projects = getProjects();
   const companyId = getCurrentCompany();
   const quotations = getQuotations();
+  const companies = getCompanies();
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | QuotationStatus>("all");
@@ -103,6 +104,7 @@ function QuotationsPage() {
 
   // form state
   const [quoteNo, setQuoteNo] = useState("");
+  const [formCompanyId, setFormCompanyId] = useState(companyId);
   const [clientMode, setClientMode] = useState<"new" | "existing">("new");
   const [clientId, setClientId] = useState("");
   const [prospectCompany, setProspectCompany] = useState("");
@@ -126,6 +128,7 @@ function QuotationsPage() {
 
   function resetForm() {
     setQuoteNo(nextQuoteNo());
+    setFormCompanyId(companyId || companies[0]?.id || "");
     setClientMode("new");
     setClientId("");
     setProspectCompany("");
@@ -204,7 +207,7 @@ function QuotationsPage() {
     }
     addQuotation({
       quoteNo: quoteNo.trim() || undefined,
-      companyId: companyId || undefined,
+      companyId: formCompanyId || companyId || undefined,
       clientId: clientMode === "existing" ? clientId : undefined,
       prospectCompany: clientMode === "new" ? prospectCompany.trim() || undefined : undefined,
       prospectContact: clientMode === "new" ? prospectContact.trim() || undefined : undefined,
@@ -260,13 +263,14 @@ function QuotationsPage() {
   }
 
   async function downloadPdf(quote: Quotation) {
-    const company = companyId ? getCompany(companyId) : undefined;
+    const company = getCompany(quote.companyId || companyId);
     await downloadQuotationPdf(quote, {
       company: company
         ? {
             name: company.legalName || company.name,
             uen: company.uen,
             address: [company.address, company.phone, company.email].filter(Boolean).join(" · "),
+            logoUrl: company.logoUrl,
           }
         : undefined,
       clientName: quote.clientId ? clients.find((c) => c.id === quote.clientId)?.name : undefined,
@@ -458,6 +462,18 @@ function QuotationsPage() {
             <div className="space-y-1.5">
               <Label>Quote number</Label>
               <Input value={quoteNo} onChange={(e) => setQuoteNo(e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Quoting company</Label>
+              <Select value={formCompanyId} onValueChange={setFormCompanyId}>
+                <SelectTrigger><SelectValue placeholder="Select company" /></SelectTrigger>
+                <SelectContent>
+                  {companies.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>{c.legalName || c.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">Letterhead on the PDF uses this company's logo and address.</p>
             </div>
             <div className="space-y-1.5">
               <Label>Quote for</Label>
