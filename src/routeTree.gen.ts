@@ -40,6 +40,7 @@ import { Route as AuthenticatedDriverComplianceRouteImport } from './routes/_aut
 import { Route as AuthenticatedDocumentsRouteImport } from './routes/_authenticated/documents'
 import { Route as AuthenticatedDeployedWorkersRouteImport } from './routes/_authenticated/deployed-workers'
 import { Route as AuthenticatedCrmRouteImport } from './routes/_authenticated/crm'
+import { Route as AuthenticatedContractsRouteImport } from './routes/_authenticated/contracts'
 import { Route as AuthenticatedComplianceRouteImport } from './routes/_authenticated/compliance'
 import { Route as AuthenticatedCompaniesRouteImport } from './routes/_authenticated/companies'
 import { Route as AuthenticatedClientsRouteImport } from './routes/_authenticated/clients'
@@ -228,6 +229,11 @@ const AuthenticatedCrmRoute = AuthenticatedCrmRouteImport.update({
   path: '/crm',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedContractsRoute = AuthenticatedContractsRouteImport.update({
+  id: '/contracts',
+  path: '/contracts',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedComplianceRoute = AuthenticatedComplianceRouteImport.update({
   id: '/compliance',
   path: '/compliance',
@@ -372,6 +378,7 @@ export interface FileRoutesByFullPath {
   '/clients': typeof AuthenticatedClientsRoute
   '/companies': typeof AuthenticatedCompaniesRoute
   '/compliance': typeof AuthenticatedComplianceRoute
+  '/contracts': typeof AuthenticatedContractsRoute
   '/crm': typeof AuthenticatedCrmRoute
   '/deployed-workers': typeof AuthenticatedDeployedWorkersRoute
   '/documents': typeof AuthenticatedDocumentsRoute
@@ -428,6 +435,7 @@ export interface FileRoutesByTo {
   '/clients': typeof AuthenticatedClientsRoute
   '/companies': typeof AuthenticatedCompaniesRoute
   '/compliance': typeof AuthenticatedComplianceRoute
+  '/contracts': typeof AuthenticatedContractsRoute
   '/crm': typeof AuthenticatedCrmRoute
   '/deployed-workers': typeof AuthenticatedDeployedWorkersRoute
   '/documents': typeof AuthenticatedDocumentsRoute
@@ -487,6 +495,7 @@ export interface FileRoutesById {
   '/_authenticated/clients': typeof AuthenticatedClientsRoute
   '/_authenticated/companies': typeof AuthenticatedCompaniesRoute
   '/_authenticated/compliance': typeof AuthenticatedComplianceRoute
+  '/_authenticated/contracts': typeof AuthenticatedContractsRoute
   '/_authenticated/crm': typeof AuthenticatedCrmRoute
   '/_authenticated/deployed-workers': typeof AuthenticatedDeployedWorkersRoute
   '/_authenticated/documents': typeof AuthenticatedDocumentsRoute
@@ -547,6 +556,7 @@ export interface FileRouteTypes {
     | '/clients'
     | '/companies'
     | '/compliance'
+    | '/contracts'
     | '/crm'
     | '/deployed-workers'
     | '/documents'
@@ -603,6 +613,7 @@ export interface FileRouteTypes {
     | '/clients'
     | '/companies'
     | '/compliance'
+    | '/contracts'
     | '/crm'
     | '/deployed-workers'
     | '/documents'
@@ -661,6 +672,7 @@ export interface FileRouteTypes {
     | '/_authenticated/clients'
     | '/_authenticated/companies'
     | '/_authenticated/compliance'
+    | '/_authenticated/contracts'
     | '/_authenticated/crm'
     | '/_authenticated/deployed-workers'
     | '/_authenticated/documents'
@@ -944,6 +956,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCrmRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/contracts': {
+      id: '/_authenticated/contracts'
+      path: '/contracts'
+      fullPath: '/contracts'
+      preLoaderRoute: typeof AuthenticatedContractsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/compliance': {
       id: '/_authenticated/compliance'
       path: '/compliance'
@@ -1133,6 +1152,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedClientsRoute: typeof AuthenticatedClientsRoute
   AuthenticatedCompaniesRoute: typeof AuthenticatedCompaniesRoute
   AuthenticatedComplianceRoute: typeof AuthenticatedComplianceRoute
+  AuthenticatedContractsRoute: typeof AuthenticatedContractsRoute
   AuthenticatedCrmRoute: typeof AuthenticatedCrmRoute
   AuthenticatedDeployedWorkersRoute: typeof AuthenticatedDeployedWorkersRoute
   AuthenticatedDocumentsRoute: typeof AuthenticatedDocumentsRoute
@@ -1177,6 +1197,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedClientsRoute: AuthenticatedClientsRoute,
   AuthenticatedCompaniesRoute: AuthenticatedCompaniesRoute,
   AuthenticatedComplianceRoute: AuthenticatedComplianceRoute,
+  AuthenticatedContractsRoute: AuthenticatedContractsRoute,
   AuthenticatedCrmRoute: AuthenticatedCrmRoute,
   AuthenticatedDeployedWorkersRoute: AuthenticatedDeployedWorkersRoute,
   AuthenticatedDocumentsRoute: AuthenticatedDocumentsRoute,
@@ -1233,3 +1254,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
