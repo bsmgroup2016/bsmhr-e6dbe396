@@ -415,9 +415,9 @@ export default function AccommodationPage() {
                       <TableHead>Invoice No</TableHead>
                       <TableHead>Dormitory</TableHead>
                       <TableHead>Date</TableHead>
-                      <TableHead>Due Date</TableHead>
                       <TableHead>Amount</TableHead>
                       <TableHead>Paid</TableHead>
+                      <TableHead>Balance</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead className="w-16"></TableHead>
                     </TableRow>
@@ -437,10 +437,19 @@ export default function AccommodationPage() {
                           <TableCell className="font-medium">{i.invoiceNo}</TableCell>
                           <TableCell>{dormName(i.dormitoryId)}</TableCell>
                           <TableCell>{i.invoiceDate}</TableCell>
-                          <TableCell>{i.dueDate || "—"}</TableCell>
-                          <TableCell>${i.totalAmount.toLocaleString()}</TableCell>
-                          <TableCell>${i.amountPaid.toLocaleString()}</TableCell>
-                          <TableCell><StatusBadge variant={i.status === "Paid" ? "success" : "warning"} label={i.status} dot /></TableCell>
+                          <TableCell>{i.invoiceDate}</TableCell>
+                          <TableCell className="font-medium">${i.totalAmount.toLocaleString()}</TableCell>
+                          <TableCell className="text-success">${i.amountPaid.toLocaleString()}</TableCell>
+                          <TableCell className={i.totalAmount - i.amountPaid > 0 ? "text-destructive font-medium" : "text-muted-foreground"}>
+                            ${(i.totalAmount - i.amountPaid).toLocaleString()}
+                          </TableCell>
+                          <TableCell>
+                            <StatusBadge 
+                              variant={i.amountPaid >= i.totalAmount ? "success" : i.amountPaid > 0 ? "warning" : "destructive"} 
+                              label={i.amountPaid >= i.totalAmount ? "Matched" : i.amountPaid > 0 ? "Partial" : "Unpaid"} 
+                              dot 
+                            />
+                          </TableCell>
                           <TableCell>
                             <Button size="icon" variant="ghost">
                               <Eye className="h-4 w-4" />
