@@ -700,6 +700,7 @@ export const fromAsset = (r: Row): Asset => ({
   purchaseDate: d(r.purchase_date), warrantyExpiry: d(r.warranty_expiry),
   calibrationDue: d(r.calibration_due), location: r.location ?? undefined,
   status: (r.status ?? "Available") as Asset["status"], remarks: r.remarks ?? undefined,
+  reissueMonths: Number(r.reissue_months ?? 0), minStock: Number(r.min_stock ?? 0),
   createdAt: r.created_at, updatedAt: r.updated_at,
 });
 
@@ -710,6 +711,7 @@ export const toAsset = (x: Partial<Asset>): Row => ({
   purchase_date: nullDate(x.purchaseDate), warranty_expiry: nullDate(x.warrantyExpiry),
   calibration_due: nullDate(x.calibrationDue), location: x.location ?? null,
   status: x.status, remarks: x.remarks ?? null,
+  reissue_months: x.reissueMonths ?? 0, min_stock: x.minStock ?? 0,
 });
 
 export const fromIssuance = (r: Row): AssetIssuance => ({
@@ -718,6 +720,10 @@ export const fromIssuance = (r: Row): AssetIssuance => ({
   returnDate: d(r.return_date), conditionOut: (r.condition_out ?? "Good") as AssetIssuance["conditionOut"],
   conditionIn: (r.condition_in ?? undefined) as AssetIssuance["conditionIn"],
   status: (r.status ?? "Issued") as AssetIssuance["status"], remarks: r.remarks ?? undefined,
+  size: r.size ?? undefined, issuedBy: r.issued_by ?? undefined, receiptNo: r.receipt_no ?? undefined,
+  acknowledged: !!r.acknowledged, ackDate: d(r.ack_date), ackSignatureUrl: r.ack_signature_url ?? undefined,
+  replacementDue: d(r.replacement_due), costRecovery: Number(r.cost_recovery ?? 0),
+  deductFromSalary: !!r.deduct_from_salary,
   createdAt: r.created_at, updatedAt: r.updated_at,
 });
 
@@ -726,6 +732,10 @@ export const toIssuance = (x: Partial<AssetIssuance>): Row => ({
   quantity: x.quantity ?? 1, issue_date: nullDate(x.issueDate), due_date: nullDate(x.dueDate),
   return_date: nullDate(x.returnDate), condition_out: x.conditionOut ?? "Good",
   condition_in: x.conditionIn ?? null, status: x.status, remarks: x.remarks ?? null,
+  size: x.size ?? null, issued_by: x.issuedBy ?? null, receipt_no: x.receiptNo ?? null,
+  acknowledged: x.acknowledged ?? false, ack_date: nullDate(x.ackDate),
+  ack_signature_url: x.ackSignatureUrl ?? null, replacement_due: nullDate(x.replacementDue),
+  cost_recovery: x.costRecovery ?? 0, deduct_from_salary: x.deductFromSalary ?? false,
 });
 
 /* ---------- Phase 9: training & safety ---------- */

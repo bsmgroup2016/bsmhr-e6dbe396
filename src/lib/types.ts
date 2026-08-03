@@ -792,6 +792,8 @@ export interface Asset {
   location?: string;
   status: AssetStatus;
   remarks?: string;
+  reissueMonths?: number;
+  minStock?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -809,6 +811,15 @@ export interface AssetIssuance {
   conditionIn?: AssetCondition;
   status: IssuanceStatus;
   remarks?: string;
+  size?: string;
+  issuedBy?: string;
+  receiptNo?: string;
+  acknowledged?: boolean;
+  ackDate?: string;
+  ackSignatureUrl?: string;
+  replacementDue?: string;
+  costRecovery?: number;
+  deductFromSalary?: boolean;
   createdAt: string;
   updatedAt: string;
 }
