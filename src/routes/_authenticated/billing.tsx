@@ -178,6 +178,7 @@ function BillingPage() {
   const [payDate, setPayDate] = useState(new Date().toISOString().slice(0, 10));
   const [payMode, setPayMode] = useState<PaymentMode>("Bank Transfer");
   const [payRef, setPayRef] = useState("");
+  const [payerName, setPayerName] = useState("");
 
   const companyId = getCurrentCompany();
   const company = getCompanies().find((c) => c.id === companyId);
@@ -331,6 +332,7 @@ function BillingPage() {
     setPayAmount((Math.round((inv.total - inv.amountPaid) * 100) / 100).toFixed(2));
     setPayDate(new Date().toISOString().slice(0, 10));
     setPayRef("");
+    setPayerName(clients.find((c) => c.id === inv.clientId)?.name ?? "");
   }
 
   function confirmPay() {
@@ -349,6 +351,7 @@ function BillingPage() {
       amount,
       paymentMode: payMode,
       referenceNo: payRef || undefined,
+      remarks: payerName ? `Paid by ${payerName}` : undefined,
     });
     setPayTarget(null);
     refresh();
@@ -800,12 +803,21 @@ function BillingPage() {
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="payRef">Reference</Label>
+                <Label htmlFor="payRef">Transaction reference</Label>
                 <Input
                   id="payRef"
                   value={payRef}
                   onChange={(e) => setPayRef(e.target.value)}
-                  placeholder="Bank ref / cheque no"
+                  placeholder="Bank ref / cheque / PayNow ref"
+                />
+              </div>
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label htmlFor="payerName">Payer name</Label>
+                <Input
+                  id="payerName"
+                  value={payerName}
+                  onChange={(e) => setPayerName(e.target.value)}
+                  placeholder="Who made the payment"
                 />
               </div>
             </div>
