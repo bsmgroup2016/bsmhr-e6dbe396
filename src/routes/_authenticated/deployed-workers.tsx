@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Briefcase, Users, Search, Clock } from "lucide-react";
+import { Briefcase, Users, Search, Clock, ArrowLeftRight, LogOut, History } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
 import { SummaryCard } from "@/components/ui/summary-card";
@@ -23,6 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { DeploymentActionDialog } from "@/components/deployment-actions";
 import { getEmployees, getAssignments, getCompanies, getProjects, getSites } from "@/lib/store";
 import { employeeSlugById } from "@/lib/employee-slug";
 
@@ -46,6 +47,7 @@ function daysSince(iso?: string) {
 }
 
 function DeployedWorkersPage() {
+  const [tick, setTick] = useState(0);
   const employees = getEmployees().filter((e) => !!e.companyId);
   const companies = getCompanies();
   const projects = getProjects();
@@ -56,6 +58,8 @@ function DeployedWorkersPage() {
   const [project, setProject] = useState("all");
   const [trade, setTrade] = useState("all");
   const [company, setCompany] = useState("all");
+  const [action, setAction] = useState<{ assignmentId: string; mode: "transfer" | "offhire" } | null>(null);
+  void tick;
 
   const deployed = assignments
     .map((a) => {
@@ -105,6 +109,9 @@ function DeployedWorkersPage() {
           </div>
           <Button variant="outline" size="sm" asChild>
             <Link to="/available-workers">Available workers</Link>
+          </Button>
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/deployment-history"><History className="mr-1 h-4 w-4" /> Deployment history</Link>
           </Button>
         </div>
 
