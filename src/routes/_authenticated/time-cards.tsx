@@ -435,15 +435,26 @@ function TimeCardsPage() {
                   onChange={(e) => {
                     const file = e.target.files?.[0];
                     if (file) {
-                      toast.info(`Importing ${file.name}...`);
-                      // Simulation: In a real app we'd call a parse function
-                      // For now we just show we're ready for it.
+                      setImportFile(file);
+                      setIsImportOpen(true);
                     }
+                    e.target.value = "";
                   }}
                 />
               </div>
             </div>
           </div>
+
+          <ImportValidationDialog
+            file={importFile}
+            isOpen={isImportOpen}
+            onClose={() => {
+              setIsImportOpen(false);
+              setImportFile(null);
+            }}
+            onConfirm={handleImportConfirm}
+          />
+
           <p className="text-xs text-muted-foreground sm:col-span-2 lg:col-span-4">
             {uploading ? (
               <span className="inline-flex items-center gap-1">
