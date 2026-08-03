@@ -11,7 +11,7 @@
  * For OCR (vision), the system automatically filters to Lovable, OpenAI, or Gemini.
  */
 
-export type AiProviderName = "lovable" | "openai" | "gemini" | "groq" | "cerebras" | "copyfish";
+export type AiProviderName = "lovable" | "openai" | "gemini" | "groq" | "cerebras" | "copyfish" | "copyshish";
 
 interface ProviderConfig {
   name: AiProviderName;
@@ -28,6 +28,7 @@ const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/openai/chat
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
 const CEREBRAS_URL = "https://api.cerebras.ai/v1/chat/completions";
 const COPYFISH_URL = "https://api.ocr.space/parse/image";
+const COPYSHISH_URL = "https://api.ocr.space/parse/image"; // Alias for user typo
 
 /** Gateway model id must come from the Lovable model catalog. */
 const GATEWAY_MODEL = "openai/gpt-5.6-sol";
@@ -37,7 +38,7 @@ const GEMINI_DEFAULT_MODEL = "gemini-2.5-flash";
 const GROQ_DEFAULT_MODEL = "llama-3.3-70b-versatile";
 const CEREBRAS_DEFAULT_MODEL = "llama-3.3-70b";
 
-const PROVIDER_ORDER: AiProviderName[] = ["lovable", "openai", "gemini", "groq", "cerebras", "copyfish"];
+const PROVIDER_ORDER: AiProviderName[] = ["lovable", "openai", "gemini", "groq", "cerebras", "copyfish", "copyshish"];
 
 function configured(): ProviderConfig[] {
   const list: ProviderConfig[] = [];
@@ -93,6 +94,15 @@ function configured(): ProviderConfig[] {
       name: "copyfish",
       url: COPYFISH_URL,
       apiKey: env.COPYFISH_API_KEY,
+      model: "ocr-space-v1",
+      vision: true,
+    });
+  }
+  if (env.COPYSHISH_API_KEY) {
+    list.push({
+      name: "copyshish",
+      url: COPYSHISH_URL,
+      apiKey: env.COPYSHISH_API_KEY,
       model: "ocr-space-v1",
       vision: true,
     });
@@ -190,7 +200,7 @@ export async function askAiJson(req: AiRequest): Promise<unknown> {
   let lastError: Error | null = null;
   for (const provider of list) {
     try {
-      if (provider.name === 'copyfish') {
+      if (provider.name === 'copyfish' || provider.name === 'copyshish') {
         // OCR.space (Copyfish) specific handling
         if (!req.dataUrl) continue;
         const formData = new FormData();
