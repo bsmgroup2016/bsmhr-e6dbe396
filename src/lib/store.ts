@@ -2683,7 +2683,7 @@ export function compareTimeCard(card: TimeCard): TimeCardComparison[] {
       else if (!entry || (!cardIn && !cardOut)) state = "Missing on card";
       else if (cardIn === systemIn && cardOut === systemOut) state = "Verified";
       else state = "Mismatch";
-      return { date, cardIn, cardOut, systemIn, systemOut, state, resolution: entry?.resolution };
+      return { date, cardIn, cardOut, systemIn, systemOut, state, resolution: entry?.resolution, remarks: entry?.remarks };
     });
 }
 
