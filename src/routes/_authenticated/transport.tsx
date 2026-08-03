@@ -18,6 +18,7 @@ import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { TripCalendar } from "@/components/trip-calendar";
 import {
   getVehicles, getTrips, getEmployees, getSites, getCurrentCompany,
   addVehicle, deleteVehicle, addTrip, updateTrip, deleteTrip, vehicleExpiryAlerts,
@@ -160,8 +161,13 @@ export default function TransportPage() {
         <Tabs defaultValue="trips">
           <TabsList>
             <TabsTrigger value="trips">Trips</TabsTrigger>
+            <TabsTrigger value="calendar">Calendar</TabsTrigger>
             <TabsTrigger value="vehicles">Vehicles</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="calendar" className="mt-4">
+            <TripCalendar trips={filteredTrips} plate={plate} siteName={siteName} />
+          </TabsContent>
 
           <TabsContent value="trips" className="mt-4">
             <div className="rounded-xl border bg-card p-4 shadow-sm">
