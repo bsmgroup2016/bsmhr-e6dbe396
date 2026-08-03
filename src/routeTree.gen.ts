@@ -66,6 +66,7 @@ import { Route as ApiPublicAutomationRunRouteImport } from './routes/api/public/
 import { Route as ApiPublicAiStatusRouteImport } from './routes/api/public/ai-status'
 import { Route as AuthenticatedWorkforceSlugRouteImport } from './routes/_authenticated/workforce_.$slug'
 import { Route as AuthenticatedCompaniesIdRouteImport } from './routes/_authenticated/companies_.$id'
+import { Route as AuthenticatedClientsIdRouteImport } from './routes/_authenticated/clients_.$id'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -364,6 +365,11 @@ const AuthenticatedCompaniesIdRoute =
     path: '/companies/$id',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedClientsIdRoute = AuthenticatedClientsIdRouteImport.update({
+  id: '/clients_/$id',
+  path: '/clients/$id',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
@@ -407,6 +413,7 @@ export interface FileRoutesByFullPath {
   '/transport': typeof AuthenticatedTransportRoute
   '/users': typeof AuthenticatedUsersRoute
   '/workforce': typeof AuthenticatedWorkforceRoute
+  '/clients/$id': typeof AuthenticatedClientsIdRoute
   '/companies/$id': typeof AuthenticatedCompaniesIdRoute
   '/workforce/$slug': typeof AuthenticatedWorkforceSlugRoute
   '/api/public/ai-status': typeof ApiPublicAiStatusRoute
@@ -465,6 +472,7 @@ export interface FileRoutesByTo {
   '/users': typeof AuthenticatedUsersRoute
   '/workforce': typeof AuthenticatedWorkforceRoute
   '/': typeof AuthenticatedIndexRoute
+  '/clients/$id': typeof AuthenticatedClientsIdRoute
   '/companies/$id': typeof AuthenticatedCompaniesIdRoute
   '/workforce/$slug': typeof AuthenticatedWorkforceSlugRoute
   '/api/public/ai-status': typeof ApiPublicAiStatusRoute
@@ -525,6 +533,7 @@ export interface FileRoutesById {
   '/_authenticated/users': typeof AuthenticatedUsersRoute
   '/_authenticated/workforce': typeof AuthenticatedWorkforceRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/clients_/$id': typeof AuthenticatedClientsIdRoute
   '/_authenticated/companies_/$id': typeof AuthenticatedCompaniesIdRoute
   '/_authenticated/workforce_/$slug': typeof AuthenticatedWorkforceSlugRoute
   '/api/public/ai-status': typeof ApiPublicAiStatusRoute
@@ -585,6 +594,7 @@ export interface FileRouteTypes {
     | '/transport'
     | '/users'
     | '/workforce'
+    | '/clients/$id'
     | '/companies/$id'
     | '/workforce/$slug'
     | '/api/public/ai-status'
@@ -643,6 +653,7 @@ export interface FileRouteTypes {
     | '/users'
     | '/workforce'
     | '/'
+    | '/clients/$id'
     | '/companies/$id'
     | '/workforce/$slug'
     | '/api/public/ai-status'
@@ -702,6 +713,7 @@ export interface FileRouteTypes {
     | '/_authenticated/users'
     | '/_authenticated/workforce'
     | '/_authenticated/'
+    | '/_authenticated/clients_/$id'
     | '/_authenticated/companies_/$id'
     | '/_authenticated/workforce_/$slug'
     | '/api/public/ai-status'
@@ -1138,6 +1150,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCompaniesIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/clients_/$id': {
+      id: '/_authenticated/clients_/$id'
+      path: '/clients/$id'
+      fullPath: '/clients/$id'
+      preLoaderRoute: typeof AuthenticatedClientsIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
@@ -1182,6 +1201,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedUsersRoute: typeof AuthenticatedUsersRoute
   AuthenticatedWorkforceRoute: typeof AuthenticatedWorkforceRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedClientsIdRoute: typeof AuthenticatedClientsIdRoute
   AuthenticatedCompaniesIdRoute: typeof AuthenticatedCompaniesIdRoute
   AuthenticatedWorkforceSlugRoute: typeof AuthenticatedWorkforceSlugRoute
 }
@@ -1227,6 +1247,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedUsersRoute: AuthenticatedUsersRoute,
   AuthenticatedWorkforceRoute: AuthenticatedWorkforceRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedClientsIdRoute: AuthenticatedClientsIdRoute,
   AuthenticatedCompaniesIdRoute: AuthenticatedCompaniesIdRoute,
   AuthenticatedWorkforceSlugRoute: AuthenticatedWorkforceSlugRoute,
 }
