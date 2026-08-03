@@ -22,14 +22,13 @@ async function newDoc() {
 }
 
 /** Fetch an R2-stored logo and return a jsPDF-friendly data URL. */
-async function loadLogo(ref?: string): Promise<{ data: string; format: string } | null> {
+async function loadLogo(
+  ref?: string,
+): Promise<{ data: string; format: string; width: number; height: number } | null> {
   if (!ref) return null;
   try {
-    const { getSignedUrl } = await import("./r2");
-    const url = await getSignedUrl(ref);
-    const res = await fetch(url);
-    if (!res.ok) return null;
-    const blob = await res.blob();
+    const { fetchR2Blob } = await import("./r2");
+    const blob = await fetchR2Blob(ref);
     const data = await new Promise<string>((resolve, reject) => {
       const fr = new FileReader();
       fr.onload = () => resolve(String(fr.result));
@@ -37,8 +36,15 @@ async function loadLogo(ref?: string): Promise<{ data: string; format: string } 
       fr.readAsDataURL(blob);
     });
     const format = blob.type.includes("png") ? "PNG" : blob.type.includes("webp") ? "WEBP" : "JPEG";
-    return { data, format };
-  } catch {
+    const size = await new Promise<{ width: number; height: number }>((resolve) => {
+      const img = new Image();
+      img.onload = () => resolve({ width: img.naturalWidth || 1, height: img.naturalHeight || 1 });
+      img.onerror = () => resolve({ width: 1, height: 1 });
+      img.src = data;
+    });
+    return { data, format, ...size };
+  } catch (e) {
+    console.error("Logo could not be loaded for the PDF letterhead", e);
     return null;
   }
 }
@@ -48,15 +54,19 @@ function header(
   title: string,
   company: { name?: string; uen?: string; address?: string } | undefined,
   right: string[],
-  logo?: { data: string; format: string } | null,
+  logo?: { data: string; format: string; width?: number; height?: number } | null,
 ) {
   doc.setFillColor(BRAND[0], BRAND[1], BRAND[2]);
   doc.rect(0, 0, doc.internal.pageSize.getWidth(), 6, "F");
   let textX = 40;
   if (logo) {
     try {
-      doc.addImage(logo.data, logo.format, 40, 26, 56, 56, undefined, "FAST");
-      textX = 108;
+      const box = 56;
+      const ratio = (logo.width || 1) / (logo.height || 1);
+      const w = ratio >= 1 ? box : box * ratio;
+      const h = ratio >= 1 ? box / ratio : box;
+      doc.addImage(logo.data, logo.format, 40, 26 + (box - h) / 2, w, h, undefined, "FAST");
+      textX = 40 + box + 14;
     } catch {
       textX = 40;
     }
