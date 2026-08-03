@@ -2788,3 +2788,42 @@ export function deleteDesignation(id: string) {
   void supabase.from("designations").delete().eq("id", id).then(({ error }) => fail("designations", error));
   if (target) addAuditLog("DELETE", "Designation", id, `Deleted designation ${target.title}`);
 }
+
+/* ---------------- manpower requests ---------------- */
+export function getManpowerRequests(): ManpowerRequest[] { return getState().manpowerRequests; }
+
+export function addManpowerRequest(req: Omit<ManpowerRequest, "id" | "createdAt" | "updatedAt">): ManpowerRequest {
+  const s = getState();
+  const now = new Date().toISOString();
+  const row: ManpowerRequest = {
+    ...req,
+    id: newId(),
+    createdAt: now,
+    updatedAt: now,
+  };
+  setState({ ...s, manpowerRequests: [row, ...s.manpowerRequests] });
+  void supabase.from("manpower_requests").insert({ id: row.id, ...toManpowerRequest(row) })
+    .then(({ error }) => fail("manpower_requests", error));
+  
+  if (req.items?.length) {
+    req.items.forEach(item => {
+      const itemRow = { ...item, requestId: row.id, id: newId() };
+      void supabase.from("manpower_request_items").insert({ id: itemRow.id, ...toManpowerRequestItem(itemRow) });
+    });
+  }
+
+  addAuditLog("CREATE", "ManpowerRequest", row.id, `Created manpower request: ${row.title}`);
+  return row;
+}
+
+export function updateManpowerRequest(id: string, updates: Partial<ManpowerRequest>): ManpowerRequest | undefined {
+  const s = getState();
+  const existing = s.manpowerRequests.find(r => r.id === id);
+  if (!existing) return undefined;
+  const updated = { ...existing, ...updates, updatedAt: new Date().toISOString() };
+  setState({ ...s, manpowerRequests: s.manpowerRequests.map(r => r.id === id ? updated : r) });
+  void supabase.from("manpower_requests").update(toManpowerRequest(updated)).eq("id", id)
+    .then(({ error }) => fail("manpower_requests", error));
+  addAuditLog("UPDATE", "ManpowerRequest", id, `Updated manpower request status to ${updated.status}`);
+  return updated;
+}
