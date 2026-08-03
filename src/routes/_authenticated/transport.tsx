@@ -127,7 +127,7 @@ export default function TransportPage() {
       <div className="w-full space-y-6">
         <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Fleet Management (Transport)</h1>
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Vehicles & Fleet</h1>
             <p className="text-sm text-muted-foreground max-w-2xl">Manage company vehicles, maintenance schedules, road tax/insurance renewals, and coordinate daily worker transportation (trips) between dormitories and sites.</p>
           </div>
           <div className="flex gap-2 mt-2 sm:mt-0">
