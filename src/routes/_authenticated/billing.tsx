@@ -453,8 +453,7 @@ function BillingPage() {
               <TabsTrigger value="invoices">Invoices</TabsTrigger>
               <TabsTrigger value="payments">Payments</TabsTrigger>
               <TabsTrigger value="bills">Bills & expenses</TabsTrigger>
-              <TabsTrigger value="contracts">Contracts</TabsTrigger>
-              <TabsTrigger value="rates">Rate agreements</TabsTrigger>
+              <TabsTrigger value="contracts">Contracts & Rates</TabsTrigger>
               <TabsTrigger value="reports">Reports</TabsTrigger>
             </TabsList>
 

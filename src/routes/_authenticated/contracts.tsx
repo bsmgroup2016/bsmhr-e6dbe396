@@ -163,7 +163,9 @@ function ContractsPage() {
       billingCycle: form.get("billingCycle") as BillingCycle,
       billingDay: Number(form.get("billingDay") ?? 1),
       billingSource: form.get("billingSource") as BillingSource,
+      fixedAmount: Number(form.get("fixedAmount") ?? 0),
       gstRate: Number(form.get("gstRate") ?? GST_DEFAULT),
+      paymentTermsDays: Number(form.get("paymentTermsDays") ?? 30),
       autoInvoice: true,
       status: "Active",
     });
@@ -271,6 +273,16 @@ function ContractsPage() {
                           <SelectItem value="Fixed">Fixed Monthly Amount</SelectItem>
                         </SelectContent>
                       </Select>
+                    </div>
+                     <div className="space-y-2">
+                      <Label>Monthly Fixed Amount ($)</Label>
+                      <Input name="fixedAmount" type="number" step="0.01" defaultValue="0.00" />
+                    </div>
+                  </div>
+                   <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Payment Terms (Days)</Label>
+                      <Input name="paymentTermsDays" type="number" defaultValue="30" />
                     </div>
                      <div className="space-y-2">
                       <Label>GST Rate (%)</Label>
