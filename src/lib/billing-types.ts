@@ -103,7 +103,14 @@ export interface QuotationLine {
 export interface Quotation {
   id: string;
   companyId?: string;
-  clientId: string;
+  /** Existing client — empty for a brand-new prospect. */
+  clientId?: string;
+  /** Prospect (not yet a client) details captured on the quotation itself. */
+  prospectCompany?: string;
+  prospectContact?: string;
+  prospectEmail?: string;
+  prospectPhone?: string;
+  prospectAddress?: string;
   projectId?: string;
   quoteNo: string;
   title: string;
