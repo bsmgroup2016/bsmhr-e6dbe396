@@ -7,6 +7,7 @@ import type {
   LeaveRequest, RateAgreement, Invoice, InvoiceLine,
   Dormitory, BedAllocation, Vehicle, Trip,
   Asset, AssetIssuance,
+  DormitoryInvoice, DormitoryInspection, DormitoryMovement,
 } from "@/lib/types";
 import type { TrainingCourse, TrainingRecord, SafetyIncident } from "@/lib/types";
 import type { JobRequisition, Candidate } from "@/lib/types";
@@ -105,7 +106,9 @@ const emptyState: AppState = {
   employees: [], clients: [], projects: [], sites: [], assignments: [], documents: [],
   attendance: [], payroll: [], approvals: [], auditLogs: [], leaveRequests: [],
   rateAgreements: [], invoices: [], users: [],
-  dormitories: [], allocations: [], vehicles: [], trips: [],
+  dormitories: [], allocations: [],
+  dormitoryInvoices: [], dormitoryInspections: [], dormitoryMovements: [],
+  vehicles: [], trips: [],
   assets: [], issuances: [],
   courses: [], trainings: [], incidents: [],
   requisitions: [], candidates: [],
