@@ -50,6 +50,12 @@ function configured(): ProviderConfig[] {
 
   const activeEnv: Record<string, string | undefined> = { ...demoKeys, ...env };
 
+  // Debug: Log active keys (masked)
+  console.log("AI Config - Active providers detection:", 
+    Object.keys(activeEnv).filter(k => k.endsWith('_API_KEY') && activeEnv[k])
+  );
+
+
 
 
   if (activeEnv.LOVABLE_API_KEY) {
