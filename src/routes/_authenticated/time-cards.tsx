@@ -216,6 +216,26 @@ function TimeCardsPage() {
     refresh();
   }
 
+  function bulkUpdateResolution(resolution: TimeCardEntry["resolution"]) {
+    if (!selected) return;
+    const entries = [...selected.entries];
+    filteredComparison.forEach((r) => {
+      const isMismatch =
+        r.state === "Mismatch" || r.state === "Missing in system" || r.state === "Missing on card";
+      if (isMismatch) {
+        const idx = entries.findIndex((e) => e.date === r.date);
+        if (idx > -1) {
+          entries[idx] = { ...entries[idx], resolution };
+        } else {
+          entries.push({ date: r.date, resolution });
+        }
+      }
+    });
+    updateTimeCard(selected.id, { entries });
+    refresh();
+    toast.success(`Bulk updated ${filteredComparison.length} rows to ${resolution}`);
+  }
+
   function finalize(card: TimeCard) {
     const rows = compareTimeCard(card);
     const unresolved = rows.filter((r) => r.state !== "Verified" && !r.resolution).length;
