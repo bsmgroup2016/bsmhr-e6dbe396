@@ -58,7 +58,7 @@ export function AiSettings() {
   const testMutation = useMutation({
     mutationFn: (provider: string) => runTest({ data: { provider } }),
     onMutate: (provider) => setTestingProvider(provider),
-    onSuccess: (res) => {
+    onSuccess: (res: any) => {
       setTestingProvider(null);
       if (res.success) {
         toast.success("Connection test successful!");
@@ -66,6 +66,7 @@ export function AiSettings() {
         toast.error(`Test failed: ${res.error}`);
       }
     },
+
     onError: () => setTestingProvider(null),
   });
 
