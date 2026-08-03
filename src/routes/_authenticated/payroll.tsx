@@ -97,8 +97,8 @@ const PAYROLL_IMPORT_COLUMNS: ImportColumn[] = [
 export const Route = createFileRoute("/_authenticated/payroll")({
   head: () => ({
     meta: [
-      { title: "Payroll — BSM Workforce & Operations" },
-      { name: "description", content: "Monthly payroll and payslip management." },
+      { title: "Payroll & CPF Management | BSM Engineering" },
+      { name: "description", content: "Singapore-compliant payroll management for BSM Engineering. CPF e-Submission, SDL, SHG, and IR8A processing." },
       { property: "og:title", content: "Payroll — BSM Workforce & Operations" },
       { property: "og:description", content: "Monthly payroll and payslip management." },
     ],

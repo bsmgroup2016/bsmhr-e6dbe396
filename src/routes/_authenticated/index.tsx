@@ -64,8 +64,8 @@ import { isCountableWorker } from "@/lib/workforce-split";
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
     meta: [
-      { title: "Dashboard — BSM Workforce & Operations" },
-      { name: "description", content: "BSM Engineering operations dashboard." },
+      { title: "Dashboard | BSM Engineering Workforce & Operations" },
+      { name: "description", content: "BSM Engineering operations dashboard for manpower tracking, MOM compliance alerts, and project oversight." },
       { property: "og:title", content: "Dashboard — BSM Workforce & Operations" },
       { property: "og:description", content: "BSM Engineering operations dashboard." },
     ],

@@ -70,8 +70,8 @@ export const Route = createFileRoute("/_authenticated/clients")({
   }),
   head: () => ({
     meta: [
-      { title: "Clients — BSM Workforce & Operations" },
-      { name: "description", content: "Manage BSM Engineering client companies." },
+      { title: "Clients & Contracts | BSM Engineering" },
+      { name: "description", content: "Manage BSM Engineering's client portfolio and service contracts in the Singapore construction and marine sectors." },
       { property: "og:title", content: "Clients — BSM Workforce & Operations" },
       { property: "og:description", content: "Manage BSM Engineering client companies." },
     ],
