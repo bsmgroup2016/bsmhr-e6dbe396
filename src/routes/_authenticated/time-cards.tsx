@@ -489,6 +489,23 @@ function TimeCardsPage() {
                     <p className="text-xs text-muted-foreground">
                       {mismatches} of {comparison.length} rows need attention.
                     </p>
+                    {lowConfidenceCount > 0 && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="mt-2 h-7 border-warning/40 text-xs text-warning hover:text-warning"
+                        onClick={() => {
+                          setVerificationFilter("LowConfidence");
+                          setVerificationSearch("");
+                          toast.message(
+                            `Review queue: ${lowConfidenceCount} low-confidence row(s) below 70%`,
+                          );
+                        }}
+                      >
+                        <ScanLine className="mr-1 h-3.5 w-3.5" />
+                        Review queue ({lowConfidenceCount} low confidence)
+                      </Button>
+                    )}
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <div className="flex gap-2">
@@ -509,6 +526,9 @@ function TimeCardsPage() {
                           <SelectItem value="All">All Rows</SelectItem>
                           <SelectItem value="Mismatch">All Diffs</SelectItem>
                           <SelectItem value="Unresolved">Needs Action</SelectItem>
+                          <SelectItem value="LowConfidence">
+                            Low Confidence ({lowConfidenceCount})
+                          </SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
