@@ -2,16 +2,13 @@
  * AI provider layer — SINGLE place every server-side AI call goes through.
  *
  * Provider order:
- *   1. Lovable AI Gateway  (LOVABLE_API_KEY)  — default, no extra setup
- *   2. OpenAI directly     (OPENAI_API_KEY)   — automatic backup / override
- *   3. Google Gemini       (GOOGLE_API_KEY)   — backup
- *   4. Groq                (GROQ_API_KEY)     — backup (fast, free tier)
- *   5. Cerebras            (CEREBRAS_API_KEY) — backup (fast, free tier)
+ *   1. Lovable AI Gateway  (LOVABLE_API_KEY)  — primary
+ *   2. OpenAI directly     (OPENAI_API_KEY)   — first backup
+ *   3. Google Gemini       (GOOGLE_API_KEY)   — second backup (vision compatible)
+ *   4. Groq                (GROQ_API_KEY)     — third backup (text-only)
+ *   5. Cerebras            (CEREBRAS_API_KEY) — fourth backup (text-only)
  *
- * If one provider is rate limited, out of credits or down, the same request is
- * retried on the next configured one without any code change. Set
- * AI_PROVIDER=openai (or gemini / groq / cerebras / lovable) to change which
- * provider is tried first.
+ * For OCR (vision), the system automatically filters to Lovable, OpenAI, or Gemini.
  */
 
 export type AiProviderName = "lovable" | "openai" | "gemini" | "groq" | "cerebras";
