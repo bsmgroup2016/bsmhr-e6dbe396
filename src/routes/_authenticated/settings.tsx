@@ -274,14 +274,28 @@ export default function SettingsPage() {
                     <Plus className="h-3 w-3" /> Add Provider
                   </Button>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                   {['lovable', 'openai', 'gemini', 'copyfish'].map(name => (
-                    <div key={name} className="flex items-center justify-between p-3 rounded-md bg-muted/30 border">
-                      <div className="flex flex-col">
-                        <span className="text-xs font-bold capitalize">{name}</span>
-                        <span className="text-[9px] text-muted-foreground">v2.4 stable</span>
+                    <div key={name} className="flex flex-col p-3 rounded-md bg-muted/30 border">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex flex-col">
+                          <span className="text-xs font-bold capitalize">{name}</span>
+                          <span className="text-[9px] text-muted-foreground">v2.4 stable</span>
+                        </div>
+                        <Badge variant="outline" className="text-[9px] bg-green-500/10 text-green-600 border-green-500/20">VISION OK</Badge>
                       </div>
-                      <Badge variant="outline" className="text-[9px] bg-green-500/10 text-green-600 border-green-500/20">VISION OK</Badge>
+                      
+                      <div className="flex items-center gap-1.5 mt-2 pt-2 border-t border-dashed">
+                        <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-primary">
+                          <Settings className="h-3 w-3" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive">
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-primary">
+                          <Download className="h-3 w-3" />
+                        </Button>
+                      </div>
                     </div>
                   ))}
                 </div>
