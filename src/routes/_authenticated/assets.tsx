@@ -514,8 +514,68 @@ export default function AssetsPage() {
             </div>
           </TabsContent>
 
+          <TabsContent value="workers" className="mt-4">
+            <div className="rounded-xl border bg-card p-4 shadow-sm">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <h2 className="text-sm font-medium text-muted-foreground">Who is holding what</h2>
+                <div className="relative w-full max-w-sm">
+                  <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input type="search" placeholder="Search worker..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+                </div>
+              </div>
+              <div className="mt-4 overflow-hidden rounded-lg border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Worker</TableHead>
+                      <TableHead>Items held</TableHead>
+                      <TableHead>Total issued</TableHead>
+                      <TableHead>Last issue</TableHead>
+                      <TableHead>Pending sign-off</TableHead>
+                      <TableHead>Replace due</TableHead>
+                      <TableHead>Lost / damaged</TableHead>
+                      <TableHead>Held value</TableHead>
+                      <TableHead className="w-16"></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {workerLedger.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={9} className="h-32 text-center">
+                          <EmptyState className="border-0 bg-transparent" icon={<HardHat className="h-5 w-5" />} title="No PPE issued yet" description="Issue PPE to workers to build the ledger." />
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      workerLedger.map((w) => (
+                        <TableRow key={w.employeeId}>
+                          <TableCell>
+                            <div className="font-medium">{w.name}</div>
+                            <div className="text-xs text-muted-foreground">{w.code}</div>
+                          </TableCell>
+                          <TableCell className="font-medium">{w.holding}</TableCell>
+                          <TableCell>{w.total}</TableCell>
+                          <TableCell>{w.lastIssue || "—"}</TableCell>
+                          <TableCell className={w.pendingAck ? "text-amber-500" : undefined}>{w.pendingAck}</TableCell>
+                          <TableCell className={w.dueReplacement ? "text-destructive" : undefined}>{w.dueReplacement}</TableCell>
+                          <TableCell>{w.lost}{w.recovery ? ` ($${w.recovery.toFixed(2)})` : ""}</TableCell>
+                          <TableCell>${w.value.toFixed(2)}</TableCell>
+                          <TableCell>
+                            <div className="flex justify-end">
+                              <Button size="icon" variant="ghost" title="View history" onClick={() => setLedgerWorker(w.employeeId)}>
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          </TabsContent>
+
           <TabsContent value="register" className="mt-4">
-            {null}
             <div className="rounded-xl border bg-card p-4 shadow-sm">
               <div className="flex items-center justify-between">
                 <h2 className="text-sm font-medium text-muted-foreground">Asset register</h2>
