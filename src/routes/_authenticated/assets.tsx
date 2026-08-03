@@ -608,6 +608,8 @@ export default function AssetsPage() {
                       <div><Label>Warranty expiry</Label><Input type="date" value={assetForm.warrantyExpiry} onChange={(e) => setAssetForm({ ...assetForm, warrantyExpiry: e.target.value })} /></div>
                       <div><Label>Calibration due</Label><Input type="date" value={assetForm.calibrationDue} onChange={(e) => setAssetForm({ ...assetForm, calibrationDue: e.target.value })} /></div>
                       <div><Label>Storage location</Label><Input value={assetForm.location} onChange={(e) => setAssetForm({ ...assetForm, location: e.target.value })} /></div>
+                      <div><Label>Re-issue cycle (months)</Label><Input type="number" min={0} value={assetForm.reissueMonths} onChange={(e) => setAssetForm({ ...assetForm, reissueMonths: Number(e.target.value) })} /></div>
+                      <div><Label>Minimum stock</Label><Input type="number" min={0} value={assetForm.minStock} onChange={(e) => setAssetForm({ ...assetForm, minStock: Number(e.target.value) })} /></div>
                       <div className="sm:col-span-2"><Label>Remarks</Label><Textarea value={assetForm.remarks} onChange={(e) => setAssetForm({ ...assetForm, remarks: e.target.value })} /></div>
                     </div>
                     <DialogFooter>
@@ -649,6 +651,9 @@ export default function AssetsPage() {
                           <TableCell>
                             <span className="font-medium">{assetAvailableQty(a.id)}</span>
                             <span className="text-xs text-muted-foreground"> / {a.quantity} ({assetIssuedQty(a.id)} out)</span>
+                            {a.minStock && assetAvailableQty(a.id) < a.minStock ? (
+                              <div className="text-xs text-destructive">Below min stock ({a.minStock})</div>
+                            ) : null}
                           </TableCell>
                           <TableCell>${a.unitCost.toLocaleString()}</TableCell>
                           <TableCell>{a.calibrationDue ?? "—"}</TableCell>
@@ -675,6 +680,58 @@ export default function AssetsPage() {
             </div>
           </TabsContent>
         </Tabs>
+
+        <Dialog open={!!ledgerWorker} onOpenChange={(o) => !o && setLedgerWorker(null)}>
+          <DialogContent className="max-w-3xl">
+            <DialogHeader>
+              <DialogTitle>PPE history — {ledgerWorker ? empName(ledgerWorker) : ""}</DialogTitle>
+              <DialogDescription>Every item issued, when it was taken, sign-off and return status.</DialogDescription>
+            </DialogHeader>
+            <div className="max-h-[60vh] overflow-auto rounded-lg border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Item</TableHead>
+                    <TableHead>Qty / size</TableHead>
+                    <TableHead>Issued</TableHead>
+                    <TableHead>Issued by</TableHead>
+                    <TableHead>Replace by</TableHead>
+                    <TableHead>Returned</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {ledgerRows.map((i) => (
+                    <TableRow key={i.id}>
+                      <TableCell>
+                        <div className="font-medium">{assetName(i.assetId)}</div>
+                        <div className="text-xs text-muted-foreground">{i.receiptNo ?? ""}</div>
+                      </TableCell>
+                      <TableCell>{i.quantity}{i.size ? ` · ${i.size}` : ""}</TableCell>
+                      <TableCell>
+                        <div>{i.issueDate}</div>
+                        <div className="text-xs text-muted-foreground">{i.acknowledged ? `Signed ${i.ackDate ?? ""}` : "Sign-off pending"}</div>
+                      </TableCell>
+                      <TableCell>{i.issuedBy ?? "—"}</TableCell>
+                      <TableCell>{i.replacementDue ?? "—"}</TableCell>
+                      <TableCell>{i.returnDate ?? "—"}{i.conditionIn ? ` (${i.conditionIn})` : ""}</TableCell>
+                      <TableCell>
+                        <StatusBadge
+                          variant={i.status === "Returned" ? "success" : i.status === "Issued" ? "warning" : "destructive"}
+                          label={i.status}
+                          dot
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setLedgerWorker(null)}>Close</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </AppShell>
   );
