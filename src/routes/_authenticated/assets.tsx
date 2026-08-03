@@ -1,6 +1,9 @@
 import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { Boxes, HardHat, PackageCheck, AlertTriangle, Plus, Search, Trash2, Undo2, Download } from "lucide-react";
+import {
+  Boxes, HardHat, PackageCheck, AlertTriangle, Plus, Search, Trash2, Undo2, Download,
+  CheckCircle2, Clock, Eye, RefreshCw,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/app-shell";
@@ -20,7 +23,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   getAssets, getIssuances, getEmployees, getSites, getCurrentCompany,
   addAsset, deleteAsset, issueAsset, returnIssuance, deleteIssuance,
-  assetAvailableQty, assetIssuedQty, assetAlerts, overdueIssuances,
+  assetAvailableQty, assetIssuedQty, assetAlerts, overdueIssuances, updateIssuance,
 } from "@/lib/store";
 import { exportRows } from "@/lib/xlsx";
 import type { Asset, AssetIssuance } from "@/lib/types";
@@ -48,11 +51,21 @@ const emptyAsset = {
   assetCode: "", name: "", category: "PPE" as Asset["category"], serialNo: "", brand: "",
   quantity: 1, unitCost: 0, purchaseDate: "", warrantyExpiry: "", calibrationDue: "",
   location: "", status: "Available" as Asset["status"], remarks: "",
+  reissueMonths: 0, minStock: 0,
 };
 
 const emptyIssue = {
   assetId: "", employeeId: "", siteId: "", quantity: 1, issueDate: today(), dueDate: "",
   conditionOut: "Good" as AssetIssuance["conditionOut"], status: "Issued" as AssetIssuance["status"], remarks: "",
+  size: "", issuedBy: "", receiptNo: "", acknowledged: false, ackDate: "",
+  replacementDue: "", costRecovery: 0, deductFromSalary: false,
+};
+
+const addMonths = (dateStr: string, months: number) => {
+  if (!dateStr || !months) return "";
+  const d = new Date(`${dateStr}T00:00:00`);
+  d.setMonth(d.getMonth() + months);
+  return d.toISOString().slice(0, 10);
 };
 
 export default function AssetsPage() {
@@ -66,6 +79,9 @@ export default function AssetsPage() {
   const [issueOpen, setIssueOpen] = useState(false);
   const [assetForm, setAssetForm] = useState(emptyAsset);
   const [issueForm, setIssueForm] = useState(emptyIssue);
+  const [statusFilter, setStatusFilter] = useState<"all" | AssetIssuance["status"] | "Overdue" | "Unacknowledged">("all");
+  const [categoryFilter, setCategoryFilter] = useState<"all" | Asset["category"]>("all");
+  const [ledgerWorker, setLedgerWorker] = useState<string | null>(null);
 
   function refresh() {
     setAssets(getAssets());
@@ -82,6 +98,8 @@ export default function AssetsPage() {
 
   const assetName = (id: string) => assets.find((a) => a.id === id)?.name ?? "—";
   const assetCode = (id: string) => assets.find((a) => a.id === id)?.assetCode ?? "";
+  const assetCategory = (id: string) => assets.find((a) => a.id === id)?.category;
+  const assetCost = (id: string) => assets.find((a) => a.id === id)?.unitCost ?? 0;
   const empName = (id: string) => employees.find((e) => e.id === id)?.name ?? "—";
   const empCode = (id: string) => employees.find((e) => e.id === id)?.employeeCode ?? "";
   const siteName = (id?: string) => sites.find((s) => s.id === id)?.name ?? "—";
@@ -90,22 +108,74 @@ export default function AssetsPage() {
   const outNow = scopedIssues.filter((i) => i.status === "Issued").length;
   const alerts = assetAlerts().filter((x) => assetIds.has(x.asset.id));
   const overdue = overdueIssuances().filter((i) => assetIds.has(i.assetId));
+  const dueReplacement = scopedIssues.filter(
+    (i) => i.status === "Issued" && !!i.replacementDue && i.replacementDue <= today(),
+  );
+  const unacknowledged = scopedIssues.filter((i) => i.status === "Issued" && !i.acknowledged);
+  const recovery = scopedIssues.reduce((s, i) => s + (i.costRecovery ?? 0), 0);
 
   const q = search.trim().toLowerCase();
-  const filteredIssues = scopedIssues.filter(
-    (i) =>
-      !q ||
-      assetName(i.assetId).toLowerCase().includes(q) ||
-      empName(i.employeeId).toLowerCase().includes(q) ||
-      empCode(i.employeeId).toLowerCase().includes(q),
-  );
+  const filteredIssues = scopedIssues
+    .filter(
+      (i) =>
+        !q ||
+        assetName(i.assetId).toLowerCase().includes(q) ||
+        empName(i.employeeId).toLowerCase().includes(q) ||
+        empCode(i.employeeId).toLowerCase().includes(q) ||
+        (i.receiptNo ?? "").toLowerCase().includes(q),
+    )
+    .filter((i) => {
+      if (statusFilter === "all") return true;
+      if (statusFilter === "Overdue") return i.status === "Issued" && !!i.dueDate && i.dueDate < today();
+      if (statusFilter === "Unacknowledged") return i.status === "Issued" && !i.acknowledged;
+      return i.status === statusFilter;
+    })
+    .filter((i) => categoryFilter === "all" || assetCategory(i.assetId) === categoryFilter)
+    .sort((a, b) => (b.issueDate ?? "").localeCompare(a.issueDate ?? ""));
+
+  /** Per-worker PPE ledger: who has what, since when, and outstanding value. */
+  const workerLedger = useMemo(() => {
+    const map = new Map<string, AssetIssuance[]>();
+    for (const i of scopedIssues) {
+      const list = map.get(i.employeeId) ?? [];
+      list.push(i);
+      map.set(i.employeeId, list);
+    }
+    const rows = [...map.entries()].map(([employeeId, list]) => {
+      const held = list.filter((i) => i.status === "Issued");
+      return {
+        employeeId,
+        name: empName(employeeId),
+        code: empCode(employeeId),
+        total: list.length,
+        holding: held.reduce((s, i) => s + i.quantity, 0),
+        lastIssue: list.map((i) => i.issueDate).sort().reverse()[0] ?? "",
+        pendingAck: held.filter((i) => !i.acknowledged).length,
+        dueReplacement: held.filter((i) => !!i.replacementDue && i.replacementDue <= today()).length,
+        lost: list.filter((i) => i.status === "Lost" || i.status === "Damaged").length,
+        value: held.reduce((s, i) => s + i.quantity * assetCost(i.assetId), 0),
+        recovery: list.reduce((s, i) => s + (i.costRecovery ?? 0), 0),
+      };
+    });
+    const needle = q;
+    return rows
+      .filter((r) => !needle || r.name.toLowerCase().includes(needle) || r.code.toLowerCase().includes(needle))
+      .sort((a, b) => b.holding - a.holding);
+  }, [scopedIssues, q]);
+
+  const ledgerRows = ledgerWorker
+    ? scopedIssues
+        .filter((i) => i.employeeId === ledgerWorker)
+        .sort((a, b) => (b.issueDate ?? "").localeCompare(a.issueDate ?? ""))
+    : [];
+
   const filteredAssets = scopedAssets.filter(
     (a) =>
       !q ||
       a.name.toLowerCase().includes(q) ||
       a.assetCode.toLowerCase().includes(q) ||
       (a.serialNo ?? "").toLowerCase().includes(q),
-  );
+  ).filter((a) => categoryFilter === "all" || a.category === categoryFilter);
 
   function saveAsset() {
     if (!assetForm.name.trim()) return toast.error("Asset name required");
@@ -124,15 +194,38 @@ export default function AssetsPage() {
     if (!issueForm.assetId || !issueForm.employeeId) return toast.error("Asset and worker required");
     const available = assetAvailableQty(issueForm.assetId);
     if (issueForm.quantity > available) return toast.error(`Only ${available} available in stock`);
-    issueAsset({ ...issueForm, siteId: issueForm.siteId || undefined });
+    const asset = assets.find((a) => a.id === issueForm.assetId);
+    issueAsset({
+      ...issueForm,
+      siteId: issueForm.siteId || undefined,
+      dueDate: issueForm.dueDate || undefined,
+      replacementDue:
+        issueForm.replacementDue ||
+        addMonths(issueForm.issueDate, asset?.reissueMonths ?? 0) ||
+        undefined,
+      ackDate: issueForm.acknowledged ? issueForm.ackDate || issueForm.issueDate : undefined,
+      issuedBy: issueForm.issuedBy || undefined,
+      receiptNo: issueForm.receiptNo || `PPE-${String(issuances.length + 1).padStart(4, "0")}`,
+      size: issueForm.size || undefined,
+    });
     setIssueForm(emptyIssue);
     setIssueOpen(false);
     refresh();
     toast.success("Asset issued");
   }
 
+  function acknowledge(id: string) {
+    updateIssuance(id, { acknowledged: true, ackDate: today() });
+    refresh();
+    toast.success("Receipt acknowledged");
+  }
+
   function handleReturn(id: string, status: AssetIssuance["status"]) {
     returnIssuance(id, status === "Returned" ? "Good" : "Unusable", status);
+    if (status !== "Returned") {
+      const i = getIssuances().find((x) => x.id === id);
+      if (i) updateIssuance(id, { costRecovery: i.quantity * assetCost(i.assetId), deductFromSalary: true });
+    }
     refresh();
     toast.success(status === "Returned" ? "Item returned" : `Marked as ${status.toLowerCase()}`);
   }
@@ -142,16 +235,25 @@ export default function AssetsPage() {
       filteredIssues.map((i) => ({
         Asset: assetName(i.assetId),
         "Asset code": assetCode(i.assetId),
+        Category: assetCategory(i.assetId) ?? "",
         Worker: empName(i.employeeId),
         "P-File No": empCode(i.employeeId),
         Site: siteName(i.siteId),
         Qty: i.quantity,
+        Size: i.size ?? "",
         "Issue date": i.issueDate,
         "Due date": i.dueDate ?? "",
+        "Replacement due": i.replacementDue ?? "",
         "Return date": i.returnDate ?? "",
         "Condition out": i.conditionOut,
         "Condition in": i.conditionIn ?? "",
+        "Issued by": i.issuedBy ?? "",
+        "Receipt no": i.receiptNo ?? "",
+        Acknowledged: i.acknowledged ? `Yes (${i.ackDate ?? ""})` : "No",
+        "Cost recovery": i.costRecovery ?? 0,
+        "Salary deduction": i.deductFromSalary ? "Yes" : "No",
         Status: i.status,
+        Remarks: i.remarks ?? "",
       })),
       "assets-issuance", "Issuance",
     );
@@ -175,6 +277,9 @@ export default function AssetsPage() {
           <SummaryCard title="Issued out" value={outNow.toString()} icon={<HardHat className="h-5 w-5" />} variant="success" caption="Currently with workers" />
           <SummaryCard title="Overdue returns" value={overdue.length.toString()} icon={<PackageCheck className="h-5 w-5" />} variant={overdue.length ? "warning" : "default"} caption="Past due date" />
           <SummaryCard title="Service alerts" value={alerts.length.toString()} icon={<AlertTriangle className="h-5 w-5" />} variant={alerts.length ? "warning" : "default"} caption="Warranty / calibration" />
+          <SummaryCard title="Due for replacement" value={dueReplacement.length.toString()} icon={<RefreshCw className="h-5 w-5" />} variant={dueReplacement.length ? "warning" : "default"} caption="PPE past its wear cycle" />
+          <SummaryCard title="Pending acknowledgement" value={unacknowledged.length.toString()} icon={<Clock className="h-5 w-5" />} variant={unacknowledged.length ? "warning" : "default"} caption="Worker sign-off missing" />
+          <SummaryCard title="Cost recovery" value={`$${recovery.toLocaleString()}`} icon={<AlertTriangle className="h-5 w-5" />} variant="default" caption="Lost / damaged charged" />
         </div>
 
         {alerts.length > 0 && (
@@ -195,6 +300,7 @@ export default function AssetsPage() {
         <Tabs defaultValue="issuance">
           <TabsList>
             <TabsTrigger value="issuance">Issuance</TabsTrigger>
+            <TabsTrigger value="workers">By worker</TabsTrigger>
             <TabsTrigger value="register">Asset register</TabsTrigger>
           </TabsList>
 
@@ -203,8 +309,28 @@ export default function AssetsPage() {
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="relative w-full max-w-sm">
                   <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input type="search" placeholder="Search asset or worker..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+                  <Input type="search" placeholder="Search asset, worker or receipt no..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
                 </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as typeof statusFilter)}>
+                    <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All statuses</SelectItem>
+                      <SelectItem value="Issued">Issued (with worker)</SelectItem>
+                      <SelectItem value="Overdue">Overdue return</SelectItem>
+                      <SelectItem value="Unacknowledged">Pending sign-off</SelectItem>
+                      <SelectItem value="Returned">Returned</SelectItem>
+                      <SelectItem value="Lost">Lost</SelectItem>
+                      <SelectItem value="Damaged">Damaged</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select value={categoryFilter} onValueChange={(v) => setCategoryFilter(v as typeof categoryFilter)}>
+                    <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All categories</SelectItem>
+                      {categories.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
                 <Dialog open={issueOpen} onOpenChange={setIssueOpen}>
                   <DialogTrigger asChild>
                     <Button size="sm" disabled={scopedAssets.length === 0}>
@@ -253,6 +379,21 @@ export default function AssetsPage() {
                       <div><Label>Quantity</Label><Input type="number" min={1} value={issueForm.quantity} onChange={(e) => setIssueForm({ ...issueForm, quantity: Number(e.target.value) })} /></div>
                       <div><Label>Issue date</Label><Input type="date" value={issueForm.issueDate} onChange={(e) => setIssueForm({ ...issueForm, issueDate: e.target.value })} /></div>
                       <div><Label>Return due</Label><Input type="date" value={issueForm.dueDate} onChange={(e) => setIssueForm({ ...issueForm, dueDate: e.target.value })} /></div>
+                      <div><Label>Size</Label><Input placeholder="e.g. 42 / L" value={issueForm.size} onChange={(e) => setIssueForm({ ...issueForm, size: e.target.value })} /></div>
+                      <div><Label>Replacement due</Label><Input type="date" value={issueForm.replacementDue} onChange={(e) => setIssueForm({ ...issueForm, replacementDue: e.target.value })} /></div>
+                      <div><Label>Issued by</Label><Input placeholder="Store keeper name" value={issueForm.issuedBy} onChange={(e) => setIssueForm({ ...issueForm, issuedBy: e.target.value })} /></div>
+                      <div><Label>Receipt no</Label><Input placeholder="Auto" value={issueForm.receiptNo} onChange={(e) => setIssueForm({ ...issueForm, receiptNo: e.target.value })} /></div>
+                      <div><Label>Cost recovery ($)</Label><Input type="number" value={issueForm.costRecovery} onChange={(e) => setIssueForm({ ...issueForm, costRecovery: Number(e.target.value) })} /></div>
+                      <div className="flex flex-col justify-end gap-2 pb-1">
+                        <label className="flex items-center gap-2 text-sm">
+                          <input type="checkbox" checked={issueForm.acknowledged} onChange={(e) => setIssueForm({ ...issueForm, acknowledged: e.target.checked })} />
+                          Worker acknowledged receipt
+                        </label>
+                        <label className="flex items-center gap-2 text-sm">
+                          <input type="checkbox" checked={issueForm.deductFromSalary} onChange={(e) => setIssueForm({ ...issueForm, deductFromSalary: e.target.checked })} />
+                          Deduct cost from salary
+                        </label>
+                      </div>
                       <div className="sm:col-span-2">
                         <Label>Condition on issue</Label>
                         <Select value={issueForm.conditionOut} onValueChange={(v) => setIssueForm({ ...issueForm, conditionOut: v as AssetIssuance["conditionOut"] })}>
@@ -270,6 +411,7 @@ export default function AssetsPage() {
                     </DialogFooter>
                   </DialogContent>
                 </Dialog>
+                </div>
               </div>
 
               <div className="mt-4 overflow-hidden rounded-lg border">
@@ -280,8 +422,10 @@ export default function AssetsPage() {
                       <TableHead>Worker</TableHead>
                       <TableHead>Site</TableHead>
                       <TableHead>Qty</TableHead>
+                      <TableHead>Size</TableHead>
                       <TableHead>Issued</TableHead>
-                      <TableHead>Due</TableHead>
+                      <TableHead>Replace by</TableHead>
+                      <TableHead>Sign-off</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead className="w-32"></TableHead>
                     </TableRow>
@@ -289,7 +433,7 @@ export default function AssetsPage() {
                   <TableBody>
                     {filteredIssues.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={8} className="h-32 text-center">
+                        <TableCell colSpan={11} className="h-32 text-center">
                           <EmptyState className="border-0 bg-transparent" icon={<HardHat className="h-5 w-5" />} title="No issuance records" description="Issue an asset to get started." />
                         </TableCell>
                       </TableRow>
@@ -308,8 +452,25 @@ export default function AssetsPage() {
                             </TableCell>
                             <TableCell>{siteName(i.siteId)}</TableCell>
                             <TableCell>{i.quantity}</TableCell>
-                            <TableCell>{i.issueDate}</TableCell>
-                            <TableCell className={isOverdue ? "text-destructive" : undefined}>{i.dueDate ?? "—"}</TableCell>
+                            <TableCell>{i.size ?? "—"}</TableCell>
+                            <TableCell>
+                              <div>{i.issueDate}</div>
+                              <div className="text-xs text-muted-foreground">{i.issuedBy ? `by ${i.issuedBy}` : ""}{i.receiptNo ? ` · ${i.receiptNo}` : ""}</div>
+                            </TableCell>
+                            <TableCell className={i.replacementDue && i.replacementDue <= today() && i.status === "Issued" ? "text-destructive" : undefined}>
+                              {i.replacementDue ?? i.dueDate ?? "—"}
+                            </TableCell>
+                            <TableCell>
+                              {i.acknowledged ? (
+                                <span className="inline-flex items-center gap-1 text-xs text-emerald-500">
+                                  <CheckCircle2 className="h-3.5 w-3.5" />{i.ackDate ?? "Signed"}
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                                  <Clock className="h-3.5 w-3.5" />Pending
+                                </span>
+                              )}
+                            </TableCell>
                             <TableCell>
                               <StatusBadge
                                 variant={
@@ -323,6 +484,11 @@ export default function AssetsPage() {
                             </TableCell>
                             <TableCell>
                               <div className="flex justify-end gap-1">
+                                {i.status === "Issued" && !i.acknowledged && (
+                                  <Button size="icon" variant="ghost" title="Mark acknowledged" onClick={() => acknowledge(i.id)}>
+                                    <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                                  </Button>
+                                )}
                                 {i.status === "Issued" && (
                                   <>
                                     <Button size="icon" variant="ghost" title="Mark returned" onClick={() => handleReturn(i.id, "Returned")}>
