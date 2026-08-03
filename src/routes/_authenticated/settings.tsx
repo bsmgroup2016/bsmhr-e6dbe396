@@ -278,6 +278,10 @@ export default function SettingsPage() {
             <SmtpSettings />
           </TabsContent>
 
+          <TabsContent value="payments" className="mt-4 space-y-4">
+            <PaymentDetails />
+          </TabsContent>
+
           <TabsContent value="storage" className="mt-4 space-y-4">
             <div className="rounded-xl border bg-card p-5 shadow-sm">
               <div className="mb-4 flex items-center gap-2">
