@@ -133,20 +133,24 @@ export default function OperationsPage() {
     setEmployees(getEmployees());
   }
 
-  function createAssignments(ids: string[], projectId: string, siteId: string, startDate: string, remarks?: string) {
+  async function createAssignments(ids: string[], projectId: string, siteId: string, startDate: string, remarks?: string) {
     let created = 0;
     for (const id of ids) {
       const worker = emp(id);
       if (!worker) continue;
+      
       const compliance = await checkDeploymentCompliance(id);
+      
       if (hasExpiredWorkPermit(worker)) {
         toast.error(`${worker.name}: Work Permit expired — deployment blocked`);
         continue;
       }
+
       if (!compliance.compliant) {
-        toast.error(`${worker.name}: Missing/Expired safety course: ${compliance.missingOrExpired.join(", ")}`);
+        toast.error(`${worker.name}: Missing/Expired safety course: ${compliance.missingOrExpired?.join(", ") || "Safety Course Required"}`);
         continue;
       }
+
       addAssignment({ employeeId: id, siteId, projectId, startDate, status: "Pending", remarks });
       created += 1;
     }
