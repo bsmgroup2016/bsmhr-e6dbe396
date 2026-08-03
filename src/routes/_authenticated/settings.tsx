@@ -14,6 +14,7 @@ import {
   Bot,
 } from "lucide-react";
 import { AiSettings } from "@/components/settings/ai-settings";
+import { Badge } from "@/components/ui/badge";
 
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
