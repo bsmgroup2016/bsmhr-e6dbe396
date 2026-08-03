@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Briefcase, Users, Search, Clock } from "lucide-react";
+import { Briefcase, Users, Search, Clock, ArrowLeftRight, LogOut, History } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
 import { SummaryCard } from "@/components/ui/summary-card";
@@ -23,6 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { DeploymentActionDialog } from "@/components/deployment-actions";
 import { getEmployees, getAssignments, getCompanies, getProjects, getSites } from "@/lib/store";
 import { employeeSlugById } from "@/lib/employee-slug";
 
@@ -46,6 +47,7 @@ function daysSince(iso?: string) {
 }
 
 function DeployedWorkersPage() {
+  const [tick, setTick] = useState(0);
   const employees = getEmployees().filter((e) => !!e.companyId);
   const companies = getCompanies();
   const projects = getProjects();
@@ -56,6 +58,8 @@ function DeployedWorkersPage() {
   const [project, setProject] = useState("all");
   const [trade, setTrade] = useState("all");
   const [company, setCompany] = useState("all");
+  const [action, setAction] = useState<{ assignmentId: string; mode: "transfer" | "offhire" } | null>(null);
+  void tick;
 
   const deployed = assignments
     .map((a) => {
@@ -105,6 +109,9 @@ function DeployedWorkersPage() {
           </div>
           <Button variant="outline" size="sm" asChild>
             <Link to="/available-workers">Available workers</Link>
+          </Button>
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/deployment-history"><History className="mr-1 h-4 w-4" /> Deployment history</Link>
           </Button>
         </div>
 
@@ -174,12 +181,13 @@ function DeployedWorkersPage() {
                   <TableHead>Start</TableHead>
                   <TableHead>Days on job</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {rows.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="h-32 text-center">
+                    <TableCell colSpan={7} className="h-32 text-center">
                       <EmptyState className="border-0 bg-transparent" icon={<Briefcase className="h-5 w-5" />} title="No deployed workers" description="No assignments match these filters." />
                     </TableCell>
                   </TableRow>
@@ -201,6 +209,24 @@ function DeployedWorkersPage() {
                       <TableCell>
                         <StatusBadge variant={r.assignment.status === "Active" ? "success" : "info"} label={r.assignment.status} dot />
                       </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setAction({ assignmentId: r.assignment.id, mode: "transfer" })}
+                          >
+                            <ArrowLeftRight className="mr-1 h-3.5 w-3.5" /> Transfer
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setAction({ assignmentId: r.assignment.id, mode: "offhire" })}
+                          >
+                            <LogOut className="mr-1 h-3.5 w-3.5" /> Off-hire
+                          </Button>
+                        </div>
+                      </TableCell>
                     </TableRow>
                   ))
                 )}
@@ -208,6 +234,23 @@ function DeployedWorkersPage() {
             </Table>
           </div>
         </div>
+
+        {action && (() => {
+          const row = deployed.find((r) => r.assignment.id === action.assignmentId);
+          if (!row) return null;
+          return (
+            <DeploymentActionDialog
+              open
+              onOpenChange={(o) => !o && setAction(null)}
+              assignment={row.assignment}
+              employee={row.employee}
+              projects={projects}
+              sites={sites}
+              mode={action.mode}
+              onDone={() => setTick((t) => t + 1)}
+            />
+          );
+        })()}
       </div>
     </AppShell>
   );
