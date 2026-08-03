@@ -12,6 +12,7 @@ import {
   ClipboardList,
   Fuel,
   FileText,
+  FileSignature,
   IdCard,
   MapPin,
   FolderKanban,
