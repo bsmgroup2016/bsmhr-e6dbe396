@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import {
   Plus, Search, HardHat, Users, ArrowRightLeft, Clock, MoreHorizontal, Pencil, Eye,
   Download, CheckCircle2, XCircle, LogOut, AlertTriangle, Layers,
+  FileText, TrendingUp, DollarSign,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -27,7 +28,7 @@ import { DeploymentFillRates } from "@/components/deployment-fill-rates";
 import { BulkDeploySheet } from "@/components/bulk-deploy-sheet";
 import {
   getEmployees, getProjects, getSites, getAssignments, getUsers, addAssignment,
-  updateAssignment, updateEmployee, addApproval, getCurrentCompany,
+  updateAssignment, updateEmployee, addApproval, getCurrentCompany, getManpowerRequests,
 } from "@/lib/store";
 import { activeAssignedEmployeeIds, isEmployeeAvailable, hasExpiredWorkPermit } from "@/lib/availability";
 import { exportRows } from "@/lib/xlsx";
@@ -270,8 +271,10 @@ export default function OperationsPage() {
         <Tabs value={tab} onValueChange={setTab}>
           <TabsList>
             <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="requests">Manpower Requests</TabsTrigger>
             <TabsTrigger value="assignments">Assignments</TabsTrigger>
             <TabsTrigger value="pool">Available pool</TabsTrigger>
+            <TabsTrigger value="profitability">Project Profitability</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="mt-4">
@@ -281,6 +284,109 @@ export default function OperationsPage() {
               assignments={scoped}
               onSelectProject={(id) => { setProjectFilter(id); setSiteFilter("all"); setTab("assignments"); }}
             />
+          </TabsContent>
+
+          <TabsContent value="requests" className="mt-4">
+            <div className="rounded-xl border bg-card p-4 shadow-sm">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-medium">Client Manpower Requests</h3>
+                <Button size="sm">
+                  <Plus className="mr-1 h-4 w-4" /> Create Request
+                </Button>
+              </div>
+              <p className="mt-1 text-sm text-muted-foreground">Track demand from clients for specific designations and dates.</p>
+              
+              <div className="mt-4 overflow-hidden rounded-lg border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Client / Project</TableHead>
+                      <TableHead>Request Title</TableHead>
+                      <TableHead>Demanded Trades</TableHead>
+                      <TableHead>Start Date</TableHead>
+                      <TableHead>Fill Rate</TableHead>
+                      <TableHead>Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {getManpowerRequests().length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">
+                          No active manpower requests found.
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      getManpowerRequests().map(req => (
+                        <TableRow key={req.id}>
+                          <TableCell className="font-medium">
+                            {projects.find(p => p.id === req.projectId)?.name || "Multiple Projects"}
+                          </TableCell>
+                          <TableCell>{req.title}</TableCell>
+                          <TableCell>
+                            <div className="flex flex-wrap gap-1">
+                              {req.items.map((it, idx) => (
+                                <StatusBadge key={idx} variant="info" label={`${it.count}x ${it.designation}`} />
+                              ))}
+                            </div>
+                          </TableCell>
+                          <TableCell>{req.startDate}</TableCell>
+                          <TableCell>
+                            {Math.round((req.items.reduce((s, i) => s + i.countFilled, 0) / req.items.reduce((s, i) => s + i.count, 1)) * 100)}%
+                          </TableCell>
+                          <TableCell>
+                            <StatusBadge variant={req.status === "Filled" ? "success" : "warning"} label={req.status} dot />
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="profitability" className="mt-4">
+            <div className="grid gap-6 md:grid-cols-2">
+              {projects.filter(p => p.status === "Active").map(p => {
+                const activeOnProject = scoped.filter(a => a.projectId === p.id && isLive(a));
+                const dailyChargeOut = activeOnProject.reduce((sum, a) => sum + 400, 0); // Demo rate
+                const dailyCost = activeOnProject.reduce((sum, a) => {
+                  const e = emp(a.employeeId);
+                  const basic = (e?.basicSalary || 0) / 26;
+                  const levy = 400 / 30; // $400/mo levy
+                  const dorm = 300 / 30; // $300/mo dorm
+                  const transport = 5; // $5/day transport overhead
+                  return sum + basic + levy + dorm + transport;
+                }, 0);
+                
+                return (
+                  <div key={p.id} className="rounded-xl border bg-card p-5 shadow-sm">
+                    <div className="mb-4 flex items-center justify-between">
+                      <h3 className="font-semibold">{p.name}</h3>
+                      <StatusBadge variant="success" label="Healthy" dot />
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <p className="text-xs text-muted-foreground uppercase tracking-wider">Est. Daily Revenue</p>
+                        <p className="text-xl font-bold text-success">${Math.round(dailyChargeOut)}</p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-xs text-muted-foreground uppercase tracking-wider">Est. Daily Cost</p>
+                        <p className="text-xl font-bold text-destructive">${Math.round(dailyCost)}</p>
+                      </div>
+                    </div>
+                    
+                    <div className="mt-4 pt-4 border-t flex items-center justify-between">
+                      <span className="text-sm font-medium">Gross Margin</span>
+                      <span className="text-lg font-bold text-primary">
+                        {Math.round(((dailyChargeOut - dailyCost) / dailyChargeOut) * 100)}%
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </TabsContent>
 
           <TabsContent value="assignments" className="mt-4">
