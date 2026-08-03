@@ -73,7 +73,9 @@ export function AiSettings({ visionOnly = false }: { visionOnly?: boolean }) {
 
   if (isLoading || !config) return <div className="p-8 text-center">Loading AI configuration...</div>;
 
-  const providers = config.providers;
+  const providers = visionOnly 
+    ? config.providers.filter(p => p.vision) 
+    : config.providers;
 
   return (
     <div className="space-y-6">
