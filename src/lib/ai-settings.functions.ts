@@ -2,11 +2,6 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { aiProviderStatus, AiProviderName, askAiJson } from "./ai.server";
 
-/**
- * AI configuration for key management.
- * Note: These interact with Supabase or environment secrets.
- */
-
 export const getAiConfig = createServerFn({ method: "GET" })
   .handler(async () => {
     return aiProviderStatus();
@@ -18,15 +13,13 @@ export const testAiProvider = createServerFn({ method: "POST" })
   }).parse(data))
   .handler(async ({ data }) => {
     try {
-      // Small test request to verify the key works
       const res = await askAiJson({
         instruction: "Say 'Success' if you can read this.",
         system: "You are a test assistant. Return JSON: { \"status\": \"success\" }"
       });
-      // Ensure the response is serializable (cast to any or specific shape)
-      return { success: true, response: res as any };
+      return { success: true, response: res as any, error: null };
     } catch (e) {
-      return { success: false, error: e instanceof Error ? e.message : String(e) };
+      return { success: false, error: e instanceof Error ? e.message : String(e), response: null };
     }
   });
 
@@ -37,10 +30,9 @@ export const updateAiKey = createServerFn({ method: "POST" })
     delete: z.boolean().default(false)
   }).parse(data))
   .handler(async ({ data }) => {
-    // Logic for key management
     console.log(`AI Key update requested for ${data.provider}. Action: ${data.delete ? 'DELETE' : 'SAVE'}`);
-    
-    return { success: true, message: "Settings will be applied on next deploy. Please update project secrets for immediate effect." };
+    return { success: true, message: "Settings will be applied on next deploy.", error: null };
   });
+
 
 

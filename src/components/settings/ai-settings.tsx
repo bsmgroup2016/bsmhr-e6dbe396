@@ -43,7 +43,7 @@ export function AiSettings() {
   const saveMutation = useMutation({
     mutationFn: (vars: { provider: string; key?: string; delete?: boolean }) => 
       saveKey({ data: vars }),
-    onSuccess: (res) => {
+    onSuccess: (res: any) => {
       if (res.success) {
         toast.success(res.message || "Key settings updated");
         setEditingProvider(null);
@@ -53,6 +53,7 @@ export function AiSettings() {
         toast.error(res.error || "Failed to update key");
       }
     },
+
   });
 
   const testMutation = useMutation({
