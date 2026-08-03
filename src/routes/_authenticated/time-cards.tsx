@@ -93,7 +93,10 @@ function TimeCardsPage() {
   const [verificationSearch, setVerificationSearch] = useState("");
   const [verificationFilter, setVerificationFilter] = useState<
     "All" | "Mismatch" | "Unresolved" | "LowConfidence"
-  >("All");
+    >("All");
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [isImportOpen, setIsImportOpen] = useState(false);
+
 
   const LOW_CONFIDENCE = 0.7;
 
