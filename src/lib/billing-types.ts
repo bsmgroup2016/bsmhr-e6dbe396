@@ -82,3 +82,48 @@ export interface ClientContract {
   updatedAt: string;
 }
 
+
+/* ---------------- Quotation management ---------------- */
+export type QuotationStatus =
+  | "Draft" | "Sent" | "Accepted" | "Rejected" | "Expired" | "Converted";
+
+export interface QuotationLine {
+  id: string;
+  designation: string;
+  description?: string;
+  headcount: number;
+  unit: RateUnit;
+  normalRate: number;
+  otRate: number;
+  /** Billable units per headcount for the quoted period (e.g. hours/month). */
+  unitsPerPeriod: number;
+  amount: number;
+}
+
+export interface Quotation {
+  id: string;
+  companyId?: string;
+  clientId: string;
+  projectId?: string;
+  quoteNo: string;
+  title: string;
+  contactPerson?: string;
+  quoteDate: string;
+  validUntil?: string;
+  lines: QuotationLine[];
+  subtotal: number;
+  discount: number;
+  gstRate: number;
+  gstAmount: number;
+  total: number;
+  status: QuotationStatus;
+  paymentTermsDays: number;
+  preparedBy?: string;
+  sentOn?: string;
+  decidedOn?: string;
+  convertedContractId?: string;
+  terms?: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
