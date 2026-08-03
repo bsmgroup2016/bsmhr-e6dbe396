@@ -12,6 +12,7 @@ import {
   ClipboardList,
   Fuel,
   FileText,
+  FileSignature,
   IdCard,
   MapPin,
   FolderKanban,
@@ -81,6 +82,7 @@ const navGroups: { label: string; items: NavItem[] }[] = [
   {
     label: "Clients & Deployment",
     items: [
+      { title: "Quotation Management", url: "/quotations", icon: FileSignature },
       { title: "Client Directory", url: "/clients", icon: Handshake },
       { title: "Business Pipeline (CRM)", url: "/crm", icon: BadgeDollarSign },
       { title: "Projects & Sites", url: "/projects", icon: FolderKanban },
