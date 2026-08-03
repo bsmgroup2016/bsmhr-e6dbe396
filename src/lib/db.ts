@@ -879,7 +879,10 @@ export const toContract = (c: Partial<ClientContract>): Row => ({
 
 /* ---------- branch prefixes / certifications / time cards / claim sheets ---------- */
 export const fromQuotation = (r: Row): Quotation => ({
-  id: r.id, companyId: r.company_id ?? undefined, clientId: r.client_id,
+  id: r.id, companyId: r.company_id ?? undefined, clientId: r.client_id ?? undefined,
+  prospectCompany: r.prospect_company ?? undefined, prospectContact: r.prospect_contact ?? undefined,
+  prospectEmail: r.prospect_email ?? undefined, prospectPhone: r.prospect_phone ?? undefined,
+  prospectAddress: r.prospect_address ?? undefined,
   projectId: r.project_id ?? undefined, quoteNo: r.quote_no ?? "",
   title: r.title ?? "", contactPerson: r.contact_person ?? undefined,
   quoteDate: d(r.quote_date) ?? "", validUntil: d(r.valid_until),
@@ -896,7 +899,10 @@ export const fromQuotation = (r: Row): Quotation => ({
 });
 
 export const toQuotation = (q: Partial<Quotation>): Row => ({
-  company_id: q.companyId || null, client_id: q.clientId, project_id: q.projectId || null,
+  company_id: q.companyId || null, client_id: q.clientId || null, project_id: q.projectId || null,
+  prospect_company: q.prospectCompany ?? null, prospect_contact: q.prospectContact ?? null,
+  prospect_email: q.prospectEmail ?? null, prospect_phone: q.prospectPhone ?? null,
+  prospect_address: q.prospectAddress ?? null,
   quote_no: q.quoteNo, title: q.title ?? "", contact_person: q.contactPerson ?? null,
   quote_date: nullDate(q.quoteDate), valid_until: nullDate(q.validUntil),
   lines: q.lines ?? [], subtotal: q.subtotal ?? 0, discount: q.discount ?? 0,
