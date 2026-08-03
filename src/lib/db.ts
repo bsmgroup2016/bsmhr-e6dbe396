@@ -931,6 +931,59 @@ async function all(table: string, order = "created_at") {
   return (data ?? []) as Row[];
 }
 
+export interface LoadedData {
+  employees: Employee[];
+  clients: Client[];
+  projects: Project[];
+  sites: Site[];
+  assignments: Assignment[];
+  documents: EmployeeDocument[];
+  attendance: Attendance[];
+  payroll: PayrollEntry[];
+  approvals: Approval[];
+  auditLogs: AuditLog[];
+  leaveRequests: LeaveRequest[];
+  rateAgreements: RateAgreement[];
+  invoices: Invoice[];
+  dormitories: Dormitory[];
+  allocations: BedAllocation[];
+  dormitoryInvoices: DormitoryInvoice[];
+  dormitoryInspections: DormitoryInspection[];
+  dormitoryMovements: DormitoryMovement[];
+  vehicles: Vehicle[];
+  trips: Trip[];
+  assets: Asset[];
+  issuances: AssetIssuance[];
+  inventory: InventoryItem[];
+  movements: StockMovement[];
+  purchaseOrders: PurchaseOrder[];
+  courses: TrainingCourse[];
+  trainings: TrainingRecord[];
+  incidents: SafetyIncident[];
+  requisitions: JobRequisition[];
+  candidates: Candidate[];
+  leads: Lead[];
+  activities: CrmActivity[];
+  expenses: Expense[];
+  receipts: PaymentReceipt[];
+  users: User[];
+  branchPrefixes: BranchPrefix[];
+  certifications: EmployeeCertification[];
+  timeCards: TimeCard[];
+  claimSheets: ClaimSheet[];
+  contracts: ClientContract[];
+  medicalClaims: MedicalClaim[];
+  loans: EmployeeLoan[];
+  loanRepayments: LoanRepayment[];
+  departments: Department[];
+  designations: Designation[];
+  driverProfiles: DriverProfile[];
+  driverIncidents: DriverIncident[];
+  fuelLogs: FuelLog[];
+  manpowerRequests: ManpowerRequest[];
+  companies: Company[];
+}
+
 export async function loadAll(): Promise<LoadedData> {
   const [
     companies, employees, clients, projects, sites, assignments,
