@@ -102,7 +102,13 @@ function QuotationsPage() {
 
   // form state
   const [quoteNo, setQuoteNo] = useState("");
+  const [clientMode, setClientMode] = useState<"new" | "existing">("new");
   const [clientId, setClientId] = useState("");
+  const [prospectCompany, setProspectCompany] = useState("");
+  const [prospectContact, setProspectContact] = useState("");
+  const [prospectEmail, setProspectEmail] = useState("");
+  const [prospectPhone, setProspectPhone] = useState("");
+  const [prospectAddress, setProspectAddress] = useState("");
   const [projectId, setProjectId] = useState("all");
   const [title, setTitle] = useState("");
   const [contactPerson, setContactPerson] = useState("");
@@ -119,7 +125,13 @@ function QuotationsPage() {
 
   function resetForm() {
     setQuoteNo(nextQuoteNo());
+    setClientMode("new");
     setClientId("");
+    setProspectCompany("");
+    setProspectContact("");
+    setProspectEmail("");
+    setProspectPhone("");
+    setProspectAddress("");
     setProjectId("all");
     setTitle("");
     setContactPerson("");
@@ -143,14 +155,18 @@ function QuotationsPage() {
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return quotations.filter((quote) => {
-      const client = clients.find((c) => c.id === quote.clientId);
+      const clientName = quote.clientId
+        ? clients.find((c) => c.id === quote.clientId)?.name ?? ""
+        : quote.prospectCompany ?? quote.prospectContact ?? "";
       const matchesCompany = !companyId || !quote.companyId || quote.companyId === companyId;
       const matchesStatus = statusFilter === "all" || quote.status === statusFilter;
       const matchesSearch =
         !q ||
         quote.quoteNo.toLowerCase().includes(q) ||
         quote.title.toLowerCase().includes(q) ||
-        (client?.name ?? "").toLowerCase().includes(q);
+        clientName.toLowerCase().includes(q) ||
+        (quote.prospectEmail ?? "").toLowerCase().includes(q) ||
+        (quote.prospectPhone ?? "").toLowerCase().includes(q);
       return matchesCompany && matchesStatus && matchesSearch;
     });
   }, [quotations, clients, companyId, statusFilter, search]);
@@ -171,15 +187,29 @@ function QuotationsPage() {
     };
   }, [filtered]);
 
+  /** Existing client name, or the prospect details captured on the quote. */
+  function clientLabel(q: Quotation) {
+    if (q.clientId) return clients.find((c) => c.id === q.clientId)?.name ?? "-";
+    return q.prospectCompany || q.prospectContact || "New prospect";
+  }
+
   function save() {
-    if (!clientId) return toast.error("Select a client");
+    if (clientMode === "existing" && !clientId) return toast.error("Select a client");
+    if (clientMode === "new" && !prospectCompany.trim() && !prospectContact.trim()) {
+      return toast.error("Enter the company or contact name of the prospect");
+    }
     if (!priced.some((l) => l.designation && l.normalRate > 0)) {
       return toast.error("Add at least one designation with a rate");
     }
     addQuotation({
       quoteNo: quoteNo.trim() || undefined,
       companyId: companyId || undefined,
-      clientId,
+      clientId: clientMode === "existing" ? clientId : undefined,
+      prospectCompany: clientMode === "new" ? prospectCompany.trim() || undefined : undefined,
+      prospectContact: clientMode === "new" ? prospectContact.trim() || undefined : undefined,
+      prospectEmail: clientMode === "new" ? prospectEmail.trim() || undefined : undefined,
+      prospectPhone: clientMode === "new" ? prospectPhone.trim() || undefined : undefined,
+      prospectAddress: clientMode === "new" ? prospectAddress.trim() || undefined : undefined,
       projectId: projectId === "all" ? undefined : projectId,
       title: title.trim() || "Manpower supply quotation",
       contactPerson: contactPerson.trim() || undefined,
@@ -228,7 +258,10 @@ function QuotationsPage() {
     await exportRows(
       filtered.map((q) => ({
         "Quote No": q.quoteNo,
-        Client: clients.find((c) => c.id === q.clientId)?.name ?? "-",
+        Client: clientLabel(q),
+        "Contact": q.prospectContact ?? q.contactPerson ?? "",
+        "Email": q.prospectEmail ?? "",
+        "Phone": q.prospectPhone ?? "",
         Title: q.title,
         "Quote Date": q.quoteDate,
         "Valid Until": q.validUntil ?? "-",
@@ -325,7 +358,17 @@ function QuotationsPage() {
                 {filtered.map((q) => (
                   <TableRow key={q.id} className="cursor-pointer" onClick={() => setDetail(q)}>
                     <TableCell className="font-medium">{q.quoteNo}</TableCell>
-                    <TableCell>{clients.find((c) => c.id === q.clientId)?.name ?? "-"}</TableCell>
+                    <TableCell>
+                      <div className="flex flex-col">
+                        <span>{clientLabel(q)}</span>
+                        {!q.clientId && (
+                          <span className="text-xs text-muted-foreground">
+                            Prospect{q.prospectEmail ? ` · ${q.prospectEmail}` : ""}
+                            {q.prospectPhone ? ` · ${q.prospectPhone}` : ""}
+                          </span>
+                        )}
+                      </div>
+                    </TableCell>
                     <TableCell className="max-w-[220px] truncate">{q.title}</TableCell>
                     <TableCell className="text-right">{q.lines.reduce((s, l) => s + l.headcount, 0)}</TableCell>
                     <TableCell className="text-right font-medium">{money(q.total)}</TableCell>
@@ -393,14 +436,75 @@ function QuotationsPage() {
               <Input value={quoteNo} onChange={(e) => setQuoteNo(e.target.value)} />
             </div>
             <div className="space-y-1.5">
-              <Label>Client</Label>
-              <Select value={clientId} onValueChange={setClientId}>
-                <SelectTrigger><SelectValue placeholder="Select client" /></SelectTrigger>
+              <Label>Quote for</Label>
+              <Select value={clientMode} onValueChange={(v) => setClientMode(v as "new" | "existing")}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {clients.map((c) => (<SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>))}
+                  <SelectItem value="new">New prospect (not a client yet)</SelectItem>
+                  <SelectItem value="existing">Existing client</SelectItem>
                 </SelectContent>
               </Select>
             </div>
+
+            {clientMode === "existing" ? (
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label>Client</Label>
+                <Select value={clientId} onValueChange={setClientId}>
+                  <SelectTrigger><SelectValue placeholder="Select client" /></SelectTrigger>
+                  <SelectContent>
+                    {clients.map((c) => (<SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>))}
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : (
+              <>
+                <div className="space-y-1.5">
+                  <Label>Company name</Label>
+                  <Input
+                    value={prospectCompany}
+                    onChange={(e) => setProspectCompany(e.target.value)}
+                    placeholder="e.g. Sembawang Marine Pte Ltd"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Contact person</Label>
+                  <Input
+                    value={prospectContact}
+                    onChange={(e) => setProspectContact(e.target.value)}
+                    placeholder="Mr. Tan"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Email</Label>
+                  <Input
+                    type="email"
+                    value={prospectEmail}
+                    onChange={(e) => setProspectEmail(e.target.value)}
+                    placeholder="name@company.com.sg"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Phone / WhatsApp</Label>
+                  <Input
+                    value={prospectPhone}
+                    onChange={(e) => setProspectPhone(e.target.value)}
+                    placeholder="+65 9xxx xxxx"
+                  />
+                </div>
+                <div className="space-y-1.5 sm:col-span-2">
+                  <Label>Address (optional)</Label>
+                  <Input
+                    value={prospectAddress}
+                    onChange={(e) => setProspectAddress(e.target.value)}
+                    placeholder="Billing / site address"
+                  />
+                </div>
+                <p className="sm:col-span-2 -mt-2 text-xs text-muted-foreground">
+                  No client record is created now. When the quotation is accepted and converted,
+                  this prospect is automatically added to the Client Directory with rates and a contract.
+                </p>
+              </>
+            )}
             <div className="space-y-1.5">
               <Label>Project / site (optional)</Label>
               <Select value={projectId} onValueChange={setProjectId}>
@@ -589,7 +693,7 @@ function QuotationsPage() {
                   <Badge className={statusTone[detail.status]} variant="secondary">{detail.status}</Badge>
                 </DialogTitle>
                 <DialogDescription>
-                  {clients.find((c) => c.id === detail.clientId)?.name ?? "-"} · {detail.title}
+                  {clientLabel(detail)} · {detail.title}
                 </DialogDescription>
               </DialogHeader>
 

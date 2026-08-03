@@ -3015,11 +3015,26 @@ export function convertQuotationToContract(id: string): { rates: number; contrac
   const quote = getQuotation(id);
   if (!quote) return { rates: 0 };
 
+  // A prospect quotation has no client record yet — create the client on conversion.
+  let clientId = quote.clientId;
+  if (!clientId) {
+    const created = addClient({
+      name: quote.prospectCompany?.trim() || quote.prospectContact?.trim() || `Client — ${quote.quoteNo}`,
+      contactPerson: quote.prospectContact ?? quote.contactPerson ?? "",
+      email: quote.prospectEmail ?? "",
+      phone: quote.prospectPhone ?? "",
+      address: quote.prospectAddress ?? "",
+      status: "Active",
+    });
+    clientId = created.id;
+    updateQuotation(quote.id, { clientId });
+  }
+
   let rates = 0;
   for (const line of quote.lines) {
     if (!line.designation) continue;
     addRateAgreement({
-      clientId: quote.clientId,
+      clientId,
       projectId: quote.projectId,
       trade: line.designation,
       unit: line.unit,
@@ -3035,7 +3050,7 @@ export function convertQuotationToContract(id: string): { rates: number; contrac
 
   const contract = addContract({
     companyId: quote.companyId,
-    clientId: quote.clientId,
+    clientId,
     projectId: quote.projectId,
     contractNo: quote.quoteNo.replace("QT-", "CT-"),
     title: quote.title || `Service contract — ${quote.quoteNo}`,
