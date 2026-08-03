@@ -116,7 +116,7 @@ const emptyState: AppState = {
   departments: [], designations: [],
   driverProfiles: [], driverIncidents: [], fuelLogs: [],
   branches: defaultBranches, currentBranch: "hq",
-  companies: [], currentCompany: "", currentUser: null,
+  companies: [], currentCompany: "", currentUser: null, manpowerRequests: [],
 };
 
 let state: AppState = emptyState;
