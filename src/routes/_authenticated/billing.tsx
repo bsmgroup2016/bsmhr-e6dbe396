@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   Plus,
   Search,
@@ -15,6 +15,7 @@ import {
   Banknote,
   Repeat,
   PlayCircle,
+  ExternalLink,
 } from "lucide-react";
 import { toast } from "sonner";
 
