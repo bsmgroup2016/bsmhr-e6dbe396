@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { Building2, BedDouble, Users, Plus, Search, Trash2, LogOut, Download, FileText, ClipboardCheck, History, Eye, MapPin, Sparkles } from "lucide-react";
+import { Building2, BedDouble, Users, Plus, Search, Trash2, LogOut, Download, FileText, ClipboardCheck, History, Eye, MapPin } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/app-shell";
@@ -25,7 +25,6 @@ import {
   getDormitoryMovements, addDormitoryMovement,
 } from "@/lib/store";
 import { exportRows } from "@/lib/xlsx";
-import { seedAccommodationDemoData } from "@/lib/seed-accommodation";
 import { HousingNotificationPanel } from "@/components/housing-notification-panel";
 import { dormCapacityCheck, SQM_PER_RESIDENT } from "@/lib/mom";
 import type { Dormitory, BedAllocation } from "@/lib/types";
