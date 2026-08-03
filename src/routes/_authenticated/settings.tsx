@@ -230,6 +230,11 @@ export default function SettingsPage() {
             </div>
           </TabsContent>
 
+          <TabsContent value="ai" className="mt-4 space-y-4">
+            <AiSettings />
+          </TabsContent>
+
+
           <TabsContent value="storage" className="mt-4 space-y-4">
             <div className="rounded-xl border bg-card p-5 shadow-sm">
               <div className="mb-4 flex items-center gap-2">
