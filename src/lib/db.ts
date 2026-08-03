@@ -1096,6 +1096,7 @@ export async function loadAll(): Promise<LoadedData> {
     driverProfiles: driverProfileRows.map(fromDriverProfile),
     driverIncidents: driverIncidentRows.map(fromDriverIncident),
     fuelLogs: fuelLogRows.map(fromFuelLog),
+    manpowerRequests: [],
   };
 }
 
