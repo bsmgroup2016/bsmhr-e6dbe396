@@ -2936,3 +2936,127 @@ export function updateManpowerRequest(id: string, updates: Partial<ManpowerReque
   addAuditLog("UPDATE", "ManpowerRequest", id, `Updated manpower request status to ${updated.status}`);
   return updated;
 }
+
+/* ---------------- quotation management ---------------- */
+export function getQuotations(): Quotation[] { return getState().quotations; }
+export function getQuotation(id: string): Quotation | undefined {
+  return getState().quotations.find((q) => q.id === id);
+}
+
+export function nextQuoteNo(): string {
+  const year = new Date().getFullYear();
+  const count = getState().quotations.filter((q) => q.quoteNo.includes(`-${year}-`)).length + 1;
+  return `QT-${year}-${String(count).padStart(4, "0")}`;
+}
+
+/** Line amount = headcount x units x rate (+ OT if quoted). */
+export function computeQuotationLine(line: Omit<QuotationLine, "amount">): number {
+  const normal = line.headcount * line.unitsPerPeriod * line.normalRate;
+  return Math.round(normal * 100) / 100;
+}
+
+export function computeQuotationTotals(lines: QuotationLine[], gstRate: number, discount = 0) {
+  const gross = lines.reduce((sum, l) => sum + l.amount, 0);
+  const subtotal = Math.round(Math.max(gross - discount, 0) * 100) / 100;
+  const gstAmount = Math.round(subtotal * (gstRate / 100) * 100) / 100;
+  return { subtotal, gstAmount, total: Math.round((subtotal + gstAmount) * 100) / 100 };
+}
+
+export function addQuotation(
+  quote: Omit<Quotation, "id" | "quoteNo" | "subtotal" | "gstAmount" | "total" | "createdAt" | "updatedAt"> &
+    Partial<Pick<Quotation, "quoteNo">>,
+): Quotation {
+  const s = getState();
+  const now = new Date().toISOString();
+  const totals = computeQuotationTotals(quote.lines, quote.gstRate, quote.discount);
+  const row: Quotation = {
+    ...quote,
+    ...totals,
+    quoteNo: quote.quoteNo?.trim() || nextQuoteNo(),
+    id: newId(),
+    createdAt: now,
+    updatedAt: now,
+  };
+  setState({ ...s, quotations: [row, ...s.quotations] });
+  void supabase.from("quotations").insert({ id: row.id, ...toQuotation(row) })
+    .then(({ error }) => fail("quotations", error));
+  addAuditLog("CREATE", "Quotation", row.id, `Quotation ${row.quoteNo} — $${row.total}`);
+  return row;
+}
+
+export function updateQuotation(id: string, updates: Partial<Quotation>): Quotation | undefined {
+  const s = getState();
+  const existing = s.quotations.find((q) => q.id === id);
+  if (!existing) return undefined;
+  const merged: Quotation = { ...existing, ...updates, updatedAt: new Date().toISOString() };
+  const totals = computeQuotationTotals(merged.lines, merged.gstRate, merged.discount);
+  const updated: Quotation = { ...merged, ...totals };
+  setState({ ...s, quotations: s.quotations.map((q) => (q.id === id ? updated : q)) });
+  void supabase.from("quotations").update(toQuotation(updated)).eq("id", id)
+    .then(({ error }) => fail("quotations", error));
+  addAuditLog("UPDATE", "Quotation", id, `Updated quotation ${updated.quoteNo}`);
+  return updated;
+}
+
+export function deleteQuotation(id: string): boolean {
+  const s = getState();
+  if (!s.quotations.some((q) => q.id === id)) return false;
+  setState({ ...s, quotations: s.quotations.filter((q) => q.id !== id) });
+  void supabase.from("quotations").delete().eq("id", id).then(({ error }) => fail("quotations", error));
+  addAuditLog("DELETE", "Quotation", id, "Deleted quotation");
+  return true;
+}
+
+/**
+ * Accepted quotation -> live rate agreements (one per quoted designation)
+ * plus a monthly service contract so billing can pick it up.
+ */
+export function convertQuotationToContract(id: string): { rates: number; contractId?: string } {
+  const quote = getQuotation(id);
+  if (!quote) return { rates: 0 };
+
+  let rates = 0;
+  for (const line of quote.lines) {
+    if (!line.designation) continue;
+    addRateAgreement({
+      clientId: quote.clientId,
+      projectId: quote.projectId,
+      trade: line.designation,
+      unit: line.unit,
+      normalRate: line.normalRate,
+      otRate: line.otRate,
+      effectiveFrom: quote.quoteDate || new Date().toISOString().slice(0, 10),
+      effectiveTo: undefined,
+      status: "Active",
+      remarks: `From quotation ${quote.quoteNo}`,
+    });
+    rates += 1;
+  }
+
+  const contract = addContract({
+    companyId: quote.companyId,
+    clientId: quote.clientId,
+    projectId: quote.projectId,
+    contractNo: quote.quoteNo.replace("QT-", "CT-"),
+    title: quote.title || `Service contract — ${quote.quoteNo}`,
+    startDate: quote.quoteDate || new Date().toISOString().slice(0, 10),
+    endDate: undefined,
+    billingCycle: "Monthly",
+    billingDay: 1,
+    billingSource: "Timesheet",
+    fixedAmount: 0,
+    gstRate: quote.gstRate,
+    paymentTermsDays: quote.paymentTermsDays,
+    autoInvoice: true,
+    status: "Active",
+    remarks: `Converted from quotation ${quote.quoteNo}`,
+  });
+
+  updateQuotation(id, {
+    status: "Converted",
+    decidedOn: new Date().toISOString().slice(0, 10),
+    convertedContractId: contract.id,
+  });
+
+  return { rates, contractId: contract.id };
+}
