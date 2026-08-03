@@ -256,6 +256,26 @@ function QuotationsPage() {
   }
 
   async function exportExcel() {
+    return exportExcelRows();
+  }
+
+  async function downloadPdf(quote: Quotation) {
+    const company = companyId ? getCompany(companyId) : undefined;
+    await downloadQuotationPdf(quote, {
+      company: company
+        ? {
+            name: company.legalName || company.name,
+            uen: company.uen,
+            address: [company.address, company.phone, company.email].filter(Boolean).join(" · "),
+          }
+        : undefined,
+      clientName: quote.clientId ? clients.find((c) => c.id === quote.clientId)?.name : undefined,
+      projectName: quote.projectId ? projects.find((p) => p.id === quote.projectId)?.name : undefined,
+    });
+    toast.success(`${quote.quoteNo} PDF downloaded`);
+  }
+
+  async function exportExcelRows() {
     await exportRows(
       filtered.map((q) => ({
         "Quote No": q.quoteNo,
