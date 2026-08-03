@@ -102,7 +102,13 @@ function QuotationsPage() {
 
   // form state
   const [quoteNo, setQuoteNo] = useState("");
+  const [clientMode, setClientMode] = useState<"new" | "existing">("new");
   const [clientId, setClientId] = useState("");
+  const [prospectCompany, setProspectCompany] = useState("");
+  const [prospectContact, setProspectContact] = useState("");
+  const [prospectEmail, setProspectEmail] = useState("");
+  const [prospectPhone, setProspectPhone] = useState("");
+  const [prospectAddress, setProspectAddress] = useState("");
   const [projectId, setProjectId] = useState("all");
   const [title, setTitle] = useState("");
   const [contactPerson, setContactPerson] = useState("");
@@ -119,7 +125,13 @@ function QuotationsPage() {
 
   function resetForm() {
     setQuoteNo(nextQuoteNo());
+    setClientMode("new");
     setClientId("");
+    setProspectCompany("");
+    setProspectContact("");
+    setProspectEmail("");
+    setProspectPhone("");
+    setProspectAddress("");
     setProjectId("all");
     setTitle("");
     setContactPerson("");
