@@ -88,10 +88,27 @@ function TimeCardsPage() {
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const [rescanId, setRescanId] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [verificationSearch, setVerificationSearch] = useState("");
+  const [verificationFilter, setVerificationFilter] = useState<"All" | "Mismatch" | "Unresolved">("All");
 
   const selected = cards.find((c) => c.id === selectedId) ?? null;
   const comparison = useMemo(() => (selected ? compareTimeCard(selected) : []), [selected]);
   const mismatches = comparison.filter((r) => r.state !== "Verified").length;
+
+  const filteredComparison = useMemo(() => {
+    return comparison.filter((r) => {
+      const matchesSearch =
+        r.date.includes(verificationSearch) ||
+        (r.remarks?.toLowerCase().includes(verificationSearch.toLowerCase()) ?? false);
+
+      const matchesFilter =
+        verificationFilter === "All" ||
+        (verificationFilter === "Mismatch" && r.state !== "Verified") ||
+        (verificationFilter === "Unresolved" && r.state !== "Verified" && !r.resolution);
+
+      return matchesSearch && matchesFilter;
+    });
+  }, [comparison, verificationSearch, verificationFilter]);
 
   const empName = (id?: string) => employees.find((e) => e.id === id)?.name ?? "—";
 
@@ -433,24 +450,48 @@ function TimeCardsPage() {
                       {mismatches} of {comparison.length} rows need attention.
                     </p>
                   </div>
-                  <div className="flex gap-2">
-                    <ExportButton
-                      rows={comparison.map((r) => ({
-                        Date: r.date,
-                        "Card In": r.cardIn ?? "",
-                        "Card Out": r.cardOut ?? "",
-                        "System In": r.systemIn ?? "",
-                        "System Out": r.systemOut ?? "",
-                        Result: r.state,
-                        Resolution: r.resolution ?? "",
-                      }))}
-                      baseName="time_card_verification"
-                      sheetName="Verification"
-                    />
-                    <Button size="sm" onClick={() => finalize(selected)}>
-                      <CheckCircle2 className="mr-1 h-4 w-4" />
-                      Finalize
-                    </Button>
+                  <div className="flex flex-wrap gap-2">
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Search date or notes..."
+                        className="h-8 w-48 text-xs"
+                        value={verificationSearch}
+                        onChange={(e) => setVerificationSearch(e.target.value)}
+                      />
+                      <Select
+                        value={verificationFilter}
+                        onValueChange={(v: any) => setVerificationFilter(v)}
+                      >
+                        <SelectTrigger className="h-8 w-32 text-xs">
+                          <SelectValue placeholder="Filter" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="All">All Rows</SelectItem>
+                          <SelectItem value="Mismatch">All Diffs</SelectItem>
+                          <SelectItem value="Unresolved">Needs Action</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex gap-2">
+                      <ExportButton
+                        rows={comparison.map((r) => ({
+                          Date: r.date,
+                          "Card In": r.cardIn ?? "",
+                          "Card Out": r.cardOut ?? "",
+                          "System In": r.systemIn ?? "",
+                          "System Out": r.systemOut ?? "",
+                          Result: r.state,
+                          Resolution: r.resolution ?? "",
+                          Notes: r.remarks ?? "",
+                        }))}
+                        baseName="time_card_verification"
+                        sheetName="Verification"
+                      />
+                      <Button size="sm" onClick={() => finalize(selected)}>
+                        <CheckCircle2 className="mr-1 h-4 w-4" />
+                        Finalize
+                      </Button>
+                    </div>
                   </div>
                 </div>
 
@@ -464,7 +505,7 @@ function TimeCardsPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {comparison.map((r) => {
+                      {filteredComparison.map((r) => {
                         const isMismatch = r.state === "Mismatch" || r.state === "Missing in system" || r.state === "Missing on card";
                         return (
                           <TableRow key={r.date} className={isMismatch ? "bg-destructive/5" : undefined}>
