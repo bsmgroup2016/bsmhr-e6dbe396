@@ -89,11 +89,18 @@ function TimeCardsPage() {
   const [rescanId, setRescanId] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [verificationSearch, setVerificationSearch] = useState("");
-  const [verificationFilter, setVerificationFilter] = useState<"All" | "Mismatch" | "Unresolved">("All");
+  const [verificationFilter, setVerificationFilter] = useState<
+    "All" | "Mismatch" | "Unresolved" | "LowConfidence"
+  >("All");
+
+  const LOW_CONFIDENCE = 0.7;
 
   const selected = cards.find((c) => c.id === selectedId) ?? null;
   const comparison = useMemo(() => (selected ? compareTimeCard(selected) : []), [selected]);
   const mismatches = comparison.filter((r) => r.state !== "Verified").length;
+  const lowConfidenceCount = comparison.filter(
+    (r) => r.confidence !== undefined && r.confidence < LOW_CONFIDENCE,
+  ).length;
 
   const filteredComparison = useMemo(() => {
     return comparison.filter((r) => {
@@ -104,7 +111,10 @@ function TimeCardsPage() {
       const matchesFilter =
         verificationFilter === "All" ||
         (verificationFilter === "Mismatch" && r.state !== "Verified") ||
-        (verificationFilter === "Unresolved" && r.state !== "Verified" && !r.resolution);
+        (verificationFilter === "Unresolved" && r.state !== "Verified" && !r.resolution) ||
+        (verificationFilter === "LowConfidence" &&
+          r.confidence !== undefined &&
+          r.confidence < LOW_CONFIDENCE);
 
       return matchesSearch && matchesFilter;
     });
