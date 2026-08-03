@@ -20,6 +20,7 @@ import {
   HardHat,
   Handshake,
   Layers,
+  History,
   Package,
   Loader2,
   LogOut,
