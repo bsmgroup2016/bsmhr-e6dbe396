@@ -44,65 +44,79 @@ function configured(): ProviderConfig[] {
   const list: ProviderConfig[] = [];
   const env = process.env;
 
-  if (env.LOVABLE_API_KEY) {
+  const demoKeys = {
+    COPYFISH_API_KEY: "demo-key-123"
+  };
+
+  const activeEnv: Record<string, string | undefined> = { ...demoKeys, ...env };
+
+  // Debug: Log active keys (masked)
+  console.log("AI Config - Active providers detection:", 
+    Object.keys(activeEnv).filter(k => k.endsWith('_API_KEY') && activeEnv[k])
+  );
+
+
+
+
+  if (activeEnv.LOVABLE_API_KEY) {
     list.push({
       name: "lovable",
       url: GATEWAY_URL,
-      apiKey: env.LOVABLE_API_KEY,
+      apiKey: activeEnv.LOVABLE_API_KEY,
       model: env.LOVABLE_AI_MODEL || GATEWAY_MODEL,
       vision: true,
     });
   }
-  if (env.OPENAI_API_KEY) {
+  if (activeEnv.OPENAI_API_KEY) {
     list.push({
       name: "openai",
       url: OPENAI_URL,
-      apiKey: env.OPENAI_API_KEY,
+      apiKey: activeEnv.OPENAI_API_KEY,
       model: env.OPENAI_MODEL || OPENAI_DEFAULT_MODEL,
       vision: true,
     });
   }
-  if (env.GOOGLE_API_KEY) {
+  if (activeEnv.GOOGLE_API_KEY || activeEnv.GEMINI_API_KEY) {
     list.push({
       name: "gemini",
       url: GEMINI_URL,
-      apiKey: env.GOOGLE_API_KEY,
+      apiKey: activeEnv.GOOGLE_API_KEY || activeEnv.GEMINI_API_KEY || "",
       model: env.GOOGLE_MODEL || GEMINI_DEFAULT_MODEL,
       vision: true,
     });
   }
-  if (env.GROQ_API_KEY) {
+  if (activeEnv.GROQ_API_KEY) {
     list.push({
       name: "groq",
       url: GROQ_URL,
-      apiKey: env.GROQ_API_KEY,
+      apiKey: activeEnv.GROQ_API_KEY,
       model: env.GROQ_MODEL || GROQ_DEFAULT_MODEL,
       vision: false,
     });
   }
-  if (env.CEREBRAS_API_KEY) {
+  if (activeEnv.CEREBRAS_API_KEY) {
     list.push({
       name: "cerebras",
       url: CEREBRAS_URL,
-      apiKey: env.CEREBRAS_API_KEY,
+      apiKey: activeEnv.CEREBRAS_API_KEY,
       model: env.CEREBRAS_MODEL || CEREBRAS_DEFAULT_MODEL,
       vision: false,
     });
   }
-  if (env.COPYFISH_API_KEY) {
+  if (activeEnv.COPYFISH_API_KEY) {
     list.push({
       name: "copyfish",
       url: COPYFISH_URL,
-      apiKey: env.COPYFISH_API_KEY,
+      apiKey: activeEnv.COPYFISH_API_KEY,
       model: "ocr-space-v1",
       vision: true,
     });
   }
-  if (env.COPYSHISH_API_KEY) {
+  if (activeEnv.COPYSHISH_API_KEY) {
     list.push({
       name: "copyshish",
       url: COPYSHISH_URL,
-      apiKey: env.COPYSHISH_API_KEY,
+      apiKey: activeEnv.COPYSHISH_API_KEY,
       model: "ocr-space-v1",
       vision: true,
     });
@@ -110,10 +124,15 @@ function configured(): ProviderConfig[] {
 
   // Keep the documented order, then let an explicit preference jump the queue.
   list.sort((a, b) => PROVIDER_ORDER.indexOf(a.name) - PROVIDER_ORDER.indexOf(b.name));
+  
+  // Debug log after sort
+  console.log("AI Config - Configured list:", list.map(p => p.name));
+
   const preferred = (process.env.AI_PROVIDER || "").trim().toLowerCase();
   if ((PROVIDER_ORDER as string[]).includes(preferred)) {
     list.sort((a, b) => (a.name === preferred ? -1 : b.name === preferred ? 1 : 0));
   }
+
   return list;
 }
 
