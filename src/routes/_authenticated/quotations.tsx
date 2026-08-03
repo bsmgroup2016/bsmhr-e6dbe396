@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import {
   FileSignature, Plus, Search, Trash2, Send, CheckCircle2, XCircle,
-  Download, ArrowRightLeft, Copy,
+  Download, ArrowRightLeft, Copy, FileText,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -25,9 +25,10 @@ import {
 import {
   getClients, getProjects, getCurrentCompany, getQuotations, addQuotation,
   updateQuotation, deleteQuotation, convertQuotationToContract,
-  computeQuotationTotals, nextQuoteNo, subscribe,
+  computeQuotationTotals, nextQuoteNo, subscribe, getCompany,
 } from "@/lib/store";
 import { exportRows, timestampedName } from "@/lib/xlsx";
+import { downloadQuotationPdf } from "@/lib/pdf";
 import type { Quotation, QuotationLine, QuotationStatus, RateUnit } from "@/lib/types";
 import { useEffect } from "react";
 
@@ -255,6 +256,26 @@ function QuotationsPage() {
   }
 
   async function exportExcel() {
+    return exportExcelRows();
+  }
+
+  async function downloadPdf(quote: Quotation) {
+    const company = companyId ? getCompany(companyId) : undefined;
+    await downloadQuotationPdf(quote, {
+      company: company
+        ? {
+            name: company.legalName || company.name,
+            uen: company.uen,
+            address: [company.address, company.phone, company.email].filter(Boolean).join(" · "),
+          }
+        : undefined,
+      clientName: quote.clientId ? clients.find((c) => c.id === quote.clientId)?.name : undefined,
+      projectName: quote.projectId ? projects.find((p) => p.id === quote.projectId)?.name : undefined,
+    });
+    toast.success(`${quote.quoteNo} PDF downloaded`);
+  }
+
+  async function exportExcelRows() {
     await exportRows(
       filtered.map((q) => ({
         "Quote No": q.quoteNo,
@@ -400,6 +421,9 @@ function QuotationsPage() {
                         )}
                         <Button size="icon" variant="ghost" title="Duplicate" onClick={() => duplicate(q)}>
                           <Copy className="h-4 w-4" />
+                        </Button>
+                        <Button size="icon" variant="ghost" title="Download PDF" onClick={() => downloadPdf(q)}>
+                          <FileText className="h-4 w-4 text-primary" />
                         </Button>
                         <Button
                           size="icon"
@@ -742,6 +766,9 @@ function QuotationsPage() {
               )}
 
               <DialogFooter>
+                <Button variant="outline" onClick={() => downloadPdf(detail)}>
+                  <Download className="mr-2 h-4 w-4" /> Download PDF
+                </Button>
                 {detail.status === "Draft" && (
                   <Button onClick={() => { setStatus(detail, "Sent"); setDetail(null); }}>Mark as sent</Button>
                 )}
