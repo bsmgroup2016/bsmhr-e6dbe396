@@ -258,7 +258,10 @@ function QuotationsPage() {
     await exportRows(
       filtered.map((q) => ({
         "Quote No": q.quoteNo,
-        Client: clients.find((c) => c.id === q.clientId)?.name ?? "-",
+        Client: clientLabel(q),
+        "Contact": q.prospectContact ?? q.contactPerson ?? "",
+        "Email": q.prospectEmail ?? "",
+        "Phone": q.prospectPhone ?? "",
         Title: q.title,
         "Quote Date": q.quoteDate,
         "Valid Until": q.validUntil ?? "-",
@@ -355,7 +358,17 @@ function QuotationsPage() {
                 {filtered.map((q) => (
                   <TableRow key={q.id} className="cursor-pointer" onClick={() => setDetail(q)}>
                     <TableCell className="font-medium">{q.quoteNo}</TableCell>
-                    <TableCell>{clients.find((c) => c.id === q.clientId)?.name ?? "-"}</TableCell>
+                    <TableCell>
+                      <div className="flex flex-col">
+                        <span>{clientLabel(q)}</span>
+                        {!q.clientId && (
+                          <span className="text-xs text-muted-foreground">
+                            Prospect{q.prospectEmail ? ` · ${q.prospectEmail}` : ""}
+                            {q.prospectPhone ? ` · ${q.prospectPhone}` : ""}
+                          </span>
+                        )}
+                      </div>
+                    </TableCell>
                     <TableCell className="max-w-[220px] truncate">{q.title}</TableCell>
                     <TableCell className="text-right">{q.lines.reduce((s, l) => s + l.headcount, 0)}</TableCell>
                     <TableCell className="text-right font-medium">{money(q.total)}</TableCell>
@@ -680,7 +693,7 @@ function QuotationsPage() {
                   <Badge className={statusTone[detail.status]} variant="secondary">{detail.status}</Badge>
                 </DialogTitle>
                 <DialogDescription>
-                  {clients.find((c) => c.id === detail.clientId)?.name ?? "-"} · {detail.title}
+                  {clientLabel(detail)} · {detail.title}
                 </DialogDescription>
               </DialogHeader>
 
