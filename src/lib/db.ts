@@ -18,6 +18,7 @@ import type {
   DormitoryInvoice, DormitoryInspection, DormitoryMovement,
 } from "@/lib/types";
 import type { ClientContract } from "@/lib/types";
+import type { Quotation, QuotationLine } from "@/lib/types";
 import type { MedicalClaim } from "@/lib/types";
 import type { EmployeeLoan, LoanRepayment } from "@/lib/types";
 import type { Department, Designation } from "@/lib/types";
