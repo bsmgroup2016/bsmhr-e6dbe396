@@ -166,7 +166,7 @@ export default function TransportPage() {
           </TabsList>
 
           <TabsContent value="calendar" className="mt-4">
-            <TripCalendar trips={filteredTrips} plate={plate} siteName={siteName} />
+            <TripCalendar trips={filteredTrips} plate={plate} siteName={siteName} driverName={empName} />
           </TabsContent>
 
           <TabsContent value="trips" className="mt-4">
