@@ -13,8 +13,7 @@ import {
   XCircle,
   Loader2,
   Eye,
-  EyeOff,
-  Plus
+  EyeOff
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -99,38 +98,7 @@ export function AiSettings() {
           </div>
         )}
 
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-semibold">Active Providers</h3>
-          <Button variant="outline" size="sm" className="h-8 gap-1.5" onClick={() => setEditingProvider("new")}>
-            <Plus className="h-3 w-3" /> Add New API
-          </Button>
-        </div>
-
         <div className="space-y-4">
-          {editingProvider === "new" && (
-            <div className="p-4 rounded-lg border border-primary bg-primary/5 space-y-3">
-              <h4 className="text-sm font-bold">Add New OCR/AI Provider</h4>
-              <div className="grid gap-3">
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Provider Name (e.g. Copyfish, Tesseract)</Label>
-                  <Input placeholder="Enter name..." value={editingProvider === 'new' ? '' : ''} onChange={() => {}} />
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Endpoint URL</Label>
-                  <Input placeholder="https://api..." />
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs">API Key</Label>
-                  <Input type="password" placeholder="sk-..." />
-                </div>
-              </div>
-              <div className="flex justify-end gap-2 pt-2">
-                <Button variant="ghost" size="sm" onClick={() => setEditingProvider(null)}>Cancel</Button>
-                <Button size="sm" onClick={() => toast.success("Provider added successfully (Demo)")}>Save Provider</Button>
-              </div>
-            </div>
-          )}
-
           {providers.map((p, index) => (
             <div 
               key={p.name} 
