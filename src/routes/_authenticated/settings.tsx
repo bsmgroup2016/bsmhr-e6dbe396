@@ -270,7 +270,7 @@ export default function SettingsPage() {
               <div className="mt-6 border-t pt-4">
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-sm font-semibold">Compatible OCR Backups</h3>
-                  <Button variant="outline" size="xs" className="h-7 text-[10px] gap-1">
+                  <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1">
                     <Plus className="h-3 w-3" /> Add Provider
                   </Button>
                 </div>
