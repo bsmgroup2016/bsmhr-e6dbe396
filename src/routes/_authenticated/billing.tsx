@@ -25,6 +25,7 @@ import { BillingOverview } from "@/components/billing-overview";
 import { PaymentsReceived, BillsAndExpenses } from "@/components/billing-payments";
 import { BillingReports } from "@/components/billing-reports";
 import { downloadInvoicePdf } from "@/lib/pdf";
+import { PayInvoicePanel } from "@/components/billing/pay-invoice-panel";
 import { SummaryCard } from "@/components/ui/summary-card";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -890,6 +891,14 @@ function BillingPage() {
               </div>
 
               {preview.notes && <p className="text-muted-foreground">{preview.notes}</p>}
+
+              {preview.status !== "Paid" && preview.status !== "Cancelled" && (
+                <PayInvoicePanel
+                  company={company}
+                  amount={Math.max(0, preview.total - preview.amountPaid)}
+                  reference={preview.invoiceNo}
+                />
+              )}
 
               <DialogFooter>
                 <Button variant="outline" onClick={() => window.print()}>
