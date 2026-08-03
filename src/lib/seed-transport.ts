@@ -1,7 +1,8 @@
 import { 
   getVehicles, addVehicle, getTrips, addTrip, 
-  getEmployees, getSites, getCurrentCompany, getCompanies
+  getEmployees, getSites, getCompanies
 } from "./store";
+import type { Employee, Site } from "./types";
 
 /**
  * Seeds demo transport data (vehicles and trips) for BSM, VRL, and Pluto.
@@ -23,13 +24,20 @@ export function seedTransportDemoData() {
   const vrl = companies.find(c => c.code === 'VRL') || companies[1] || bsm;
   const pluto = companies.find(c => c.code === 'PLT') || companies[2] || bsm;
 
-  const drivers = employees.filter(e => (e.designation || e.trade || "").toLowerCase().includes("driver"));
+  // Filter drivers based on trade or workerCategory
+  const drivers = employees.filter(e => 
+    (e.trade || "").toLowerCase().includes("driver") || 
+    (e.workerCategory === "Driver")
+  );
+  
   const bsmDriver = drivers.find(e => e.companyId === bsm?.id) || drivers[0];
   const vrlDriver = drivers.find(e => e.companyId === vrl?.id) || drivers[1] || bsmDriver;
   const plutoDriver = drivers.find(e => e.companyId === pluto?.id) || drivers[2] || bsmDriver;
 
-  const bsmSite = sites.find(s => s.companyId === bsm?.id) || sites[0];
-  const vrlSite = sites.find(s => s.companyId === vrl?.id) || sites[1] || bsmSite;
+  // Filter sites - Site interface uses projectId, not companyId directly in types,
+  // but many sites are usually linked via projects. We'll just take the first few sites available.
+  const bsmSite = sites[0];
+  const vrlSite = sites[1] || bsmSite;
 
   const today = new Date();
   const isoDate = (d: Date) => d.toISOString().slice(0, 10);
@@ -65,30 +73,34 @@ export function seedTransportDemoData() {
     const dateStr = isoDate(date);
     
     // BSM Lorry Trip
-    addTrip({
-      vehicleId: vehicleIds[0],
-      driverEmployeeId: bsmDriver?.id,
-      siteId: bsmSite?.id,
-      date: dateStr,
-      departureTime: "07:30",
-      returnTime: "18:30",
-      route: "Jurong Dorm → " + (bsmSite?.name || "Site A"),
-      passengers: 12,
-      status: i === 0 ? "Scheduled" : "Completed",
-    });
+    if (vehicleIds[0]) {
+      addTrip({
+        vehicleId: vehicleIds[0],
+        driverEmployeeId: bsmDriver?.id || "",
+        siteId: bsmSite?.id || "",
+        date: dateStr,
+        departureTime: "07:30",
+        returnTime: "18:30",
+        route: "Jurong Dorm → " + (bsmSite?.name || "Project Site A"),
+        passengers: 12,
+        status: i === 0 ? "Scheduled" : "Completed",
+      });
+    }
 
     // VRL Bus Trip
-    addTrip({
-      vehicleId: vehicleIds[2],
-      driverEmployeeId: vrlDriver?.id,
-      siteId: vrlSite?.id,
-      date: dateStr,
-      departureTime: "07:00",
-      returnTime: "19:00",
-      route: "Tampines Dorm → " + (vrlSite?.name || "Site B"),
-      passengers: 40,
-      status: i === 0 ? "Scheduled" : "Completed",
-    });
+    if (vehicleIds[2]) {
+      addTrip({
+        vehicleId: vehicleIds[2],
+        driverEmployeeId: vrlDriver?.id || "",
+        siteId: vrlSite?.id || "",
+        date: dateStr,
+        departureTime: "07:00",
+        returnTime: "19:00",
+        route: "Tampines Dorm → " + (vrlSite?.name || "Project Site B"),
+        passengers: 40,
+        status: i === 0 ? "Scheduled" : "Completed",
+      });
+    }
   }
 
   console.log("Seeded transport demo data successfully.");
