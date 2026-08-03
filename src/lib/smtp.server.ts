@@ -18,6 +18,11 @@ export interface SmtpConfig {
   fromEmail: string | null;
   fromName: string | null;
   updatedAt: string | null;
+  maxAttempts: number;
+  retryDelayMs: number;
+  backoffMultiplier: number;
+  failoverEnabled: boolean;
+  switchBack: boolean;
 }
 
 const EMPTY: SmtpConfig = {
@@ -31,6 +36,11 @@ const EMPTY: SmtpConfig = {
   fromEmail: null,
   fromName: null,
   updatedAt: null,
+  maxAttempts: 3,
+  retryDelayMs: 1000,
+  backoffMultiplier: 2,
+  failoverEnabled: true,
+  switchBack: true,
 };
 
 export async function loadSmtpConfig(): Promise<SmtpConfig> {
@@ -48,6 +58,11 @@ export async function loadSmtpConfig(): Promise<SmtpConfig> {
     fromEmail: r.from_email ?? null,
     fromName: r.from_name ?? null,
     updatedAt: r.updated_at ?? null,
+    maxAttempts: Number(r.max_attempts ?? 3),
+    retryDelayMs: Number(r.retry_delay_ms ?? 1000),
+    backoffMultiplier: Number(r.backoff_multiplier ?? 2),
+    failoverEnabled: r.failover_enabled ?? true,
+    switchBack: r.switch_back ?? true,
   };
 }
 
