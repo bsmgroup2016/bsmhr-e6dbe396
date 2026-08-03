@@ -377,6 +377,7 @@ export interface TimeCardEntry {
   checkIn?: string;
   checkOut?: string;
   resolution?: "Accepted" | "Corrected" | "Ignored";
+  remarks?: string;
 }
 
 export interface TimeCard {

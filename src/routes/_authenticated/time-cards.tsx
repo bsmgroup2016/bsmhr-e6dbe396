@@ -460,8 +460,7 @@ function TimeCardsPage() {
                       <TableRow>
                         <TableHead>Date</TableHead>
                         <TableHead>Comparison (Card vs System)</TableHead>
-                        <TableHead>Result</TableHead>
-                        <TableHead>Decision</TableHead>
+                        <TableHead>Resolution & Notes</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -512,36 +511,47 @@ function TimeCardsPage() {
                               </div>
                             </TableCell>
                             <TableCell>
-                              <StatusBadge
-                                dot
-                                label={r.state}
-                                variant={
-                                  r.state === "Verified"
-                                    ? "success"
-                                    : r.state === "Mismatch"
-                                      ? "destructive"
-                                      : "warning"
-                                }
-                              />
-                            </TableCell>
-                            <TableCell>
-                              <Select
-                                value={r.resolution ?? ""}
-                                onValueChange={(v) =>
-                                  setEntry(r.date, {
-                                    resolution: v as TimeCardEntry["resolution"],
-                                  })
-                                }
-                              >
-                                <SelectTrigger className="h-8 w-36">
-                                  <SelectValue placeholder="Action Required" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="Accepted">Accept Card (Keep OCR)</SelectItem>
-                                  <SelectItem value="Corrected">Use System Time</SelectItem>
-                                  <SelectItem value="Ignored">Ignore Entry</SelectItem>
-                                </SelectContent>
-                              </Select>
+                              <div className="flex flex-col gap-2">
+                                <div className="flex items-center gap-2">
+                                  <StatusBadge
+                                    dot
+                                    label={r.state}
+                                    variant={
+                                      r.state === "Verified"
+                                        ? "success"
+                                        : r.state === "Mismatch"
+                                          ? "destructive"
+                                          : "warning"
+                                    }
+                                    className="shrink-0"
+                                  />
+                                  <Select
+                                    value={r.resolution ?? ""}
+                                    onValueChange={(v) =>
+                                      setEntry(r.date, {
+                                        resolution: v as TimeCardEntry["resolution"],
+                                      })
+                                    }
+                                  >
+                                    <SelectTrigger className="h-8 w-full min-w-[140px]">
+                                      <SelectValue placeholder="Action Required" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="Accepted">Accept Card (Keep OCR)</SelectItem>
+                                      <SelectItem value="Corrected">Use System Time</SelectItem>
+                                      <SelectItem value="Ignored">Ignore Entry</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                {isMismatch && (
+                                  <Input
+                                    placeholder="Add reason for adjustment..."
+                                    className="h-7 text-[11px]"
+                                    value={r.remarks ?? ""}
+                                    onChange={(e) => setEntry(r.date, { remarks: e.target.value })}
+                                  />
+                                )}
+                              </div>
                             </TableCell>
                           </TableRow>
                         );
