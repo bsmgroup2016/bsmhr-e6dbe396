@@ -877,6 +877,35 @@ export const toContract = (c: Partial<ClientContract>): Row => ({
 });
 
 /* ---------- branch prefixes / certifications / time cards / claim sheets ---------- */
+export const fromQuotation = (r: Row): Quotation => ({
+  id: r.id, companyId: r.company_id ?? undefined, clientId: r.client_id,
+  projectId: r.project_id ?? undefined, quoteNo: r.quote_no ?? "",
+  title: r.title ?? "", contactPerson: r.contact_person ?? undefined,
+  quoteDate: d(r.quote_date) ?? "", validUntil: d(r.valid_until),
+  lines: Array.isArray(r.lines) ? (r.lines as QuotationLine[]) : [],
+  subtotal: Number(r.subtotal ?? 0), discount: Number(r.discount ?? 0),
+  gstRate: Number(r.gst_rate ?? 9), gstAmount: Number(r.gst_amount ?? 0),
+  total: Number(r.total ?? 0),
+  status: (r.status ?? "Draft") as Quotation["status"],
+  paymentTermsDays: Number(r.payment_terms_days ?? 30),
+  preparedBy: r.prepared_by ?? undefined, sentOn: d(r.sent_on), decidedOn: d(r.decided_on),
+  convertedContractId: r.converted_contract_id ?? undefined,
+  terms: r.terms ?? undefined, notes: r.notes ?? undefined,
+  createdAt: r.created_at, updatedAt: r.updated_at,
+});
+
+export const toQuotation = (q: Partial<Quotation>): Row => ({
+  company_id: q.companyId || null, client_id: q.clientId, project_id: q.projectId || null,
+  quote_no: q.quoteNo, title: q.title ?? "", contact_person: q.contactPerson ?? null,
+  quote_date: nullDate(q.quoteDate), valid_until: nullDate(q.validUntil),
+  lines: q.lines ?? [], subtotal: q.subtotal ?? 0, discount: q.discount ?? 0,
+  gst_rate: q.gstRate ?? 9, gst_amount: q.gstAmount ?? 0, total: q.total ?? 0,
+  status: q.status ?? "Draft", payment_terms_days: q.paymentTermsDays ?? 30,
+  prepared_by: q.preparedBy ?? null, sent_on: nullDate(q.sentOn),
+  decided_on: nullDate(q.decidedOn), converted_contract_id: q.convertedContractId || null,
+  terms: q.terms ?? null, notes: q.notes ?? null,
+});
+
 export const fromBranchPrefix = (r: Row): BranchPrefix => ({
   id: r.id, code: r.code, name: r.name, companyId: r.company_id ?? undefined,
   active: r.active ?? true, createdAt: r.created_at, updatedAt: r.updated_at,
