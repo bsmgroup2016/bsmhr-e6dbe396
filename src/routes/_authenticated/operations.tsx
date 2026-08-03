@@ -6,7 +6,7 @@ import {
   FileText, TrendingUp, DollarSign,
 } from "lucide-react";
 import { toast } from "sonner";
-
+import { checkDeploymentCompliance } from "@/lib/compliance";
 import { AppShell } from "@/components/app-shell";
 import { SummaryCard } from "@/components/ui/summary-card";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -138,8 +138,13 @@ export default function OperationsPage() {
     for (const id of ids) {
       const worker = emp(id);
       if (!worker) continue;
+      const compliance = await checkDeploymentCompliance(id);
       if (hasExpiredWorkPermit(worker)) {
         toast.error(`${worker.name}: Work Permit expired — deployment blocked`);
+        continue;
+      }
+      if (!compliance.compliant) {
+        toast.error(`${worker.name}: Missing/Expired safety course: ${compliance.missingOrExpired.join(", ")}`);
         continue;
       }
       addAssignment({ employeeId: id, siteId, projectId, startDate, status: "Pending", remarks });
