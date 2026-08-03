@@ -1117,3 +1117,48 @@ export const toLoanRepayment = (x: Partial<LoanRepayment>): Row => ({
   loan_id: x.loanId, employee_id: x.employeeId, paid_on: nullDate(x.paidOn),
   month: x.month ?? null, amount: x.amount ?? 0, source: x.source, remarks: x.remarks ?? null,
 });
+
+export const fromManpowerRequest = (r: Row): ManpowerRequest => ({
+  id: r.id,
+  clientId: r.client_id,
+  projectId: r.project_id ?? undefined,
+  title: r.title ?? "",
+  startDate: d(r.start_date) ?? "",
+  endDate: d(r.end_date),
+  status: (r.status ?? "Pending") as ManpowerRequest["status"],
+  requestedBy: r.requested_by ?? "",
+  items: [],
+  createdAt: r.created_at,
+  updatedAt: r.updated_at,
+});
+
+export const toManpowerRequest = (x: Partial<ManpowerRequest>): Row => ({
+  client_id: x.clientId,
+  project_id: x.projectId || null,
+  title: x.title ?? "",
+  start_date: nullDate(x.startDate),
+  end_date: nullDate(x.endDate),
+  status: x.status,
+  requested_by: x.requestedBy ?? null,
+});
+
+export const fromManpowerRequestItem = (r: Row): ManpowerRequestItem => ({
+  id: r.id,
+  requestId: r.request_id,
+  designation: r.designation ?? "",
+  count: Number(r.count ?? 0),
+  count_filled: Number(r.countFilled ?? 0),
+  startDate: d(r.start_date) ?? "",
+  endDate: d(r.end_date),
+  remarks: r.remarks ?? undefined,
+});
+
+export const toManpowerRequestItem = (x: Partial<ManpowerRequestItem>): Row => ({
+  request_id: x.requestId,
+  designation: x.designation ?? "",
+  count: x.count ?? 0,
+  count_filled: x.countFilled ?? 0,
+  start_date: nullDate(x.startDate),
+  end_date: nullDate(x.endDate),
+  remarks: x.remarks ?? null,
+});
