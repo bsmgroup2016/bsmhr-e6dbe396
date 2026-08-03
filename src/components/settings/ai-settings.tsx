@@ -80,12 +80,12 @@ export function AiSettings() {
       <div className="rounded-xl border bg-card p-5 shadow-sm">
         <div className="flex items-center gap-2 mb-4">
           <Bot className="h-5 w-5 text-primary" />
-          <h2 className="text-lg font-semibold">AI Provider & Key Management</h2>
+          <h2 className="text-lg font-semibold">AI & OCR Provider Management</h2>
         </div>
         
         <p className="text-sm text-muted-foreground mb-6">
-          Configure API keys and manage your AI infrastructure. Note: For immediate effect in the cloud, 
-          ensure these keys are also added to your project secrets.
+          Configure API keys for AI and OCR providers. You can add, edit, or test connections to primary providers 
+          and specialized OCR engines like Copyfish or Gemini Vision.
         </p>
 
         {!config.configured && (

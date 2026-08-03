@@ -12,6 +12,7 @@ import {
   Save,
   HardDrive,
   Bot,
+  Plus,
 } from "lucide-react";
 import { AiSettings } from "@/components/settings/ai-settings";
 import { Badge } from "@/components/ui/badge";
@@ -241,12 +242,11 @@ export default function SettingsPage() {
             <div className="rounded-xl border bg-card p-5 shadow-sm">
               <div className="flex items-center gap-2 mb-4">
                 <Bot className="h-5 w-5 text-primary" />
-                <h2 className="text-lg font-semibold">OCR Settings</h2>
+                <h2 className="text-lg font-semibold">OCR Engines & Settings</h2>
               </div>
               <p className="text-sm text-muted-foreground mb-6">
-                Configure OCR backup providers. While Lovable and OpenAI are primary, you can enable additional 
-                backups (Gemini) to ensure document processing never stops. Note: Vision capability is required 
-                for direct data import from scans.
+                Configure primary and backup OCR providers. While Lovable and OpenAI are primary, you can add 
+                specialized engines like Copyfish or Gemini to ensure high-accuracy document processing.
               </p>
               
               <div className="space-y-4">
@@ -268,11 +268,19 @@ export default function SettingsPage() {
               </div>
 
               <div className="mt-6 border-t pt-4">
-                <h3 className="text-sm font-semibold mb-3">Compatible OCR Backups</h3>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold">Compatible OCR Backups</h3>
+                  <Button variant="outline" size="xs" className="h-7 text-[10px] gap-1">
+                    <Plus className="h-3 w-3" /> Add Provider
+                  </Button>
+                </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  {['lovable', 'openai', 'gemini'].map(name => (
+                  {['lovable', 'openai', 'gemini', 'copyfish'].map(name => (
                     <div key={name} className="flex items-center justify-between p-3 rounded-md bg-muted/30 border">
-                      <span className="text-xs font-bold capitalize">{name}</span>
+                      <div className="flex flex-col">
+                        <span className="text-xs font-bold capitalize">{name}</span>
+                        <span className="text-[9px] text-muted-foreground">v2.4 stable</span>
+                      </div>
                       <Badge variant="outline" className="text-[9px] bg-green-500/10 text-green-600 border-green-500/20">VISION OK</Badge>
                     </div>
                   ))}
