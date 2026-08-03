@@ -158,17 +158,6 @@ export default function AccommodationPage() {
             <p className="text-sm text-muted-foreground">Dormitories, bed allocation and occupancy tracking.</p>
           </div>
           <div className="mt-2 flex gap-2 sm:mt-0">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => {
-                seedAccommodationDemoData();
-                refresh();
-                toast.success("Demo accommodation data loaded");
-              }}
-            >
-              <Sparkles className="mr-1 h-4 w-4" /> Load demo data
-            </Button>
             <Button size="sm" variant="outline" onClick={handleExport} disabled={filteredAllocs.length === 0}>
               <Download className="mr-1 h-4 w-4" /> Export
             </Button>
