@@ -85,8 +85,8 @@ export const Route = createFileRoute("/_authenticated/workforce")({
   }),
   head: () => ({
     meta: [
-      { title: "Workforce — BSM Workforce & Operations" },
-      { name: "description", content: "Manage BSM Engineering employees and worker records." },
+      { title: "Workforce Management | BSM Engineering" },
+      { name: "description", content: "Manage BSM Engineering's manpower supply. Detailed P-File records, FIN/Work Permit tracking, and worker availability." },
       { property: "og:title", content: "Workforce — BSM Workforce & Operations" },
       { property: "og:description", content: "Manage BSM Engineering employees and worker records." },
     ],

@@ -75,8 +75,8 @@ export const Route = createFileRoute("/_authenticated/projects")({
   }),
   head: () => ({
     meta: [
-      { title: "Projects & Sites — BSM Workforce & Operations" },
-      { name: "description", content: "Manage projects, sites, and manpower requirements." },
+      { title: "Projects & Site Management | BSM Engineering" },
+      { name: "description", content: "Track BSM Engineering project sites, manpower requirements, and deployment status across Singapore." },
       { property: "og:title", content: "Projects & Sites — BSM Workforce & Operations" },
       { property: "og:description", content: "Manage projects, sites, and manpower requirements." },
     ],

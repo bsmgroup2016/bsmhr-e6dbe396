@@ -117,15 +117,15 @@ const money = (n: number) =>
 export const Route = createFileRoute("/_authenticated/billing")({
   head: () => ({
     meta: [
-      { title: "Billing & Invoicing — BSM Workforce & Operations" },
+      { title: "Billing, Invoicing & Financial Reports | BSM Engineering" },
       {
         name: "description",
-        content: "Client billing based on deployed manpower, timesheets and rate agreements.",
+        content: "BSM Engineering billing system. Professional invoicing, accounts receivable, and QuickBooks-style financial reporting.",
       },
-      { property: "og:title", content: "Billing & Invoicing — BSM Workforce & Operations" },
+      { property: "og:title", content: "Billing, Invoicing & Financial Reports | BSM Engineering" },
       {
         property: "og:description",
-        content: "Client billing based on deployed manpower, timesheets and rate agreements.",
+        content: "BSM Engineering billing system. Professional invoicing, accounts receivable, and QuickBooks-style financial reporting.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
