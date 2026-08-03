@@ -396,6 +396,157 @@ export default function AccommodationPage() {
               </div>
             </div>
           </TabsContent>
+          
+          <TabsContent value="invoices" className="mt-4">
+            <div className="rounded-xl border bg-card p-4 shadow-sm">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h2 className="text-sm font-medium text-muted-foreground">Dormitory Invoices</h2>
+                </div>
+                <Button size="sm">
+                  <Plus className="mr-1 h-4 w-4" /> Log invoice
+                </Button>
+              </div>
+              
+              <div className="mt-4 overflow-hidden rounded-lg border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Invoice No</TableHead>
+                      <TableHead>Dormitory</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Due Date</TableHead>
+                      <TableHead>Amount</TableHead>
+                      <TableHead>Paid</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="w-16"></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {getDormitoryInvoices().length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={8} className="h-32 text-center text-muted-foreground">
+                          No invoices logged.
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      getDormitoryInvoices()
+                        .filter(i => !companyId || i.companyId === companyId)
+                        .map((i) => (
+                        <TableRow key={i.id}>
+                          <TableCell className="font-medium">{i.invoiceNo}</TableCell>
+                          <TableCell>{dormName(i.dormitoryId)}</TableCell>
+                          <TableCell>{i.invoiceDate}</TableCell>
+                          <TableCell>{i.dueDate || "—"}</TableCell>
+                          <TableCell>${i.totalAmount.toLocaleString()}</TableCell>
+                          <TableCell>${i.amountPaid.toLocaleString()}</TableCell>
+                          <TableCell><StatusBadge variant={i.status === "Paid" ? "success" : "warning"} label={i.status} dot /></TableCell>
+                          <TableCell>
+                            <Button size="icon" variant="ghost">
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="inspections" className="mt-4">
+            <div className="rounded-xl border bg-card p-4 shadow-sm">
+              <div className="flex items-center justify-between">
+                <h2 className="text-sm font-medium text-muted-foreground">Inspection Logs</h2>
+                <Button size="sm">
+                  <Plus className="mr-1 h-4 w-4" /> New inspection
+                </Button>
+              </div>
+              
+              <div className="mt-4 overflow-hidden rounded-lg border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Dormitory</TableHead>
+                      <TableHead>Inspector</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Findings</TableHead>
+                      <TableHead className="w-16"></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {getDormitoryInspections().length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">
+                          No inspections recorded.
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      getDormitoryInspections().map((insp) => (
+                        <TableRow key={insp.id}>
+                          <TableCell>{insp.inspectionDate}</TableCell>
+                          <TableCell>{dormName(insp.dormitoryId)}</TableCell>
+                          <TableCell>{insp.inspectorName || "—"}</TableCell>
+                          <TableCell><StatusBadge variant={insp.status === "Passed" ? "success" : "destructive"} label={insp.status} dot /></TableCell>
+                          <TableCell className="max-w-[200px] truncate">{insp.findings || "—"}</TableCell>
+                          <TableCell>
+                            <Button size="icon" variant="ghost">
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="history" className="mt-4">
+            <div className="rounded-xl border bg-card p-4 shadow-sm">
+              <h2 className="text-sm font-medium text-muted-foreground">Worker Movement History</h2>
+              <div className="mt-4 overflow-hidden rounded-lg border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Worker</TableHead>
+                      <TableHead>From</TableHead>
+                      <TableHead>To</TableHead>
+                      <TableHead>Room</TableHead>
+                      <TableHead>Reason</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {getDormitoryMovements().length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">
+                          No movement records.
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      getDormitoryMovements().map((m) => (
+                        <TableRow key={m.id}>
+                          <TableCell>{m.moveDate}</TableCell>
+                          <TableCell>
+                            <div className="font-medium">{empName(m.employeeId)}</div>
+                            <div className="text-xs text-muted-foreground">{empCode(m.employeeId)}</div>
+                          </TableCell>
+                          <TableCell>{m.fromDormitoryId ? dormName(m.fromDormitoryId) : "Initial Allocation"}</TableCell>
+                          <TableCell>{m.toDormitoryId ? dormName(m.toDormitoryId) : "Vacated"}</TableCell>
+                          <TableCell>{m.toRoom || m.fromRoom || "—"}</TableCell>
+                          <TableCell>{m.reason || "—"}</TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          </TabsContent>
 
           <TabsContent value="mom-address" className="mt-4">
             <div className="rounded-xl border bg-card p-4 shadow-sm">
