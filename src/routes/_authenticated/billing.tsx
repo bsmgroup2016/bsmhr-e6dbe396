@@ -868,7 +868,6 @@ function BillingPage() {
                   </Table>
                 </div>
               </div>
-            </TabsContent>
 
             <TabsContent value="rates" className="mt-4">
               <div className="rounded-xl border bg-card p-4 shadow-sm">
