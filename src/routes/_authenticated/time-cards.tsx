@@ -89,11 +89,18 @@ function TimeCardsPage() {
   const [rescanId, setRescanId] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [verificationSearch, setVerificationSearch] = useState("");
-  const [verificationFilter, setVerificationFilter] = useState<"All" | "Mismatch" | "Unresolved">("All");
+  const [verificationFilter, setVerificationFilter] = useState<
+    "All" | "Mismatch" | "Unresolved" | "LowConfidence"
+  >("All");
+
+  const LOW_CONFIDENCE = 0.7;
 
   const selected = cards.find((c) => c.id === selectedId) ?? null;
   const comparison = useMemo(() => (selected ? compareTimeCard(selected) : []), [selected]);
   const mismatches = comparison.filter((r) => r.state !== "Verified").length;
+  const lowConfidenceCount = comparison.filter(
+    (r) => r.confidence !== undefined && r.confidence < LOW_CONFIDENCE,
+  ).length;
 
   const filteredComparison = useMemo(() => {
     return comparison.filter((r) => {
@@ -104,7 +111,10 @@ function TimeCardsPage() {
       const matchesFilter =
         verificationFilter === "All" ||
         (verificationFilter === "Mismatch" && r.state !== "Verified") ||
-        (verificationFilter === "Unresolved" && r.state !== "Verified" && !r.resolution);
+        (verificationFilter === "Unresolved" && r.state !== "Verified" && !r.resolution) ||
+        (verificationFilter === "LowConfidence" &&
+          r.confidence !== undefined &&
+          r.confidence < LOW_CONFIDENCE);
 
       return matchesSearch && matchesFilter;
     });
@@ -479,6 +489,23 @@ function TimeCardsPage() {
                     <p className="text-xs text-muted-foreground">
                       {mismatches} of {comparison.length} rows need attention.
                     </p>
+                    {lowConfidenceCount > 0 && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="mt-2 h-7 border-warning/40 text-xs text-warning hover:text-warning"
+                        onClick={() => {
+                          setVerificationFilter("LowConfidence");
+                          setVerificationSearch("");
+                          toast.message(
+                            `Review queue: ${lowConfidenceCount} low-confidence row(s) below 70%`,
+                          );
+                        }}
+                      >
+                        <ScanLine className="mr-1 h-3.5 w-3.5" />
+                        Review queue ({lowConfidenceCount} low confidence)
+                      </Button>
+                    )}
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <div className="flex gap-2">
@@ -499,6 +526,9 @@ function TimeCardsPage() {
                           <SelectItem value="All">All Rows</SelectItem>
                           <SelectItem value="Mismatch">All Diffs</SelectItem>
                           <SelectItem value="Unresolved">Needs Action</SelectItem>
+                          <SelectItem value="LowConfidence">
+                            Low Confidence ({lowConfidenceCount})
+                          </SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
