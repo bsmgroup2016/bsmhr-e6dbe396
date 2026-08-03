@@ -6,7 +6,7 @@ import {
   FileText, TrendingUp, DollarSign,
 } from "lucide-react";
 import { toast } from "sonner";
-
+import { checkDeploymentCompliance } from "@/lib/compliance";
 import { AppShell } from "@/components/app-shell";
 import { SummaryCard } from "@/components/ui/summary-card";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -133,15 +133,24 @@ export default function OperationsPage() {
     setEmployees(getEmployees());
   }
 
-  function createAssignments(ids: string[], projectId: string, siteId: string, startDate: string, remarks?: string) {
+  async function createAssignments(ids: string[], projectId: string, siteId: string, startDate: string, remarks?: string) {
     let created = 0;
     for (const id of ids) {
       const worker = emp(id);
       if (!worker) continue;
+      
+      const compliance = await checkDeploymentCompliance(id);
+      
       if (hasExpiredWorkPermit(worker)) {
         toast.error(`${worker.name}: Work Permit expired — deployment blocked`);
         continue;
       }
+
+      if (!compliance.compliant) {
+        toast.error(`${worker.name}: Missing/Expired safety course: ${compliance.missingOrExpired?.join(", ") || "Safety Course Required"}`);
+        continue;
+      }
+
       addAssignment({ employeeId: id, siteId, projectId, startDate, status: "Pending", remarks });
       created += 1;
     }

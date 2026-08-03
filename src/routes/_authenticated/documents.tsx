@@ -71,6 +71,14 @@ import { extractPassportData } from "@/lib/ocr";
 import { FileUpload } from "@/components/file-upload";
 import type { EmployeeDocument, DocumentType, DocumentStatus } from "@/lib/types";
 
+function mapComplianceToDocStatus(status: string): DocumentStatus {
+  if (status === "critical") return "Expiring Soon";
+  if (status === "expired") return "Expired";
+  if (status === "warning") return "Expiring Soon";
+  if (status === "ok") return "Valid";
+  return status as DocumentStatus;
+}
+
 const documentTypes: DocumentType[] = [
   "Passport", "Work Permit", "S Pass", "Employment Pass", "IC", "Safety Certificate", "P-File", "Medical Report", "Insurance", "Other",
 ];
@@ -102,7 +110,7 @@ function readDocForm(formData: FormData) {
     issuingAuthority: (formData.get("issuingAuthority") as string) || undefined,
     remarks: (formData.get("remarks") as string) || undefined,
     reminderDays,
-    status: computeDocumentStatus(expiryDate, reminderDays, (formData.get("status") as DocumentStatus) || "Valid"),
+    status: (computeDocumentStatus(expiryDate, reminderDays) as DocumentStatus),
   };
 }
 
@@ -186,14 +194,24 @@ export default function DocumentsPage() {
   }
 
   function handleCreate(formData: FormData) {
-    addDocument({ ...readDocForm(formData), version: 1, verified: false });
+    const data = readDocForm(formData);
+    addDocument({
+      ...data,
+      status: mapComplianceToDocStatus(data.status),
+      version: 1,
+      verified: false
+    } as any);
     setIsCreateOpen(false);
     refresh();
   }
 
   function handleEdit(formData: FormData) {
     if (!editingDoc) return;
-    updateDocument(editingDoc.id, readDocForm(formData));
+    const data = readDocForm(formData);
+    updateDocument(editingDoc.id, {
+      ...data,
+      status: mapComplianceToDocStatus(data.status)
+    } as any);
     setEditingDoc(null);
     refresh();
   }
@@ -213,12 +231,14 @@ export default function DocumentsPage() {
 
   function handleRenewSubmit(formData: FormData) {
     if (!renewSource) return;
+    const data = readDocForm(formData);
     addDocument({
-      ...readDocForm(formData),
+      ...data,
+      status: mapComplianceToDocStatus(data.status),
       version: (renewSource.version ?? 1) + 1,
       replacesId: renewSource.id,
       verified: false,
-    });
+    } as any);
     setRenewSource(null);
     refresh();
   }

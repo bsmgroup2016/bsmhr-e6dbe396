@@ -1,32 +1,7 @@
-import type { Employee, EmployeeDocument, DocumentStatus } from "@/lib/types";
+import { supabase } from "@/integrations/supabase/client";
+import type { Employee, EmployeeDocument } from "./types";
 
-export const DEFAULT_REMINDER_DAYS = 60;
-
-/** Whole days from today until an ISO date. Negative when already past. */
-export function daysUntil(value?: string | null): number | null {
-  if (!value || value === "-") return null;
-  const target = new Date(value);
-  if (Number.isNaN(target.getTime())) return null;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  target.setHours(0, 0, 0, 0);
-  return Math.round((target.getTime() - today.getTime()) / 86_400_000);
-}
-
-/** Derive a document status from its expiry date and reminder window. */
-export function computeDocumentStatus(
-  expiryDate?: string,
-  reminderDays: number = DEFAULT_REMINDER_DAYS,
-  fallback: DocumentStatus = "Valid",
-): DocumentStatus {
-  const days = daysUntil(expiryDate);
-  if (days === null) return fallback === "Superseded" ? fallback : fallback;
-  if (days < 0) return "Expired";
-  if (days <= reminderDays) return "Expiring Soon";
-  return "Valid";
-}
-
-export type ComplianceSeverity = "expired" | "critical" | "warning" | "ok";
+export type ComplianceSeverity = "ok" | "warning" | "critical" | "expired";
 
 export interface ComplianceItem {
   id: string;
@@ -34,7 +9,7 @@ export interface ComplianceItem {
   employeeName: string;
   employeeCode: string;
   companyId?: string;
-  category: "Work Pass" | "Passport" | "Document" | "Medical";
+  category: "Work Pass" | "Passport" | "Document" | "Medical" | "Safety";
   label: string;
   reference?: string;
   expiryDate: string;
@@ -43,136 +18,168 @@ export interface ComplianceItem {
   fileUrl?: string;
 }
 
-export function severityFor(days: number): ComplianceSeverity {
+export const severityLabel: Record<ComplianceSeverity, string> = {
+  ok: "Valid",
+  warning: "Expiring (90d)",
+  critical: "Critical (30d)",
+  expired: "Expired",
+};
+
+export const severityVariant: Record<ComplianceSeverity, "success" | "warning" | "destructive" | "default"> = {
+  ok: "success",
+  warning: "default",
+  critical: "warning",
+  expired: "destructive",
+};
+
+export const DEFAULT_REMINDER_DAYS = 30;
+
+export function daysUntil(dateStr?: string): number {
+  if (!dateStr || dateStr === "-") return 9999;
+  const t = new Date(`${dateStr}T23:59:59+08:00`).getTime();
+  if (Number.isNaN(t)) return 9999;
+  return Math.ceil((t - Date.now()) / 86400000);
+}
+
+export function computeDocumentStatus(expiryDate?: string, reminderDays = DEFAULT_REMINDER_DAYS): ComplianceSeverity {
+  const days = daysUntil(expiryDate);
   if (days < 0) return "expired";
-  if (days <= 30) return "critical";
+  if (days <= reminderDays) return "critical";
   if (days <= 90) return "warning";
   return "ok";
 }
 
-/**
- * MOM-style reminder tiers: work passes and permits must be actioned at
- * 30, 14 and 7 days before expiry.
- */
-export const REMINDER_TIERS = [30, 14, 7] as const;
-export type ReminderTier = 30 | 14 | 7 | null;
+export function severityFor(days: number): ComplianceSeverity {
+  if (days < 0) return "expired";
+  if (days <= 14) return "critical";
+  if (days <= 30) return "warning";
+  return "ok";
+}
 
-/** The tightest reminder tier an expiry date currently falls into. */
-export function reminderTier(days: number): ReminderTier {
-  if (days < 0) return null;
+export function reminderTier(days: number): number {
+  if (days <= 0) return 0;
   if (days <= 7) return 7;
   if (days <= 14) return 14;
   if (days <= 30) return 30;
-  return null;
+  return 90;
 }
 
-/** Human label for the alert badge, e.g. "T-7 · 5 days left". */
 export function reminderLabel(days: number): string {
-  if (days < 0) return `Expired ${Math.abs(days)} day(s) ago`;
-  const tier = reminderTier(days);
-  const left = days === 0 ? "expires today" : `${days} day(s) left`;
-  return tier ? `T-${tier} · ${left}` : left;
+  if (days < 0) return `Expired ${Math.abs(days)} days ago`;
+  if (days === 0) return "Expires today";
+  return `Expires in ${days} days`;
 }
 
-/** Flatten employee passes, passports and documents into one expiry list. */
-export function buildComplianceItems(
-  employees: Employee[],
-  documents: EmployeeDocument[],
-): ComplianceItem[] {
+export function buildComplianceItems(employees: Employee[], documents: EmployeeDocument[]): ComplianceItem[] {
   const items: ComplianceItem[] = [];
-  const active = (e: Employee) =>
-    !["Archived", "Resigned", "Terminated", "Repatriated"].includes(e.status);
 
   for (const e of employees) {
-    if (!active(e)) continue;
-    const base = {
-      employeeId: e.id,
-      employeeName: e.name,
-      employeeCode: e.employeeCode,
-      companyId: e.companyId,
-    };
-    const pass = daysUntil(e.passExpiry);
-    if (pass !== null) {
+    // Work Permit
+    if (e.workPermitExpiryDate) {
+      const days = daysUntil(e.workPermitExpiryDate);
       items.push({
-        ...base,
-        id: `pass-${e.id}`,
+        id: `wp-${e.id}`,
+        employeeId: e.id,
+        employeeName: e.name,
+        employeeCode: e.employeeCode,
+        companyId: e.companyId,
         category: "Work Pass",
-        label: e.passType,
-        reference: e.workPermitNumber || e.fin,
-        expiryDate: e.passExpiry,
-        daysLeft: pass,
-        severity: severityFor(pass),
-      });
-    }
-    const passport = daysUntil(e.passportExpiry);
-    if (passport !== null) {
-      items.push({
-        ...base,
-        id: `passport-${e.id}`,
-        category: "Passport",
-        label: "Passport",
-        reference: e.passportNumber,
-        expiryDate: e.passportExpiry!,
-        daysLeft: passport,
-        severity: severityFor(passport),
-      });
-    }
-    const medical: [string, string | undefined][] = [
-      ["Medical insurance", e.medicalInsuranceExpiry],
-      ["Medical examination", e.medicalCheckupDue],
-    ];
-    for (const [label, date] of medical) {
-      const days = daysUntil(date);
-      if (days === null) continue;
-      items.push({
-        ...base,
-        id: `${label.replace(/\s+/g, "-").toLowerCase()}-${e.id}`,
-        category: "Medical",
-        label,
-        reference: e.fin,
-        expiryDate: date!,
+        label: `${e.passType} Expiry`,
+        reference: e.workPermitNumber,
+        expiryDate: e.workPermitExpiryDate,
         daysLeft: days,
-        severity: severityFor(days),
+        severity: computeDocumentStatus(e.workPermitExpiryDate),
+      });
+    }
+
+    // Passport
+    if (e.passportExpiry) {
+      const days = daysUntil(e.passportExpiry);
+      items.push({
+        id: `pp-${e.id}`,
+        employeeId: e.id,
+        employeeName: e.name,
+        employeeCode: e.employeeCode,
+        companyId: e.companyId,
+        category: "Passport",
+        label: "Passport Expiry",
+        reference: e.passportNumber,
+        expiryDate: e.passportExpiry,
+        daysLeft: days,
+        severity: computeDocumentStatus(e.passportExpiry, 60),
+      });
+    }
+
+    // Safety Courses (from Employee table fields)
+    if (e.safetyCourseExpiry) {
+      const days = daysUntil(e.safetyCourseExpiry);
+      items.push({
+        id: `safety-${e.id}`,
+        employeeId: e.id,
+        employeeName: e.name,
+        employeeCode: e.employeeCode,
+        companyId: e.companyId,
+        category: "Safety",
+        label: `${e.safetyCourseType || "Safety Course"} Expiry`,
+        reference: e.safetyCourseNo,
+        expiryDate: e.safetyCourseExpiry,
+        daysLeft: days,
+        severity: computeDocumentStatus(e.safetyCourseExpiry),
       });
     }
   }
 
-  const byId = new Map(employees.map((e) => [e.id, e]));
+  // Documents
   for (const d of documents) {
-    if (d.status === "Superseded") continue;
-    const days = daysUntil(d.expiryDate);
-    if (days === null) continue;
-    const e = byId.get(d.employeeId);
-    if (!e || !active(e)) continue;
-    items.push({
-      id: `doc-${d.id}`,
-      employeeId: e.id,
-      employeeName: e.name,
-      employeeCode: e.employeeCode,
-      companyId: e.companyId,
-      category: "Document",
-      label: `${d.type} — ${d.name}`,
-      reference: d.docNumber,
-      expiryDate: d.expiryDate!,
-      daysLeft: days,
-      severity: severityFor(days),
-      fileUrl: d.fileUrl,
-    });
+    if (d.expiryDate) {
+      const e = employees.find((x) => x.id === d.employeeId);
+      if (!e) continue;
+      items.push({
+        id: `doc-${d.id}`,
+        employeeId: d.employeeId,
+        employeeName: e.name,
+        employeeCode: e.employeeCode,
+        companyId: e.companyId,
+        category: d.type === "Passport" || d.type === "Work Permit" ? "Work Pass" : "Document",
+        label: d.name,
+        reference: d.docNumber,
+        expiryDate: d.expiryDate,
+        daysLeft: daysUntil(d.expiryDate),
+        severity: computeDocumentStatus(d.expiryDate, d.reminderDays || DEFAULT_REMINDER_DAYS),
+        fileUrl: d.fileUrl,
+      });
+    }
   }
 
   return items.sort((a, b) => a.daysLeft - b.daysLeft);
 }
 
-export const severityLabel: Record<ComplianceSeverity, string> = {
-  expired: "Expired",
-  critical: "≤ 30 days",
-  warning: "≤ 90 days",
-  ok: "Valid",
-};
+/**
+ * Compliance check for deployment readiness.
+ * Checks for mandatory safety course expiry.
+ */
+export async function checkDeploymentCompliance(employeeId: string) {
+  const { data: certs, error } = await supabase
+    .from("employee_certifications")
+    .select("*")
+    .eq("employee_id", employeeId);
 
-export const severityVariant: Record<ComplianceSeverity, "destructive" | "warning" | "info" | "success"> = {
-  expired: "destructive",
-  critical: "destructive",
-  warning: "warning",
-  ok: "success",
-};
+  if (error) {
+    console.error("Error checking compliance:", error);
+    return { compliant: false, error: "Unable to verify safety compliance." };
+  }
+
+  const mandatoryCourses = ["CSOC", "Construction Safety Orientation Course", "SCOS"];
+  
+  const missingOrExpired = mandatoryCourses.filter(courseName => {
+    const cert = certs.find(c => c.course_name.toLowerCase().includes(courseName.toLowerCase()));
+    if (!cert) return true;
+    if (cert.expiry_date && new Date(cert.expiry_date) < new Date()) return true;
+    return false;
+  });
+
+  return {
+    compliant: missingOrExpired.length === 0,
+    missingOrExpired
+  };
+}

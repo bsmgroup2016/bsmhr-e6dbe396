@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { createFileRoute } from "@tanstack/react-router";
-import { Truck, Route as RouteIcon, AlertTriangle, Users, Plus, Search, Trash2, Download, CheckCircle2, Wand2 } from "lucide-react";
+import { Truck, Route as RouteIcon, AlertTriangle, Users, Plus, Search, Trash2, Download, CheckCircle2, Wand2, TrendingUp } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/app-shell";
@@ -22,8 +22,10 @@ import { TripCalendar } from "@/components/trip-calendar";
 import {
   getVehicles, getTrips, getEmployees, getSites, getCurrentCompany,
   addVehicle, deleteVehicle, addTrip, updateTrip, deleteTrip, vehicleExpiryAlerts,
+  getFuelLogs, getDriverProfiles, getDriverIncidents,
 } from "@/lib/store";
 import { exportRows } from "@/lib/xlsx";
+import { daysUntil } from "@/lib/compliance";
 import type { Vehicle, Trip, VehicleType } from "@/lib/types";
 import { seedTransportDemoData } from "@/lib/seed-transport";
 
@@ -83,6 +85,10 @@ export default function TransportPage() {
   const alerts = vehicleExpiryAlerts(60).filter((a) => vehicleIds.has(a.vehicle.id));
   const todaysTrips = scopedTrips.filter((t) => t.date === today());
   const paxToday = todaysTrips.reduce((s, t) => s + t.passengers, 0);
+
+  const fuelLogs = getFuelLogs().filter(f => vehicleIds.has(f.vehicleId));
+  const driverProfiles = getDriverProfiles();
+  const driverIncidents = getDriverIncidents();
 
   const q = search.trim().toLowerCase();
   const filteredTrips = scopedTrips.filter(
@@ -163,6 +169,8 @@ export default function TransportPage() {
             <TabsTrigger value="trips">Trips</TabsTrigger>
             <TabsTrigger value="calendar">Calendar</TabsTrigger>
             <TabsTrigger value="vehicles">Vehicles</TabsTrigger>
+            <TabsTrigger value="drivers">Drivers</TabsTrigger>
+            <TabsTrigger value="fuel">Fuel & Efficiency</TabsTrigger>
           </TabsList>
 
           <TabsContent value="calendar" className="mt-4">
@@ -391,6 +399,131 @@ export default function TransportPage() {
                           </TableCell>
                         </TableRow>
                       ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="drivers" className="mt-4">
+            <div className="rounded-xl border bg-card p-4 shadow-sm">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-medium">Driver Roster & Assignments</h3>
+                  <p className="text-sm text-muted-foreground">Vehicle assignments and licence compliance tracking.</p>
+                </div>
+              </div>
+              <div className="mt-4 overflow-hidden rounded-lg border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Driver</TableHead>
+                      <TableHead>Assigned Vehicle</TableHead>
+                      <TableHead>Licence Class</TableHead>
+                      <TableHead>Licence Expiry</TableHead>
+                      <TableHead>Demerit Points</TableHead>
+                      <TableHead>Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {companyEmployees.filter(e => e.workerCategory === "Driver" || vehicles.some(v => v.driverEmployeeId === e.id)).map(d => {
+                      const veh = vehicles.find(v => v.driverEmployeeId === d.id);
+                      return (
+                        <TableRow key={d.id}>
+                          <TableCell>
+                            <div className="font-medium">{d.name}</div>
+                            <div className="text-xs text-muted-foreground">{d.employeeCode}</div>
+                          </TableCell>
+                          <TableCell>
+                            {veh ? <StatusBadge variant="info" label={veh.plateNo} /> : <span className="text-muted-foreground">—</span>}
+                          </TableCell>
+                          <TableCell>
+                            {(() => {
+                              const profile = driverProfiles.find(p => p.employeeId === d.id);
+                              return profile?.licenceClasses || "Class 3";
+                            })()}
+                          </TableCell>
+                          <TableCell>
+                            {(() => {
+                              const profile = driverProfiles.find(p => p.employeeId === d.id);
+                              const expiry = profile?.licenceExpiry || d.passExpiry;
+                              return (
+                                <div className={cn("flex items-center gap-2", daysUntil(expiry) <= 30 && "text-destructive font-medium")}>
+                                  {expiry || "—"}
+                                </div>
+                              );
+                            })()}
+                          </TableCell>
+                          <TableCell>
+                            {(() => {
+                              const profile = driverProfiles.find(p => p.employeeId === d.id);
+                              return profile?.demeritPoints || 0;
+                            })()}
+                          </TableCell>
+                          <TableCell>
+                            <StatusBadge variant="success" label="Active" dot />
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="fuel" className="mt-4">
+            <div className="rounded-xl border bg-card p-4 shadow-sm">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-medium">Monthly Fuel & Efficiency Report</h3>
+                  <p className="text-sm text-muted-foreground">Fuel consumption and km/litre tracking across the fleet.</p>
+                </div>
+              </div>
+              <div className="mt-4 overflow-hidden rounded-lg border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Vehicle</TableHead>
+                      <TableHead>Month</TableHead>
+                      <TableHead>Distance (km)</TableHead>
+                      <TableHead>Fuel (L)</TableHead>
+                      <TableHead>Efficiency (km/L)</TableHead>
+                      <TableHead>Total Cost</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {scopedVehicles.map(v => {
+                      const vLogs = fuelLogs.filter(f => f.vehicleId === v.id);
+                      const totalLiters = vLogs.reduce((sum, l) => sum + l.litres, 0);
+                      const totalCost = vLogs.reduce((sum, l) => sum + l.amount, 0);
+                      const maxOdo = vLogs.length > 0 ? Math.max(...vLogs.map(l => l.odometer)) : 0;
+                      const minOdo = vLogs.length > 0 ? Math.min(...vLogs.map(l => l.odometer)) : 0;
+                      const distance = maxOdo - minOdo;
+                      const efficiency = totalLiters > 0 ? (distance / totalLiters).toFixed(1) : "—";
+                      
+                      return (
+                        <TableRow key={v.id}>
+                          <TableCell className="font-medium">{v.plateNo}</TableCell>
+                          <TableCell>{new Date().toLocaleString('default', { month: 'long', year: 'numeric' })}</TableCell>
+                          <TableCell>{distance.toLocaleString()} km</TableCell>
+                          <TableCell>{totalLiters.toLocaleString()} L</TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              {efficiency} {Number(efficiency) > 8 ? <TrendingUp className="h-3 w-3 text-success" /> : null}
+                            </div>
+                          </TableCell>
+                          <TableCell>${totalCost.toFixed(2)}</TableCell>
+                        </TableRow>
+                      );
+                    })}
+                    {scopedVehicles.length === 0 && (
+                       <TableRow>
+                        <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">
+                          No fuel data available for this fleet.
+                        </TableCell>
+                      </TableRow>
                     )}
                   </TableBody>
                 </Table>
