@@ -124,10 +124,15 @@ function configured(): ProviderConfig[] {
 
   // Keep the documented order, then let an explicit preference jump the queue.
   list.sort((a, b) => PROVIDER_ORDER.indexOf(a.name) - PROVIDER_ORDER.indexOf(b.name));
+  
+  // Debug log after sort
+  console.log("AI Config - Configured list:", list.map(p => p.name));
+
   const preferred = (process.env.AI_PROVIDER || "").trim().toLowerCase();
   if ((PROVIDER_ORDER as string[]).includes(preferred)) {
     list.sort((a, b) => (a.name === preferred ? -1 : b.name === preferred ? 1 : 0));
   }
+
   return list;
 }
 
