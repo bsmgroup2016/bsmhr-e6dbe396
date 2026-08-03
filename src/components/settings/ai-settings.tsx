@@ -13,7 +13,9 @@ import {
   XCircle,
   Loader2,
   Eye,
-  EyeOff
+  EyeOff,
+  Plus,
+  Monitor
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -37,17 +39,22 @@ export function AiSettings({ visionOnly = false }: { visionOnly?: boolean }) {
 
   const [editingProvider, setEditingProvider] = useState<string | null>(null);
   const [tempKey, setTempKey] = useState("");
+  const [tempModel, setTempModel] = useState("");
+  const [isVision, setIsVision] = useState(false);
   const [showKey, setShowKey] = useState(false);
   const [testingProvider, setTestingProvider] = useState<string | null>(null);
+  const [isAdding, setIsAdding] = useState(false);
 
   const saveMutation = useMutation({
-    mutationFn: (vars: { provider: string; key?: string; delete?: boolean }) => 
+    mutationFn: (vars: { provider: string; key?: string; model?: string; vision?: boolean; delete?: boolean }) => 
       saveKey({ data: vars }),
     onSuccess: (res: any) => {
       if (res.success) {
         toast.success(res.message || "Key settings updated");
         setEditingProvider(null);
+        setIsAdding(false);
         setTempKey("");
+        setTempModel("");
         queryClient.invalidateQueries({ queryKey: ["ai-config"] });
       } else {
         toast.error(res.error || "Failed to update key");
@@ -205,6 +212,86 @@ export function AiSettings({ visionOnly = false }: { visionOnly?: boolean }) {
             </div>
           ))}
         </div>
+
+        {!isAdding ? (
+          <Button 
+            variant="outline" 
+            className="w-full mt-6 border-dashed border-2 py-8 text-muted-foreground hover:text-primary hover:border-primary/50 flex flex-col gap-2"
+            onClick={() => setIsAdding(true)}
+          >
+            <Plus className="h-6 w-6" />
+            <span>Add New Provider</span>
+          </Button>
+        ) : (
+          <div className="mt-6 p-5 rounded-xl border-2 border-primary/20 bg-primary/5 space-y-4 animate-in fade-in slide-in-from-top-4 duration-300">
+            <div className="flex items-center gap-2 mb-2">
+              <Plus className="h-4 w-4 text-primary" />
+              <h3 className="text-sm font-bold uppercase tracking-wider">New Provider Details</h3>
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Provider Name (e.g. copyfish, custom)</Label>
+                <Input 
+                  placeholder="Enter name..." 
+                  value={editingProvider || ""} 
+                  onChange={(e) => setEditingProvider(e.target.value.toLowerCase())}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Model ID</Label>
+                <Input 
+                  placeholder="e.g. gpt-4o, llama-3..." 
+                  value={tempModel} 
+                  onChange={(e) => setTempModel(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs">API Key</Label>
+              <Input 
+                type="password"
+                placeholder="sk-..." 
+                value={tempKey} 
+                onChange={(e) => setTempKey(e.target.value)}
+              />
+            </div>
+
+            <div className="flex items-center justify-between p-3 rounded-lg bg-background border">
+              <div className="flex items-center gap-2">
+                <Monitor className="h-4 w-4 text-muted-foreground" />
+                <div>
+                  <p className="text-xs font-medium">Vision Ready</p>
+                  <p className="text-[10px] text-muted-foreground">Does this provider support OCR / image scanning?</p>
+                </div>
+              </div>
+              <Switch checked={isVision} onCheckedChange={setIsVision} />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="ghost" size="sm" onClick={() => {
+                setIsAdding(false);
+                setEditingProvider(null);
+                setTempKey("");
+                setTempModel("");
+              }}>Cancel</Button>
+              <Button 
+                size="sm" 
+                disabled={!editingProvider || !tempKey || saveMutation.isPending}
+                onClick={() => saveMutation.mutate({ 
+                  provider: editingProvider!, 
+                  key: tempKey,
+                  model: tempModel,
+                  vision: isVision
+                })}
+              >
+                {saveMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin mr-1.5" /> : <Save className="h-3 w-3 mr-1.5" />}
+                Add Provider
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="rounded-xl border bg-card p-5 shadow-sm">
