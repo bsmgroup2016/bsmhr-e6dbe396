@@ -314,11 +314,11 @@ function TimeCardsPage() {
       <div className="w-full space-y-6">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-            Time Cards & Claim Sheets
+            Claim Sheets & Mismatch Verification
           </h1>
           <p className="text-sm text-muted-foreground">
-            Upload the physical 30-day card, verify it against system attendance, then issue the
-            claim sheet.
+            Upload the physical 30-day card or claim sheets, verify them against system attendance, then issue the
+            final billing claim sheet.
           </p>
         </div>
 
