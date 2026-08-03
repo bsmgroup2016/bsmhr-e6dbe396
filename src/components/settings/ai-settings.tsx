@@ -80,22 +80,22 @@ export function AiSettings({ visionOnly = false }: { visionOnly?: boolean }) {
 
   if (isLoading || !config) return <div className="p-8 text-center">Loading AI configuration...</div>;
 
-  const providers = visionOnly 
-    ? config.providers.filter(p => p.name === "copyfish" || p.name === "copyshish") 
-    : config.providers;
+  const providers = visionOnly
+    ? config.providers.filter(p => p.name === "copyfish" || p.name === "copyshish")
+    : config.providers.filter(p => p.name !== "copyfish" && p.name !== "copyshish");
 
   return (
     <div className="space-y-6">
       <div className="rounded-xl border bg-card p-5 shadow-sm">
         <div className="flex items-center gap-2 mb-4">
           <Bot className="h-5 w-5 text-primary" />
-          <h2 className="text-lg font-semibold">{visionOnly ? "OCR Engine Management" : "AI & OCR Provider Management"}</h2>
+          <h2 className="text-lg font-semibold">{visionOnly ? "OCR Engine Management" : "AI Provider Management"}</h2>
         </div>
         
         <p className="text-sm text-muted-foreground mb-6">
           {visionOnly
             ? "Manage the dedicated OCR engine (Copyfish). Add, edit or test the API key used for document scanning."
-            : "Configure API keys for AI and OCR providers. You can add, edit, or test connections to primary providers and specialized OCR engines."}
+            : "Configure API keys for AI providers. OCR engines are managed separately in the OCR Center."}
         </p>
 
         {!config.configured && (
