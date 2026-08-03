@@ -81,7 +81,7 @@ export function AiSettings({ visionOnly = false }: { visionOnly?: boolean }) {
   if (isLoading || !config) return <div className="p-8 text-center">Loading AI configuration...</div>;
 
   const providers = visionOnly 
-    ? config.providers.filter(p => p.vision) 
+    ? config.providers.filter(p => p.name === "copyfish" || p.name === "copyshish") 
     : config.providers;
 
   return (
@@ -93,8 +93,9 @@ export function AiSettings({ visionOnly = false }: { visionOnly?: boolean }) {
         </div>
         
         <p className="text-sm text-muted-foreground mb-6">
-          Configure API keys for AI and OCR providers. You can add, edit, or test connections to primary providers 
-          and specialized OCR engines like Copyfish or Gemini Vision.
+          {visionOnly
+            ? "Manage the dedicated OCR engine (Copyfish). Add, edit or test the API key used for document scanning."
+            : "Configure API keys for AI and OCR providers. You can add, edit, or test connections to primary providers and specialized OCR engines."}
         </p>
 
         {!config.configured && (
