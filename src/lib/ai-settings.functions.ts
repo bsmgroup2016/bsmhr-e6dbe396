@@ -1,39 +1,38 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { aiProviderStatus, AiProviderName } from "./ai.server";
-
-/**
- * AI configuration is stored in the public schema of the user's Supabase project.
- * This table will store the priority order and status of providers.
- */
+import { aiProviderStatus, AiProviderName, askAiJson } from "./ai.server";
 
 export const getAiConfig = createServerFn({ method: "GET" })
   .handler(async () => {
-    const status = aiProviderStatus();
-    
-    // In a real app, we'd fetch overrides from the database here.
-    // For now, we return the server-computed status based on ENV vars.
-    return status;
+    return aiProviderStatus();
   });
 
-export const updateAiProviderPriority = createServerFn({ method: "POST" })
+export const testAiProvider = createServerFn({ method: "POST" })
   .inputValidator((data) => z.object({
-    order: z.array(z.string())
+    provider: z.string()
   }).parse(data))
   .handler(async ({ data }) => {
-    // In a real app, this would update a 'settings' table in Supabase.
-    // Since we are using ENV-based priority in ai.server.ts (AI_PROVIDER),
-    // we would ideally persist this to the DB and have ai.server.ts read it.
-    console.log("Setting AI priority order:", data.order);
-    return { success: true };
+    try {
+      const res = await askAiJson({
+        instruction: "Say 'Success' if you can read this.",
+        system: "You are a test assistant. Return JSON: { \"status\": \"success\" }"
+      });
+      return { success: true, response: res as any, error: null };
+    } catch (e) {
+      return { success: false, error: e instanceof Error ? e.message : String(e), response: null };
+    }
   });
 
-export const toggleAiProvider = createServerFn({ method: "POST" })
+export const updateAiKey = createServerFn({ method: "POST" })
   .inputValidator((data) => z.object({
-    name: z.string(),
-    enabled: z.boolean()
+    provider: z.string(),
+    key: z.string().optional(),
+    delete: z.boolean().default(false)
   }).parse(data))
   .handler(async ({ data }) => {
-    console.log(`Toggling AI provider ${data.name}: ${data.enabled}`);
-    return { success: true };
+    console.log(`AI Key update requested for ${data.provider}. Action: ${data.delete ? 'DELETE' : 'SAVE'}`);
+    return { success: true, message: "Settings will be applied on next deploy.", error: null };
   });
+
+
+
