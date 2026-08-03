@@ -515,6 +515,7 @@ export default function AssetsPage() {
           </TabsContent>
 
           <TabsContent value="register" className="mt-4">
+            {null}
             <div className="rounded-xl border bg-card p-4 shadow-sm">
               <div className="flex items-center justify-between">
                 <h2 className="text-sm font-medium text-muted-foreground">Asset register</h2>
