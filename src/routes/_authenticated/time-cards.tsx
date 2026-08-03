@@ -507,6 +507,26 @@ function TimeCardsPage() {
                         baseName="time_card_verification"
                         sheetName="Verification"
                       />
+                      <div className="flex gap-1 border-l pl-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8 text-xs text-success hover:text-success"
+                          onClick={() => bulkUpdateResolution("Accepted")}
+                          disabled={!filteredComparison.some(r => r.state !== "Verified")}
+                        >
+                          Bulk Accept
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8 text-xs text-warning hover:text-warning"
+                          onClick={() => bulkUpdateResolution("Corrected")}
+                          disabled={!filteredComparison.some(r => r.state !== "Verified")}
+                        >
+                          Bulk Correct
+                        </Button>
+                      </div>
                       <Button size="sm" onClick={() => finalize(selected)}>
                         <CheckCircle2 className="mr-1 h-4 w-4" />
                         Finalize
