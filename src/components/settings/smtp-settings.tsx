@@ -323,7 +323,7 @@ export function SmtpSettings() {
         </p>
       </div>
 
-      <div className="hidden">
+      <div>
         {data?.updatedAt && (
           <p className="mt-3 text-xs text-muted-foreground">
             Last updated {new Date(data.updatedAt).toLocaleString()}
