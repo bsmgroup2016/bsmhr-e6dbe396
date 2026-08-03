@@ -37,6 +37,16 @@ export const fromCompany = (r: Row): Company => ({
   status: (r.status ?? "Active") as Company["status"], accent: (r.accent ?? "primary") as Company["accent"],
   sector: r.sector ?? undefined,
   logoUrl: r.logo_url ?? undefined,
+  paynowType: (r.paynow_type ?? "UEN") as Company["paynowType"],
+  paynowUen: r.paynow_uen ?? undefined,
+  paynowPhone: r.paynow_phone ?? undefined,
+  paynowEditable: Boolean(r.paynow_editable ?? false),
+  bankName: r.bank_name ?? undefined,
+  bankAccountName: r.bank_account_name ?? undefined,
+  bankAccountNo: r.bank_account_no ?? undefined,
+  bankCode: r.bank_code ?? undefined,
+  bankSwift: r.bank_swift ?? undefined,
+  paymentInstructions: r.payment_instructions ?? undefined,
   createdAt: r.created_at, updatedAt: r.updated_at,
 });
 
@@ -356,6 +366,16 @@ export const toCompany = (c: Partial<Company>): Row => ({
   address: c.address, phone: c.phone, email: c.email, status: c.status, accent: c.accent,
   sector: c.sector ?? null,
   logo_url: c.logoUrl ?? null,
+  paynow_type: c.paynowType ?? "UEN",
+  paynow_uen: c.paynowUen ?? null,
+  paynow_phone: c.paynowPhone ?? null,
+  paynow_editable: c.paynowEditable ?? false,
+  bank_name: c.bankName ?? null,
+  bank_account_name: c.bankAccountName ?? null,
+  bank_account_no: c.bankAccountNo ?? null,
+  bank_code: c.bankCode ?? null,
+  bank_swift: c.bankSwift ?? null,
+  payment_instructions: c.paymentInstructions ?? null,
 });
 
 export const fromLeave = (r: Row): LeaveRequest => ({
