@@ -24,7 +24,7 @@ import { getAiConfig, updateAiKey, testAiProvider } from "@/lib/ai-settings.func
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 
-export function AiSettings() {
+export function AiSettings({ visionOnly = false }: { visionOnly?: boolean }) {
   const queryClient = useQueryClient();
   const fetchConfig = useServerFn(getAiConfig);
   const saveKey = useServerFn(updateAiKey);
