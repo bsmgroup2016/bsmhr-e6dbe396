@@ -335,7 +335,7 @@ function ContractsPage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label>Unit</Label>
-                      <Select name="unit" defaultValue="Daily">
+                      <Select name="unit" defaultValue="Hourly">
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
@@ -353,7 +353,7 @@ function ContractsPage() {
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label>Normal Rate ($)</Label>
+                      <Label>Normal Rate ($/hr)</Label>
                       <Input name="normalRate" type="number" step="0.01" placeholder="0.00" required />
                     </div>
                     <div className="space-y-2">
