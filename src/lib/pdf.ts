@@ -100,7 +100,7 @@ function totals(doc: any, startY: number, rows: [string, string, boolean?][]) {
     doc.setFontSize(bold ? 12 : 10);
     if (bold) doc.setTextColor(17, 24, 39);
     else doc.setTextColor(MUTED[0], MUTED[1], MUTED[2]);
-    doc.text(label, rx - 170, y);
+    doc.text(label, rx - 200, y);
     doc.text(value, rx, y, { align: "right" });
     y += bold ? 20 : 16;
   }
@@ -144,11 +144,17 @@ export async function downloadInvoicePdf(
     styles: { fontSize: 9, cellPadding: 6 },
     headStyles: { fillColor: BRAND, textColor: 255 },
     columnStyles: {
-      1: { halign: "right" },
-      2: { halign: "right" },
-      3: { halign: "right" },
-      4: { halign: "right" },
-      5: { halign: "right" },
+      0: { cellWidth: "auto" },
+      1: { halign: "right", cellWidth: 60 },
+      2: { halign: "right", cellWidth: 70 },
+      3: { halign: "right", cellWidth: 60 },
+      4: { halign: "right", cellWidth: 70 },
+      5: { halign: "right", cellWidth: 85 },
+    },
+    margin: { left: 40, right: 40 },
+    tableWidth: "auto",
+    didParseCell: (data: any) => {
+      if (data.section === "head" && data.column.index > 0) data.cell.styles.halign = "right";
     },
   });
   const after = doc.lastAutoTable.finalY + 26;
@@ -328,11 +334,16 @@ export async function downloadQuotationPdf(
     styles: { fontSize: 9, cellPadding: 6 },
     headStyles: { fillColor: BRAND, textColor: 255 },
     columnStyles: {
-      1: { halign: "right" },
-      2: { halign: "right" },
-      3: { halign: "right" },
-      4: { halign: "right" },
-      5: { halign: "right" },
+      0: { cellWidth: "auto" },
+      1: { halign: "right", cellWidth: 45 },
+      2: { halign: "right", cellWidth: 80 },
+      3: { halign: "right", cellWidth: 80 },
+      4: { halign: "right", cellWidth: 50 },
+      5: { halign: "right", cellWidth: 90 },
+    },
+    margin: { left: 40, right: 40 },
+    didParseCell: (data: any) => {
+      if (data.section === "head" && data.column.index > 0) data.cell.styles.halign = "right";
     },
   });
 
