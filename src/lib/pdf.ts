@@ -117,14 +117,28 @@ function footer(doc: any, note?: string) {
 
 export async function downloadInvoicePdf(
   invoice: Invoice,
-  opts: { company?: { name?: string; uen?: string; address?: string }; clientName?: string },
+  opts: {
+    company?: {
+      name?: string;
+      uen?: string;
+      address?: string;
+      phone?: string;
+      email?: string;
+      logoUrl?: string;
+      [key: string]: any;
+    };
+    clientName?: string;
+  },
 ) {
   const { doc, autoTable } = await newDoc();
-  const y = header(doc, "TAX INVOICE", opts.company, [
-    invoice.invoiceNo,
-    `Issue: ${invoice.issueDate}`,
-    `Due: ${invoice.dueDate}`,
-  ]);
+  const logo = await loadLogo(opts.company?.logoUrl);
+  const y = header(
+    doc,
+    "TAX INVOICE",
+    opts.company,
+    [invoice.invoiceNo, `Issue: ${invoice.issueDate}`, `Due: ${invoice.dueDate}`],
+    logo,
+  );
   doc.setFontSize(10);
   doc.setTextColor(17, 24, 39);
   doc.text(`Bill to: ${opts.clientName ?? "-"}`, 40, y + 6);
@@ -158,15 +172,96 @@ export async function downloadInvoicePdf(
     },
   });
   const after = doc.lastAutoTable.finalY + 26;
-  totals(doc, after, [
+  const endTotals = totals(doc, after, [
     ["Subtotal", money(invoice.subtotal)],
     [`GST ${invoice.gstRate}%`, money(invoice.gstAmount)],
     ["Total", money(invoice.total), true],
     ["Paid", money(invoice.amountPaid)],
     ["Balance due", money(invoice.total - invoice.amountPaid), true],
   ]);
+  await paymentBlock(doc, endTotals + 8, invoice, opts.company);
   footer(doc, invoice.notes);
   doc.save(`invoice_${invoice.invoiceNo}.pdf`);
+}
+
+/** "How to pay" block: PayNow QR + bank transfer details (manual reconciliation). */
+async function paymentBlock(doc: any, startY: number, invoice: Invoice, company?: any) {
+  const { payNowQrDataUrl, payNowConfigured, bankTransferLines } = await import("./paynow");
+  const balance = Math.max(0, invoice.total - invoice.amountPaid);
+  const bank = bankTransferLines(company);
+  const hasQr = payNowConfigured(company);
+  if (!hasQr && !bank.length && !company?.paymentInstructions) return startY;
+
+  const pageH = doc.internal.pageSize.getHeight();
+  let y = startY;
+  if (y > pageH - 200) {
+    doc.addPage();
+    y = 60;
+  }
+
+  doc.setDrawColor(220, 224, 230);
+  doc.line(40, y, doc.internal.pageSize.getWidth() - 40, y);
+  y += 20;
+  doc.setFontSize(11);
+  doc.setTextColor(17, 24, 39);
+  doc.text("How to pay", 40, y);
+
+  let textY = y + 18;
+  doc.setFontSize(9);
+  if (hasQr) {
+    doc.setTextColor(17, 24, 39);
+    doc.text("PayNow", 40, textY);
+    doc.setTextColor(MUTED[0], MUTED[1], MUTED[2]);
+    textY += 13;
+    doc.text(
+      `Scan the QR code with any Singapore banking app. Reference: ${invoice.invoiceNo}`,
+      40,
+      textY,
+      { maxWidth: 330 },
+    );
+    textY += 13;
+    doc.text(`Amount payable: ${money(balance)}`, 40, textY);
+    textY += 20;
+  }
+  if (bank.length) {
+    doc.setTextColor(17, 24, 39);
+    doc.text("Bank transfer", 40, textY);
+    doc.setTextColor(MUTED[0], MUTED[1], MUTED[2]);
+    textY += 13;
+    for (const line of bank) {
+      doc.text(line, 40, textY, { maxWidth: 330 });
+      textY += 12;
+    }
+    textY += 6;
+  }
+  if (company?.paymentInstructions) {
+    doc.setTextColor(MUTED[0], MUTED[1], MUTED[2]);
+    doc.setFontSize(8);
+    doc.text(String(company.paymentInstructions), 40, textY, { maxWidth: 330 });
+    textY += 14;
+  }
+
+  if (hasQr) {
+    const qr = await payNowQrDataUrl(company, {
+      amount: balance,
+      reference: invoice.invoiceNo,
+      width: 400,
+    });
+    if (qr) {
+      const size = 120;
+      const qx = doc.internal.pageSize.getWidth() - 40 - size;
+      try {
+        doc.addImage(qr, "PNG", qx, y + 10, size, size, undefined, "FAST");
+        doc.setFontSize(8);
+        doc.setTextColor(MUTED[0], MUTED[1], MUTED[2]);
+        doc.text("PayNow QR", qx + size / 2, y + size + 24, { align: "center" });
+      } catch (e) {
+        console.error("PayNow QR could not be added to the invoice PDF", e);
+      }
+      return Math.max(textY, y + size + 30);
+    }
+  }
+  return textY;
 }
 
 export async function downloadPayslipPdf(

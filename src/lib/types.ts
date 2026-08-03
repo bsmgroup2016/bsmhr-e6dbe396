@@ -539,6 +539,18 @@ export interface Company {
   logoUrl?: string;
   /** MOM sector — drives levy rates and Dependency Ratio Ceiling. */
   sector?: string;
+  /* ---- Manual payment collection (PayNow / bank transfer) ---- */
+  paynowType?: "UEN" | "Mobile";
+  paynowUen?: string;
+  paynowPhone?: string;
+  /** Allow the payer to edit the amount in their banking app. */
+  paynowEditable?: boolean;
+  bankName?: string;
+  bankAccountName?: string;
+  bankAccountNo?: string;
+  bankCode?: string;
+  bankSwift?: string;
+  paymentInstructions?: string;
   createdAt: string;
   updatedAt: string;
 }
