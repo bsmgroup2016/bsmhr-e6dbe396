@@ -777,6 +777,7 @@ export interface LoadedData {
   timeCards: TimeCard[]; claimSheets: ClaimSheet[];
   contracts: ClientContract[];
   medicalClaims: MedicalClaim[];
+  quotations: Quotation[];
   loans: EmployeeLoan[];
   loanRepayments: LoanRepayment[];
   departments: Department[];
