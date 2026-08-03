@@ -547,7 +547,8 @@ export interface Company {
 // Types moved to src/lib/billing-types.ts to avoid circular deps and manage complexity.
 export type {
   RateUnit, RateAgreement, InvoiceLine, InvoiceStatus, Invoice,
-  BillingCycle, BillingSource, ContractStatus, ClientContract
+  BillingCycle, BillingSource, ContractStatus, ClientContract,
+  QuotationStatus, QuotationLine, Quotation
 } from "./billing-types";
 
 
