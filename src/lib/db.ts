@@ -1147,7 +1147,7 @@ export const fromManpowerRequestItem = (r: Row): ManpowerRequestItem => ({
   requestId: r.request_id,
   designation: r.designation ?? "",
   count: Number(r.count ?? 0),
-  count_filled: Number(r.countFilled ?? 0),
+  countFilled: Number(r.count_filled ?? 0),
   startDate: d(r.start_date) ?? "",
   endDate: d(r.end_date),
   remarks: r.remarks ?? undefined,
