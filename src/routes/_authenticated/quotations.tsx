@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import {
   FileSignature, Plus, Search, Trash2, Send, CheckCircle2, XCircle,
-  Download, ArrowRightLeft, Copy,
+  Download, ArrowRightLeft, Copy, FileText,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -25,9 +25,10 @@ import {
 import {
   getClients, getProjects, getCurrentCompany, getQuotations, addQuotation,
   updateQuotation, deleteQuotation, convertQuotationToContract,
-  computeQuotationTotals, nextQuoteNo, subscribe,
+  computeQuotationTotals, nextQuoteNo, subscribe, getCompany,
 } from "@/lib/store";
 import { exportRows, timestampedName } from "@/lib/xlsx";
+import { downloadQuotationPdf } from "@/lib/pdf";
 import type { Quotation, QuotationLine, QuotationStatus, RateUnit } from "@/lib/types";
 import { useEffect } from "react";
 
