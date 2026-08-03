@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import {
   FileSignature, Plus, Search, Trash2, Send, CheckCircle2, XCircle,
-  Download, ArrowRightLeft, Copy, FileText,
+  Download, ArrowRightLeft, Copy, FileText, Pencil,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -100,6 +100,7 @@ function QuotationsPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | QuotationStatus>("all");
   const [open, setOpen] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
   const [detail, setDetail] = useState<Quotation | null>(null);
 
   // form state
@@ -148,6 +149,37 @@ function QuotationsPage() {
     setPaymentTermsDays(30);
     setNotes("");
     setLines([emptyLine()]);
+  }
+
+  /** Load an existing quotation into the form for editing. */
+  function loadForm(quote: Quotation) {
+    setEditId(quote.id);
+    setQuoteNo(quote.quoteNo);
+    setFormCompanyId(quote.companyId || companyId || companies[0]?.id || "");
+    setClientMode(quote.clientId ? "existing" : "new");
+    setClientId(quote.clientId ?? "");
+    setProspectCompany(quote.prospectCompany ?? "");
+    setProspectContact(quote.prospectContact ?? "");
+    setProspectEmail(quote.prospectEmail ?? "");
+    setProspectPhone(quote.prospectPhone ?? "");
+    setProspectAddress(quote.prospectAddress ?? "");
+    setProjectId(quote.projectId ?? "all");
+    setTitle(quote.title);
+    setContactPerson(quote.contactPerson ?? "");
+    setQuoteDate(quote.quoteDate || today());
+    setValidUntil(quote.validUntil ?? "");
+    setGstRate(quote.gstRate);
+    setDiscount(quote.discount ?? 0);
+    setPaymentTermsDays(quote.paymentTermsDays);
+    setTerms(quote.terms ?? "");
+    setNotes(quote.notes ?? "");
+    setLines(
+      quote.lines.length
+        ? quote.lines.map((l) => ({ ...l, id: l.id || lineId() }))
+        : [emptyLine()],
+    );
+    setDetail(null);
+    setOpen(true);
   }
 
   const priced: QuotationLine[] = lines.map((l) => ({
@@ -205,7 +237,7 @@ function QuotationsPage() {
     if (!priced.some((l) => l.designation && l.normalRate > 0)) {
       return toast.error("Add at least one designation with a rate");
     }
-    addQuotation({
+    const payload = {
       quoteNo: quoteNo.trim() || undefined,
       companyId: formCompanyId || companyId || undefined,
       clientId: clientMode === "existing" ? clientId : undefined,
@@ -222,11 +254,18 @@ function QuotationsPage() {
       lines: priced.filter((l) => l.designation),
       discount,
       gstRate,
-      status: "Draft",
       paymentTermsDays,
       terms,
       notes: notes.trim() || undefined,
-    });
+    };
+    if (editId) {
+      updateQuotation(editId, payload);
+      setOpen(false);
+      setEditId(null);
+      toast.success("Quotation updated");
+      return;
+    }
+    addQuotation({ ...payload, status: "Draft" });
     setOpen(false);
     toast.success("Quotation created");
   }
@@ -319,6 +358,7 @@ function QuotationsPage() {
               size="sm"
               onClick={() => {
                 resetForm();
+                setEditId(null);
                 setOpen(true);
               }}
             >
@@ -426,6 +466,9 @@ function QuotationsPage() {
                         <Button size="icon" variant="ghost" title="Duplicate" onClick={() => duplicate(q)}>
                           <Copy className="h-4 w-4" />
                         </Button>
+                        <Button size="icon" variant="ghost" title="Edit" onClick={() => loadForm(q)}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
                         <Button size="icon" variant="ghost" title="Download PDF" onClick={() => downloadPdf(q)}>
                           <FileText className="h-4 w-4 text-primary" />
                         </Button>
@@ -451,10 +494,16 @@ function QuotationsPage() {
       </div>
 
       {/* create dialog */}
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog
+        open={open}
+        onOpenChange={(o) => {
+          setOpen(o);
+          if (!o) setEditId(null);
+        }}
+      >
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
           <DialogHeader>
-            <DialogTitle>New quotation</DialogTitle>
+            <DialogTitle>{editId ? `Edit quotation ${quoteNo}` : "New quotation"}</DialogTitle>
             <DialogDescription>Quote manpower per designation with hourly, daily or monthly rates.</DialogDescription>
           </DialogHeader>
 
@@ -717,7 +766,7 @@ function QuotationsPage() {
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-            <Button onClick={save}>Save quotation</Button>
+            <Button onClick={save}>{editId ? "Save changes" : "Save quotation"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -782,6 +831,9 @@ function QuotationsPage() {
               )}
 
               <DialogFooter>
+                <Button variant="outline" onClick={() => loadForm(detail)}>
+                  <Pencil className="mr-2 h-4 w-4" /> Edit
+                </Button>
                 <Button variant="outline" onClick={() => downloadPdf(detail)}>
                   <Download className="mr-2 h-4 w-4" /> Download PDF
                 </Button>
