@@ -22,6 +22,8 @@ import type { EmployeeLoan, LoanRepayment } from "@/lib/types";
 import type { Department, Designation } from "@/lib/types";
 import type { DriverProfile, DriverIncident, FuelLog } from "@/lib/types";
 
+import type { ManpowerRequest, ManpowerRequestItem } from "@/lib/types";
+
 type Row = Record<string, any>;
 
 const d = (v: any) => (v ? String(v).slice(0, 10) : undefined);
