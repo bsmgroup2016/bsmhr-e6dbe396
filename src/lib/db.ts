@@ -15,6 +15,7 @@ import type { InventoryItem, StockMovement, PurchaseOrder } from "@/lib/types";
 import type {
   BranchPrefix, EmployeeCertification, TimeCard, ClaimSheet,
   TimeCardEntry, ClaimSheetRow,
+  DormitoryInvoice, DormitoryInspection, DormitoryMovement,
 } from "@/lib/types";
 import type { ClientContract } from "@/lib/types";
 import type { MedicalClaim } from "@/lib/types";
@@ -503,7 +504,6 @@ export const toCandidate = (x: Partial<Candidate>): Row => ({
   commission_paid_on: nullDate(x.commissionPaidOn),
 });
 
-/* ---------- bulk load ---------- */
 /* ---------- accommodation & transport ---------- */
 export const fromDormitory = (r: Row): Dormitory => ({
   id: r.id, companyId: r.company_id ?? undefined, name: r.name, address: r.address ?? "",
@@ -524,6 +524,51 @@ export const toDormitory = (x: Partial<Dormitory>): Row => ({
   floor_area_sqm: x.floorAreaSqm ?? 0, rooms: x.rooms ?? 0,
   license_expiry: nullDate(x.licenseExpiry), last_inspection: nullDate(x.lastInspection),
   status: x.status, remarks: x.remarks ?? null,
+});
+
+export const fromDormitoryInvoice = (r: Row): DormitoryInvoice => ({
+  id: r.id, companyId: r.company_id ?? undefined, dormitoryId: r.dormitory_id,
+  invoiceNo: r.invoice_no, invoiceDate: d(r.invoice_date) ?? "",
+  dueDate: d(r.due_date), totalAmount: Number(r.total_amount ?? 0),
+  amountPaid: Number(r.amount_paid ?? 0), status: (r.status ?? "Draft") as DormitoryInvoice["status"],
+  documentUrl: r.document_url ?? undefined, remarks: r.remarks ?? undefined,
+  createdAt: r.created_at, updatedAt: r.updated_at,
+});
+
+export const toDormitoryInvoice = (x: Partial<DormitoryInvoice>): Row => ({
+  company_id: x.companyId || null, dormitory_id: x.dormitoryId, invoice_no: x.invoiceNo,
+  invoice_date: nullDate(x.invoiceDate), due_date: nullDate(x.dueDate),
+  total_amount: x.totalAmount ?? 0, amount_paid: x.amountPaid ?? 0,
+  status: x.status, document_url: x.documentUrl || null, remarks: x.remarks || null,
+});
+
+export const fromDormitoryInspection = (r: Row): DormitoryInspection => ({
+  id: r.id, dormitoryId: r.dormitory_id, inspectionDate: d(r.inspection_date) ?? "",
+  inspectorName: r.inspector_name ?? undefined, findings: r.findings ?? undefined,
+  documentUrls: Array.isArray(r.document_urls) ? r.document_urls : [],
+  status: (r.status ?? "Passed") as DormitoryInspection["status"],
+  rectificationDeadline: d(r.rectification_deadline),
+  createdAt: r.created_at, updatedAt: r.updated_at,
+});
+
+export const toDormitoryInspection = (x: Partial<DormitoryInspection>): Row => ({
+  dormitory_id: x.dormitoryId, inspection_date: nullDate(x.inspectionDate),
+  inspector_name: x.inspectorName || null, findings: x.findings || null,
+  document_urls: x.documentUrls || [], status: x.status,
+  rectification_deadline: nullDate(x.rectificationDeadline),
+});
+
+export const fromDormitoryMovement = (r: Row): DormitoryMovement => ({
+  id: r.id, employeeId: r.employee_id, fromDormitoryId: r.from_dormitory_id ?? undefined,
+  toDormitoryId: r.to_dormitory_id ?? undefined, fromRoom: r.from_room ?? undefined,
+  toRoom: r.to_room ?? undefined, moveDate: d(r.move_date) ?? "",
+  reason: r.reason ?? undefined, createdAt: r.created_at,
+});
+
+export const toDormitoryMovement = (x: Partial<DormitoryMovement>): Row => ({
+  employee_id: x.employeeId, from_dormitory_id: x.fromDormitoryId || null,
+  to_dormitory_id: x.toDormitoryId || null, from_room: x.fromRoom || null,
+  to_room: x.toRoom || null, move_date: nullDate(x.moveDate), reason: x.reason || null,
 });
 
 export const fromAllocation = (r: Row): BedAllocation => ({
@@ -886,6 +931,59 @@ async function all(table: string, order = "created_at") {
   return (data ?? []) as Row[];
 }
 
+export interface LoadedData {
+  employees: Employee[];
+  clients: Client[];
+  projects: Project[];
+  sites: Site[];
+  assignments: Assignment[];
+  documents: EmployeeDocument[];
+  attendance: Attendance[];
+  payroll: PayrollEntry[];
+  approvals: Approval[];
+  auditLogs: AuditLog[];
+  leaveRequests: LeaveRequest[];
+  rateAgreements: RateAgreement[];
+  invoices: Invoice[];
+  dormitories: Dormitory[];
+  allocations: BedAllocation[];
+  dormitoryInvoices: DormitoryInvoice[];
+  dormitoryInspections: DormitoryInspection[];
+  dormitoryMovements: DormitoryMovement[];
+  vehicles: Vehicle[];
+  trips: Trip[];
+  assets: Asset[];
+  issuances: AssetIssuance[];
+  inventory: InventoryItem[];
+  movements: StockMovement[];
+  purchaseOrders: PurchaseOrder[];
+  courses: TrainingCourse[];
+  trainings: TrainingRecord[];
+  incidents: SafetyIncident[];
+  requisitions: JobRequisition[];
+  candidates: Candidate[];
+  leads: Lead[];
+  activities: CrmActivity[];
+  expenses: Expense[];
+  receipts: PaymentReceipt[];
+  users: User[];
+  branchPrefixes: BranchPrefix[];
+  certifications: EmployeeCertification[];
+  timeCards: TimeCard[];
+  claimSheets: ClaimSheet[];
+  contracts: ClientContract[];
+  medicalClaims: MedicalClaim[];
+  loans: EmployeeLoan[];
+  loanRepayments: LoanRepayment[];
+  departments: Department[];
+  designations: Designation[];
+  driverProfiles: DriverProfile[];
+  driverIncidents: DriverIncident[];
+  fuelLogs: FuelLog[];
+  manpowerRequests: ManpowerRequest[];
+  companies: Company[];
+}
+
 export async function loadAll(): Promise<LoadedData> {
   const [
     companies, employees, clients, projects, sites, assignments,
@@ -896,6 +994,7 @@ export async function loadAll(): Promise<LoadedData> {
     inventory, movements, purchaseOrders,
     branchPrefixes, certifications, timeCards, claimSheets, contracts,
     medicalClaims,
+    dormInvoices, dormInspections, dormMovements,
   ] = await Promise.all([
     all("companies"), all("employees"), all("clients"), all("projects"), all("sites"),
     all("assignments"), all("employee_documents"), all("attendance"), all("payroll_entries"),
@@ -910,6 +1009,7 @@ export async function loadAll(): Promise<LoadedData> {
     all("branch_prefixes"), all("employee_certifications"), all("time_cards"), all("claim_sheets"),
     all("client_contracts"),
     all("medical_claims"),
+    all("dormitory_invoices"), all("dormitory_inspections"), all("dormitory_movements"),
   ]);
 
   const [loanRows, repaymentRows] = await Promise.all([
@@ -966,6 +1066,9 @@ export async function loadAll(): Promise<LoadedData> {
     allocations: allocations.map(fromAllocation),
     vehicles: vehicles.map(fromVehicle),
     trips: trips.map(fromTrip),
+    dormitoryInvoices: dormInvoices.map(fromDormitoryInvoice),
+    dormitoryInspections: dormInspections.map(fromDormitoryInspection),
+    dormitoryMovements: dormMovements.map(fromDormitoryMovement),
     assets: assets.map(fromAsset),
     issuances: issuances.map(fromIssuance),
     courses: courses.map(fromCourse),
@@ -993,6 +1096,7 @@ export async function loadAll(): Promise<LoadedData> {
     driverProfiles: driverProfileRows.map(fromDriverProfile),
     driverIncidents: driverIncidentRows.map(fromDriverIncident),
     fuelLogs: fuelLogRows.map(fromFuelLog),
+    manpowerRequests: [],
   };
 }
 

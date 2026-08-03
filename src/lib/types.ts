@@ -606,6 +606,47 @@ export interface Dormitory {
   updatedAt: string;
 }
 
+export interface DormitoryInvoice {
+  id: string;
+  companyId?: string;
+  dormitoryId: string;
+  invoiceNo: string;
+  invoiceDate: string;
+  dueDate?: string;
+  totalAmount: number;
+  amountPaid: number;
+  status: "Draft" | "Pending" | "Paid" | "Overdue";
+  documentUrl?: string;
+  remarks?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DormitoryInspection {
+  id: string;
+  dormitoryId: string;
+  inspectionDate: string;
+  inspectorName?: string;
+  findings?: string;
+  documentUrls?: string[];
+  status: "Passed" | "Failed" | "Needs Rectification";
+  rectificationDeadline?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DormitoryMovement {
+  id: string;
+  employeeId: string;
+  fromDormitoryId?: string;
+  toDormitoryId?: string;
+  fromRoom?: string;
+  toRoom?: string;
+  moveDate: string;
+  reason?: string;
+  createdAt: string;
+}
+
 export type BedStatus = "Occupied" | "Reserved" | "Vacated";
 
 export interface BedAllocation {

@@ -7,6 +7,7 @@ import type {
   LeaveRequest, RateAgreement, Invoice, InvoiceLine,
   Dormitory, BedAllocation, Vehicle, Trip,
   Asset, AssetIssuance,
+  DormitoryInvoice, DormitoryInspection, DormitoryMovement,
 } from "@/lib/types";
 import type { TrainingCourse, TrainingRecord, SafetyIncident } from "@/lib/types";
 import type { JobRequisition, Candidate } from "@/lib/types";
@@ -24,6 +25,7 @@ import {
   toRate, toInvoice,
   toDormitory, toAllocation, toVehicle, toTrip,
   toAsset, toIssuance,
+  toDormitoryInvoice, toDormitoryInspection, toDormitoryMovement,
 } from "@/lib/db";
 import { toCourse, toTraining, toIncident } from "@/lib/db";
 import { toRequisition, toCandidate } from "@/lib/db";
@@ -54,6 +56,9 @@ export interface AppState {
   invoices: Invoice[];
   dormitories: Dormitory[];
   allocations: BedAllocation[];
+  dormitoryInvoices: DormitoryInvoice[];
+  dormitoryInspections: DormitoryInspection[];
+  dormitoryMovements: DormitoryMovement[];
   vehicles: Vehicle[];
   trips: Trip[];
   assets: Asset[];
@@ -102,7 +107,9 @@ const emptyState: AppState = {
   employees: [], clients: [], projects: [], sites: [], assignments: [], documents: [],
   attendance: [], payroll: [], approvals: [], auditLogs: [], leaveRequests: [],
   rateAgreements: [], invoices: [], users: [],
-  dormitories: [], allocations: [], vehicles: [], trips: [],
+  dormitories: [], allocations: [],
+  dormitoryInvoices: [], dormitoryInspections: [], dormitoryMovements: [],
+  vehicles: [], trips: [],
   assets: [], issuances: [],
   courses: [], trainings: [], incidents: [],
   requisitions: [], candidates: [],
@@ -1312,6 +1319,90 @@ export function deleteAllocation(id: string): boolean {
 
 export function dormOccupancy(dormitoryId: string): number {
   return getState().allocations.filter((a) => a.dormitoryId === dormitoryId && a.status !== "Vacated").length;
+}
+
+/* ---------------- dormitory invoices ---------------- */
+export function getDormitoryInvoices(): DormitoryInvoice[] { return getState().dormitoryInvoices; }
+
+export function addDormitoryInvoice(x: Omit<DormitoryInvoice, "id" | "createdAt" | "updatedAt">): DormitoryInvoice {
+  const s = getState();
+  const now = new Date().toISOString();
+  const row: DormitoryInvoice = { ...x, id: newId(), createdAt: now, updatedAt: now };
+  setState({ ...s, dormitoryInvoices: [row, ...s.dormitoryInvoices] });
+  void supabase.from("dormitory_invoices").insert({ id: row.id, ...toDormitoryInvoice(row) })
+    .then(({ error }) => fail("dormitory_invoices", error));
+  addAuditLog("CREATE", "DormitoryInvoice", row.id, `Added dorm invoice ${row.invoiceNo}`);
+  return row;
+}
+
+export function updateDormitoryInvoice(id: string, updates: Partial<DormitoryInvoice>): DormitoryInvoice | undefined {
+  const s = getState();
+  const existing = s.dormitoryInvoices.find((x) => x.id === id);
+  if (!existing) return undefined;
+  const updated: DormitoryInvoice = { ...existing, ...updates, updatedAt: new Date().toISOString() };
+  setState({ ...s, dormitoryInvoices: s.dormitoryInvoices.map((x) => (x.id === id ? updated : x)) });
+  void supabase.from("dormitory_invoices").update(toDormitoryInvoice(updated)).eq("id", id)
+    .then(({ error }) => fail("dormitory_invoices", error));
+  addAuditLog("UPDATE", "DormitoryInvoice", id, "Updated dorm invoice");
+  return updated;
+}
+
+export function deleteDormitoryInvoice(id: string): boolean {
+  const s = getState();
+  if (!s.dormitoryInvoices.some((x) => x.id === id)) return false;
+  setState({ ...s, dormitoryInvoices: s.dormitoryInvoices.filter((x) => x.id !== id) });
+  void supabase.from("dormitory_invoices").delete().eq("id", id).then(({ error }) => fail("dormitory_invoices", error));
+  addAuditLog("DELETE", "DormitoryInvoice", id, "Deleted dorm invoice");
+  return true;
+}
+
+/* ---------------- dormitory inspections ---------------- */
+export function getDormitoryInspections(): DormitoryInspection[] { return getState().dormitoryInspections; }
+
+export function addDormitoryInspection(x: Omit<DormitoryInspection, "id" | "createdAt" | "updatedAt">): DormitoryInspection {
+  const s = getState();
+  const now = new Date().toISOString();
+  const row: DormitoryInspection = { ...x, id: newId(), createdAt: now, updatedAt: now };
+  setState({ ...s, dormitoryInspections: [row, ...s.dormitoryInspections] });
+  void supabase.from("dormitory_inspections").insert({ id: row.id, ...toDormitoryInspection(row) })
+    .then(({ error }) => fail("dormitory_inspections", error));
+  addAuditLog("CREATE", "DormitoryInspection", row.id, "Added dorm inspection");
+  return row;
+}
+
+export function updateDormitoryInspection(id: string, updates: Partial<DormitoryInspection>): DormitoryInspection | undefined {
+  const s = getState();
+  const existing = s.dormitoryInspections.find((x) => x.id === id);
+  if (!existing) return undefined;
+  const updated: DormitoryInspection = { ...existing, ...updates, updatedAt: new Date().toISOString() };
+  setState({ ...s, dormitoryInspections: s.dormitoryInspections.map((x) => (x.id === id ? updated : x)) });
+  void supabase.from("dormitory_inspections").update(toDormitoryInspection(updated)).eq("id", id)
+    .then(({ error }) => fail("dormitory_inspections", error));
+  addAuditLog("UPDATE", "DormitoryInspection", id, "Updated dorm inspection");
+  return updated;
+}
+
+export function deleteDormitoryInspection(id: string): boolean {
+  const s = getState();
+  if (!s.dormitoryInspections.some((x) => x.id === id)) return false;
+  setState({ ...s, dormitoryInspections: s.dormitoryInspections.filter((x) => x.id !== id) });
+  void supabase.from("dormitory_inspections").delete().eq("id", id).then(({ error }) => fail("dormitory_inspections", error));
+  addAuditLog("DELETE", "DormitoryInspection", id, "Deleted dorm inspection");
+  return true;
+}
+
+/* ---------------- dormitory movements ---------------- */
+export function getDormitoryMovements(): DormitoryMovement[] { return getState().dormitoryMovements; }
+
+export function addDormitoryMovement(x: Omit<DormitoryMovement, "id" | "createdAt">): DormitoryMovement {
+  const s = getState();
+  const now = new Date().toISOString();
+  const row: DormitoryMovement = { ...x, id: newId(), createdAt: now };
+  setState({ ...s, dormitoryMovements: [row, ...s.dormitoryMovements] });
+  void supabase.from("dormitory_movements").insert({ id: row.id, ...toDormitoryMovement(row) })
+    .then(({ error }) => fail("dormitory_movements", error));
+  addAuditLog("CREATE", "DormitoryMovement", row.id, "Recorded worker dorm movement");
+  return row;
 }
 
 /* ---------------- transport ---------------- */
