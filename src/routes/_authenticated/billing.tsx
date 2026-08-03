@@ -1307,7 +1307,7 @@ function RateForm({
           </Select>
         </div>
         <div className="space-y-1">
-          <Label htmlFor="normalRate">Normal rate ($)</Label>
+          <Label htmlFor="normalRate">Normal rate ($/hr)</Label>
           <Input
             id="normalRate"
             name="normalRate"
