@@ -14,6 +14,7 @@ import {
   Bot,
   Plus,
 } from "lucide-react";
+import { SmtpSettings } from "@/components/settings/smtp-settings";
 import { AiSettings } from "@/components/settings/ai-settings";
 import { Badge } from "@/components/ui/badge";
 
@@ -110,12 +111,13 @@ export default function SettingsPage() {
         </div>
 
         <Tabs defaultValue="general" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 sm:w-auto sm:grid-cols-9">
+          <TabsList className="grid w-full grid-cols-3 sm:w-auto sm:grid-cols-10">
             <TabsTrigger value="general">General</TabsTrigger>
             <TabsTrigger value="notifications">Notifications</TabsTrigger>
             <TabsTrigger value="security">Security</TabsTrigger>
             <TabsTrigger value="ai">AI Center</TabsTrigger>
             <TabsTrigger value="ocr">OCR</TabsTrigger>
+            <TabsTrigger value="smtp">SMTP</TabsTrigger>
             <TabsTrigger value="storage">Storage</TabsTrigger>
             <TabsTrigger value="data">Data</TabsTrigger>
             <TabsTrigger value="automation">Automation</TabsTrigger>
@@ -268,6 +270,10 @@ export default function SettingsPage() {
                 </div>
               </div>
             </div>
+          </TabsContent>
+
+          <TabsContent value="smtp" className="mt-4 space-y-4">
+            <SmtpSettings />
           </TabsContent>
 
           <TabsContent value="storage" className="mt-4 space-y-4">
