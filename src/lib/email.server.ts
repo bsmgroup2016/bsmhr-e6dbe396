@@ -70,6 +70,36 @@ export async function restPost(path: string, rows: unknown[]): Promise<number> {
 }
 
 async function sendMailInternal({ to, subject, html }: MailInput) {
+  const { loadSmtpConfig, sendViaSmtp, smtpUsable } = await import("./smtp.server");
+  let cfg = null as Awaited<ReturnType<typeof loadSmtpConfig>> | null;
+  try {
+    cfg = await loadSmtpConfig();
+  } catch {
+    cfg = null;
+  }
+
+  // Custom SMTP as the primary sender.
+  if (cfg && smtpUsable(cfg) && cfg.primaryProvider === "smtp") {
+    try {
+      return await sendViaSmtp(cfg, { to, subject, html });
+    } catch (e) {
+      console.error("SMTP send failed, falling back to Resend:", e);
+    }
+  }
+
+  try {
+    return await sendViaResend({ to, subject, html });
+  } catch (e) {
+    // Resend failed (or is not configured) -> fall back to custom SMTP.
+    if (cfg && smtpUsable(cfg)) {
+      console.error("Resend send failed, falling back to SMTP:", e);
+      return await sendViaSmtp(cfg, { to, subject, html });
+    }
+    throw e;
+  }
+}
+
+export async function sendViaResend({ to, subject, html }: MailInput) {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) throw new Error("RESEND_API_KEY is not configured");
   const from = process.env.RESEND_FROM || "BSM Workforce <onboarding@resend.dev>";
