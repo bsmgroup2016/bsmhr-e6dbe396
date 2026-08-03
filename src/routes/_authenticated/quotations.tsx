@@ -172,8 +172,6 @@ function QuotationsPage() {
   }, [quotations, clients, companyId, statusFilter, search]);
 
   const kpi = useMemo(() => {
-    return computeKpi();
-    function computeKpi() {
     const open = filtered.filter((q) => q.status === "Sent");
     const won = filtered.filter((q) => q.status === "Accepted" || q.status === "Converted");
     const decided = won.length + filtered.filter((q) => q.status === "Rejected").length;
@@ -187,7 +185,6 @@ function QuotationsPage() {
           q.validUntil <= new Date(Date.now() + 7 * 864e5).toISOString().slice(0, 10),
       ).length,
     };
-    }
   }, [filtered]);
 
   /** Existing client name, or the prospect details captured on the quote. */
