@@ -82,7 +82,7 @@ export function AiSettings({ visionOnly = false }: { visionOnly?: boolean }) {
       <div className="rounded-xl border bg-card p-5 shadow-sm">
         <div className="flex items-center gap-2 mb-4">
           <Bot className="h-5 w-5 text-primary" />
-          <h2 className="text-lg font-semibold">AI & OCR Provider Management</h2>
+          <h2 className="text-lg font-semibold">{visionOnly ? "OCR Engine Management" : "AI & OCR Provider Management"}</h2>
         </div>
         
         <p className="text-sm text-muted-foreground mb-6">
