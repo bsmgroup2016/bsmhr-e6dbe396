@@ -39,6 +39,11 @@ export function SmtpSettings() {
     password: "",
     fromEmail: "",
     fromName: "",
+    maxAttempts: 3,
+    retryDelayMs: 1000,
+    backoffMultiplier: 2,
+    failoverEnabled: true,
+    switchBack: true,
   });
   const [showKey, setShowKey] = useState(false);
   const [testTo, setTestTo] = useState("");
@@ -55,6 +60,11 @@ export function SmtpSettings() {
       password: "",
       fromEmail: data.fromEmail ?? "",
       fromName: data.fromName ?? "",
+      maxAttempts: data.maxAttempts ?? 3,
+      retryDelayMs: data.retryDelayMs ?? 1000,
+      backoffMultiplier: data.backoffMultiplier ?? 2,
+      failoverEnabled: data.failoverEnabled ?? true,
+      switchBack: data.switchBack ?? true,
     });
   }, [data]);
 
@@ -236,6 +246,84 @@ export function SmtpSettings() {
             Send test email
           </Button>
         </div>
+      </div>
+
+      <div className="rounded-xl border bg-card p-5 shadow-sm">
+        <h2 className="mb-1 text-lg font-semibold">Failover & retry</h2>
+        <p className="mb-4 text-sm text-muted-foreground">
+          If the primary sender fails, each send is retried with exponential backoff, then
+          automatically switched to the other sender. Retry delay grows by the multiplier on every
+          attempt.
+        </p>
+        <div className="grid gap-4 sm:grid-cols-3">
+          <div className="space-y-2">
+            <Label htmlFor="smtp-attempts">Attempts per sender</Label>
+            <Input
+              id="smtp-attempts"
+              type="number"
+              min={1}
+              max={10}
+              value={form.maxAttempts}
+              onChange={(e) => set("maxAttempts", Math.max(1, Number(e.target.value) || 1))}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="smtp-delay">Initial retry delay (ms)</Label>
+            <Input
+              id="smtp-delay"
+              type="number"
+              min={0}
+              max={60000}
+              step={500}
+              value={form.retryDelayMs}
+              onChange={(e) => set("retryDelayMs", Math.max(0, Number(e.target.value) || 0))}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="smtp-backoff">Backoff multiplier</Label>
+            <Input
+              id="smtp-backoff"
+              type="number"
+              min={1}
+              max={10}
+              step={0.5}
+              value={form.backoffMultiplier}
+              onChange={(e) => set("backoffMultiplier", Math.max(1, Number(e.target.value) || 1))}
+            />
+          </div>
+        </div>
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <div className="flex items-center justify-between rounded-lg border bg-background/50 p-4">
+            <div>
+              <p className="text-sm font-medium">Automatic failover</p>
+              <p className="text-xs text-muted-foreground">
+                Switch to the other sender when the primary keeps failing.
+              </p>
+            </div>
+            <Switch
+              checked={form.failoverEnabled}
+              onCheckedChange={(v) => set("failoverEnabled", v)}
+            />
+          </div>
+          <div className="flex items-center justify-between rounded-lg border bg-background/50 p-4">
+            <div>
+              <p className="text-sm font-medium">Switch back and retry</p>
+              <p className="text-xs text-muted-foreground">
+                After the backup also fails, try the primary sender one more round.
+              </p>
+            </div>
+            <Switch checked={form.switchBack} onCheckedChange={(v) => set("switchBack", v)} />
+          </div>
+        </div>
+        <p className="mt-3 text-xs text-muted-foreground">
+          Order: {form.primaryProvider === "smtp" ? "SMTP" : "Resend"} x {form.maxAttempts}
+          {form.failoverEnabled
+            ? ` -> ${form.primaryProvider === "smtp" ? "Resend" : "SMTP"} x ${form.maxAttempts}${form.switchBack ? ` -> ${form.primaryProvider === "smtp" ? "SMTP" : "Resend"} x ${form.maxAttempts}` : ""}`
+            : ""}
+        </p>
+      </div>
+
+      <div>
         {data?.updatedAt && (
           <p className="mt-3 text-xs text-muted-foreground">
             Last updated {new Date(data.updatedAt).toLocaleString()}

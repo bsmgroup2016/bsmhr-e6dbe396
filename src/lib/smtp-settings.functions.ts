@@ -23,6 +23,11 @@ const schema = z.object({
   password: z.string().max(500).optional(),
   fromEmail: z.string().trim().max(200).optional(),
   fromName: z.string().trim().max(120).optional(),
+  maxAttempts: z.number().int().min(1).max(10).optional(),
+  retryDelayMs: z.number().int().min(0).max(60000).optional(),
+  backoffMultiplier: z.number().min(1).max(10).optional(),
+  failoverEnabled: z.boolean().optional(),
+  switchBack: z.boolean().optional(),
 });
 
 export const saveSmtpSettings = createServerFn({ method: "POST" })
@@ -39,6 +44,11 @@ export const saveSmtpSettings = createServerFn({ method: "POST" })
     if (data.password) patch.password = data.password;
     if (data.fromEmail !== undefined) patch.from_email = data.fromEmail || null;
     if (data.fromName !== undefined) patch.from_name = data.fromName || null;
+    if (data.maxAttempts !== undefined) patch.max_attempts = data.maxAttempts;
+    if (data.retryDelayMs !== undefined) patch.retry_delay_ms = data.retryDelayMs;
+    if (data.backoffMultiplier !== undefined) patch.backoff_multiplier = data.backoffMultiplier;
+    if (data.failoverEnabled !== undefined) patch.failover_enabled = data.failoverEnabled;
+    if (data.switchBack !== undefined) patch.switch_back = data.switchBack;
     const ok = await saveSmtpConfig(patch);
     return ok
       ? { success: true, error: null }
