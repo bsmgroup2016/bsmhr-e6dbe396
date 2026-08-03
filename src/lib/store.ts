@@ -86,6 +86,7 @@ export interface AppState {
   medicalClaims: MedicalClaim[];
   loans: EmployeeLoan[];
   loanRepayments: LoanRepayment[];
+  quotations: Quotation[];
   departments: Department[];
   designations: Designation[];
   driverProfiles: DriverProfile[];
@@ -121,6 +122,7 @@ const emptyState: AppState = {
   branchPrefixes: [], certifications: [], timeCards: [], claimSheets: [],
   contracts: [],
   medicalClaims: [],
+  quotations: [],
   loans: [], loanRepayments: [],
   departments: [], designations: [],
   driverProfiles: [], driverIncidents: [], fuelLogs: [],
