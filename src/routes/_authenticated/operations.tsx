@@ -282,7 +282,9 @@ export default function OperationsPage() {
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="requests">Manpower Requests</TabsTrigger>
             <TabsTrigger value="assignments">Assignments</TabsTrigger>
-            <TabsTrigger value="pool">Available pool</TabsTrigger>
+            <TabsTrigger value="available">Available Workers</TabsTrigger>
+            <TabsTrigger value="deployed">Deployed Workers</TabsTrigger>
+            <TabsTrigger value="history">Deployment History</TabsTrigger>
             <TabsTrigger value="profitability">Project Profitability</TabsTrigger>
           </TabsList>
 
