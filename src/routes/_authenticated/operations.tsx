@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import {
   Plus, Search, HardHat, Users, ArrowRightLeft, Clock, MoreHorizontal, Pencil, Eye,
   Download, CheckCircle2, XCircle, LogOut, AlertTriangle, Layers,
-  FileText, TrendingUp, DollarSign,
+  FileText, TrendingUp, DollarSign, Briefcase, History
 } from "lucide-react";
 import { toast } from "sonner";
 import { checkDeploymentCompliance } from "@/lib/compliance";
@@ -26,9 +26,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { DeploymentFillRates } from "@/components/deployment-fill-rates";
 import { BulkDeploySheet } from "@/components/bulk-deploy-sheet";
+import { ExportButton } from "@/components/data-io";
+import { DeploymentActionDialog } from "@/components/deployment-actions";
 import {
   getEmployees, getProjects, getSites, getAssignments, getUsers, addAssignment,
   updateAssignment, updateEmployee, addApproval, getCurrentCompany, getManpowerRequests,
+  getCompanies, getClients,
 } from "@/lib/store";
 import { activeAssignedEmployeeIds, isEmployeeAvailable, hasExpiredWorkPermit } from "@/lib/availability";
 import { exportRows } from "@/lib/xlsx";
@@ -707,10 +710,245 @@ export default function OperationsPage() {
   );
 }
 
+function AvailableWorkersContent({ pool, employees }: { pool: Employee[]; employees: Employee[] }) {
+  const companies = getCompanies();
+  const [search, setSearch] = useState("");
+  const [trade, setTrade] = useState("all");
+  const [company, setCompany] = useState("all");
+
+  const trades = Array.from(new Set(pool.map((e) => e.trade).filter(Boolean))).sort();
+  const byTrade = trades
+    .map((t) => ({ trade: t, count: pool.filter((e) => e.trade === t).length }))
+    .sort((a, b) => b.count - a.count);
+
+  const q = search.toLowerCase();
+  const rows = pool.filter(
+    (e) =>
+      (e.name.toLowerCase().includes(q) || e.employeeCode.toLowerCase().includes(q)) &&
+      (trade === "all" || e.trade === trade) &&
+      (company === "all" || e.companyId === company)
+  );
+
+  return (
+    <div className="space-y-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <SummaryCard title="Available now" value={String(pool.length)} icon={<HardHat className="h-5 w-5" />} variant="success" compact />
+        <SummaryCard title="Total workforce" value={String(employees.length)} icon={<Users className="h-5 w-5" />} variant="primary" compact />
+      </div>
+
+      <div className="rounded-xl border bg-card p-4 shadow-sm">
+        <h2 className="mb-3 text-sm font-semibold">Free by designation</h2>
+        <div className="flex flex-wrap gap-2">
+          {byTrade.map((t) => (
+            <button
+              key={t.trade}
+              onClick={() => setTrade(trade === t.trade ? "all" : t.trade)}
+              className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+                trade === t.trade ? "border-primary bg-primary text-primary-foreground" : "bg-muted/40 hover:bg-muted"
+              }`}
+            >
+              {t.trade} · {t.count}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="space-y-4 rounded-xl border bg-card p-4 shadow-sm">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative w-full max-w-sm">
+            <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input placeholder="Search available..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+          </div>
+          <Select value={trade} onValueChange={setTrade}>
+            <SelectTrigger className="w-48"><SelectValue placeholder="Designation" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All designations</SelectItem>
+              {trades.map((t) => (<SelectItem key={t} value={t}>{t}</SelectItem>))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="overflow-hidden rounded-lg border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Worker</TableHead>
+                <TableHead>Company</TableHead>
+                <TableHead>Designation</TableHead>
+                <TableHead>Status</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {rows.length === 0 ? (
+                <TableRow><TableCell colSpan={4} className="h-32 text-center text-muted-foreground">No available workers.</TableCell></TableRow>
+              ) : (
+                rows.map((e) => (
+                  <TableRow key={e.id}>
+                    <TableCell>
+                      <div className="font-medium text-primary">{e.name}</div>
+                      <div className="text-xs text-muted-foreground">{e.employeeCode}</div>
+                    </TableCell>
+                    <TableCell>{companies.find((c) => c.id === e.companyId)?.name ?? "—"}</TableCell>
+                    <TableCell>{e.trade}</TableCell>
+                    <TableCell><StatusBadge variant="success" label={e.status} dot /></TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DeployedWorkersContent({ assignments, employees, projects, sites, onActionDone }: { assignments: Assignment[]; employees: Employee[]; projects: Project[]; sites: Site[]; onActionDone: () => void }) {
+  const active = assignments.filter((a) => a.status === "Active" || a.status === "Approved");
+  const [search, setSearch] = useState("");
+  const [project, setProject] = useState("all");
+  const [action, setAction] = useState<{ assignmentId: string; mode: "transfer" | "offhire" } | null>(null);
+
+  const deployed = active.map((a) => {
+    const emp = employees.find((e) => e.id === a.employeeId);
+    if (!emp) return null;
+    return { a, emp, project: projects.find((p) => p.id === a.projectId), site: sites.find((s) => s.id === a.siteId) };
+  }).filter((r): r is NonNullable<typeof r> => r !== null);
+
+  const q = search.toLowerCase();
+  const rows = deployed.filter((r) => 
+    (r.emp.name.toLowerCase().includes(q) || r.emp.employeeCode.toLowerCase().includes(q)) &&
+    (project === "all" || r.a.projectId === project)
+  );
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative w-full max-w-sm">
+          <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input placeholder="Search deployed..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+        </div>
+        <Select value={project} onValueChange={setProject}>
+          <SelectTrigger className="w-48"><SelectValue placeholder="Project" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All projects</SelectItem>
+            {projects.map((p) => (<SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="overflow-hidden rounded-lg border bg-card">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Worker</TableHead>
+              <TableHead>Project / Site</TableHead>
+              <TableHead>Start</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {rows.length === 0 ? (
+              <TableRow><TableCell colSpan={5} className="h-32 text-center text-muted-foreground">No deployed workers match.</TableCell></TableRow>
+            ) : (
+              rows.map((r) => (
+                <TableRow key={r.a.id}>
+                  <TableCell>
+                    <div className="font-medium">{r.emp.name}</div>
+                    <div className="text-xs text-muted-foreground">{r.emp.employeeCode} · {r.emp.trade}</div>
+                  </TableCell>
+                  <TableCell>{r.project?.name}<div className="text-xs text-muted-foreground">{r.site?.name}</div></TableCell>
+                  <TableCell className="text-sm">{r.a.startDate}</TableCell>
+                  <TableCell><StatusBadge variant="success" label={r.a.status} dot /></TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-1">
+                      <Button variant="outline" size="sm" onClick={() => setAction({ assignmentId: r.a.id, mode: "transfer" })}><ArrowRightLeft className="h-3.5 w-3.5" /></Button>
+                      <Button variant="ghost" size="sm" onClick={() => setAction({ assignmentId: r.a.id, mode: "offhire" })}><LogOut className="h-3.5 w-3.5" /></Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+      {action && (() => {
+        const row = deployed.find((r) => r.a.id === action.assignmentId);
+        if (!row) return null;
+        return (
+          <DeploymentActionDialog 
+            open 
+            onOpenChange={(o) => !o && setAction(null)} 
+            assignment={row.a} 
+            employee={row.emp} 
+            projects={projects} 
+            sites={sites} 
+            mode={action.mode} 
+            onDone={onActionDone} 
+          />
+        );
+      })()}
+    </div>
+  );
+}
+
+function DeploymentHistoryContent({ assignments, employees, projects, sites }: { assignments: Assignment[]; employees: Employee[]; projects: Project[]; sites: Site[] }) {
+  const clients = getClients();
+  const [q, setQ] = useState("");
+  const rows = useMemo(() => {
+    const term = q.toLowerCase();
+    return assignments.map((a) => {
+      const emp = employees.find((e) => e.id === a.employeeId);
+      const project = projects.find((p) => p.id === a.projectId);
+      return { a, emp, project, site: sites.find((s) => s.id === a.siteId) };
+    }).filter((r) => r.emp && (r.emp.name.toLowerCase().includes(term) || r.emp.employeeCode.toLowerCase().includes(term) || (r.project?.name ?? "").toLowerCase().includes(term)))
+    .sort((x, y) => y.a.startDate.localeCompare(x.a.startDate));
+  }, [assignments, employees, projects, sites, q]);
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div className="relative w-full max-w-sm">
+          <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input placeholder="Search history..." value={q} onChange={(e) => setQ(e.target.value)} className="pl-9" />
+        </div>
+        <ExportButton 
+          rows={rows.map(r => ({ Worker: r.emp?.name, Project: r.project?.name, Site: r.site?.name, Start: r.a.startDate, End: r.a.endDate, Status: r.a.status }))} 
+          baseName="manpower-history" 
+        />
+      </div>
+      <div className="overflow-hidden rounded-lg border bg-card">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Worker</TableHead>
+              <TableHead>Project / Site</TableHead>
+              <TableHead>Period</TableHead>
+              <TableHead>Status</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {rows.map((r) => (
+              <TableRow key={r.a.id}>
+                <TableCell>
+                  <div className="font-medium">{r.emp?.name}</div>
+                  <div className="text-xs text-muted-foreground">{r.emp?.employeeCode}</div>
+                </TableCell>
+                <TableCell>{r.project?.name}<div className="text-xs text-muted-foreground">{r.site?.name}</div></TableCell>
+                <TableCell className="text-xs">{r.a.startDate} → {r.a.endDate || "ongoing"}</TableCell>
+                <TableCell><StatusBadge variant="ghost" label={r.a.status} dot /></TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    </div>
+  );
+}
+
 function AssignmentForm({
   employees, sites, projects, onSubmit,
 }: {
-  employees: ReturnType<typeof getEmployees>;
+  employees: Employee[];
   sites: ReturnType<typeof getSites>;
   projects: ReturnType<typeof getProjects>;
   onSubmit: (data: FormData) => void;
