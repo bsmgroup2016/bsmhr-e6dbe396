@@ -35,7 +35,7 @@ import {
 } from "@/lib/store";
 import { activeAssignedEmployeeIds, isEmployeeAvailable, hasExpiredWorkPermit } from "@/lib/availability";
 import { exportRows } from "@/lib/xlsx";
-import type { Assignment, AssignmentStatus } from "@/lib/types";
+import type { Assignment, AssignmentStatus, Employee, Project, Site } from "@/lib/types";
 
 const statuses: AssignmentStatus[] = ["Pending", "Approved", "Active", "Ended", "Transferred", "Rejected"];
 const isLive = (a: Assignment) => a.status === "Active" || a.status === "Approved";
@@ -528,54 +528,27 @@ export default function OperationsPage() {
             </div>
           </TabsContent>
 
-          <TabsContent value="pool" className="mt-4">
-            <div className="rounded-xl border bg-card p-4 shadow-sm">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-sm font-medium text-muted-foreground">Available workers</h2>
-                  <p className="text-lg font-semibold">{pool.length} ready to deploy</p>
-                </div>
-                <Button size="sm" onClick={() => setBulkOpen(true)}>
-                  <Layers className="mr-1 h-4 w-4" /> Deploy selected
-                </Button>
-              </div>
-              <div className="mt-4 overflow-hidden rounded-lg border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Worker</TableHead>
-                      <TableHead>Designation</TableHead>
-                      <TableHead>Pass</TableHead>
-                      <TableHead>WP expiry</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {pool.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={4} className="h-24 text-center text-sm text-muted-foreground">
-                          Every worker is currently deployed.
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      pool.slice(0, 50).map((e) => (
-                        <TableRow key={e.id}>
-                          <TableCell>
-                            <div className="font-medium">{e.name}</div>
-                            <div className="text-xs text-muted-foreground">{e.employeeCode}</div>
-                          </TableCell>
-                          <TableCell className="text-sm">{e.trade || "—"}</TableCell>
-                          <TableCell className="text-sm">{e.passType}</TableCell>
-                          <TableCell className="text-sm">{e.workPermitExpiryDate || "—"}</TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-              {pool.length > 50 && (
-                <p className="mt-2 text-xs text-muted-foreground">Showing first 50 — use bulk deploy to search the full pool.</p>
-              )}
-            </div>
+          <TabsContent value="available" className="mt-4">
+            <AvailableWorkersContent pool={pool} employees={employees} />
+          </TabsContent>
+
+          <TabsContent value="deployed" className="mt-4">
+            <DeployedWorkersContent 
+              assignments={assignments} 
+              employees={employees} 
+              projects={projects} 
+              sites={sites} 
+              onActionDone={refresh}
+            />
+          </TabsContent>
+
+          <TabsContent value="history" className="mt-4">
+            <DeploymentHistoryContent 
+              assignments={assignments} 
+              employees={employees} 
+              projects={projects} 
+              sites={sites} 
+            />
           </TabsContent>
         </Tabs>
 
