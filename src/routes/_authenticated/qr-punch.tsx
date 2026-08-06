@@ -226,9 +226,43 @@ function QrPunchPage() {
           )}
         </div>
 
+        <div className="rounded-lg border border-border/60 p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium">Selfie proof</p>
+              <p className="text-xs text-muted-foreground">
+                {siteRow.selfieRequired
+                  ? "Required at this site."
+                  : "Optional, but a punch with a selfie is auto-verified."}
+              </p>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => fileRef.current?.click()}>
+              <Camera className="mr-2 h-4 w-4" /> {selfie ? "Retake" : "Take selfie"}
+            </Button>
+          </div>
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*"
+            capture="user"
+            className="hidden"
+            onChange={(e) => setSelfie(e.target.files?.[0] ?? null)}
+          />
+          {selfie && (
+            <p className="mt-2 flex items-center gap-1 text-xs text-emerald-500">
+              <ShieldCheck className="h-3 w-3" /> {selfie.name} ready
+            </p>
+          )}
+          {siteRow.lat != null && siteRow.lng != null && (
+            <p className="mt-2 text-xs text-muted-foreground">
+              Geofence: {siteRow.geofenceRadiusM ?? 300} m
+              {siteRow.geofenceEnforced ? " (enforced)" : " (flag only)"}
+            </p>
+          )}
+        </div>
+
         <div className="grid gap-2 sm:grid-cols-2">
           <Button size="lg" disabled={busy || !!record?.checkIn} onClick={() => punch("in")}>
-
             <LogIn className="mr-2 h-4 w-4" /> Clock in
           </Button>
           <Button
