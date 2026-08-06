@@ -11,7 +11,14 @@ import {
 } from "@/lib/api-v1.server";
 
 type PatchBody = { ids?: string[]; all?: boolean };
-type PostBody = { userIds?: string[]; employeeIds?: string[]; title?: string; body?: string; category?: string; data?: Record<string, string> };
+type PostBody = {
+  userIds?: string[];
+  employeeIds?: string[];
+  title?: string;
+  body?: string;
+  category?: string;
+  data?: Record<string, string>;
+};
 
 /** In-app notification inbox (RLS scopes every read to the caller). */
 export const Route = createFileRoute("/api/public/v1/notifications")({
@@ -22,7 +29,12 @@ export const Route = createFileRoute("/api/public/v1/notifications")({
         const auth = await requireAuth(request);
         if ("response" in auth) return auth.response;
         const p = listParams(request);
-        const filters = [`select=*`, `order=created_at.desc`, `limit=${p.limit}`, `offset=${p.offset}`];
+        const filters = [
+          `select=*`,
+          `order=created_at.desc`,
+          `limit=${p.limit}`,
+          `offset=${p.offset}`,
+        ];
         if (p.url.searchParams.get("unread") === "1") filters.push(`read_at=is.null`);
         const res = await sbRest(auth.ctx, `notifications?${filters.join("&")}`, {
           prefer: "count=exact",
@@ -32,13 +44,13 @@ export const Route = createFileRoute("/api/public/v1/notifications")({
         const total = Number(res.headers.get("content-range")?.split("/")[1] ?? rows.length);
         return ok(
           rows.map((r) => ({
-            id: r['id'],
-            title: r['title'],
-            body: r['body'],
-            category: r['category'],
-            data: r['data'] ?? {},
-            readAt: r['read_at'] ?? null,
-            createdAt: r['created_at'],
+            id: r["id"],
+            title: r["title"],
+            body: r["body"],
+            category: r["category"],
+            data: r["data"] ?? {},
+            readAt: r["read_at"] ?? null,
+            createdAt: r["created_at"],
           })),
           { total, limit: p.limit, offset: p.offset, hasMore: p.offset + rows.length < total },
         );

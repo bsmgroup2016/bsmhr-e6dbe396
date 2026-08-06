@@ -55,7 +55,8 @@ export async function applyPunch(
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date))
     return { clientEventId, status: "error", message: "date must be YYYY-MM-DD" };
 
-  const isCheckOut = Boolean(event.checkOut) || event.checkIn === undefined && event.checkOut === "";
+  const isCheckOut =
+    Boolean(event.checkOut) || (event.checkIn === undefined && event.checkOut === "");
   const kind: "checkIn" | "checkOut" = event.checkOut ? "checkOut" : "checkIn";
 
   // 1. Claim the event id first — this is what makes retries safe.
@@ -143,14 +144,14 @@ export async function applyPunch(
   const savedRow = saved[0];
 
   // 3. Link the event to the attendance row so a later replay returns it.
-  if (clientEventId && savedRow?.['id']) {
+  if (clientEventId && savedRow?.["id"]) {
     await sbRest(
       ctx,
       `attendance_events?employee_id=eq.${encodeURIComponent(employeeId)}&client_event_id=eq.${encodeURIComponent(clientEventId)}`,
       {
         method: "PATCH",
         prefer: "return=minimal",
-        body: JSON.stringify({ attendance_id: savedRow['id'] }),
+        body: JSON.stringify({ attendance_id: savedRow["id"] }),
       },
     );
   }
