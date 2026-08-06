@@ -61,6 +61,7 @@ Codes: `unauthorized`, `forbidden`, `not_found`, `bad_request`,
 | GET | `/leave` | `status,employeeId` |
 | POST | `/leave` | Apply for leave |
 | GET | `/payroll` | `month,employeeId` — payslip history |
+| GET | `/payroll/:id/payslip` | Payslip **PDF bytes** (`application/pdf`); workers get only their own |
 | GET | `/projects` | Staff roles only |
 | GET | `/clients` | admin / hr / manager only |
 | GET | `/driver/tasks` | Driver app job list. `open=1`, `status`, `from`, `to`, `driverId` (staff only). Drivers scoped to self |
