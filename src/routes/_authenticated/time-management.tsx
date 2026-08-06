@@ -68,6 +68,7 @@ import {
 import { isSiteWorker } from "@/lib/workforce-split";
 import { GeoCapture } from "@/components/geo-capture";
 import { QrAttendancePanel } from "@/components/qr-attendance-panel";
+import { PunchVerificationPanel } from "@/components/punch-verification-panel";
 import { LocationMap } from "@/components/location-map";
 import type { Attendance, AttendanceStatus } from "@/lib/types";
 import { pick, type ImportColumn } from "@/lib/xlsx";
