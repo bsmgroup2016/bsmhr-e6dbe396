@@ -12,6 +12,7 @@ import { getEmployees, getSites, getAttendance, upsertAttendance } from "@/lib/s
 import { capturePoint } from "@/lib/geo";
 import { uploadToR2 } from "@/lib/r2";
 import { verifyPunch } from "@/lib/punch-verification";
+import { enqueuePunch, useOfflineQueue } from "@/lib/offline-punch";
 import {
   validatePunchToken, hoursBetween, nowTime, splitHours, today,
 } from "@/lib/qr-attendance";
@@ -41,6 +42,7 @@ function QrPunchPage() {
   const [busy, setBusy] = useState(false);
   const [selfie, setSelfie] = useState<File | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const { online, pending, syncing, sync } = useOfflineQueue();
 
   const check = useMemo(() => validatePunchToken(site, d, k), [site, d, k]);
   const employee = useMemo(
@@ -111,6 +113,29 @@ function QrPunchPage() {
       );
       if (verdict.rejected) {
         toast.error(verdict.message ?? "Punch rejected by site rules");
+        return;
+      }
+
+      // No network: keep the punch on the device and flush it later.
+      if (!online) {
+        const stampOffline = nowTime();
+        enqueuePunch({
+          employeeId: employee.id,
+          siteId: siteRow.id,
+          date: today(),
+          punchedAt: new Date().toISOString(),
+          checkIn: mode === "in" ? stampOffline : (record?.checkIn ?? undefined),
+          checkOut: mode === "out" ? stampOffline : undefined,
+          lat: point?.lat,
+          lng: point?.lng,
+          address: point?.address,
+          notes: `Offline QR clock-${mode} at ${siteRow.name}`,
+        });
+        toast.success(
+          `Saved offline at ${stampOffline} — it will sync automatically when you are back online.`,
+        );
+        setSelfie(null);
+        if (fileRef.current) fileRef.current.value = "";
         return;
       }
 
@@ -279,6 +304,24 @@ function QrPunchPage() {
           <CheckCircle2 className="h-3 w-3" /> GPS location is captured with every punch for MOM
           attendance evidence.
         </p>
+        {(!online || pending > 0) && (
+          <div className="rounded-lg border border-border/60 bg-muted/40 p-3 text-xs">
+            {online
+              ? `${pending} offline punch${pending === 1 ? "" : "es"} waiting to sync.`
+              : "You are offline. Punches are stored on this device and sync automatically."}
+            {online && pending > 0 && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="ml-2 h-6 px-2"
+                disabled={syncing}
+                onClick={() => void sync()}
+              >
+                {syncing ? "Syncing" : "Sync now"}
+              </Button>
+            )}
+          </div>
+        )}
         <Button variant="ghost" size="sm" asChild>
           <Link to="/my-portal">Back to my portal</Link>
         </Button>
