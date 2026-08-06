@@ -90,7 +90,7 @@ const ATTENDANCE_IMPORT_COLUMNS: ImportColumn[] = [
 ];
 
 export const Route = createFileRoute("/_authenticated/time-management")({
-  validateSearch: (search: Record<string, unknown>) => ({
+  validateSearch: (search: Record<string, unknown>): { new?: true } => ({
     new: search.new === "1" || search.new === true ? true : undefined,
   }),
   head: () => ({

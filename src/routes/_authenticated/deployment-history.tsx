@@ -16,7 +16,7 @@ import { employeeSlugById } from "@/lib/employee-slug";
 import type { AssignmentStatus } from "@/lib/types";
 
 export const Route = createFileRoute("/_authenticated/deployment-history")({
-  validateSearch: (search: Record<string, unknown>) => ({
+  validateSearch: (search: Record<string, unknown>): { client?: string } => ({
     client: typeof search.client === "string" ? search.client : undefined,
   }),
   head: () => ({

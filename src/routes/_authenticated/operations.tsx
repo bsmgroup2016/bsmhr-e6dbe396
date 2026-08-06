@@ -42,7 +42,7 @@ const isLive = (a: Assignment) => a.status === "Active" || a.status === "Approve
 const today = () => new Date().toISOString().slice(0, 10);
 
 export const Route = createFileRoute("/_authenticated/operations")({
-  validateSearch: (search: Record<string, unknown>) => ({
+  validateSearch: (search: Record<string, unknown>): { new?: true } => ({
     new: search.new === "1" || search.new === true ? true : undefined,
   }),
   head: () => ({
