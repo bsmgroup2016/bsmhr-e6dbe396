@@ -187,6 +187,12 @@ export const fromAttendance = (r: Row): Attendance => ({
   checkOutLat: r.check_out_lat != null ? Number(r.check_out_lat) : undefined,
   checkOutLng: r.check_out_lng != null ? Number(r.check_out_lng) : undefined,
   checkOutAddress: r.check_out_address ?? undefined,
+  checkInSelfieKey: r.check_in_selfie_key ?? undefined,
+  checkOutSelfieKey: r.check_out_selfie_key ?? undefined,
+  checkInVerification: r.check_in_verification ?? undefined,
+  checkOutVerification: r.check_out_verification ?? undefined,
+  checkInDistanceM: r.check_in_distance_m != null ? Number(r.check_in_distance_m) : undefined,
+  checkOutDistanceM: r.check_out_distance_m != null ? Number(r.check_out_distance_m) : undefined,
   createdAt: r.created_at, updatedAt: r.updated_at,
 });
 
@@ -346,6 +352,12 @@ export const toAttendance = (a: Partial<Attendance>): Row => ({
   check_in_address: a.checkInAddress ?? null,
   check_out_lat: a.checkOutLat ?? null, check_out_lng: a.checkOutLng ?? null,
   check_out_address: a.checkOutAddress ?? null,
+  check_in_selfie_key: a.checkInSelfieKey ?? null,
+  check_out_selfie_key: a.checkOutSelfieKey ?? null,
+  check_in_verification: a.checkInVerification ?? null,
+  check_out_verification: a.checkOutVerification ?? null,
+  check_in_distance_m: a.checkInDistanceM ?? null,
+  check_out_distance_m: a.checkOutDistanceM ?? null,
 });
 
 export const toPayroll = (p: Partial<PayrollEntry>): Row => ({
