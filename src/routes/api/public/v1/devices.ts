@@ -18,7 +18,7 @@ export const Route = createFileRoute("/api/public/v1/devices")({
     handlers: {
       OPTIONS: preflight,
       GET: async ({ request }) => {
-        const auth = await requireAuth(request);
+        const auth = await requireAuth(request, "devices");
         if ("response" in auth) return auth.response;
         const rows = await sbSelect<Record<string, unknown>>(
           auth.ctx,
@@ -37,7 +37,7 @@ export const Route = createFileRoute("/api/public/v1/devices")({
       },
 
       POST: async ({ request }) => {
-        const auth = await requireAuth(request);
+        const auth = await requireAuth(request, "devices");
         if ("response" in auth) return auth.response;
         const { ctx } = auth;
         const body = await readJson<Body>(request);
@@ -67,7 +67,7 @@ export const Route = createFileRoute("/api/public/v1/devices")({
       },
 
       DELETE: async ({ request }) => {
-        const auth = await requireAuth(request);
+        const auth = await requireAuth(request, "devices");
         if ("response" in auth) return auth.response;
         const url = new URL(request.url);
         const body = await readJson<Body>(request);

@@ -24,7 +24,7 @@ export const Route = createFileRoute("/api/public/v1/driver/pings")({
     handlers: {
       OPTIONS: preflight,
       GET: async ({ request }) => {
-        const auth = await requireAuth(request);
+        const auth = await requireAuth(request, "driver.pings");
         if ("response" in auth) return auth.response;
         const { ctx } = auth;
         const p = listParams(request);
@@ -50,7 +50,7 @@ export const Route = createFileRoute("/api/public/v1/driver/pings")({
       },
 
       POST: async ({ request }) => {
-        const auth = await requireAuth(request);
+        const auth = await requireAuth(request, "driver.pings");
         if ("response" in auth) return auth.response;
         const { ctx } = auth;
         const body = await readJson<Body>(request);
