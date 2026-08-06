@@ -43,6 +43,125 @@ export function fail(status: number, code: string, message: string) {
   );
 }
 
+/* ------------------------------------------------------------------ *
+ * Rate limiting
+ *
+ * The server runtime is stateless, so counters live in Postgres
+ * (`public.api_rate_limit` security-definer function, fixed window).
+ * Defaults are generous for normal app usage but stop runaway loops or
+ * mass requests from a single device/user.
+ * ------------------------------------------------------------------ */
+
+export type RateLimitRule = { limit: number; windowSeconds: number };
+
+/** Per-endpoint budgets. Key = route bucket name. */
+export const RATE_LIMITS: Record<string, RateLimitRule> = {
+  default: { limit: 120, windowSeconds: 60 },
+  auth: { limit: 30, windowSeconds: 60 },
+  attendance: { limit: 60, windowSeconds: 60 },
+  "attendance.sync": { limit: 20, windowSeconds: 60 },
+  uploads: { limit: 20, windowSeconds: 60 },
+  "driver.pings": { limit: 240, windowSeconds: 60 },
+  payslip: { limit: 30, windowSeconds: 60 },
+  notifications: { limit: 120, windowSeconds: 60 },
+  devices: { limit: 30, windowSeconds: 60 },
+};
+
+function clientIp(request: Request) {
+  return (
+    request.headers.get("cf-connecting-ip") ??
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    "unknown"
+  );
+}
+
+type RateVerdict = { allowed: boolean; remaining: number; resetAt: string; limit: number };
+
+async function consume(bucket: string, rule: RateLimitRule): Promise<RateVerdict> {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/api_rate_limit`, {
+      method: "POST",
+      headers: {
+        apikey: SUPABASE_ANON,
+        Authorization: `Bearer ${SUPABASE_ANON}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        _bucket: bucket,
+        _limit: rule.limit,
+        _window_seconds: rule.windowSeconds,
+      }),
+    });
+    if (!res.ok) throw new Error(`rpc ${res.status}`);
+    const rows = (await res.json()) as Array<{
+      allowed: boolean;
+      remaining: number;
+      reset_at: string;
+    }>;
+    const row = rows[0];
+    if (!row) throw new Error("empty rpc result");
+    return {
+      allowed: row.allowed,
+      remaining: row.remaining,
+      resetAt: row.reset_at,
+      limit: rule.limit,
+    };
+  } catch {
+    // Fail open: a limiter outage must never take the API down.
+    return {
+      allowed: true,
+      remaining: rule.limit,
+      resetAt: new Date(Date.now() + rule.windowSeconds * 1000).toISOString(),
+      limit: rule.limit,
+    };
+  }
+}
+
+export function rateHeaders(v: RateVerdict): Record<string, string> {
+  return {
+    "X-RateLimit-Limit": String(v.limit),
+    "X-RateLimit-Remaining": String(v.remaining),
+    "X-RateLimit-Reset": v.resetAt,
+  };
+}
+
+/**
+ * Enforce a rate limit for this request. Identity = user id when known,
+ * otherwise the client IP. Returns a ready-to-send 429 when exceeded.
+ */
+export async function enforceRateLimit(
+  request: Request,
+  bucketName: string,
+  identity?: string,
+): Promise<{ response?: Response; headers: Record<string, string> }> {
+  const rule = RATE_LIMITS[bucketName] ?? RATE_LIMITS["default"]!;
+  const who = identity ?? `ip:${clientIp(request)}`;
+  const verdict = await consume(`${bucketName}|${who}`, rule);
+  const headers = rateHeaders(verdict);
+  if (verdict.allowed) return { headers };
+  return {
+    headers,
+    response: Response.json(
+      {
+        ok: false,
+        error: {
+          code: "rate_limited",
+          message: "Too many requests. Please slow down and try again shortly.",
+        },
+      },
+      {
+        status: 429,
+        headers: {
+          ...corsHeaders,
+          ...headers,
+          "Cache-Control": "no-store",
+          "Retry-After": String(rule.windowSeconds),
+        },
+      },
+    ),
+  };
+}
+
 export type AuthContext = {
   userId: string;
   email: string | null;
@@ -106,9 +225,20 @@ export async function authenticate(request: Request): Promise<AuthContext | null
 /** Guard helper: returns a context or a ready-to-return 401 response. */
 export async function requireAuth(
   request: Request,
+  bucketName = "default",
 ): Promise<{ ctx: AuthContext } | { response: Response }> {
+  // Pre-auth guard on the caller IP: stops token-guessing floods before we
+  // spend a Supabase Auth round-trip.
+  const ipGuard = await enforceRateLimit(request, "auth");
+  if (ipGuard.response) return { response: ipGuard.response };
+
   const ctx = await authenticate(request);
   if (!ctx) return { response: fail(401, "unauthorized", "Valid access token required") };
+
+  // Per-user guard on the specific endpoint budget.
+  const userGuard = await enforceRateLimit(request, bucketName, `user:${ctx.userId}`);
+  if (userGuard.response) return { response: userGuard.response };
+
   return { ctx };
 }
 
