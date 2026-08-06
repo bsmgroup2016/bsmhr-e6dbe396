@@ -167,6 +167,11 @@ export default function ProjectsPage() {
       status: formData.get("status") as SiteStatus,
       requiredWorkers: Number(formData.get("requiredWorkers") || 0),
       supervisorId: formData.get("supervisorId") as string,
+      lat: formData.get("lat") ? Number(formData.get("lat")) : undefined,
+      lng: formData.get("lng") ? Number(formData.get("lng")) : undefined,
+      geofenceRadiusM: Number(formData.get("geofenceRadiusM") || 300),
+      geofenceEnforced: formData.get("geofenceEnforced") === "on",
+      selfieRequired: formData.get("selfieRequired") === "on",
     });
     setAddSiteProject(null);
     refresh();
