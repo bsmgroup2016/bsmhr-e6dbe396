@@ -113,7 +113,109 @@ staff 25 MB / 500). Allowed types: pdf, jpg, jpeg, png, webp, gif, heic, doc,
 docx, xls, xlsx, csv, txt.
 4. PDFs and reports mobile needs are generated server-side and returned as a
    URL, not only in the browser.
-## 9. Push notifications (FCM / APNs)
+
+## 9. Mobile home screen dashboard
+
+`GET /api/public/v1/me/dashboard` returns one payload for the Flutter home
+screen. It mirrors the data from the individual endpoints but avoids multiple
+round-trips on a slow mobile connection.
+
+Response shape for a worker/driver:
+
+```json
+{
+  "ok": true,
+  "data": {
+    "roleView": "worker",
+    "profile": { "id", "full_name", "avatar_url", "email" },
+    "employee": { "id", "pFileNumber", "designation", "status", "passType", "workPermitExpiry" },
+    "today": {
+      "date": "2026-08-06",
+      "attendance": { "checkIn", "checkOut", "status", "checkInVerification" },
+      "canCheckIn": true,
+      "canCheckOut": false,
+      "isComplete": false
+    },
+    "counts": { "pendingLeave": 1, "unreadNotifications": 3 },
+    "leave": { "recent": [{ "id", "leaveType", "startDate", "endDate", "status" }] },
+    "payroll": { "month", "netPay", "status" },
+    "quickActions": [{ "label", "path" }]
+  }
+}
+```
+
+Staff users see `roleView: "staff"`, a global `pendingLeave` count (across all
+workers), and their own unread notification count. Workers with no linked
+employee profile get a `notice` message explaining the missing link.
+
+Rate limit bucket: `dashboard` (60 req/min).
+
+## 10. Push notifications (FCM / APNs)
+
+1. Flutter gets an FCM token (`firebase_messaging`; iOS delivery goes through
+   APNs automatically once the APNs key is uploaded to Firebase).
+2. `POST /api/public/v1/devices` with `{ token, platform, appVersion, deviceModel }`
+   on every launch; `DELETE /api/public/v1/devices` on logout.
+3. The server stores every notification in `public.notifications`, so the
+   in-app inbox (`GET /v1/notifications`) still works when delivery fails.
+4. Leave approve/reject already sends a push automatically; staff can send
+   announcements with `POST /v1/notifications`.
+
+Server secret required: `FCM_SERVICE_ACCOUNT_JSON` (Firebase service-account
+JSON). Without it, notifications are still stored but not delivered.
+
+DB migration: `supabase/migrations/0062_push_notifications.sql`.
+
+## 11. Offline attendance queue (mobile)
+
+1. On punch, the app writes the record to its local DB with a locally
+   generated `clientEventId` (uuid) and `punchedAt` (device time).
+2. When online, it POSTs the whole queue to
+   `POST /api/public/v1/attendance/sync` as `{ events: [...] }`.
+3. The server claims each `clientEventId` in `attendance_events` before
+   touching `attendance`, so replaying the same queue is safe. Response:
+   `{ saved, duplicates, failed, results: [{ clientEventId, status }] }`.
+4. The app deletes a local row when its result is `saved` **or** `duplicate`,
+   and keeps only `error` rows for the next retry.
+
+Single punches (`POST /v1/attendance`) accept the same `clientEventId` and use
+the identical idempotent path, so a flaky network never double-punches.
+
+DB migration: `supabase/migrations/0063_attendance_offline_queue.sql`.
+
+## 12. Selfie + GPS punch verification
+
+Each site can carry a geofence (`lat`, `lng`, `geofence_radius_m`, default
+300 m) plus two switches: `geofence_enforced` (reject punches outside the
+radius) and `selfie_required`.
+
+Mobile punch flow:
+
+1. Upload the selfie first: `POST /api/public/v1/uploads` with
+   `folder=attendance` -> returns `{ key }`.
+2. Punch with the proof attached:
+
+       POST /api/public/v1/attendance
+       { "siteId": "...", "checkIn": "08:02", "lat": 1.3521, "lng": 103.8198,
+         "accuracyM": 12, "selfieKey": "attendance/...jpg",
+         "clientEventId": "<uuid>" }
+
+3. The server runs the shared rules in `src/lib/punch-verification.ts`
+   (exported from `@/core`, so web and Flutter behave identically):
+   - inside radius + selfie + good accuracy -> `verified`
+   - outside radius or missing required selfie -> `flagged`
+   - no GPS / no site coordinates -> `unverified`
+   - `geofence_enforced` breach -> HTTP 422 `punch_rejected` (nothing saved)
+4. Response meta: `{ verification, geoStatus, distanceM, flags, notice }`.
+    Offline batch results also report `rejected` and `flagged` counts, so the
+    app can surface the reason and keep failed rows queued.
+
+Every event is stored in `attendance_events` with `selfie_key`, `accuracy_m`,
+`distance_m`, `geo_status`, `verification` and `flags` for HR audit; the day's
+`attendance` row keeps the selfie key, verdict and distance for check-in and
+check-out.
+
+DB migration: `supabase/migrations/0064_punch_verification.sql`.
 
 1. Flutter gets an FCM token (`firebase_messaging`; iOS delivery goes through
    APNs automatically once the APNs key is uploaded to Firebase).
