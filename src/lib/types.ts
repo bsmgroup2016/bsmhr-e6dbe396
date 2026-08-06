@@ -280,6 +280,8 @@ export interface Assignment {
   approvedBy?: string;
   approvedAt?: string;
   remarks?: string;
+  /** MC / supporting document references stored in R2. */
+  attachmentUrls?: string[];
   createdAt: string;
   updatedAt: string;
 }
