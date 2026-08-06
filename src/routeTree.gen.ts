@@ -80,6 +80,7 @@ import { Route as ApiPublicV1AttendanceRouteImport } from './routes/api/public/v
 import { Route as ApiPublicV1EmployeesIdRouteImport } from './routes/api/public/v1/employees.$id'
 import { Route as ApiPublicV1DriverTasksRouteImport } from './routes/api/public/v1/driver.tasks'
 import { Route as ApiPublicV1DriverPingsRouteImport } from './routes/api/public/v1/driver.pings'
+import { Route as ApiPublicV1PayrollIdPayslipRouteImport } from './routes/api/public/v1/payroll.$id.payslip'
 import { Route as ApiPublicV1DriverTasksIdRouteImport } from './routes/api/public/v1/driver.tasks.$id'
 
 const AuthRoute = AuthRouteImport.update({
@@ -450,6 +451,12 @@ const ApiPublicV1DriverPingsRoute = ApiPublicV1DriverPingsRouteImport.update({
   path: '/api/public/v1/driver/pings',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicV1PayrollIdPayslipRoute =
+  ApiPublicV1PayrollIdPayslipRouteImport.update({
+    id: '/$id/payslip',
+    path: '/$id/payslip',
+    getParentRoute: () => ApiPublicV1PayrollRoute,
+  } as any)
 const ApiPublicV1DriverTasksIdRoute =
   ApiPublicV1DriverTasksIdRouteImport.update({
     id: '/$id',
@@ -523,12 +530,13 @@ export interface FileRoutesByFullPath {
   '/api/public/v1/leave': typeof ApiPublicV1LeaveRoute
   '/api/public/v1/me': typeof ApiPublicV1MeRoute
   '/api/public/v1/meta': typeof ApiPublicV1MetaRoute
-  '/api/public/v1/payroll': typeof ApiPublicV1PayrollRoute
+  '/api/public/v1/payroll': typeof ApiPublicV1PayrollRouteWithChildren
   '/api/public/v1/projects': typeof ApiPublicV1ProjectsRoute
   '/api/public/v1/driver/pings': typeof ApiPublicV1DriverPingsRoute
   '/api/public/v1/driver/tasks': typeof ApiPublicV1DriverTasksRouteWithChildren
   '/api/public/v1/employees/$id': typeof ApiPublicV1EmployeesIdRoute
   '/api/public/v1/driver/tasks/$id': typeof ApiPublicV1DriverTasksIdRoute
+  '/api/public/v1/payroll/$id/payslip': typeof ApiPublicV1PayrollIdPayslipRoute
 }
 export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
@@ -596,12 +604,13 @@ export interface FileRoutesByTo {
   '/api/public/v1/leave': typeof ApiPublicV1LeaveRoute
   '/api/public/v1/me': typeof ApiPublicV1MeRoute
   '/api/public/v1/meta': typeof ApiPublicV1MetaRoute
-  '/api/public/v1/payroll': typeof ApiPublicV1PayrollRoute
+  '/api/public/v1/payroll': typeof ApiPublicV1PayrollRouteWithChildren
   '/api/public/v1/projects': typeof ApiPublicV1ProjectsRoute
   '/api/public/v1/driver/pings': typeof ApiPublicV1DriverPingsRoute
   '/api/public/v1/driver/tasks': typeof ApiPublicV1DriverTasksRouteWithChildren
   '/api/public/v1/employees/$id': typeof ApiPublicV1EmployeesIdRoute
   '/api/public/v1/driver/tasks/$id': typeof ApiPublicV1DriverTasksIdRoute
+  '/api/public/v1/payroll/$id/payslip': typeof ApiPublicV1PayrollIdPayslipRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -671,12 +680,13 @@ export interface FileRoutesById {
   '/api/public/v1/leave': typeof ApiPublicV1LeaveRoute
   '/api/public/v1/me': typeof ApiPublicV1MeRoute
   '/api/public/v1/meta': typeof ApiPublicV1MetaRoute
-  '/api/public/v1/payroll': typeof ApiPublicV1PayrollRoute
+  '/api/public/v1/payroll': typeof ApiPublicV1PayrollRouteWithChildren
   '/api/public/v1/projects': typeof ApiPublicV1ProjectsRoute
   '/api/public/v1/driver/pings': typeof ApiPublicV1DriverPingsRoute
   '/api/public/v1/driver/tasks': typeof ApiPublicV1DriverTasksRouteWithChildren
   '/api/public/v1/employees/$id': typeof ApiPublicV1EmployeesIdRoute
   '/api/public/v1/driver/tasks/$id': typeof ApiPublicV1DriverTasksIdRoute
+  '/api/public/v1/payroll/$id/payslip': typeof ApiPublicV1PayrollIdPayslipRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -752,6 +762,7 @@ export interface FileRouteTypes {
     | '/api/public/v1/driver/tasks'
     | '/api/public/v1/employees/$id'
     | '/api/public/v1/driver/tasks/$id'
+    | '/api/public/v1/payroll/$id/payslip'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/auth'
@@ -825,6 +836,7 @@ export interface FileRouteTypes {
     | '/api/public/v1/driver/tasks'
     | '/api/public/v1/employees/$id'
     | '/api/public/v1/driver/tasks/$id'
+    | '/api/public/v1/payroll/$id/payslip'
   id:
     | '__root__'
     | '/_authenticated'
@@ -899,6 +911,7 @@ export interface FileRouteTypes {
     | '/api/public/v1/driver/tasks'
     | '/api/public/v1/employees/$id'
     | '/api/public/v1/driver/tasks/$id'
+    | '/api/public/v1/payroll/$id/payslip'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -923,7 +936,7 @@ export interface RootRouteChildren {
   ApiPublicV1LeaveRoute: typeof ApiPublicV1LeaveRoute
   ApiPublicV1MeRoute: typeof ApiPublicV1MeRoute
   ApiPublicV1MetaRoute: typeof ApiPublicV1MetaRoute
-  ApiPublicV1PayrollRoute: typeof ApiPublicV1PayrollRoute
+  ApiPublicV1PayrollRoute: typeof ApiPublicV1PayrollRouteWithChildren
   ApiPublicV1ProjectsRoute: typeof ApiPublicV1ProjectsRoute
   ApiPublicV1DriverPingsRoute: typeof ApiPublicV1DriverPingsRoute
   ApiPublicV1DriverTasksRoute: typeof ApiPublicV1DriverTasksRouteWithChildren
@@ -1428,6 +1441,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicV1DriverPingsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/v1/payroll/$id/payslip': {
+      id: '/api/public/v1/payroll/$id/payslip'
+      path: '/$id/payslip'
+      fullPath: '/api/public/v1/payroll/$id/payslip'
+      preLoaderRoute: typeof ApiPublicV1PayrollIdPayslipRouteImport
+      parentRoute: typeof ApiPublicV1PayrollRoute
+    }
     '/api/public/v1/driver/tasks/$id': {
       id: '/api/public/v1/driver/tasks/$id'
       path: '/$id'
@@ -1548,6 +1568,17 @@ const ApiPublicV1EmployeesRouteChildren: ApiPublicV1EmployeesRouteChildren = {
 const ApiPublicV1EmployeesRouteWithChildren =
   ApiPublicV1EmployeesRoute._addFileChildren(ApiPublicV1EmployeesRouteChildren)
 
+interface ApiPublicV1PayrollRouteChildren {
+  ApiPublicV1PayrollIdPayslipRoute: typeof ApiPublicV1PayrollIdPayslipRoute
+}
+
+const ApiPublicV1PayrollRouteChildren: ApiPublicV1PayrollRouteChildren = {
+  ApiPublicV1PayrollIdPayslipRoute: ApiPublicV1PayrollIdPayslipRoute,
+}
+
+const ApiPublicV1PayrollRouteWithChildren =
+  ApiPublicV1PayrollRoute._addFileChildren(ApiPublicV1PayrollRouteChildren)
+
 interface ApiPublicV1DriverTasksRouteChildren {
   ApiPublicV1DriverTasksIdRoute: typeof ApiPublicV1DriverTasksIdRoute
 }
@@ -1584,7 +1615,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicV1LeaveRoute: ApiPublicV1LeaveRoute,
   ApiPublicV1MeRoute: ApiPublicV1MeRoute,
   ApiPublicV1MetaRoute: ApiPublicV1MetaRoute,
-  ApiPublicV1PayrollRoute: ApiPublicV1PayrollRoute,
+  ApiPublicV1PayrollRoute: ApiPublicV1PayrollRouteWithChildren,
   ApiPublicV1ProjectsRoute: ApiPublicV1ProjectsRoute,
   ApiPublicV1DriverPingsRoute: ApiPublicV1DriverPingsRoute,
   ApiPublicV1DriverTasksRoute: ApiPublicV1DriverTasksRouteWithChildren,
