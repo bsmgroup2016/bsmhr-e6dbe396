@@ -69,6 +69,7 @@ import { Route as ApiPublicAiStatusRouteImport } from './routes/api/public/ai-st
 import { Route as AuthenticatedWorkforceSlugRouteImport } from './routes/_authenticated/workforce_.$slug'
 import { Route as AuthenticatedCompaniesIdRouteImport } from './routes/_authenticated/companies_.$id'
 import { Route as AuthenticatedClientsIdRouteImport } from './routes/_authenticated/clients_.$id'
+import { Route as ApiPublicV1UploadsRouteImport } from './routes/api/public/v1/uploads'
 import { Route as ApiPublicV1ProjectsRouteImport } from './routes/api/public/v1/projects'
 import { Route as ApiPublicV1PayrollRouteImport } from './routes/api/public/v1/payroll'
 import { Route as ApiPublicV1MetaRouteImport } from './routes/api/public/v1/meta'
@@ -77,6 +78,7 @@ import { Route as ApiPublicV1LeaveRouteImport } from './routes/api/public/v1/lea
 import { Route as ApiPublicV1EmployeesRouteImport } from './routes/api/public/v1/employees'
 import { Route as ApiPublicV1ClientsRouteImport } from './routes/api/public/v1/clients'
 import { Route as ApiPublicV1AttendanceRouteImport } from './routes/api/public/v1/attendance'
+import { Route as ApiPublicV1LeaveIdRouteImport } from './routes/api/public/v1/leave.$id'
 import { Route as ApiPublicV1EmployeesIdRouteImport } from './routes/api/public/v1/employees.$id'
 import { Route as ApiPublicV1DriverTasksRouteImport } from './routes/api/public/v1/driver.tasks'
 import { Route as ApiPublicV1DriverPingsRouteImport } from './routes/api/public/v1/driver.pings'
@@ -396,6 +398,11 @@ const AuthenticatedClientsIdRoute = AuthenticatedClientsIdRouteImport.update({
   path: '/clients/$id',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const ApiPublicV1UploadsRoute = ApiPublicV1UploadsRouteImport.update({
+  id: '/api/public/v1/uploads',
+  path: '/api/public/v1/uploads',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicV1ProjectsRoute = ApiPublicV1ProjectsRouteImport.update({
   id: '/api/public/v1/projects',
   path: '/api/public/v1/projects',
@@ -435,6 +442,11 @@ const ApiPublicV1AttendanceRoute = ApiPublicV1AttendanceRouteImport.update({
   id: '/api/public/v1/attendance',
   path: '/api/public/v1/attendance',
   getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicV1LeaveIdRoute = ApiPublicV1LeaveIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => ApiPublicV1LeaveRoute,
 } as any)
 const ApiPublicV1EmployeesIdRoute = ApiPublicV1EmployeesIdRouteImport.update({
   id: '/$id',
@@ -527,14 +539,16 @@ export interface FileRoutesByFullPath {
   '/api/public/v1/attendance': typeof ApiPublicV1AttendanceRoute
   '/api/public/v1/clients': typeof ApiPublicV1ClientsRoute
   '/api/public/v1/employees': typeof ApiPublicV1EmployeesRouteWithChildren
-  '/api/public/v1/leave': typeof ApiPublicV1LeaveRoute
+  '/api/public/v1/leave': typeof ApiPublicV1LeaveRouteWithChildren
   '/api/public/v1/me': typeof ApiPublicV1MeRoute
   '/api/public/v1/meta': typeof ApiPublicV1MetaRoute
   '/api/public/v1/payroll': typeof ApiPublicV1PayrollRouteWithChildren
   '/api/public/v1/projects': typeof ApiPublicV1ProjectsRoute
+  '/api/public/v1/uploads': typeof ApiPublicV1UploadsRoute
   '/api/public/v1/driver/pings': typeof ApiPublicV1DriverPingsRoute
   '/api/public/v1/driver/tasks': typeof ApiPublicV1DriverTasksRouteWithChildren
   '/api/public/v1/employees/$id': typeof ApiPublicV1EmployeesIdRoute
+  '/api/public/v1/leave/$id': typeof ApiPublicV1LeaveIdRoute
   '/api/public/v1/driver/tasks/$id': typeof ApiPublicV1DriverTasksIdRoute
   '/api/public/v1/payroll/$id/payslip': typeof ApiPublicV1PayrollIdPayslipRoute
 }
@@ -601,14 +615,16 @@ export interface FileRoutesByTo {
   '/api/public/v1/attendance': typeof ApiPublicV1AttendanceRoute
   '/api/public/v1/clients': typeof ApiPublicV1ClientsRoute
   '/api/public/v1/employees': typeof ApiPublicV1EmployeesRouteWithChildren
-  '/api/public/v1/leave': typeof ApiPublicV1LeaveRoute
+  '/api/public/v1/leave': typeof ApiPublicV1LeaveRouteWithChildren
   '/api/public/v1/me': typeof ApiPublicV1MeRoute
   '/api/public/v1/meta': typeof ApiPublicV1MetaRoute
   '/api/public/v1/payroll': typeof ApiPublicV1PayrollRouteWithChildren
   '/api/public/v1/projects': typeof ApiPublicV1ProjectsRoute
+  '/api/public/v1/uploads': typeof ApiPublicV1UploadsRoute
   '/api/public/v1/driver/pings': typeof ApiPublicV1DriverPingsRoute
   '/api/public/v1/driver/tasks': typeof ApiPublicV1DriverTasksRouteWithChildren
   '/api/public/v1/employees/$id': typeof ApiPublicV1EmployeesIdRoute
+  '/api/public/v1/leave/$id': typeof ApiPublicV1LeaveIdRoute
   '/api/public/v1/driver/tasks/$id': typeof ApiPublicV1DriverTasksIdRoute
   '/api/public/v1/payroll/$id/payslip': typeof ApiPublicV1PayrollIdPayslipRoute
 }
@@ -677,14 +693,16 @@ export interface FileRoutesById {
   '/api/public/v1/attendance': typeof ApiPublicV1AttendanceRoute
   '/api/public/v1/clients': typeof ApiPublicV1ClientsRoute
   '/api/public/v1/employees': typeof ApiPublicV1EmployeesRouteWithChildren
-  '/api/public/v1/leave': typeof ApiPublicV1LeaveRoute
+  '/api/public/v1/leave': typeof ApiPublicV1LeaveRouteWithChildren
   '/api/public/v1/me': typeof ApiPublicV1MeRoute
   '/api/public/v1/meta': typeof ApiPublicV1MetaRoute
   '/api/public/v1/payroll': typeof ApiPublicV1PayrollRouteWithChildren
   '/api/public/v1/projects': typeof ApiPublicV1ProjectsRoute
+  '/api/public/v1/uploads': typeof ApiPublicV1UploadsRoute
   '/api/public/v1/driver/pings': typeof ApiPublicV1DriverPingsRoute
   '/api/public/v1/driver/tasks': typeof ApiPublicV1DriverTasksRouteWithChildren
   '/api/public/v1/employees/$id': typeof ApiPublicV1EmployeesIdRoute
+  '/api/public/v1/leave/$id': typeof ApiPublicV1LeaveIdRoute
   '/api/public/v1/driver/tasks/$id': typeof ApiPublicV1DriverTasksIdRoute
   '/api/public/v1/payroll/$id/payslip': typeof ApiPublicV1PayrollIdPayslipRoute
 }
@@ -758,9 +776,11 @@ export interface FileRouteTypes {
     | '/api/public/v1/meta'
     | '/api/public/v1/payroll'
     | '/api/public/v1/projects'
+    | '/api/public/v1/uploads'
     | '/api/public/v1/driver/pings'
     | '/api/public/v1/driver/tasks'
     | '/api/public/v1/employees/$id'
+    | '/api/public/v1/leave/$id'
     | '/api/public/v1/driver/tasks/$id'
     | '/api/public/v1/payroll/$id/payslip'
   fileRoutesByTo: FileRoutesByTo
@@ -832,9 +852,11 @@ export interface FileRouteTypes {
     | '/api/public/v1/meta'
     | '/api/public/v1/payroll'
     | '/api/public/v1/projects'
+    | '/api/public/v1/uploads'
     | '/api/public/v1/driver/pings'
     | '/api/public/v1/driver/tasks'
     | '/api/public/v1/employees/$id'
+    | '/api/public/v1/leave/$id'
     | '/api/public/v1/driver/tasks/$id'
     | '/api/public/v1/payroll/$id/payslip'
   id:
@@ -907,9 +929,11 @@ export interface FileRouteTypes {
     | '/api/public/v1/meta'
     | '/api/public/v1/payroll'
     | '/api/public/v1/projects'
+    | '/api/public/v1/uploads'
     | '/api/public/v1/driver/pings'
     | '/api/public/v1/driver/tasks'
     | '/api/public/v1/employees/$id'
+    | '/api/public/v1/leave/$id'
     | '/api/public/v1/driver/tasks/$id'
     | '/api/public/v1/payroll/$id/payslip'
   fileRoutesById: FileRoutesById
@@ -933,11 +957,12 @@ export interface RootRouteChildren {
   ApiPublicV1AttendanceRoute: typeof ApiPublicV1AttendanceRoute
   ApiPublicV1ClientsRoute: typeof ApiPublicV1ClientsRoute
   ApiPublicV1EmployeesRoute: typeof ApiPublicV1EmployeesRouteWithChildren
-  ApiPublicV1LeaveRoute: typeof ApiPublicV1LeaveRoute
+  ApiPublicV1LeaveRoute: typeof ApiPublicV1LeaveRouteWithChildren
   ApiPublicV1MeRoute: typeof ApiPublicV1MeRoute
   ApiPublicV1MetaRoute: typeof ApiPublicV1MetaRoute
   ApiPublicV1PayrollRoute: typeof ApiPublicV1PayrollRouteWithChildren
   ApiPublicV1ProjectsRoute: typeof ApiPublicV1ProjectsRoute
+  ApiPublicV1UploadsRoute: typeof ApiPublicV1UploadsRoute
   ApiPublicV1DriverPingsRoute: typeof ApiPublicV1DriverPingsRoute
   ApiPublicV1DriverTasksRoute: typeof ApiPublicV1DriverTasksRouteWithChildren
 }
@@ -1364,6 +1389,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedClientsIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/v1/uploads': {
+      id: '/api/public/v1/uploads'
+      path: '/api/public/v1/uploads'
+      fullPath: '/api/public/v1/uploads'
+      preLoaderRoute: typeof ApiPublicV1UploadsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/v1/projects': {
       id: '/api/public/v1/projects'
       path: '/api/public/v1/projects'
@@ -1419,6 +1451,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/public/v1/attendance'
       preLoaderRoute: typeof ApiPublicV1AttendanceRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/api/public/v1/leave/$id': {
+      id: '/api/public/v1/leave/$id'
+      path: '/$id'
+      fullPath: '/api/public/v1/leave/$id'
+      preLoaderRoute: typeof ApiPublicV1LeaveIdRouteImport
+      parentRoute: typeof ApiPublicV1LeaveRoute
     }
     '/api/public/v1/employees/$id': {
       id: '/api/public/v1/employees/$id'
@@ -1568,6 +1607,17 @@ const ApiPublicV1EmployeesRouteChildren: ApiPublicV1EmployeesRouteChildren = {
 const ApiPublicV1EmployeesRouteWithChildren =
   ApiPublicV1EmployeesRoute._addFileChildren(ApiPublicV1EmployeesRouteChildren)
 
+interface ApiPublicV1LeaveRouteChildren {
+  ApiPublicV1LeaveIdRoute: typeof ApiPublicV1LeaveIdRoute
+}
+
+const ApiPublicV1LeaveRouteChildren: ApiPublicV1LeaveRouteChildren = {
+  ApiPublicV1LeaveIdRoute: ApiPublicV1LeaveIdRoute,
+}
+
+const ApiPublicV1LeaveRouteWithChildren =
+  ApiPublicV1LeaveRoute._addFileChildren(ApiPublicV1LeaveRouteChildren)
+
 interface ApiPublicV1PayrollRouteChildren {
   ApiPublicV1PayrollIdPayslipRoute: typeof ApiPublicV1PayrollIdPayslipRoute
 }
@@ -1612,11 +1662,12 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicV1AttendanceRoute: ApiPublicV1AttendanceRoute,
   ApiPublicV1ClientsRoute: ApiPublicV1ClientsRoute,
   ApiPublicV1EmployeesRoute: ApiPublicV1EmployeesRouteWithChildren,
-  ApiPublicV1LeaveRoute: ApiPublicV1LeaveRoute,
+  ApiPublicV1LeaveRoute: ApiPublicV1LeaveRouteWithChildren,
   ApiPublicV1MeRoute: ApiPublicV1MeRoute,
   ApiPublicV1MetaRoute: ApiPublicV1MetaRoute,
   ApiPublicV1PayrollRoute: ApiPublicV1PayrollRouteWithChildren,
   ApiPublicV1ProjectsRoute: ApiPublicV1ProjectsRoute,
+  ApiPublicV1UploadsRoute: ApiPublicV1UploadsRoute,
   ApiPublicV1DriverPingsRoute: ApiPublicV1DriverPingsRoute,
   ApiPublicV1DriverTasksRoute: ApiPublicV1DriverTasksRouteWithChildren,
 }

@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { fromLeave } from "@/lib/db";
+import { keyFromRef } from "@/lib/r2.server";
 import {
   fail,
   hasAnyRole,
@@ -18,6 +19,8 @@ type LeaveBody = {
   endDate?: string;
   days?: number;
   reason?: string;
+  /** Object keys / links from POST /api/public/v1/uploads (MC, medical report). */
+  attachments?: string[];
 };
 
 /** Leave list + apply. Shared by the web portal and the mobile self-service app. */
@@ -69,6 +72,9 @@ export const Route = createFileRoute("/api/public/v1/leave")({
             days: body.days ?? 1,
             reason: body.reason ?? null,
             status: "Pending",
+            attachment_urls: Array.isArray(body.attachments)
+              ? body.attachments.map((a) => keyFromRef(String(a))).filter(Boolean).slice(0, 10)
+              : [],
           }),
         });
         if (!res.ok) return fail(502, "upstream_error", "Unable to submit leave request");
