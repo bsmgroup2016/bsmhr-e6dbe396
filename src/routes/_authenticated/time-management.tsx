@@ -68,6 +68,7 @@ import {
 import { isSiteWorker } from "@/lib/workforce-split";
 import { GeoCapture } from "@/components/geo-capture";
 import { QrAttendancePanel } from "@/components/qr-attendance-panel";
+import { PunchVerificationPanel } from "@/components/punch-verification-panel";
 import { LocationMap } from "@/components/location-map";
 import type { Attendance, AttendanceStatus } from "@/lib/types";
 import { pick, type ImportColumn } from "@/lib/xlsx";
@@ -797,6 +798,8 @@ export default function TimeManagementPage() {
           </div>
           <QrAttendancePanel />
         </div>
+
+        <PunchVerificationPanel />
 
         <Dialog open={!!mapRecord} onOpenChange={(open) => !open && setMapRecord(null)}>
           <DialogContent className="sm:max-w-lg">
