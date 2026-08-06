@@ -53,6 +53,12 @@ export async function createDriverTask(input: {
     status_updated_at: new Date().toISOString(),
   });
   if (error) throw error;
+  void pushToEmployees([input.driverEmployeeId], {
+    title: "New trip assigned",
+    body: `${input.title} — ${new Date(input.scheduledAt).toLocaleString("en-SG")}`,
+    category: "driver_task",
+    data: { type: "driver_task" },
+  });
 }
 
 export async function updateTaskStatus(
