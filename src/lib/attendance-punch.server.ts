@@ -9,6 +9,7 @@
  */
 import { fromAttendance } from "@/lib/db";
 import { sbRest, sbSelect, type AuthContext } from "@/lib/api-v1.server";
+import { verifyPunch, type PunchVerdict } from "@/lib/punch-verification";
 
 export interface PunchEvent {
   clientEventId?: string;
@@ -24,15 +25,20 @@ export interface PunchEvent {
   overtimeHours?: number;
   lat?: number;
   lng?: number;
+  /** GPS accuracy in metres reported by the device. */
+  accuracyM?: number;
+  /** Storage key of the selfie uploaded via POST /v1/uploads. */
+  selfieKey?: string;
   address?: string;
   notes?: string;
 }
 
 export type PunchOutcome = {
   clientEventId: string | null;
-  status: "saved" | "duplicate" | "error";
+  status: "saved" | "duplicate" | "error" | "rejected";
   message?: string;
   attendance?: unknown;
+  verdict?: PunchVerdict;
 };
 
 const timeOf = (iso?: string) =>
@@ -55,6 +61,48 @@ export async function applyPunch(
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date))
     return { clientEventId, status: "error", message: "date must be YYYY-MM-DD" };
 
+  // 0. Selfie + GPS verification against the site geofence.
+  let siteGeo:
+    | {
+        lat: number | null;
+        lng: number | null;
+        geofence_radius_m: number | null;
+        geofence_enforced: boolean | null;
+        selfie_required: boolean | null;
+      }
+    | undefined;
+  if (event.siteId) {
+    const sites = await sbSelect<typeof siteGeo & object>(
+      ctx,
+      `sites?select=lat,lng,geofence_radius_m,geofence_enforced,selfie_required&id=eq.${encodeURIComponent(event.siteId)}&limit=1`,
+    ).catch(() => []);
+    siteGeo = sites[0];
+  }
+  const verdict = verifyPunch(
+    {
+      lat: event.lat ?? null,
+      lng: event.lng ?? null,
+      accuracyM: event.accuracyM ?? null,
+      selfieKey: event.selfieKey ?? null,
+    },
+    siteGeo
+      ? {
+          lat: siteGeo.lat,
+          lng: siteGeo.lng,
+          radiusM: siteGeo.geofence_radius_m,
+          enforced: siteGeo.geofence_enforced,
+          selfieRequired: siteGeo.selfie_required,
+        }
+      : null,
+  );
+  if (verdict.rejected)
+    return {
+      clientEventId,
+      status: "rejected",
+      message: verdict.message ?? "Punch rejected by site rules",
+      verdict,
+    };
+
   const isCheckOut =
     Boolean(event.checkOut) || (event.checkIn === undefined && event.checkOut === "");
   const kind: "checkIn" | "checkOut" = event.checkOut ? "checkOut" : "checkIn";
@@ -75,6 +123,12 @@ export async function applyPunch(
         lng: event.lng ?? null,
         address: event.address ?? null,
         site_id: event.siteId ?? null,
+        selfie_key: event.selfieKey ?? null,
+        accuracy_m: event.accuracyM ?? null,
+        distance_m: verdict.distanceM,
+        geo_status: verdict.geoStatus,
+        verification: verdict.verification,
+        flags: verdict.flags,
         source,
         payload: event as unknown as Record<string, unknown>,
       }),
@@ -95,7 +149,7 @@ export async function applyPunch(
           );
           attendance = rows[0] ? fromAttendance(rows[0]) : null;
         }
-        return { clientEventId, status: "duplicate", attendance };
+        return { clientEventId, status: "duplicate", attendance, verdict };
       }
       return { clientEventId, status: "error", message: "Unable to record punch event" };
     }
@@ -120,11 +174,17 @@ export async function applyPunch(
     if (event.lat != null) payload["check_out_lat"] = event.lat;
     if (event.lng != null) payload["check_out_lng"] = event.lng;
     if (event.address) payload["check_out_address"] = event.address;
+    if (event.selfieKey) payload["check_out_selfie_key"] = event.selfieKey;
+    payload["check_out_verification"] = verdict.verification;
+    if (verdict.distanceM != null) payload["check_out_distance_m"] = verdict.distanceM;
   } else {
     payload["check_in"] = event.checkIn || timeOf(event.punchedAt);
     if (event.lat != null) payload["check_in_lat"] = event.lat;
     if (event.lng != null) payload["check_in_lng"] = event.lng;
     if (event.address) payload["check_in_address"] = event.address;
+    if (event.selfieKey) payload["check_in_selfie_key"] = event.selfieKey;
+    payload["check_in_verification"] = verdict.verification;
+    if (verdict.distanceM != null) payload["check_in_distance_m"] = verdict.distanceM;
   }
 
   const row = existing[0];
@@ -160,5 +220,6 @@ export async function applyPunch(
     clientEventId,
     status: "saved",
     attendance: savedRow ? fromAttendance(savedRow) : null,
+    verdict,
   };
 }
