@@ -148,7 +148,13 @@ export const fromProject = (r: Row): Project => ({
 export const fromSite = (r: Row): Site => ({
   id: r.id, projectId: r.project_id, code: r.code, name: r.name, location: r.location ?? "",
   status: (r.status ?? "Active") as Site["status"], supervisorId: r.supervisor_id ?? undefined,
-  requiredWorkers: r.required_workers ?? 0, createdAt: r.created_at, updatedAt: r.updated_at,
+  requiredWorkers: r.required_workers ?? 0,
+  lat: r.lat != null ? Number(r.lat) : undefined,
+  lng: r.lng != null ? Number(r.lng) : undefined,
+  geofenceRadiusM: r.geofence_radius_m != null ? Number(r.geofence_radius_m) : undefined,
+  geofenceEnforced: Boolean(r.geofence_enforced ?? false),
+  selfieRequired: Boolean(r.selfie_required ?? false),
+  createdAt: r.created_at, updatedAt: r.updated_at,
 });
 
 export const fromAssignment = (r: Row): Assignment => ({
@@ -311,6 +317,10 @@ export const toProject = (p: Partial<Project>): Row => ({
 export const toSite = (s: Partial<Site>): Row => ({
   project_id: s.projectId, code: s.code, name: s.name, location: s.location, status: s.status,
   supervisor_id: s.supervisorId || null, required_workers: s.requiredWorkers,
+  lat: s.lat ?? null, lng: s.lng ?? null,
+  geofence_radius_m: s.geofenceRadiusM ?? 300,
+  geofence_enforced: s.geofenceEnforced ?? false,
+  selfie_required: s.selfieRequired ?? false,
 });
 
 export const toAssignment = (a: Partial<Assignment>): Row => ({
