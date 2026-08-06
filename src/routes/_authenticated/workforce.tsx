@@ -77,7 +77,9 @@ const statuses: EmployeeStatus[] = [
 ];
 
 export const Route = createFileRoute("/_authenticated/workforce")({
-  validateSearch: (search: Record<string, unknown>) => ({
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { new?: true; available?: true; deployed?: true; company?: string } => ({
     new: search.new === "1" || search.new === true ? true : undefined,
     available: search.available === "1" || search.available === true ? true : undefined,
     deployed: search.deployed === "1" || search.deployed === true ? true : undefined,

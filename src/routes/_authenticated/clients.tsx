@@ -65,7 +65,7 @@ const statuses: ClientStatus[] = ["Active", "Inactive", "Prospect"];
 const industries = ["Construction", "Petrochemical", "Aviation", "Utilities", "Manufacturing", "Marine", "Other"];
 
 export const Route = createFileRoute("/_authenticated/clients")({
-  validateSearch: (search: Record<string, unknown>) => ({
+  validateSearch: (search: Record<string, unknown>): { new?: true } => ({
     new: search.new === "1" || search.new === true ? true : undefined,
   }),
   head: () => ({
