@@ -57,7 +57,7 @@ export type RateLimitRule = { limit: number; windowSeconds: number };
 /** Per-endpoint budgets. Key = route bucket name. */
 export const RATE_LIMITS: Record<string, RateLimitRule> = {
   default: { limit: 120, windowSeconds: 60 },
-  auth: { limit: 30, windowSeconds: 60 },
+  auth: { limit: 600, windowSeconds: 60 }, // per-IP; carrier NAT shares IPs, so kept high
   attendance: { limit: 60, windowSeconds: 60 },
   "attendance.sync": { limit: 20, windowSeconds: 60 },
   uploads: { limit: 20, windowSeconds: 60 },
