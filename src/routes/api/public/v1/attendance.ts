@@ -60,9 +60,18 @@ export const Route = createFileRoute("/api/public/v1/attendance")({
         // Same idempotent path as the offline batch sync: a repeated
         // clientEventId is reported as a duplicate instead of saved twice.
         const outcome = await applyPunch(ctx, body, employeeId, "single");
+        if (outcome.status === "rejected")
+          return fail(422, "punch_rejected", outcome.message ?? "Punch rejected");
         if (outcome.status === "error")
           return fail(502, "upstream_error", outcome.message ?? "Unable to save attendance");
-        return ok(outcome.attendance ?? null, { duplicate: outcome.status === "duplicate" });
+        return ok(outcome.attendance ?? null, {
+          duplicate: outcome.status === "duplicate",
+          verification: outcome.verdict?.verification ?? "unverified",
+          geoStatus: outcome.verdict?.geoStatus ?? "unknown",
+          distanceM: outcome.verdict?.distanceM ?? null,
+          flags: outcome.verdict?.flags ?? [],
+          notice: outcome.verdict?.message ?? null,
+        });
       },
     },
   },

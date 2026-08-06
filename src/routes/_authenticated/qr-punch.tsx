@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { QrCode, MapPin, CheckCircle2, AlertCircle, LogIn, LogOut } from "lucide-react";
+import { QrCode, MapPin, CheckCircle2, AlertCircle, LogIn, LogOut, Camera, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/app-shell";
@@ -10,6 +10,8 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { useAuth } from "@/lib/auth";
 import { getEmployees, getSites, getAttendance, upsertAttendance } from "@/lib/store";
 import { capturePoint } from "@/lib/geo";
+import { uploadToR2 } from "@/lib/r2";
+import { verifyPunch } from "@/lib/punch-verification";
 import {
   validatePunchToken, hoursBetween, nowTime, splitHours, today,
 } from "@/lib/qr-attendance";
@@ -37,6 +39,8 @@ function QrPunchPage() {
   const email = user?.email?.toLowerCase() ?? "";
   const [tick, setTick] = useState(0);
   const [busy, setBusy] = useState(false);
+  const [selfie, setSelfie] = useState<File | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const check = useMemo(() => validatePunchToken(site, d, k), [site, d, k]);
   const employee = useMemo(
@@ -88,6 +92,38 @@ function QrPunchPage() {
     setBusy(true);
     try {
       const point = await capturePoint();
+
+      // Selfie + GPS verification against the site geofence (same rules the
+      // mobile apps get from the API).
+      const verdict = verifyPunch(
+        {
+          lat: point?.lat ?? null,
+          lng: point?.lng ?? null,
+          selfieKey: selfie ? "pending" : null,
+        },
+        {
+          lat: siteRow.lat,
+          lng: siteRow.lng,
+          radiusM: siteRow.geofenceRadiusM,
+          enforced: siteRow.geofenceEnforced,
+          selfieRequired: siteRow.selfieRequired,
+        },
+      );
+      if (verdict.rejected) {
+        toast.error(verdict.message ?? "Punch rejected by site rules");
+        return;
+      }
+
+      let selfieKey: string | undefined;
+      if (selfie) {
+        try {
+          const uploaded = await uploadToR2(selfie, "attendance", undefined, employee.id);
+          selfieKey = uploaded.key;
+        } catch {
+          toast.warning("Selfie upload failed — the punch is saved without photo proof.");
+        }
+      }
+
       const stamp = nowTime();
       if (mode === "in") {
         upsertAttendance({
@@ -103,6 +139,9 @@ function QrPunchPage() {
           checkInLat: point?.lat,
           checkInLng: point?.lng,
           checkInAddress: point?.address,
+          checkInSelfieKey: selfieKey,
+          checkInVerification: verdict.verification,
+          checkInDistanceM: verdict.distanceM ?? undefined,
         });
         toast.success(`Clocked in at ${stamp}`);
       } else {
@@ -125,10 +164,17 @@ function QrPunchPage() {
           checkOutLat: point?.lat,
           checkOutLng: point?.lng,
           checkOutAddress: point?.address,
+          checkOutSelfieKey: selfieKey,
+          checkOutVerification: verdict.verification,
+          checkOutDistanceM: verdict.distanceM ?? undefined,
         });
         toast.success(`Clocked out at ${stamp} — ${total} h recorded`);
       }
       if (!point) toast.warning("Location not captured — the punch is flagged for review.");
+      else if (verdict.verification === "flagged")
+        toast.warning(verdict.message ?? "Punch flagged for supervisor review.");
+      setSelfie(null);
+      if (fileRef.current) fileRef.current.value = "";
       setTick((t) => t + 1);
     } finally {
       setBusy(false);
@@ -177,6 +223,41 @@ function QrPunchPage() {
             <div className="mt-3">
               <StatusBadge label="Day complete" variant="success" dot />
             </div>
+          )}
+        </div>
+
+        <div className="rounded-lg border border-border/60 p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium">Selfie proof</p>
+              <p className="text-xs text-muted-foreground">
+                {siteRow.selfieRequired
+                  ? "Required at this site."
+                  : "Optional, but a punch with a selfie is auto-verified."}
+              </p>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => fileRef.current?.click()}>
+              <Camera className="mr-2 h-4 w-4" /> {selfie ? "Retake" : "Take selfie"}
+            </Button>
+          </div>
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*"
+            capture="user"
+            className="hidden"
+            onChange={(e) => setSelfie(e.target.files?.[0] ?? null)}
+          />
+          {selfie && (
+            <p className="mt-2 flex items-center gap-1 text-xs text-emerald-500">
+              <ShieldCheck className="h-3 w-3" /> {selfie.name} ready
+            </p>
+          )}
+          {siteRow.lat != null && siteRow.lng != null && (
+            <p className="mt-2 text-xs text-muted-foreground">
+              Geofence: {siteRow.geofenceRadiusM ?? 300} m
+              {siteRow.geofenceEnforced ? " (enforced)" : " (flag only)"}
+            </p>
           )}
         </div>
 

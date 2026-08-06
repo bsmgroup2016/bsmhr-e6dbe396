@@ -148,7 +148,13 @@ export const fromProject = (r: Row): Project => ({
 export const fromSite = (r: Row): Site => ({
   id: r.id, projectId: r.project_id, code: r.code, name: r.name, location: r.location ?? "",
   status: (r.status ?? "Active") as Site["status"], supervisorId: r.supervisor_id ?? undefined,
-  requiredWorkers: r.required_workers ?? 0, createdAt: r.created_at, updatedAt: r.updated_at,
+  requiredWorkers: r.required_workers ?? 0,
+  lat: r.lat != null ? Number(r.lat) : undefined,
+  lng: r.lng != null ? Number(r.lng) : undefined,
+  geofenceRadiusM: r.geofence_radius_m != null ? Number(r.geofence_radius_m) : undefined,
+  geofenceEnforced: Boolean(r.geofence_enforced ?? false),
+  selfieRequired: Boolean(r.selfie_required ?? false),
+  createdAt: r.created_at, updatedAt: r.updated_at,
 });
 
 export const fromAssignment = (r: Row): Assignment => ({
@@ -181,6 +187,12 @@ export const fromAttendance = (r: Row): Attendance => ({
   checkOutLat: r.check_out_lat != null ? Number(r.check_out_lat) : undefined,
   checkOutLng: r.check_out_lng != null ? Number(r.check_out_lng) : undefined,
   checkOutAddress: r.check_out_address ?? undefined,
+  checkInSelfieKey: r.check_in_selfie_key ?? undefined,
+  checkOutSelfieKey: r.check_out_selfie_key ?? undefined,
+  checkInVerification: r.check_in_verification ?? undefined,
+  checkOutVerification: r.check_out_verification ?? undefined,
+  checkInDistanceM: r.check_in_distance_m != null ? Number(r.check_in_distance_m) : undefined,
+  checkOutDistanceM: r.check_out_distance_m != null ? Number(r.check_out_distance_m) : undefined,
   createdAt: r.created_at, updatedAt: r.updated_at,
 });
 
@@ -311,6 +323,10 @@ export const toProject = (p: Partial<Project>): Row => ({
 export const toSite = (s: Partial<Site>): Row => ({
   project_id: s.projectId, code: s.code, name: s.name, location: s.location, status: s.status,
   supervisor_id: s.supervisorId || null, required_workers: s.requiredWorkers,
+  lat: s.lat ?? null, lng: s.lng ?? null,
+  geofence_radius_m: s.geofenceRadiusM ?? 300,
+  geofence_enforced: s.geofenceEnforced ?? false,
+  selfie_required: s.selfieRequired ?? false,
 });
 
 export const toAssignment = (a: Partial<Assignment>): Row => ({
@@ -336,6 +352,12 @@ export const toAttendance = (a: Partial<Attendance>): Row => ({
   check_in_address: a.checkInAddress ?? null,
   check_out_lat: a.checkOutLat ?? null, check_out_lng: a.checkOutLng ?? null,
   check_out_address: a.checkOutAddress ?? null,
+  check_in_selfie_key: a.checkInSelfieKey ?? null,
+  check_out_selfie_key: a.checkOutSelfieKey ?? null,
+  check_in_verification: a.checkInVerification ?? null,
+  check_out_verification: a.checkOutVerification ?? null,
+  check_in_distance_m: a.checkInDistanceM ?? null,
+  check_out_distance_m: a.checkOutDistanceM ?? null,
 });
 
 export const toPayroll = (p: Partial<PayrollEntry>): Row => ({

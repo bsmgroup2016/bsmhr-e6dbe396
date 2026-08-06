@@ -40,6 +40,8 @@ export const Route = createFileRoute("/api/public/v1/attendance/sync")({
         return ok({
           saved: results.filter((r) => r.status === "saved").length,
           duplicates: results.filter((r) => r.status === "duplicate").length,
+          rejected: results.filter((r) => r.status === "rejected").length,
+          flagged: results.filter((r) => r.verdict?.verification === "flagged").length,
           failed: results.filter((r) => r.status === "error").length,
           results,
         });

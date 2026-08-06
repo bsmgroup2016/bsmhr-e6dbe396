@@ -15,3 +15,6 @@ export * from "@/lib/sg-leave";
 export * from "@/lib/pwm";
 export * from "@/lib/mom";
 export * from "@/lib/compliance";
+
+// Selfie + GPS punch verification (geofence rules)
+export * from "@/lib/punch-verification";
