@@ -25,7 +25,9 @@ export default defineConfig({
         devOptions: { enabled: false },
         manifest: false,
         workbox: {
-          globDirectory: ".output/public",
+          // Client assets land in dist/client; the SW must be served from its root.
+          globDirectory: "dist/client",
+          swDest: "dist/client/sw.js",
           globPatterns: ["**/*.{js,css,woff,woff2,png,svg,ico}"],
           navigateFallback: "/offline.html",
           navigateFallbackDenylist: [/^\/~oauth/, /^\/api\//, /^\/_serverFn\//],
