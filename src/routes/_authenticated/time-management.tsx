@@ -799,6 +799,8 @@ export default function TimeManagementPage() {
           <QrAttendancePanel />
         </div>
 
+        <PunchVerificationPanel />
+
         <Dialog open={!!mapRecord} onOpenChange={(open) => !open && setMapRecord(null)}>
           <DialogContent className="sm:max-w-lg">
             <DialogHeader>
