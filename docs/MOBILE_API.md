@@ -54,6 +54,7 @@ Codes: `unauthorized`, `forbidden`, `not_found`, `bad_request`,
 | --- | --- | --- |
 | GET | `/meta` | Version + capability discovery (no auth) |
 | GET | `/me` | Identity, roles, linked worker profile, companies |
+| GET | `/me/dashboard` | Single-call mobile home screen summary (today's attendance, pending leave, latest payslip, unread notifications) |
 | GET | `/employees` | `limit,offset,search,companyId,status` — staff roles only |
 | GET | `/employees/:id` | Workers may read only their own record |
 | GET | `/attendance` | `employeeId,from,to` — workers scoped to self |
