@@ -178,3 +178,45 @@ Every event is stored in `attendance_events` with `selfie_key`, `accuracy_m`,
 check-out.
 
 DB migration: `supabase/migrations/0064_punch_verification.sql`.
+
+## Rate limiting
+
+Every `/api/public/v1/*` endpoint is rate limited. Counters are stored in
+Postgres (`public.api_rate_limit`), so limits apply across all server
+instances.
+
+Two layers per request:
+
+1. **Per IP (pre-auth)** — 600 requests / minute. Blocks token-guessing floods.
+2. **Per user (per endpoint budget)** — see table below.
+
+| Bucket | Limit (per minute) |
+| --- | --- |
+| default (all list/read endpoints) | 120 |
+| `attendance` (punch in/out) | 60 |
+| `attendance/sync` (offline batch) | 20 |
+| `uploads` | 20 |
+| `driver/pings` (GPS trail) | 240 |
+| `payroll/:id/payslip` | 30 |
+| `notifications` | 120 |
+| `devices` | 30 |
+
+Response headers on every call:
+
+```
+X-RateLimit-Limit: 60
+X-RateLimit-Remaining: 57
+X-RateLimit-Reset: 2026-08-06T09:00:00Z
+```
+
+When exceeded the API returns HTTP `429` with `Retry-After` (seconds) and:
+
+```json
+{ "ok": false, "error": { "code": "rate_limited", "message": "Too many requests..." } }
+```
+
+**Flutter guidance:** on `429`, read `Retry-After`, back off exponentially, and
+keep queued punches in local storage — the offline queue is idempotent, so
+retrying the same `client_event_id` never creates duplicates. If the limiter
+itself is unavailable the API fails open (requests are allowed), so a limiter
+outage never blocks attendance.
