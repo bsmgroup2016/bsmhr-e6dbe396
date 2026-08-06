@@ -31,8 +31,28 @@ export const Route = createFileRoute("/api/public/notify-leave")({
         );
         if (!leave) return new Response("Leave request not found", { status: 404 });
         const [employee] = await restGet(
-          `employees?select=name,email&id=eq.${encodeURIComponent(leave.employee_id)}&limit=1`,
+          `employees?select=name,email,user_id&id=eq.${encodeURIComponent(leave.employee_id)}&limit=1`,
         );
+
+        // Mobile push + in-app feed (independent of the email channel)
+        if (employee?.user_id) {
+          try {
+            const { notifyUsers } = await import("@/lib/push.server");
+            await notifyUsers(
+              [employee.user_id],
+              {
+                title: `Leave ${status.toLowerCase()}`,
+                body: `${leave.leave_type} ${leave.start_date} to ${leave.end_date} was ${status.toLowerCase()}.`,
+                category: "leave",
+                data: { type: "leave", leaveId },
+              },
+              { [employee.user_id]: leave.employee_id },
+            );
+          } catch (e) {
+            console.error("leave push failed", e);
+          }
+        }
+
         if (!employee?.email) return Response.json({ sent: false, reason: "no_employee_email" });
 
         const approved = status === "Approved";

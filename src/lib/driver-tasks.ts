@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { mapDriverTaskRow, type DriverTask, type TaskStatus, type TaskType } from "@/lib/driver-tasks-core";
+import { pushToEmployees } from "@/lib/notify";
 
 export * from "@/lib/driver-tasks-core";
 
@@ -52,6 +53,12 @@ export async function createDriverTask(input: {
     status_updated_at: new Date().toISOString(),
   });
   if (error) throw error;
+  void pushToEmployees([input.driverEmployeeId], {
+    title: "New trip assigned",
+    body: `${input.title} — ${new Date(input.scheduledAt).toLocaleString("en-SG")}`,
+    category: "driver_task",
+    data: { type: "driver_task" },
+  });
 }
 
 export async function updateTaskStatus(
