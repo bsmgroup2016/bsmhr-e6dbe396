@@ -263,6 +263,15 @@ export interface Site {
   status: SiteStatus;
   supervisorId?: string;
   requiredWorkers: number;
+  /** Geofence centre — punches are measured against this point. */
+  lat?: number;
+  lng?: number;
+  /** Allowed punch radius in metres (default 300). */
+  geofenceRadiusM?: number;
+  /** Reject punches made outside the radius instead of only flagging them. */
+  geofenceEnforced?: boolean;
+  /** Selfie proof is mandatory when punching at this site. */
+  selfieRequired?: boolean;
   createdAt: string;
   updatedAt: string;
 }
