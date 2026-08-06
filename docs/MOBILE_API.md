@@ -57,7 +57,8 @@ Codes: `unauthorized`, `forbidden`, `not_found`, `bad_request`,
 | GET | `/employees` | `limit,offset,search,companyId,status` — staff roles only |
 | GET | `/employees/:id` | Workers may read only their own record |
 | GET | `/attendance` | `employeeId,from,to` — workers scoped to self |
-| POST | `/attendance` | GPS punch in/out (`checkIn`/`checkOut`, `lat`, `lng`) |
+| POST | `/attendance` | GPS punch in/out (`checkIn`/`checkOut`, `lat`, `lng`, optional `clientEventId`) |
+| POST | `/attendance/sync` | Offline queue flush: `events: [...]` (max 200), idempotent per `clientEventId` |
 | GET | `/leave` | `status,employeeId` |
 | POST | `/leave` | Apply for leave. Optional `attachments: [key]` (MC / medical report) |
 | GET | `/leave/:id` | Single request (workers: own only) |
@@ -126,3 +127,20 @@ Server secret required: `FCM_SERVICE_ACCOUNT_JSON` (Firebase service-account
 JSON). Without it, notifications are still stored but not delivered.
 
 DB migration: `supabase/migrations/0062_push_notifications.sql`.
+
+## 10. Offline attendance queue (mobile)
+
+1. On punch, the app writes the record to its local DB with a locally
+   generated `clientEventId` (uuid) and `punchedAt` (device time).
+2. When online, it POSTs the whole queue to
+   `POST /api/public/v1/attendance/sync` as `{ events: [...] }`.
+3. The server claims each `clientEventId` in `attendance_events` before
+   touching `attendance`, so replaying the same queue is safe. Response:
+   `{ saved, duplicates, failed, results: [{ clientEventId, status }] }`.
+4. The app deletes a local row when its result is `saved` **or** `duplicate`,
+   and keeps only `error` rows for the next retry.
+
+Single punches (`POST /v1/attendance`) accept the same `clientEventId` and use
+the identical idempotent path, so a flaky network never double-punches.
+
+DB migration: `supabase/migrations/0063_attendance_offline_queue.sql`.

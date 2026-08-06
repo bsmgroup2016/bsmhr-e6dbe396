@@ -26,12 +26,12 @@ export const Route = createFileRoute("/api/public/v1/devices")({
         );
         return ok(
           rows.map((r) => ({
-            id: r['id'],
-            platform: r['platform'],
-            appVersion: r['app_version'] ?? null,
-            deviceModel: r['device_model'] ?? null,
-            enabled: r['enabled'],
-            lastSeenAt: r['last_seen_at'],
+            id: r["id"],
+            platform: r["platform"],
+            appVersion: r["app_version"] ?? null,
+            deviceModel: r["device_model"] ?? null,
+            enabled: r["enabled"],
+            lastSeenAt: r["last_seen_at"],
           })),
         );
       },
@@ -63,7 +63,7 @@ export const Route = createFileRoute("/api/public/v1/devices")({
         });
         if (!res.ok) return fail(502, "upstream_error", "Unable to register device");
         const saved = (await res.json()) as Record<string, unknown>[];
-        return ok({ id: saved[0]?.['id'] ?? null, registered: true });
+        return ok({ id: saved[0]?.["id"] ?? null, registered: true });
       },
 
       DELETE: async ({ request }) => {

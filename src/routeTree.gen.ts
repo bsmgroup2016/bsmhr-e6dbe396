@@ -84,6 +84,7 @@ import { Route as ApiPublicV1LeaveIdRouteImport } from './routes/api/public/v1/l
 import { Route as ApiPublicV1EmployeesIdRouteImport } from './routes/api/public/v1/employees.$id'
 import { Route as ApiPublicV1DriverTasksRouteImport } from './routes/api/public/v1/driver.tasks'
 import { Route as ApiPublicV1DriverPingsRouteImport } from './routes/api/public/v1/driver.pings'
+import { Route as ApiPublicV1AttendanceSyncRouteImport } from './routes/api/public/v1/attendance.sync'
 import { Route as ApiPublicV1PayrollIdPayslipRouteImport } from './routes/api/public/v1/payroll.$id.payslip'
 import { Route as ApiPublicV1DriverTasksIdRouteImport } from './routes/api/public/v1/driver.tasks.$id'
 
@@ -476,6 +477,12 @@ const ApiPublicV1DriverPingsRoute = ApiPublicV1DriverPingsRouteImport.update({
   path: '/api/public/v1/driver/pings',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicV1AttendanceSyncRoute =
+  ApiPublicV1AttendanceSyncRouteImport.update({
+    id: '/sync',
+    path: '/sync',
+    getParentRoute: () => ApiPublicV1AttendanceRoute,
+  } as any)
 const ApiPublicV1PayrollIdPayslipRoute =
   ApiPublicV1PayrollIdPayslipRouteImport.update({
     id: '/$id/payslip',
@@ -549,7 +556,7 @@ export interface FileRoutesByFullPath {
   '/api/public/run-automations': typeof ApiPublicRunAutomationsRoute
   '/api/public/send-alerts': typeof ApiPublicSendAlertsRoute
   '/api/public/user-admin': typeof ApiPublicUserAdminRoute
-  '/api/public/v1/attendance': typeof ApiPublicV1AttendanceRoute
+  '/api/public/v1/attendance': typeof ApiPublicV1AttendanceRouteWithChildren
   '/api/public/v1/clients': typeof ApiPublicV1ClientsRoute
   '/api/public/v1/devices': typeof ApiPublicV1DevicesRoute
   '/api/public/v1/employees': typeof ApiPublicV1EmployeesRouteWithChildren
@@ -560,6 +567,7 @@ export interface FileRoutesByFullPath {
   '/api/public/v1/payroll': typeof ApiPublicV1PayrollRouteWithChildren
   '/api/public/v1/projects': typeof ApiPublicV1ProjectsRoute
   '/api/public/v1/uploads': typeof ApiPublicV1UploadsRoute
+  '/api/public/v1/attendance/sync': typeof ApiPublicV1AttendanceSyncRoute
   '/api/public/v1/driver/pings': typeof ApiPublicV1DriverPingsRoute
   '/api/public/v1/driver/tasks': typeof ApiPublicV1DriverTasksRouteWithChildren
   '/api/public/v1/employees/$id': typeof ApiPublicV1EmployeesIdRoute
@@ -627,7 +635,7 @@ export interface FileRoutesByTo {
   '/api/public/run-automations': typeof ApiPublicRunAutomationsRoute
   '/api/public/send-alerts': typeof ApiPublicSendAlertsRoute
   '/api/public/user-admin': typeof ApiPublicUserAdminRoute
-  '/api/public/v1/attendance': typeof ApiPublicV1AttendanceRoute
+  '/api/public/v1/attendance': typeof ApiPublicV1AttendanceRouteWithChildren
   '/api/public/v1/clients': typeof ApiPublicV1ClientsRoute
   '/api/public/v1/devices': typeof ApiPublicV1DevicesRoute
   '/api/public/v1/employees': typeof ApiPublicV1EmployeesRouteWithChildren
@@ -638,6 +646,7 @@ export interface FileRoutesByTo {
   '/api/public/v1/payroll': typeof ApiPublicV1PayrollRouteWithChildren
   '/api/public/v1/projects': typeof ApiPublicV1ProjectsRoute
   '/api/public/v1/uploads': typeof ApiPublicV1UploadsRoute
+  '/api/public/v1/attendance/sync': typeof ApiPublicV1AttendanceSyncRoute
   '/api/public/v1/driver/pings': typeof ApiPublicV1DriverPingsRoute
   '/api/public/v1/driver/tasks': typeof ApiPublicV1DriverTasksRouteWithChildren
   '/api/public/v1/employees/$id': typeof ApiPublicV1EmployeesIdRoute
@@ -707,7 +716,7 @@ export interface FileRoutesById {
   '/api/public/run-automations': typeof ApiPublicRunAutomationsRoute
   '/api/public/send-alerts': typeof ApiPublicSendAlertsRoute
   '/api/public/user-admin': typeof ApiPublicUserAdminRoute
-  '/api/public/v1/attendance': typeof ApiPublicV1AttendanceRoute
+  '/api/public/v1/attendance': typeof ApiPublicV1AttendanceRouteWithChildren
   '/api/public/v1/clients': typeof ApiPublicV1ClientsRoute
   '/api/public/v1/devices': typeof ApiPublicV1DevicesRoute
   '/api/public/v1/employees': typeof ApiPublicV1EmployeesRouteWithChildren
@@ -718,6 +727,7 @@ export interface FileRoutesById {
   '/api/public/v1/payroll': typeof ApiPublicV1PayrollRouteWithChildren
   '/api/public/v1/projects': typeof ApiPublicV1ProjectsRoute
   '/api/public/v1/uploads': typeof ApiPublicV1UploadsRoute
+  '/api/public/v1/attendance/sync': typeof ApiPublicV1AttendanceSyncRoute
   '/api/public/v1/driver/pings': typeof ApiPublicV1DriverPingsRoute
   '/api/public/v1/driver/tasks': typeof ApiPublicV1DriverTasksRouteWithChildren
   '/api/public/v1/employees/$id': typeof ApiPublicV1EmployeesIdRoute
@@ -798,6 +808,7 @@ export interface FileRouteTypes {
     | '/api/public/v1/payroll'
     | '/api/public/v1/projects'
     | '/api/public/v1/uploads'
+    | '/api/public/v1/attendance/sync'
     | '/api/public/v1/driver/pings'
     | '/api/public/v1/driver/tasks'
     | '/api/public/v1/employees/$id'
@@ -876,6 +887,7 @@ export interface FileRouteTypes {
     | '/api/public/v1/payroll'
     | '/api/public/v1/projects'
     | '/api/public/v1/uploads'
+    | '/api/public/v1/attendance/sync'
     | '/api/public/v1/driver/pings'
     | '/api/public/v1/driver/tasks'
     | '/api/public/v1/employees/$id'
@@ -955,6 +967,7 @@ export interface FileRouteTypes {
     | '/api/public/v1/payroll'
     | '/api/public/v1/projects'
     | '/api/public/v1/uploads'
+    | '/api/public/v1/attendance/sync'
     | '/api/public/v1/driver/pings'
     | '/api/public/v1/driver/tasks'
     | '/api/public/v1/employees/$id'
@@ -979,7 +992,7 @@ export interface RootRouteChildren {
   ApiPublicRunAutomationsRoute: typeof ApiPublicRunAutomationsRoute
   ApiPublicSendAlertsRoute: typeof ApiPublicSendAlertsRoute
   ApiPublicUserAdminRoute: typeof ApiPublicUserAdminRoute
-  ApiPublicV1AttendanceRoute: typeof ApiPublicV1AttendanceRoute
+  ApiPublicV1AttendanceRoute: typeof ApiPublicV1AttendanceRouteWithChildren
   ApiPublicV1ClientsRoute: typeof ApiPublicV1ClientsRoute
   ApiPublicV1DevicesRoute: typeof ApiPublicV1DevicesRoute
   ApiPublicV1EmployeesRoute: typeof ApiPublicV1EmployeesRouteWithChildren
@@ -1521,6 +1534,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicV1DriverPingsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/v1/attendance/sync': {
+      id: '/api/public/v1/attendance/sync'
+      path: '/sync'
+      fullPath: '/api/public/v1/attendance/sync'
+      preLoaderRoute: typeof ApiPublicV1AttendanceSyncRouteImport
+      parentRoute: typeof ApiPublicV1AttendanceRoute
+    }
     '/api/public/v1/payroll/$id/payslip': {
       id: '/api/public/v1/payroll/$id/payslip'
       path: '/$id/payslip'
@@ -1637,6 +1657,19 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
 const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
+interface ApiPublicV1AttendanceRouteChildren {
+  ApiPublicV1AttendanceSyncRoute: typeof ApiPublicV1AttendanceSyncRoute
+}
+
+const ApiPublicV1AttendanceRouteChildren: ApiPublicV1AttendanceRouteChildren = {
+  ApiPublicV1AttendanceSyncRoute: ApiPublicV1AttendanceSyncRoute,
+}
+
+const ApiPublicV1AttendanceRouteWithChildren =
+  ApiPublicV1AttendanceRoute._addFileChildren(
+    ApiPublicV1AttendanceRouteChildren,
+  )
+
 interface ApiPublicV1EmployeesRouteChildren {
   ApiPublicV1EmployeesIdRoute: typeof ApiPublicV1EmployeesIdRoute
 }
@@ -1700,7 +1733,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicRunAutomationsRoute: ApiPublicRunAutomationsRoute,
   ApiPublicSendAlertsRoute: ApiPublicSendAlertsRoute,
   ApiPublicUserAdminRoute: ApiPublicUserAdminRoute,
-  ApiPublicV1AttendanceRoute: ApiPublicV1AttendanceRoute,
+  ApiPublicV1AttendanceRoute: ApiPublicV1AttendanceRouteWithChildren,
   ApiPublicV1ClientsRoute: ApiPublicV1ClientsRoute,
   ApiPublicV1DevicesRoute: ApiPublicV1DevicesRoute,
   ApiPublicV1EmployeesRoute: ApiPublicV1EmployeesRouteWithChildren,

@@ -10,7 +10,7 @@
 const SUPABASE_URL = "https://thrfyeyqafmdnpexgmlc.supabase.co";
 
 function serviceKey() {
-  const key = process.env['SB_SERVICE_ROLE_KEY'];
+  const key = process.env["SB_SERVICE_ROLE_KEY"];
   if (!key) throw new Error("Service key missing");
   return key;
 }
@@ -29,7 +29,7 @@ async function sbAdmin(path: string, init?: RequestInit & { prefer?: string }) {
 type ServiceAccount = { client_email: string; private_key: string; project_id: string };
 
 function serviceAccount(): ServiceAccount | null {
-  const raw = process.env['FCM_SERVICE_ACCOUNT_JSON'];
+  const raw = process.env["FCM_SERVICE_ACCOUNT_JSON"];
   if (!raw) return null;
   try {
     const sa = JSON.parse(raw) as ServiceAccount;
@@ -185,11 +185,14 @@ export async function sendPush(input: PushInput): Promise<PushResult> {
   );
 
   if (dead.length) {
-    await sbAdmin(`device_tokens?id=in.(${encodeURIComponent(dead.map((i) => `"${i}"`).join(","))})`, {
-      method: "PATCH",
-      prefer: "return=minimal",
-      body: JSON.stringify({ enabled: false }),
-    });
+    await sbAdmin(
+      `device_tokens?id=in.(${encodeURIComponent(dead.map((i) => `"${i}"`).join(","))})`,
+      {
+        method: "PATCH",
+        prefer: "return=minimal",
+        body: JSON.stringify({ enabled: false }),
+      },
+    );
   }
 
   if (result.sent) {
