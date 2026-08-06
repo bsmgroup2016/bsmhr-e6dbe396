@@ -15,7 +15,7 @@ export const Route = createFileRoute("/api/public/v1/attendance/sync")({
     handlers: {
       OPTIONS: preflight,
       POST: async ({ request }) => {
-        const auth = await requireAuth(request);
+        const auth = await requireAuth(request, "attendance.sync");
         if ("response" in auth) return auth.response;
         const { ctx } = auth;
         const body = await readJson<Body>(request);

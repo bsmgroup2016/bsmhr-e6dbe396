@@ -26,7 +26,7 @@ export const Route = createFileRoute("/api/public/v1/notifications")({
     handlers: {
       OPTIONS: preflight,
       GET: async ({ request }) => {
-        const auth = await requireAuth(request);
+        const auth = await requireAuth(request, "notifications");
         if ("response" in auth) return auth.response;
         const p = listParams(request);
         const filters = [
@@ -58,7 +58,7 @@ export const Route = createFileRoute("/api/public/v1/notifications")({
 
       /** Mark read: pass ids, or all: true. */
       PATCH: async ({ request }) => {
-        const auth = await requireAuth(request);
+        const auth = await requireAuth(request, "notifications");
         if ("response" in auth) return auth.response;
         const body = await readJson<PatchBody>(request);
         const now = new Date().toISOString();
@@ -79,7 +79,7 @@ export const Route = createFileRoute("/api/public/v1/notifications")({
 
       /** Staff-only broadcast to selected users/employees. */
       POST: async ({ request }) => {
-        const auth = await requireAuth(request);
+        const auth = await requireAuth(request, "notifications");
         if ("response" in auth) return auth.response;
         if (!hasAnyRole(auth.ctx, ["admin", "hr", "manager", "supervisor"]))
           return fail(403, "forbidden", "Only staff can send notifications");

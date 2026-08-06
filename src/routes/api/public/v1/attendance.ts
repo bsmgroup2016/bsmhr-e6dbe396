@@ -23,7 +23,7 @@ export const Route = createFileRoute("/api/public/v1/attendance")({
     handlers: {
       OPTIONS: preflight,
       GET: async ({ request }) => {
-        const auth = await requireAuth(request);
+        const auth = await requireAuth(request, "attendance");
         if ("response" in auth) return auth.response;
         const { ctx } = auth;
         const p = listParams(request);
@@ -46,7 +46,7 @@ export const Route = createFileRoute("/api/public/v1/attendance")({
       },
 
       POST: async ({ request }) => {
-        const auth = await requireAuth(request);
+        const auth = await requireAuth(request, "attendance");
         if ("response" in auth) return auth.response;
         const { ctx } = auth;
 

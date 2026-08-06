@@ -33,7 +33,7 @@ export const Route = createFileRoute("/api/public/v1/uploads")({
       OPTIONS: preflight,
 
       GET: async ({ request }) => {
-        const auth = await requireAuth(request);
+        const auth = await requireAuth(request, "uploads");
         if ("response" in auth) return auth.response;
         const key = keyFromRef(new URL(request.url).searchParams.get("key") ?? "");
         if (!key) return fail(400, "bad_request", "key is required");
@@ -48,7 +48,7 @@ export const Route = createFileRoute("/api/public/v1/uploads")({
       },
 
       POST: async ({ request }) => {
-        const auth = await requireAuth(request);
+        const auth = await requireAuth(request, "uploads");
         if ("response" in auth) return auth.response;
         const { ctx } = auth;
 
