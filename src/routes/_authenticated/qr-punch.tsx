@@ -304,6 +304,24 @@ function QrPunchPage() {
           <CheckCircle2 className="h-3 w-3" /> GPS location is captured with every punch for MOM
           attendance evidence.
         </p>
+        {(!online || pending > 0) && (
+          <div className="rounded-lg border border-border/60 bg-muted/40 p-3 text-xs">
+            {online
+              ? `${pending} offline punch${pending === 1 ? "" : "es"} waiting to sync.`
+              : "You are offline. Punches are stored on this device and sync automatically."}
+            {online && pending > 0 && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="ml-2 h-6 px-2"
+                disabled={syncing}
+                onClick={() => void sync()}
+              >
+                {syncing ? "Syncing" : "Sync now"}
+              </Button>
+            )}
+          </div>
+        )}
         <Button variant="ghost" size="sm" asChild>
           <Link to="/my-portal">Back to my portal</Link>
         </Button>
