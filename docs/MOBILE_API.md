@@ -231,57 +231,6 @@ JSON). Without it, notifications are still stored but not delivered.
 
 DB migration: `supabase/migrations/0062_push_notifications.sql`.
 
-## 10. Offline attendance queue (mobile)
-
-1. On punch, the app writes the record to its local DB with a locally
-   generated `clientEventId` (uuid) and `punchedAt` (device time).
-2. When online, it POSTs the whole queue to
-   `POST /api/public/v1/attendance/sync` as `{ events: [...] }`.
-3. The server claims each `clientEventId` in `attendance_events` before
-   touching `attendance`, so replaying the same queue is safe. Response:
-   `{ saved, duplicates, failed, results: [{ clientEventId, status }] }`.
-4. The app deletes a local row when its result is `saved` **or** `duplicate`,
-   and keeps only `error` rows for the next retry.
-
-Single punches (`POST /v1/attendance`) accept the same `clientEventId` and use
-the identical idempotent path, so a flaky network never double-punches.
-
-DB migration: `supabase/migrations/0063_attendance_offline_queue.sql`.
-
-## 11. Selfie + GPS punch verification
-
-Each site can carry a geofence (`lat`, `lng`, `geofence_radius_m`, default
-300 m) plus two switches: `geofence_enforced` (reject punches outside the
-radius) and `selfie_required`.
-
-Mobile punch flow:
-
-1. Upload the selfie first: `POST /api/public/v1/uploads` with
-   `folder=attendance` -> returns `{ key }`.
-2. Punch with the proof attached:
-
-       POST /api/public/v1/attendance
-       { "siteId": "...", "checkIn": "08:02", "lat": 1.3521, "lng": 103.8198,
-         "accuracyM": 12, "selfieKey": "attendance/...jpg",
-         "clientEventId": "<uuid>" }
-
-3. The server runs the shared rules in `src/lib/punch-verification.ts`
-   (exported from `@/core`, so web and Flutter behave identically):
-   - inside radius + selfie + good accuracy -> `verified`
-   - outside radius or missing required selfie -> `flagged`
-   - no GPS / no site coordinates -> `unverified`
-   - `geofence_enforced` breach -> HTTP 422 `punch_rejected` (nothing saved)
-4. Response meta: `{ verification, geoStatus, distanceM, flags, notice }`.
-   Offline batch results also report `rejected` and `flagged` counts, so the
-   app can surface the reason and keep failed rows queued.
-
-Every event is stored in `attendance_events` with `selfie_key`, `accuracy_m`,
-`distance_m`, `geo_status`, `verification` and `flags` for HR audit; the day's
-`attendance` row keeps the selfie key, verdict and distance for check-in and
-check-out.
-
-DB migration: `supabase/migrations/0064_punch_verification.sql`.
-
 ## Rate limiting
 
 Every `/api/public/v1/*` endpoint is rate limited. Counters are stored in
