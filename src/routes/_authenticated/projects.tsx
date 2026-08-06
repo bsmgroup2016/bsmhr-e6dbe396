@@ -593,6 +593,31 @@ export default function ProjectsPage() {
                 <Label htmlFor="supervisorId">Supervisor ID</Label>
                 <Input id="supervisorId" name="supervisorId" placeholder="u4" />
               </div>
+              <div className="rounded-lg border border-border/60 p-3 space-y-3">
+                <p className="text-sm font-medium">Punch verification (geofence)</p>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="siteLat">Latitude</Label>
+                    <Input id="siteLat" name="lat" type="number" step="0.000001" placeholder="1.3521" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="siteLng">Longitude</Label>
+                    <Input id="siteLng" name="lng" type="number" step="0.000001" placeholder="103.8198" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="siteRadius">Radius (m)</Label>
+                    <Input id="siteRadius" name="geofenceRadiusM" type="number" defaultValue={300} />
+                  </div>
+                </div>
+                <label className="flex items-center gap-2 text-sm">
+                  <input type="checkbox" name="geofenceEnforced" className="h-4 w-4 accent-primary" />
+                  Reject punches outside the radius
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <input type="checkbox" name="selfieRequired" className="h-4 w-4 accent-primary" />
+                  Require a selfie with every punch
+                </label>
+              </div>
               <DialogFooter>
                 <Button type="submit">Add site</Button>
               </DialogFooter>
