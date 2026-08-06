@@ -63,6 +63,11 @@ Codes: `unauthorized`, `forbidden`, `not_found`, `bad_request`,
 | GET | `/payroll` | `month,employeeId` — payslip history |
 | GET | `/projects` | Staff roles only |
 | GET | `/clients` | admin / hr / manager only |
+| GET | `/driver/tasks` | Driver app job list. `open=1`, `status`, `from`, `to`, `driverId` (staff only). Drivers scoped to self |
+| GET | `/driver/tasks/:id` | Single task; drivers may read only their own |
+| PATCH | `/driver/tasks/:id` | Driver progresses the trip: `status`, `note`, `lat`, `lng`, `speedKmh` (a position also writes a breadcrumb) |
+| GET | `/driver/pings` | `taskId` — GPS trail for route replay |
+| POST | `/driver/pings` | Single ping or offline batch (`pings: [{lat,lng,recordedAt,speedKmh,status}]`, max 500) — also updates the task's last known position |
 
 Every collection endpoint is paginated (`limit` max 200) — essential on mobile.
 
