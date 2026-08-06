@@ -38,7 +38,10 @@ begin
       -- workforce
       ('employees',             'employees_company_status_idx',   array['company_id','status']),
       ('employees',             'employees_status_idx',           array['status']),
-      ('employees',             'employees_designation_idx',       array['designation']),
+      ('employees',             'employees_designation_idx',      array['designation']),
+      ('employees',             'employees_designation_id_idx',   array['designation_id']),
+      ('employees',             'employees_pfile_idx',            array['p_file_number']),
+      ('employees',             'employees_fin_idx',              array['fin_number']),
       ('employee_documents',    'employee_documents_emp_idx',     array['employee_id']),
       ('employee_certifications','employee_certifications_emp_idx',array['employee_id']),
       ('employee_loans',        'employee_loans_emp_idx',         array['employee_id']),
