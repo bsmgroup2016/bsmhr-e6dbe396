@@ -228,6 +228,7 @@ function QrPunchPage() {
 
         <div className="grid gap-2 sm:grid-cols-2">
           <Button size="lg" disabled={busy || !!record?.checkIn} onClick={() => punch("in")}>
+
             <LogIn className="mr-2 h-4 w-4" /> Clock in
           </Button>
           <Button
