@@ -72,10 +72,12 @@ import { Route as AuthenticatedClientsIdRouteImport } from './routes/_authentica
 import { Route as ApiPublicV1UploadsRouteImport } from './routes/api/public/v1/uploads'
 import { Route as ApiPublicV1ProjectsRouteImport } from './routes/api/public/v1/projects'
 import { Route as ApiPublicV1PayrollRouteImport } from './routes/api/public/v1/payroll'
+import { Route as ApiPublicV1NotificationsRouteImport } from './routes/api/public/v1/notifications'
 import { Route as ApiPublicV1MetaRouteImport } from './routes/api/public/v1/meta'
 import { Route as ApiPublicV1MeRouteImport } from './routes/api/public/v1/me'
 import { Route as ApiPublicV1LeaveRouteImport } from './routes/api/public/v1/leave'
 import { Route as ApiPublicV1EmployeesRouteImport } from './routes/api/public/v1/employees'
+import { Route as ApiPublicV1DevicesRouteImport } from './routes/api/public/v1/devices'
 import { Route as ApiPublicV1ClientsRouteImport } from './routes/api/public/v1/clients'
 import { Route as ApiPublicV1AttendanceRouteImport } from './routes/api/public/v1/attendance'
 import { Route as ApiPublicV1LeaveIdRouteImport } from './routes/api/public/v1/leave.$id'
@@ -413,6 +415,12 @@ const ApiPublicV1PayrollRoute = ApiPublicV1PayrollRouteImport.update({
   path: '/api/public/v1/payroll',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicV1NotificationsRoute =
+  ApiPublicV1NotificationsRouteImport.update({
+    id: '/api/public/v1/notifications',
+    path: '/api/public/v1/notifications',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicV1MetaRoute = ApiPublicV1MetaRouteImport.update({
   id: '/api/public/v1/meta',
   path: '/api/public/v1/meta',
@@ -431,6 +439,11 @@ const ApiPublicV1LeaveRoute = ApiPublicV1LeaveRouteImport.update({
 const ApiPublicV1EmployeesRoute = ApiPublicV1EmployeesRouteImport.update({
   id: '/api/public/v1/employees',
   path: '/api/public/v1/employees',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicV1DevicesRoute = ApiPublicV1DevicesRouteImport.update({
+  id: '/api/public/v1/devices',
+  path: '/api/public/v1/devices',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicV1ClientsRoute = ApiPublicV1ClientsRouteImport.update({
@@ -538,10 +551,12 @@ export interface FileRoutesByFullPath {
   '/api/public/user-admin': typeof ApiPublicUserAdminRoute
   '/api/public/v1/attendance': typeof ApiPublicV1AttendanceRoute
   '/api/public/v1/clients': typeof ApiPublicV1ClientsRoute
+  '/api/public/v1/devices': typeof ApiPublicV1DevicesRoute
   '/api/public/v1/employees': typeof ApiPublicV1EmployeesRouteWithChildren
   '/api/public/v1/leave': typeof ApiPublicV1LeaveRouteWithChildren
   '/api/public/v1/me': typeof ApiPublicV1MeRoute
   '/api/public/v1/meta': typeof ApiPublicV1MetaRoute
+  '/api/public/v1/notifications': typeof ApiPublicV1NotificationsRoute
   '/api/public/v1/payroll': typeof ApiPublicV1PayrollRouteWithChildren
   '/api/public/v1/projects': typeof ApiPublicV1ProjectsRoute
   '/api/public/v1/uploads': typeof ApiPublicV1UploadsRoute
@@ -614,10 +629,12 @@ export interface FileRoutesByTo {
   '/api/public/user-admin': typeof ApiPublicUserAdminRoute
   '/api/public/v1/attendance': typeof ApiPublicV1AttendanceRoute
   '/api/public/v1/clients': typeof ApiPublicV1ClientsRoute
+  '/api/public/v1/devices': typeof ApiPublicV1DevicesRoute
   '/api/public/v1/employees': typeof ApiPublicV1EmployeesRouteWithChildren
   '/api/public/v1/leave': typeof ApiPublicV1LeaveRouteWithChildren
   '/api/public/v1/me': typeof ApiPublicV1MeRoute
   '/api/public/v1/meta': typeof ApiPublicV1MetaRoute
+  '/api/public/v1/notifications': typeof ApiPublicV1NotificationsRoute
   '/api/public/v1/payroll': typeof ApiPublicV1PayrollRouteWithChildren
   '/api/public/v1/projects': typeof ApiPublicV1ProjectsRoute
   '/api/public/v1/uploads': typeof ApiPublicV1UploadsRoute
@@ -692,10 +709,12 @@ export interface FileRoutesById {
   '/api/public/user-admin': typeof ApiPublicUserAdminRoute
   '/api/public/v1/attendance': typeof ApiPublicV1AttendanceRoute
   '/api/public/v1/clients': typeof ApiPublicV1ClientsRoute
+  '/api/public/v1/devices': typeof ApiPublicV1DevicesRoute
   '/api/public/v1/employees': typeof ApiPublicV1EmployeesRouteWithChildren
   '/api/public/v1/leave': typeof ApiPublicV1LeaveRouteWithChildren
   '/api/public/v1/me': typeof ApiPublicV1MeRoute
   '/api/public/v1/meta': typeof ApiPublicV1MetaRoute
+  '/api/public/v1/notifications': typeof ApiPublicV1NotificationsRoute
   '/api/public/v1/payroll': typeof ApiPublicV1PayrollRouteWithChildren
   '/api/public/v1/projects': typeof ApiPublicV1ProjectsRoute
   '/api/public/v1/uploads': typeof ApiPublicV1UploadsRoute
@@ -770,10 +789,12 @@ export interface FileRouteTypes {
     | '/api/public/user-admin'
     | '/api/public/v1/attendance'
     | '/api/public/v1/clients'
+    | '/api/public/v1/devices'
     | '/api/public/v1/employees'
     | '/api/public/v1/leave'
     | '/api/public/v1/me'
     | '/api/public/v1/meta'
+    | '/api/public/v1/notifications'
     | '/api/public/v1/payroll'
     | '/api/public/v1/projects'
     | '/api/public/v1/uploads'
@@ -846,10 +867,12 @@ export interface FileRouteTypes {
     | '/api/public/user-admin'
     | '/api/public/v1/attendance'
     | '/api/public/v1/clients'
+    | '/api/public/v1/devices'
     | '/api/public/v1/employees'
     | '/api/public/v1/leave'
     | '/api/public/v1/me'
     | '/api/public/v1/meta'
+    | '/api/public/v1/notifications'
     | '/api/public/v1/payroll'
     | '/api/public/v1/projects'
     | '/api/public/v1/uploads'
@@ -923,10 +946,12 @@ export interface FileRouteTypes {
     | '/api/public/user-admin'
     | '/api/public/v1/attendance'
     | '/api/public/v1/clients'
+    | '/api/public/v1/devices'
     | '/api/public/v1/employees'
     | '/api/public/v1/leave'
     | '/api/public/v1/me'
     | '/api/public/v1/meta'
+    | '/api/public/v1/notifications'
     | '/api/public/v1/payroll'
     | '/api/public/v1/projects'
     | '/api/public/v1/uploads'
@@ -956,10 +981,12 @@ export interface RootRouteChildren {
   ApiPublicUserAdminRoute: typeof ApiPublicUserAdminRoute
   ApiPublicV1AttendanceRoute: typeof ApiPublicV1AttendanceRoute
   ApiPublicV1ClientsRoute: typeof ApiPublicV1ClientsRoute
+  ApiPublicV1DevicesRoute: typeof ApiPublicV1DevicesRoute
   ApiPublicV1EmployeesRoute: typeof ApiPublicV1EmployeesRouteWithChildren
   ApiPublicV1LeaveRoute: typeof ApiPublicV1LeaveRouteWithChildren
   ApiPublicV1MeRoute: typeof ApiPublicV1MeRoute
   ApiPublicV1MetaRoute: typeof ApiPublicV1MetaRoute
+  ApiPublicV1NotificationsRoute: typeof ApiPublicV1NotificationsRoute
   ApiPublicV1PayrollRoute: typeof ApiPublicV1PayrollRouteWithChildren
   ApiPublicV1ProjectsRoute: typeof ApiPublicV1ProjectsRoute
   ApiPublicV1UploadsRoute: typeof ApiPublicV1UploadsRoute
@@ -1410,6 +1437,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicV1PayrollRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/v1/notifications': {
+      id: '/api/public/v1/notifications'
+      path: '/api/public/v1/notifications'
+      fullPath: '/api/public/v1/notifications'
+      preLoaderRoute: typeof ApiPublicV1NotificationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/v1/meta': {
       id: '/api/public/v1/meta'
       path: '/api/public/v1/meta'
@@ -1436,6 +1470,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/v1/employees'
       fullPath: '/api/public/v1/employees'
       preLoaderRoute: typeof ApiPublicV1EmployeesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/v1/devices': {
+      id: '/api/public/v1/devices'
+      path: '/api/public/v1/devices'
+      fullPath: '/api/public/v1/devices'
+      preLoaderRoute: typeof ApiPublicV1DevicesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/v1/clients': {
@@ -1661,10 +1702,12 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicUserAdminRoute: ApiPublicUserAdminRoute,
   ApiPublicV1AttendanceRoute: ApiPublicV1AttendanceRoute,
   ApiPublicV1ClientsRoute: ApiPublicV1ClientsRoute,
+  ApiPublicV1DevicesRoute: ApiPublicV1DevicesRoute,
   ApiPublicV1EmployeesRoute: ApiPublicV1EmployeesRouteWithChildren,
   ApiPublicV1LeaveRoute: ApiPublicV1LeaveRouteWithChildren,
   ApiPublicV1MeRoute: ApiPublicV1MeRoute,
   ApiPublicV1MetaRoute: ApiPublicV1MetaRoute,
+  ApiPublicV1NotificationsRoute: ApiPublicV1NotificationsRoute,
   ApiPublicV1PayrollRoute: ApiPublicV1PayrollRouteWithChildren,
   ApiPublicV1ProjectsRoute: ApiPublicV1ProjectsRoute,
   ApiPublicV1UploadsRoute: ApiPublicV1UploadsRoute,
