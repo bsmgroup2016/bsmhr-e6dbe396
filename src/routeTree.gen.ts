@@ -69,6 +69,15 @@ import { Route as ApiPublicAiStatusRouteImport } from './routes/api/public/ai-st
 import { Route as AuthenticatedWorkforceSlugRouteImport } from './routes/_authenticated/workforce_.$slug'
 import { Route as AuthenticatedCompaniesIdRouteImport } from './routes/_authenticated/companies_.$id'
 import { Route as AuthenticatedClientsIdRouteImport } from './routes/_authenticated/clients_.$id'
+import { Route as ApiPublicV1ProjectsRouteImport } from './routes/api/public/v1/projects'
+import { Route as ApiPublicV1PayrollRouteImport } from './routes/api/public/v1/payroll'
+import { Route as ApiPublicV1MetaRouteImport } from './routes/api/public/v1/meta'
+import { Route as ApiPublicV1MeRouteImport } from './routes/api/public/v1/me'
+import { Route as ApiPublicV1LeaveRouteImport } from './routes/api/public/v1/leave'
+import { Route as ApiPublicV1EmployeesRouteImport } from './routes/api/public/v1/employees'
+import { Route as ApiPublicV1ClientsRouteImport } from './routes/api/public/v1/clients'
+import { Route as ApiPublicV1AttendanceRouteImport } from './routes/api/public/v1/attendance'
+import { Route as ApiPublicV1EmployeesIdRouteImport } from './routes/api/public/v1/employees.$id'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -383,6 +392,51 @@ const AuthenticatedClientsIdRoute = AuthenticatedClientsIdRouteImport.update({
   path: '/clients/$id',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const ApiPublicV1ProjectsRoute = ApiPublicV1ProjectsRouteImport.update({
+  id: '/api/public/v1/projects',
+  path: '/api/public/v1/projects',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicV1PayrollRoute = ApiPublicV1PayrollRouteImport.update({
+  id: '/api/public/v1/payroll',
+  path: '/api/public/v1/payroll',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicV1MetaRoute = ApiPublicV1MetaRouteImport.update({
+  id: '/api/public/v1/meta',
+  path: '/api/public/v1/meta',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicV1MeRoute = ApiPublicV1MeRouteImport.update({
+  id: '/api/public/v1/me',
+  path: '/api/public/v1/me',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicV1LeaveRoute = ApiPublicV1LeaveRouteImport.update({
+  id: '/api/public/v1/leave',
+  path: '/api/public/v1/leave',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicV1EmployeesRoute = ApiPublicV1EmployeesRouteImport.update({
+  id: '/api/public/v1/employees',
+  path: '/api/public/v1/employees',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicV1ClientsRoute = ApiPublicV1ClientsRouteImport.update({
+  id: '/api/public/v1/clients',
+  path: '/api/public/v1/clients',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicV1AttendanceRoute = ApiPublicV1AttendanceRouteImport.update({
+  id: '/api/public/v1/attendance',
+  path: '/api/public/v1/attendance',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicV1EmployeesIdRoute = ApiPublicV1EmployeesIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => ApiPublicV1EmployeesRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
@@ -444,6 +498,15 @@ export interface FileRoutesByFullPath {
   '/api/public/run-automations': typeof ApiPublicRunAutomationsRoute
   '/api/public/send-alerts': typeof ApiPublicSendAlertsRoute
   '/api/public/user-admin': typeof ApiPublicUserAdminRoute
+  '/api/public/v1/attendance': typeof ApiPublicV1AttendanceRoute
+  '/api/public/v1/clients': typeof ApiPublicV1ClientsRoute
+  '/api/public/v1/employees': typeof ApiPublicV1EmployeesRouteWithChildren
+  '/api/public/v1/leave': typeof ApiPublicV1LeaveRoute
+  '/api/public/v1/me': typeof ApiPublicV1MeRoute
+  '/api/public/v1/meta': typeof ApiPublicV1MetaRoute
+  '/api/public/v1/payroll': typeof ApiPublicV1PayrollRoute
+  '/api/public/v1/projects': typeof ApiPublicV1ProjectsRoute
+  '/api/public/v1/employees/$id': typeof ApiPublicV1EmployeesIdRoute
 }
 export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
@@ -505,6 +568,15 @@ export interface FileRoutesByTo {
   '/api/public/run-automations': typeof ApiPublicRunAutomationsRoute
   '/api/public/send-alerts': typeof ApiPublicSendAlertsRoute
   '/api/public/user-admin': typeof ApiPublicUserAdminRoute
+  '/api/public/v1/attendance': typeof ApiPublicV1AttendanceRoute
+  '/api/public/v1/clients': typeof ApiPublicV1ClientsRoute
+  '/api/public/v1/employees': typeof ApiPublicV1EmployeesRouteWithChildren
+  '/api/public/v1/leave': typeof ApiPublicV1LeaveRoute
+  '/api/public/v1/me': typeof ApiPublicV1MeRoute
+  '/api/public/v1/meta': typeof ApiPublicV1MetaRoute
+  '/api/public/v1/payroll': typeof ApiPublicV1PayrollRoute
+  '/api/public/v1/projects': typeof ApiPublicV1ProjectsRoute
+  '/api/public/v1/employees/$id': typeof ApiPublicV1EmployeesIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -568,6 +640,15 @@ export interface FileRoutesById {
   '/api/public/run-automations': typeof ApiPublicRunAutomationsRoute
   '/api/public/send-alerts': typeof ApiPublicSendAlertsRoute
   '/api/public/user-admin': typeof ApiPublicUserAdminRoute
+  '/api/public/v1/attendance': typeof ApiPublicV1AttendanceRoute
+  '/api/public/v1/clients': typeof ApiPublicV1ClientsRoute
+  '/api/public/v1/employees': typeof ApiPublicV1EmployeesRouteWithChildren
+  '/api/public/v1/leave': typeof ApiPublicV1LeaveRoute
+  '/api/public/v1/me': typeof ApiPublicV1MeRoute
+  '/api/public/v1/meta': typeof ApiPublicV1MetaRoute
+  '/api/public/v1/payroll': typeof ApiPublicV1PayrollRoute
+  '/api/public/v1/projects': typeof ApiPublicV1ProjectsRoute
+  '/api/public/v1/employees/$id': typeof ApiPublicV1EmployeesIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -631,6 +712,15 @@ export interface FileRouteTypes {
     | '/api/public/run-automations'
     | '/api/public/send-alerts'
     | '/api/public/user-admin'
+    | '/api/public/v1/attendance'
+    | '/api/public/v1/clients'
+    | '/api/public/v1/employees'
+    | '/api/public/v1/leave'
+    | '/api/public/v1/me'
+    | '/api/public/v1/meta'
+    | '/api/public/v1/payroll'
+    | '/api/public/v1/projects'
+    | '/api/public/v1/employees/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/auth'
@@ -692,6 +782,15 @@ export interface FileRouteTypes {
     | '/api/public/run-automations'
     | '/api/public/send-alerts'
     | '/api/public/user-admin'
+    | '/api/public/v1/attendance'
+    | '/api/public/v1/clients'
+    | '/api/public/v1/employees'
+    | '/api/public/v1/leave'
+    | '/api/public/v1/me'
+    | '/api/public/v1/meta'
+    | '/api/public/v1/payroll'
+    | '/api/public/v1/projects'
+    | '/api/public/v1/employees/$id'
   id:
     | '__root__'
     | '/_authenticated'
@@ -754,6 +853,15 @@ export interface FileRouteTypes {
     | '/api/public/run-automations'
     | '/api/public/send-alerts'
     | '/api/public/user-admin'
+    | '/api/public/v1/attendance'
+    | '/api/public/v1/clients'
+    | '/api/public/v1/employees'
+    | '/api/public/v1/leave'
+    | '/api/public/v1/me'
+    | '/api/public/v1/meta'
+    | '/api/public/v1/payroll'
+    | '/api/public/v1/projects'
+    | '/api/public/v1/employees/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -772,6 +880,14 @@ export interface RootRouteChildren {
   ApiPublicRunAutomationsRoute: typeof ApiPublicRunAutomationsRoute
   ApiPublicSendAlertsRoute: typeof ApiPublicSendAlertsRoute
   ApiPublicUserAdminRoute: typeof ApiPublicUserAdminRoute
+  ApiPublicV1AttendanceRoute: typeof ApiPublicV1AttendanceRoute
+  ApiPublicV1ClientsRoute: typeof ApiPublicV1ClientsRoute
+  ApiPublicV1EmployeesRoute: typeof ApiPublicV1EmployeesRouteWithChildren
+  ApiPublicV1LeaveRoute: typeof ApiPublicV1LeaveRoute
+  ApiPublicV1MeRoute: typeof ApiPublicV1MeRoute
+  ApiPublicV1MetaRoute: typeof ApiPublicV1MetaRoute
+  ApiPublicV1PayrollRoute: typeof ApiPublicV1PayrollRoute
+  ApiPublicV1ProjectsRoute: typeof ApiPublicV1ProjectsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1196,6 +1312,69 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedClientsIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/v1/projects': {
+      id: '/api/public/v1/projects'
+      path: '/api/public/v1/projects'
+      fullPath: '/api/public/v1/projects'
+      preLoaderRoute: typeof ApiPublicV1ProjectsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/v1/payroll': {
+      id: '/api/public/v1/payroll'
+      path: '/api/public/v1/payroll'
+      fullPath: '/api/public/v1/payroll'
+      preLoaderRoute: typeof ApiPublicV1PayrollRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/v1/meta': {
+      id: '/api/public/v1/meta'
+      path: '/api/public/v1/meta'
+      fullPath: '/api/public/v1/meta'
+      preLoaderRoute: typeof ApiPublicV1MetaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/v1/me': {
+      id: '/api/public/v1/me'
+      path: '/api/public/v1/me'
+      fullPath: '/api/public/v1/me'
+      preLoaderRoute: typeof ApiPublicV1MeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/v1/leave': {
+      id: '/api/public/v1/leave'
+      path: '/api/public/v1/leave'
+      fullPath: '/api/public/v1/leave'
+      preLoaderRoute: typeof ApiPublicV1LeaveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/v1/employees': {
+      id: '/api/public/v1/employees'
+      path: '/api/public/v1/employees'
+      fullPath: '/api/public/v1/employees'
+      preLoaderRoute: typeof ApiPublicV1EmployeesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/v1/clients': {
+      id: '/api/public/v1/clients'
+      path: '/api/public/v1/clients'
+      fullPath: '/api/public/v1/clients'
+      preLoaderRoute: typeof ApiPublicV1ClientsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/v1/attendance': {
+      id: '/api/public/v1/attendance'
+      path: '/api/public/v1/attendance'
+      fullPath: '/api/public/v1/attendance'
+      preLoaderRoute: typeof ApiPublicV1AttendanceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/v1/employees/$id': {
+      id: '/api/public/v1/employees/$id'
+      path: '/$id'
+      fullPath: '/api/public/v1/employees/$id'
+      preLoaderRoute: typeof ApiPublicV1EmployeesIdRouteImport
+      parentRoute: typeof ApiPublicV1EmployeesRoute
+    }
   }
 }
 
@@ -1298,6 +1477,17 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
 const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
+interface ApiPublicV1EmployeesRouteChildren {
+  ApiPublicV1EmployeesIdRoute: typeof ApiPublicV1EmployeesIdRoute
+}
+
+const ApiPublicV1EmployeesRouteChildren: ApiPublicV1EmployeesRouteChildren = {
+  ApiPublicV1EmployeesIdRoute: ApiPublicV1EmployeesIdRoute,
+}
+
+const ApiPublicV1EmployeesRouteWithChildren =
+  ApiPublicV1EmployeesRoute._addFileChildren(ApiPublicV1EmployeesRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
@@ -1314,17 +1504,15 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicRunAutomationsRoute: ApiPublicRunAutomationsRoute,
   ApiPublicSendAlertsRoute: ApiPublicSendAlertsRoute,
   ApiPublicUserAdminRoute: ApiPublicUserAdminRoute,
+  ApiPublicV1AttendanceRoute: ApiPublicV1AttendanceRoute,
+  ApiPublicV1ClientsRoute: ApiPublicV1ClientsRoute,
+  ApiPublicV1EmployeesRoute: ApiPublicV1EmployeesRouteWithChildren,
+  ApiPublicV1LeaveRoute: ApiPublicV1LeaveRoute,
+  ApiPublicV1MeRoute: ApiPublicV1MeRoute,
+  ApiPublicV1MetaRoute: ApiPublicV1MetaRoute,
+  ApiPublicV1PayrollRoute: ApiPublicV1PayrollRoute,
+  ApiPublicV1ProjectsRoute: ApiPublicV1ProjectsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
