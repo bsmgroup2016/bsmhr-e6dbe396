@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { fromAttendance } from "@/lib/db";
+import { applyPunch, type PunchEvent } from "@/lib/attendance-punch.server";
 import {
   fail,
   hasAnyRole,
@@ -9,23 +10,9 @@ import {
   readJson,
   requireAuth,
   sbRest,
-  sbSelect,
 } from "@/lib/api-v1.server";
 
-type PunchBody = {
-  employeeId?: string;
-  date?: string;
-  status?: string;
-  checkIn?: string;
-  checkOut?: string;
-  siteId?: string;
-  hoursWorked?: number;
-  overtimeHours?: number;
-  lat?: number;
-  lng?: number;
-  address?: string;
-  notes?: string;
-};
+type PunchBody = PunchEvent;
 
 /**
  * Attendance read + punch. The Flutter app posts GPS punches to the same
