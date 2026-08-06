@@ -31,11 +31,28 @@ export const Route = createFileRoute("/api/public/notify-leave")({
         );
         if (!leave) return new Response("Leave request not found", { status: 404 });
         const [employee] = await restGet(
-          `employees?select=name,email&id=eq.${encodeURIComponent(leave.employee_id)}&limit=1`,
+          `employees?select=name,email,user_id&id=eq.${encodeURIComponent(leave.employee_id)}&limit=1`,
         );
+        const approved = status === "Approved";
+
+        // Push + in-app notification (works even when there is no email on file).
+        if (employee?.user_id) {
+          try {
+            const { sendPush } = await import("@/lib/push.server");
+            await sendPush({
+              userIds: [employee.user_id],
+              title: `Leave request ${status.toLowerCase()}`,
+              body: `${leave.leave_type} ${leave.start_date} to ${leave.end_date} was ${status.toLowerCase()}.`,
+              category: "leave",
+              data: { leaveId, status },
+            });
+          } catch {
+            /* push failure must never block the approval flow */
+          }
+        }
+
         if (!employee?.email) return Response.json({ sent: false, reason: "no_employee_email" });
 
-        const approved = status === "Approved";
         const html = layout(`Leave request ${status.toLowerCase()}`, `
           <p>Dear ${esc(employee.name)},</p>
           <p>Your <b>${esc(leave.leave_type)}</b> request from <b>${esc(leave.start_date)}</b> to
