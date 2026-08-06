@@ -59,7 +59,11 @@ Codes: `unauthorized`, `forbidden`, `not_found`, `bad_request`,
 | GET | `/attendance` | `employeeId,from,to` — workers scoped to self |
 | POST | `/attendance` | GPS punch in/out (`checkIn`/`checkOut`, `lat`, `lng`) |
 | GET | `/leave` | `status,employeeId` |
-| POST | `/leave` | Apply for leave |
+| POST | `/leave` | Apply for leave. Optional `attachments: [key]` (MC / medical report) |
+| GET | `/leave/:id` | Single request (workers: own only) |
+| PATCH | `/leave/:id` | Attach MC (`attachments`, `replaceAttachments`), edit `reason`, worker `status: "Cancelled"`, staff `status: Approved/Rejected` + `remarks` |
+| POST | `/uploads` | `multipart/form-data`: `file`, optional `folder` (`medical`, `leave`, `claims`, `documents`, `attendance`, `safety`, `profile`), `employeeId` (staff only). Returns `{ key, url, size, contentType }` |
+| GET | `/uploads?key=` | 5-minute signed download URL for an object the caller may read |
 | GET | `/payroll` | `month,employeeId` — payslip history |
 | GET | `/payroll/:id/payslip` | Payslip **PDF bytes** (`application/pdf`); workers get only their own |
 | GET | `/projects` | Staff roles only |
@@ -88,5 +92,17 @@ Every collection endpoint is paginated (`limit` max 200) — essential on mobile
    browser-only Supabase query path mobile cannot reuse.
 3. Files always go through the R2 signed-URL endpoints, which work from any
    HTTP client.
+
+## 8. Medical leave attachment flow (mobile)
+
+1. `POST /api/public/v1/uploads` with the MC photo (`folder=medical`) → `key`.
+2. `POST /api/public/v1/leave` with `type: "Medical Leave"` and
+   `attachments: [key]`, or `PATCH /api/public/v1/leave/:id` to add the MC later.
+3. `GET /api/public/v1/uploads?key=...` returns a short-lived signed URL for
+   viewing/downloading the file in the app.
+
+Size and daily-count limits are role-based (worker 10 MB / 50 files per day,
+staff 25 MB / 500). Allowed types: pdf, jpg, jpeg, png, webp, gif, heic, doc,
+docx, xls, xlsx, csv, txt.
 4. PDFs and reports mobile needs are generated server-side and returned as a
    URL, not only in the browser.

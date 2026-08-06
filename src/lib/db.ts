@@ -383,7 +383,11 @@ export const fromLeave = (r: Row): LeaveRequest => ({
   startDate: d(r.start_date) ?? "", endDate: d(r.end_date) ?? "", days: Number(r.days ?? 0),
   reason: r.reason ?? undefined, status: (r.status ?? "Pending") as LeaveRequest["status"],
   approvedBy: r.approved_by ?? undefined, approvedAt: r.approved_at ?? undefined,
-  remarks: r.remarks ?? undefined, createdAt: r.created_at, updatedAt: r.updated_at,
+  remarks: r.remarks ?? undefined,
+  attachmentUrls: Array.isArray(r.attachment_urls)
+    ? (r.attachment_urls as string[]).filter(Boolean)
+    : [],
+  createdAt: r.created_at, updatedAt: r.updated_at,
 });
 
 export const toLeave = (l: Partial<LeaveRequest>): Row => ({
@@ -391,6 +395,7 @@ export const toLeave = (l: Partial<LeaveRequest>): Row => ({
   end_date: nullDate(l.endDate), days: l.days ?? 0, reason: l.reason ?? null,
   status: l.status, approved_by: l.approvedBy || null, approved_at: l.approvedAt || null,
   remarks: l.remarks ?? null,
+  ...(l.attachmentUrls ? { attachment_urls: l.attachmentUrls } : {}),
 });
 
 /* ---------- billing ---------- */
