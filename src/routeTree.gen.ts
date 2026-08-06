@@ -80,6 +80,7 @@ import { Route as ApiPublicV1EmployeesRouteImport } from './routes/api/public/v1
 import { Route as ApiPublicV1DevicesRouteImport } from './routes/api/public/v1/devices'
 import { Route as ApiPublicV1ClientsRouteImport } from './routes/api/public/v1/clients'
 import { Route as ApiPublicV1AttendanceRouteImport } from './routes/api/public/v1/attendance'
+import { Route as ApiPublicV1MeDashboardRouteImport } from './routes/api/public/v1/me.dashboard'
 import { Route as ApiPublicV1LeaveIdRouteImport } from './routes/api/public/v1/leave.$id'
 import { Route as ApiPublicV1EmployeesIdRouteImport } from './routes/api/public/v1/employees.$id'
 import { Route as ApiPublicV1DriverTasksRouteImport } from './routes/api/public/v1/driver.tasks'
@@ -457,6 +458,11 @@ const ApiPublicV1AttendanceRoute = ApiPublicV1AttendanceRouteImport.update({
   path: '/api/public/v1/attendance',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicV1MeDashboardRoute = ApiPublicV1MeDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => ApiPublicV1MeRoute,
+} as any)
 const ApiPublicV1LeaveIdRoute = ApiPublicV1LeaveIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -561,7 +567,7 @@ export interface FileRoutesByFullPath {
   '/api/public/v1/devices': typeof ApiPublicV1DevicesRoute
   '/api/public/v1/employees': typeof ApiPublicV1EmployeesRouteWithChildren
   '/api/public/v1/leave': typeof ApiPublicV1LeaveRouteWithChildren
-  '/api/public/v1/me': typeof ApiPublicV1MeRoute
+  '/api/public/v1/me': typeof ApiPublicV1MeRouteWithChildren
   '/api/public/v1/meta': typeof ApiPublicV1MetaRoute
   '/api/public/v1/notifications': typeof ApiPublicV1NotificationsRoute
   '/api/public/v1/payroll': typeof ApiPublicV1PayrollRouteWithChildren
@@ -572,6 +578,7 @@ export interface FileRoutesByFullPath {
   '/api/public/v1/driver/tasks': typeof ApiPublicV1DriverTasksRouteWithChildren
   '/api/public/v1/employees/$id': typeof ApiPublicV1EmployeesIdRoute
   '/api/public/v1/leave/$id': typeof ApiPublicV1LeaveIdRoute
+  '/api/public/v1/me/dashboard': typeof ApiPublicV1MeDashboardRoute
   '/api/public/v1/driver/tasks/$id': typeof ApiPublicV1DriverTasksIdRoute
   '/api/public/v1/payroll/$id/payslip': typeof ApiPublicV1PayrollIdPayslipRoute
 }
@@ -640,7 +647,7 @@ export interface FileRoutesByTo {
   '/api/public/v1/devices': typeof ApiPublicV1DevicesRoute
   '/api/public/v1/employees': typeof ApiPublicV1EmployeesRouteWithChildren
   '/api/public/v1/leave': typeof ApiPublicV1LeaveRouteWithChildren
-  '/api/public/v1/me': typeof ApiPublicV1MeRoute
+  '/api/public/v1/me': typeof ApiPublicV1MeRouteWithChildren
   '/api/public/v1/meta': typeof ApiPublicV1MetaRoute
   '/api/public/v1/notifications': typeof ApiPublicV1NotificationsRoute
   '/api/public/v1/payroll': typeof ApiPublicV1PayrollRouteWithChildren
@@ -651,6 +658,7 @@ export interface FileRoutesByTo {
   '/api/public/v1/driver/tasks': typeof ApiPublicV1DriverTasksRouteWithChildren
   '/api/public/v1/employees/$id': typeof ApiPublicV1EmployeesIdRoute
   '/api/public/v1/leave/$id': typeof ApiPublicV1LeaveIdRoute
+  '/api/public/v1/me/dashboard': typeof ApiPublicV1MeDashboardRoute
   '/api/public/v1/driver/tasks/$id': typeof ApiPublicV1DriverTasksIdRoute
   '/api/public/v1/payroll/$id/payslip': typeof ApiPublicV1PayrollIdPayslipRoute
 }
@@ -721,7 +729,7 @@ export interface FileRoutesById {
   '/api/public/v1/devices': typeof ApiPublicV1DevicesRoute
   '/api/public/v1/employees': typeof ApiPublicV1EmployeesRouteWithChildren
   '/api/public/v1/leave': typeof ApiPublicV1LeaveRouteWithChildren
-  '/api/public/v1/me': typeof ApiPublicV1MeRoute
+  '/api/public/v1/me': typeof ApiPublicV1MeRouteWithChildren
   '/api/public/v1/meta': typeof ApiPublicV1MetaRoute
   '/api/public/v1/notifications': typeof ApiPublicV1NotificationsRoute
   '/api/public/v1/payroll': typeof ApiPublicV1PayrollRouteWithChildren
@@ -732,6 +740,7 @@ export interface FileRoutesById {
   '/api/public/v1/driver/tasks': typeof ApiPublicV1DriverTasksRouteWithChildren
   '/api/public/v1/employees/$id': typeof ApiPublicV1EmployeesIdRoute
   '/api/public/v1/leave/$id': typeof ApiPublicV1LeaveIdRoute
+  '/api/public/v1/me/dashboard': typeof ApiPublicV1MeDashboardRoute
   '/api/public/v1/driver/tasks/$id': typeof ApiPublicV1DriverTasksIdRoute
   '/api/public/v1/payroll/$id/payslip': typeof ApiPublicV1PayrollIdPayslipRoute
 }
@@ -813,6 +822,7 @@ export interface FileRouteTypes {
     | '/api/public/v1/driver/tasks'
     | '/api/public/v1/employees/$id'
     | '/api/public/v1/leave/$id'
+    | '/api/public/v1/me/dashboard'
     | '/api/public/v1/driver/tasks/$id'
     | '/api/public/v1/payroll/$id/payslip'
   fileRoutesByTo: FileRoutesByTo
@@ -892,6 +902,7 @@ export interface FileRouteTypes {
     | '/api/public/v1/driver/tasks'
     | '/api/public/v1/employees/$id'
     | '/api/public/v1/leave/$id'
+    | '/api/public/v1/me/dashboard'
     | '/api/public/v1/driver/tasks/$id'
     | '/api/public/v1/payroll/$id/payslip'
   id:
@@ -972,6 +983,7 @@ export interface FileRouteTypes {
     | '/api/public/v1/driver/tasks'
     | '/api/public/v1/employees/$id'
     | '/api/public/v1/leave/$id'
+    | '/api/public/v1/me/dashboard'
     | '/api/public/v1/driver/tasks/$id'
     | '/api/public/v1/payroll/$id/payslip'
   fileRoutesById: FileRoutesById
@@ -997,7 +1009,7 @@ export interface RootRouteChildren {
   ApiPublicV1DevicesRoute: typeof ApiPublicV1DevicesRoute
   ApiPublicV1EmployeesRoute: typeof ApiPublicV1EmployeesRouteWithChildren
   ApiPublicV1LeaveRoute: typeof ApiPublicV1LeaveRouteWithChildren
-  ApiPublicV1MeRoute: typeof ApiPublicV1MeRoute
+  ApiPublicV1MeRoute: typeof ApiPublicV1MeRouteWithChildren
   ApiPublicV1MetaRoute: typeof ApiPublicV1MetaRoute
   ApiPublicV1NotificationsRoute: typeof ApiPublicV1NotificationsRoute
   ApiPublicV1PayrollRoute: typeof ApiPublicV1PayrollRouteWithChildren
@@ -1506,6 +1518,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicV1AttendanceRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/v1/me/dashboard': {
+      id: '/api/public/v1/me/dashboard'
+      path: '/dashboard'
+      fullPath: '/api/public/v1/me/dashboard'
+      preLoaderRoute: typeof ApiPublicV1MeDashboardRouteImport
+      parentRoute: typeof ApiPublicV1MeRoute
+    }
     '/api/public/v1/leave/$id': {
       id: '/api/public/v1/leave/$id'
       path: '/$id'
@@ -1692,6 +1711,18 @@ const ApiPublicV1LeaveRouteChildren: ApiPublicV1LeaveRouteChildren = {
 const ApiPublicV1LeaveRouteWithChildren =
   ApiPublicV1LeaveRoute._addFileChildren(ApiPublicV1LeaveRouteChildren)
 
+interface ApiPublicV1MeRouteChildren {
+  ApiPublicV1MeDashboardRoute: typeof ApiPublicV1MeDashboardRoute
+}
+
+const ApiPublicV1MeRouteChildren: ApiPublicV1MeRouteChildren = {
+  ApiPublicV1MeDashboardRoute: ApiPublicV1MeDashboardRoute,
+}
+
+const ApiPublicV1MeRouteWithChildren = ApiPublicV1MeRoute._addFileChildren(
+  ApiPublicV1MeRouteChildren,
+)
+
 interface ApiPublicV1PayrollRouteChildren {
   ApiPublicV1PayrollIdPayslipRoute: typeof ApiPublicV1PayrollIdPayslipRoute
 }
@@ -1738,7 +1769,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicV1DevicesRoute: ApiPublicV1DevicesRoute,
   ApiPublicV1EmployeesRoute: ApiPublicV1EmployeesRouteWithChildren,
   ApiPublicV1LeaveRoute: ApiPublicV1LeaveRouteWithChildren,
-  ApiPublicV1MeRoute: ApiPublicV1MeRoute,
+  ApiPublicV1MeRoute: ApiPublicV1MeRouteWithChildren,
   ApiPublicV1MetaRoute: ApiPublicV1MetaRoute,
   ApiPublicV1NotificationsRoute: ApiPublicV1NotificationsRoute,
   ApiPublicV1PayrollRoute: ApiPublicV1PayrollRouteWithChildren,

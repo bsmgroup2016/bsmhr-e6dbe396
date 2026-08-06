@@ -58,6 +58,7 @@ export type RateLimitRule = { limit: number; windowSeconds: number };
 export const RATE_LIMITS: Record<string, RateLimitRule> = {
   default: { limit: 120, windowSeconds: 60 },
   auth: { limit: 600, windowSeconds: 60 }, // per-IP; carrier NAT shares IPs, so kept high
+  dashboard: { limit: 60, windowSeconds: 60 },
   attendance: { limit: 60, windowSeconds: 60 },
   "attendance.sync": { limit: 20, windowSeconds: 60 },
   uploads: { limit: 20, windowSeconds: 60 },
