@@ -354,6 +354,15 @@ export interface Attendance {
   checkOutLat?: number;
   checkOutLng?: number;
   checkOutAddress?: string;
+  /** Selfie proof keys (R2 object keys) captured with each punch. */
+  checkInSelfieKey?: string;
+  checkOutSelfieKey?: string;
+  /** Punch verification verdict: verified / flagged / unverified. */
+  checkInVerification?: string;
+  checkOutVerification?: string;
+  /** Metres from the site geofence centre at punch time. */
+  checkInDistanceM?: number;
+  checkOutDistanceM?: number;
   createdAt: string;
   updatedAt: string;
 }
