@@ -12,6 +12,7 @@ import { getEmployees, getSites, getAttendance, upsertAttendance } from "@/lib/s
 import { capturePoint } from "@/lib/geo";
 import { uploadToR2 } from "@/lib/r2";
 import { verifyPunch } from "@/lib/punch-verification";
+import { enqueuePunch, useOfflineQueue } from "@/lib/offline-punch";
 import {
   validatePunchToken, hoursBetween, nowTime, splitHours, today,
 } from "@/lib/qr-attendance";
@@ -41,6 +42,7 @@ function QrPunchPage() {
   const [busy, setBusy] = useState(false);
   const [selfie, setSelfie] = useState<File | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const { online, pending, syncing, sync } = useOfflineQueue();
 
   const check = useMemo(() => validatePunchToken(site, d, k), [site, d, k]);
   const employee = useMemo(
@@ -111,6 +113,29 @@ function QrPunchPage() {
       );
       if (verdict.rejected) {
         toast.error(verdict.message ?? "Punch rejected by site rules");
+        return;
+      }
+
+      // No network: keep the punch on the device and flush it later.
+      if (!online) {
+        const stampOffline = nowTime();
+        enqueuePunch({
+          employeeId: employee.id,
+          siteId: siteRow.id,
+          date: today(),
+          punchedAt: new Date().toISOString(),
+          checkIn: mode === "in" ? stampOffline : (record?.checkIn ?? undefined),
+          checkOut: mode === "out" ? stampOffline : undefined,
+          lat: point?.lat,
+          lng: point?.lng,
+          address: point?.address,
+          notes: `Offline QR clock-${mode} at ${siteRow.name}`,
+        });
+        toast.success(
+          `Saved offline at ${stampOffline} — it will sync automatically when you are back online.`,
+        );
+        setSelfie(null);
+        if (fileRef.current) fileRef.current.value = "";
         return;
       }
 
