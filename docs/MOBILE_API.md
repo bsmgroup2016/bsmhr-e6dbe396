@@ -72,6 +72,11 @@ Codes: `unauthorized`, `forbidden`, `not_found`, `bad_request`,
 | GET | `/driver/tasks/:id` | Single task; drivers may read only their own |
 | PATCH | `/driver/tasks/:id` | Driver progresses the trip: `status`, `note`, `lat`, `lng`, `speedKmh` (a position also writes a breadcrumb) |
 | GET | `/driver/pings` | `taskId` — GPS trail for route replay |
+| POST | `/devices` | Register FCM token (`token`, `platform`, `appVersion`, `deviceModel`) — upsert on every app launch |
+| DELETE | `/devices` | Unregister the token on logout (`token`) |
+| GET | `/notifications` | In-app inbox, `unread=1` filter, paginated |
+| PATCH | `/notifications` | Mark read: `ids: [...]` or `all: true` |
+| POST | `/notifications` | Staff-only push/broadcast to `userIds` / `employeeIds` |
 | POST | `/driver/pings` | Single ping or offline batch (`pings: [{lat,lng,recordedAt,speedKmh,status}]`, max 500) — also updates the task's last known position |
 
 Every collection endpoint is paginated (`limit` max 200) — essential on mobile.
@@ -106,3 +111,18 @@ staff 25 MB / 500). Allowed types: pdf, jpg, jpeg, png, webp, gif, heic, doc,
 docx, xls, xlsx, csv, txt.
 4. PDFs and reports mobile needs are generated server-side and returned as a
    URL, not only in the browser.
+## 9. Push notifications (FCM / APNs)
+
+1. Flutter gets an FCM token (`firebase_messaging`; iOS delivery goes through
+   APNs automatically once the APNs key is uploaded to Firebase).
+2. `POST /api/public/v1/devices` with `{ token, platform, appVersion, deviceModel }`
+   on every launch; `DELETE /api/public/v1/devices` on logout.
+3. The server stores every notification in `public.notifications`, so the
+   in-app inbox (`GET /v1/notifications`) still works when delivery fails.
+4. Leave approve/reject already sends a push automatically; staff can send
+   announcements with `POST /v1/notifications`.
+
+Server secret required: `FCM_SERVICE_ACCOUNT_JSON` (Firebase service-account
+JSON). Without it, notifications are still stored but not delivered.
+
+DB migration: `supabase/migrations/0062_push_notifications.sql`.
