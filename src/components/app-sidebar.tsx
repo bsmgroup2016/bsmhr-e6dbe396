@@ -3,6 +3,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import {
   BadgeDollarSign,
   BedDouble,
+  Bot,
   Briefcase,
   Building2,
   Boxes,
@@ -121,6 +122,7 @@ const navGroups: { label: string; items: NavItem[] }[] = [
 ];
 
 const adminItems: NavItem[] = [
+  { title: "AI Assistant", url: "/assistant", icon: Bot },
   { title: "Approvals", url: "/approvals", icon: ClipboardList },
   { title: "Reports", url: "/reports", icon: ClipboardList },
   { title: "Users & Permissions", url: "/users", icon: ShieldCheck },
