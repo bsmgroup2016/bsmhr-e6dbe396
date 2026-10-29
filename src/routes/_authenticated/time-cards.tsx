@@ -149,6 +149,7 @@ function TimeCardsPage() {
         checkIn: r.checkIn,
         checkOut: r.checkOut,
         confidence: r.confidence,
+        suggestion: r.suggestion,
       }));
     }
     const card = addTimeCard({
@@ -220,6 +221,7 @@ function TimeCardsPage() {
           checkIn: r.checkIn,
           checkOut: r.checkOut,
           confidence: r.confidence,
+          suggestion: r.suggestion,
         })),
       );
       updateTimeCard(card.id, { entries });

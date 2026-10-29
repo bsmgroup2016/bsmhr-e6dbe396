@@ -86,6 +86,9 @@ export type TimeCardExtractRow = {
   checkIn?: string;
   checkOut?: string;
   confidence?: number;
+  /** Second AI's (OpenAI) differing reading, for manual review. */
+  suggestion?: { checkIn?: string; checkOut?: string };
+  verifiedBy?: string;
 };
 
 export type PassportExtract = {

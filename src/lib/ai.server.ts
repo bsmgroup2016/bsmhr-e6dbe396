@@ -157,6 +157,8 @@ export interface AiRequest {
   dataUrl?: string;
   /** Extra plain text context (spreadsheet headers, notes...). */
   context?: string;
+  /** Use only this provider (no fallback). */
+  only?: AiProviderName;
 }
 
 function buildBody(provider: ProviderConfig, req: AiRequest) {
@@ -206,6 +208,8 @@ export async function askAiJson(req: AiRequest): Promise<unknown> {
 
   // Scanned documents can only go to providers that accept images.
   if (req.dataUrl) list = list.filter((p) => p.vision);
+  // Pin a single provider (used by the Gemini-read → OpenAI-audit pipeline).
+  if (req.only) list = list.filter((p) => p.name === req.only);
   
   if (list.length === 0) {
     throw new Error(

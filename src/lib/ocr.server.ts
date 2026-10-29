@@ -35,14 +35,80 @@ export async function readIpa(ref: string) {
   return data as Record<string, string>;
 }
 
+type TcRow = { date: string; checkIn?: string; checkOut?: string };
+const TC_READ =
+  "This is a scanned monthly physical time card. Return a JSON array of rows, one per printed day, " +
+  'each like {"date":"YYYY-MM-DD","checkIn":"HH:MM","checkOut":"HH:MM"}. ' +
+  "Use 24-hour times. Skip days with no punches. Return [] if the card is unreadable.";
+
+const asRows = (d: unknown): TcRow[] =>
+  (Array.isArray(d) ? d : Array.isArray((d as { rows?: unknown })?.rows) ? (d as { rows: unknown[] }).rows : [])
+    .filter((r): r is TcRow => !!r && typeof (r as TcRow).date === "string");
+
+/**
+ * Dual-AI pipeline: Gemini reads the card, OpenAI audits the same image
+ * against Gemini's rows. Agreeing rows get high confidence; disagreements
+ * get low confidence + OpenAI's value as a suggestion for manual review.
+ * If either provider is unavailable, the other one's read is used alone.
+ */
 export async function readTimeCard(ref: string) {
-  const data = await readFile(
-    ref,
-    "This is a scanned monthly physical time card. Return a JSON array of rows, one per printed day, " +
-      'each like {"date":"YYYY-MM-DD","checkIn":"HH:MM","checkOut":"HH:MM"}. ' +
-      "Use 24-hour times. Skip days with no punches. Return [] if the card is unreadable.",
-  );
-  return Array.isArray(data) ? (data as Record<string, string>[]) : [];
+  const dataUrl = await fetchAsDataUrl(ref);
+
+  let primary: TcRow[] | null = null;
+  let primaryBy = "gemini";
+  try {
+    primary = asRows(await askAiJson({ instruction: TC_READ, dataUrl, only: "gemini" }));
+  } catch (e) {
+    console.error("timecard gemini read failed", e);
+  }
+  if (!primary || primary.length === 0) {
+    primaryBy = "fallback";
+    primary = asRows(await askAiJson({ instruction: TC_READ, dataUrl }));
+  }
+
+  let audit: TcRow[] | null = null;
+  if (primaryBy === "gemini") {
+    try {
+      audit = asRows(
+        await askAiJson({
+          only: "openai",
+          dataUrl,
+          instruction:
+            "You are auditing another AI's reading of this scanned time card. Look at the image carefully and " +
+            "return YOUR OWN reading for every date listed below (plus any punched day it missed), as a JSON " +
+            'object {"rows":[{"date":"YYYY-MM-DD","checkIn":"HH:MM","checkOut":"HH:MM"}]}. 24-hour times. ' +
+            "Correct digits that were misread; omit a time only if it is truly unreadable.",
+          context: `Other AI's reading: ${JSON.stringify(primary)}`,
+        }),
+      );
+    } catch (e) {
+      console.error("timecard openai audit failed", e);
+    }
+  }
+
+  if (!audit) return primary.map((r) => ({ ...r, confidence: 0.75, verifiedBy: primaryBy }));
+
+  const auditMap = new Map(audit.map((r) => [r.date, r]));
+  const same = (a?: string, b?: string) => (a ?? "").trim() === (b ?? "").trim();
+  const out = primary.map((r) => {
+    const a = auditMap.get(r.date);
+    auditMap.delete(r.date);
+    if (!a) return { ...r, confidence: 0.6, verifiedBy: "gemini" };
+    const inOk = same(r.checkIn, a.checkIn);
+    const outOk = same(r.checkOut, a.checkOut);
+    if (inOk && outOk) return { ...r, confidence: 0.97, verifiedBy: "gemini+openai" };
+    return {
+      ...r,
+      confidence: inOk || outOk ? 0.55 : 0.35,
+      suggestion: { checkIn: a.checkIn, checkOut: a.checkOut },
+      verifiedBy: "conflict",
+    };
+  });
+  // Days only OpenAI saw — flag for review.
+  for (const a of auditMap.values()) {
+    out.push({ date: a.date, checkIn: undefined, checkOut: undefined, confidence: 0.3, suggestion: { checkIn: a.checkIn, checkOut: a.checkOut }, verifiedBy: "openai-only" } as never);
+  }
+  return out.sort((x, y) => x.date.localeCompare(y.date));
 }
 
 /** Passport bio page or Work Permit / S-Pass card → identity + expiry dates. */
