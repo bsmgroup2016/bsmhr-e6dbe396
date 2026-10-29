@@ -24,9 +24,9 @@ function providers(): Provider[] {
   const e = process.env;
   const list: Provider[] = [];
   const gUrl = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
-  if (e.ASSISTANT_GEMINI_KEY_1) list.push({ name: "Gemini #1", url: gUrl, key: e.ASSISTANT_GEMINI_KEY_1, model: "gemini-2.5-flash", extra: { "x-goog-api-key": e.ASSISTANT_GEMINI_KEY_1 } });
-  if (e.ASSISTANT_GEMINI_KEY_2) list.push({ name: "Gemini #2", url: gUrl, key: e.ASSISTANT_GEMINI_KEY_2, model: "gemini-2.5-flash", extra: { "x-goog-api-key": e.ASSISTANT_GEMINI_KEY_2 } });
-  if (e.ASSISTANT_GROQ_KEY) list.push({ name: "Groq", url: "https://api.groq.com/openai/v1/chat/completions", key: e.ASSISTANT_GROQ_KEY, model: "llama-3.3-70b-versatile" });
+  if (e.ASSISTANT_GEMINI_KEY_1) list.push({ name: "Gemini #1", url: gUrl, key: e.ASSISTANT_GEMINI_KEY_1, model: "gemini-3.5-flash", extra: { "x-goog-api-key": e.ASSISTANT_GEMINI_KEY_1 } });
+  if (e.ASSISTANT_GEMINI_KEY_2) list.push({ name: "Gemini #2", url: gUrl, key: e.ASSISTANT_GEMINI_KEY_2, model: "gemini-3.5-flash", extra: { "x-goog-api-key": e.ASSISTANT_GEMINI_KEY_2 } });
+  if (e.ASSISTANT_GROQ_KEY) list.push({ name: "Groq", url: "https://api.groq.com/openai/v1/chat/completions", key: e.ASSISTANT_GROQ_KEY, model: "openai/gpt-oss-120b" });
   if (e.ASSISTANT_OPENROUTER_KEY) list.push({
     name: "OpenRouter", url: "https://openrouter.ai/api/v1/chat/completions", key: e.ASSISTANT_OPENROUTER_KEY,
     model: e.ASSISTANT_OPENROUTER_MODEL || "openai/gpt-4o-mini", extra: { "X-Title": "BSM Workforce Assistant" },
