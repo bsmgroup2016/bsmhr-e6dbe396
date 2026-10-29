@@ -138,8 +138,10 @@ async function runTool(name: string, args: Record<string, unknown>, auth: string
     q.set("limit", String(Math.min(200, Math.max(1, Number(args.limit) || 50))));
     const r = await rest(`${table}?${q}`, auth, anon);
     if ("error" in r) return r;
-    const out = r.text.length > 40000 ? r.text.slice(0, 40000) + "…(truncated)" : r.text;
-    return JSON.parse(out.endsWith("(truncated)") ? "[]" : out).length !== undefined ? JSON.parse(r.text.length > 40000 ? "[]" : r.text) : out;
+    const rows = JSON.parse(r.text) as unknown[];
+    let data = rows;
+    while (data.length > 1 && JSON.stringify(data).length > 40000) data = data.slice(0, Math.floor(data.length / 2));
+    return { rows: data, returned: data.length, truncated: data.length < rows.length };
   } catch (e) {
     return { error: e instanceof Error ? e.message : "tool failed" };
   }
