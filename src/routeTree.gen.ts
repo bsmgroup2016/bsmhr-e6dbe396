@@ -16,6 +16,7 @@ import { Route as AuthenticatedAccommodationRouteImport } from './routes/_authen
 import { Route as AuthenticatedAlertsRouteImport } from './routes/_authenticated/alerts'
 import { Route as AuthenticatedApprovalsRouteImport } from './routes/_authenticated/approvals'
 import { Route as AuthenticatedAssetsRouteImport } from './routes/_authenticated/assets'
+import { Route as AuthenticatedAssistantRouteImport } from './routes/_authenticated/assistant'
 import { Route as AuthenticatedAuditLogsRouteImport } from './routes/_authenticated/audit-logs'
 import { Route as AuthenticatedAvailableWorkersRouteImport } from './routes/_authenticated/available-workers'
 import { Route as AuthenticatedBillingRouteImport } from './routes/_authenticated/billing'
@@ -57,6 +58,7 @@ import { Route as AuthenticatedClientsIdRouteImport } from './routes/_authentica
 import { Route as AuthenticatedCompaniesIdRouteImport } from './routes/_authenticated/companies_.$id'
 import { Route as AuthenticatedWorkforceSlugRouteImport } from './routes/_authenticated/workforce_.$slug'
 import { Route as ApiPublicAiStatusRouteImport } from './routes/api/public/ai-status'
+import { Route as ApiPublicAssistantRouteImport } from './routes/api/public/assistant'
 import { Route as ApiPublicAutomationRunRouteImport } from './routes/api/public/automation-run'
 import { Route as ApiPublicNotifyLeaveRouteImport } from './routes/api/public/notify-leave'
 import { Route as ApiPublicOcrRouteImport } from './routes/api/public/ocr'
@@ -122,6 +124,11 @@ const AuthenticatedApprovalsRoute = AuthenticatedApprovalsRouteImport.update({
 const AuthenticatedAssetsRoute = AuthenticatedAssetsRouteImport.update({
   id: '/assets',
   path: '/assets',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAssistantRoute = AuthenticatedAssistantRouteImport.update({
+  id: '/assistant',
+  path: '/assistant',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedAuditLogsRoute = AuthenticatedAuditLogsRouteImport.update({
@@ -341,6 +348,11 @@ const ApiPublicAiStatusRoute = ApiPublicAiStatusRouteImport.update({
   path: '/api/public/ai-status',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicAssistantRoute = ApiPublicAssistantRouteImport.update({
+  id: '/api/public/assistant',
+  path: '/api/public/assistant',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicAutomationRunRoute = ApiPublicAutomationRunRouteImport.update({
   id: '/api/public/automation-run',
   path: '/api/public/automation-run',
@@ -509,6 +521,7 @@ export interface FileRoutesByFullPath {
   '/alerts': typeof AuthenticatedAlertsRoute
   '/approvals': typeof AuthenticatedApprovalsRoute
   '/assets': typeof AuthenticatedAssetsRoute
+  '/assistant': typeof AuthenticatedAssistantRoute
   '/audit-logs': typeof AuthenticatedAuditLogsRoute
   '/available-workers': typeof AuthenticatedAvailableWorkersRoute
   '/billing': typeof AuthenticatedBillingRoute
@@ -550,6 +563,7 @@ export interface FileRoutesByFullPath {
   '/companies/$id': typeof AuthenticatedCompaniesIdRoute
   '/workforce/$slug': typeof AuthenticatedWorkforceSlugRoute
   '/api/public/ai-status': typeof ApiPublicAiStatusRoute
+  '/api/public/assistant': typeof ApiPublicAssistantRoute
   '/api/public/automation-run': typeof ApiPublicAutomationRunRoute
   '/api/public/notify-leave': typeof ApiPublicNotifyLeaveRoute
   '/api/public/ocr': typeof ApiPublicOcrRoute
@@ -588,6 +602,7 @@ export interface FileRoutesByTo {
   '/alerts': typeof AuthenticatedAlertsRoute
   '/approvals': typeof AuthenticatedApprovalsRoute
   '/assets': typeof AuthenticatedAssetsRoute
+  '/assistant': typeof AuthenticatedAssistantRoute
   '/audit-logs': typeof AuthenticatedAuditLogsRoute
   '/available-workers': typeof AuthenticatedAvailableWorkersRoute
   '/billing': typeof AuthenticatedBillingRoute
@@ -630,6 +645,7 @@ export interface FileRoutesByTo {
   '/companies/$id': typeof AuthenticatedCompaniesIdRoute
   '/workforce/$slug': typeof AuthenticatedWorkforceSlugRoute
   '/api/public/ai-status': typeof ApiPublicAiStatusRoute
+  '/api/public/assistant': typeof ApiPublicAssistantRoute
   '/api/public/automation-run': typeof ApiPublicAutomationRunRoute
   '/api/public/notify-leave': typeof ApiPublicNotifyLeaveRoute
   '/api/public/ocr': typeof ApiPublicOcrRoute
@@ -670,6 +686,7 @@ export interface FileRoutesById {
   '/_authenticated/alerts': typeof AuthenticatedAlertsRoute
   '/_authenticated/approvals': typeof AuthenticatedApprovalsRoute
   '/_authenticated/assets': typeof AuthenticatedAssetsRoute
+  '/_authenticated/assistant': typeof AuthenticatedAssistantRoute
   '/_authenticated/audit-logs': typeof AuthenticatedAuditLogsRoute
   '/_authenticated/available-workers': typeof AuthenticatedAvailableWorkersRoute
   '/_authenticated/billing': typeof AuthenticatedBillingRoute
@@ -712,6 +729,7 @@ export interface FileRoutesById {
   '/_authenticated/companies_/$id': typeof AuthenticatedCompaniesIdRoute
   '/_authenticated/workforce_/$slug': typeof AuthenticatedWorkforceSlugRoute
   '/api/public/ai-status': typeof ApiPublicAiStatusRoute
+  '/api/public/assistant': typeof ApiPublicAssistantRoute
   '/api/public/automation-run': typeof ApiPublicAutomationRunRoute
   '/api/public/notify-leave': typeof ApiPublicNotifyLeaveRoute
   '/api/public/ocr': typeof ApiPublicOcrRoute
@@ -753,6 +771,7 @@ export interface FileRouteTypes {
     | '/alerts'
     | '/approvals'
     | '/assets'
+    | '/assistant'
     | '/audit-logs'
     | '/available-workers'
     | '/billing'
@@ -794,6 +813,7 @@ export interface FileRouteTypes {
     | '/companies/$id'
     | '/workforce/$slug'
     | '/api/public/ai-status'
+    | '/api/public/assistant'
     | '/api/public/automation-run'
     | '/api/public/notify-leave'
     | '/api/public/ocr'
@@ -832,6 +852,7 @@ export interface FileRouteTypes {
     | '/alerts'
     | '/approvals'
     | '/assets'
+    | '/assistant'
     | '/audit-logs'
     | '/available-workers'
     | '/billing'
@@ -874,6 +895,7 @@ export interface FileRouteTypes {
     | '/companies/$id'
     | '/workforce/$slug'
     | '/api/public/ai-status'
+    | '/api/public/assistant'
     | '/api/public/automation-run'
     | '/api/public/notify-leave'
     | '/api/public/ocr'
@@ -913,6 +935,7 @@ export interface FileRouteTypes {
     | '/_authenticated/alerts'
     | '/_authenticated/approvals'
     | '/_authenticated/assets'
+    | '/_authenticated/assistant'
     | '/_authenticated/audit-logs'
     | '/_authenticated/available-workers'
     | '/_authenticated/billing'
@@ -955,6 +978,7 @@ export interface FileRouteTypes {
     | '/_authenticated/companies_/$id'
     | '/_authenticated/workforce_/$slug'
     | '/api/public/ai-status'
+    | '/api/public/assistant'
     | '/api/public/automation-run'
     | '/api/public/notify-leave'
     | '/api/public/ocr'
@@ -992,6 +1016,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   ApiPublicAiStatusRoute: typeof ApiPublicAiStatusRoute
+  ApiPublicAssistantRoute: typeof ApiPublicAssistantRoute
   ApiPublicAutomationRunRoute: typeof ApiPublicAutomationRunRoute
   ApiPublicNotifyLeaveRoute: typeof ApiPublicNotifyLeaveRoute
   ApiPublicOcrRoute: typeof ApiPublicOcrRoute
@@ -1068,6 +1093,13 @@ declare module '@tanstack/react-router' {
       path: '/assets'
       fullPath: '/assets'
       preLoaderRoute: typeof AuthenticatedAssetsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/assistant': {
+      id: '/_authenticated/assistant'
+      path: '/assistant'
+      fullPath: '/assistant'
+      preLoaderRoute: typeof AuthenticatedAssistantRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/audit-logs': {
@@ -1357,6 +1389,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicAiStatusRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/assistant': {
+      id: '/api/public/assistant'
+      path: '/api/public/assistant'
+      fullPath: '/api/public/assistant'
+      preLoaderRoute: typeof ApiPublicAssistantRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/automation-run': {
       id: '/api/public/automation-run'
       path: '/api/public/automation-run'
@@ -1582,6 +1621,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAlertsRoute: typeof AuthenticatedAlertsRoute
   AuthenticatedApprovalsRoute: typeof AuthenticatedApprovalsRoute
   AuthenticatedAssetsRoute: typeof AuthenticatedAssetsRoute
+  AuthenticatedAssistantRoute: typeof AuthenticatedAssistantRoute
   AuthenticatedAuditLogsRoute: typeof AuthenticatedAuditLogsRoute
   AuthenticatedAvailableWorkersRoute: typeof AuthenticatedAvailableWorkersRoute
   AuthenticatedBillingRoute: typeof AuthenticatedBillingRoute
@@ -1630,6 +1670,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAlertsRoute: AuthenticatedAlertsRoute,
   AuthenticatedApprovalsRoute: AuthenticatedApprovalsRoute,
   AuthenticatedAssetsRoute: AuthenticatedAssetsRoute,
+  AuthenticatedAssistantRoute: AuthenticatedAssistantRoute,
   AuthenticatedAuditLogsRoute: AuthenticatedAuditLogsRoute,
   AuthenticatedAvailableWorkersRoute: AuthenticatedAvailableWorkersRoute,
   AuthenticatedBillingRoute: AuthenticatedBillingRoute,
@@ -1752,6 +1793,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   ApiPublicAiStatusRoute: ApiPublicAiStatusRoute,
+  ApiPublicAssistantRoute: ApiPublicAssistantRoute,
   ApiPublicAutomationRunRoute: ApiPublicAutomationRunRoute,
   ApiPublicNotifyLeaveRoute: ApiPublicNotifyLeaveRoute,
   ApiPublicOcrRoute: ApiPublicOcrRoute,
