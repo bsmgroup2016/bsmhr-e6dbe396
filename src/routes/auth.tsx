@@ -249,6 +249,53 @@ function AuthCard() {
               </Button>
             </form>
           </TabsContent>
+          <TabsContent value="forgot">
+            {forgotSent ? (
+              <Alert className="mt-2">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  Reset link sent to <span className="font-medium">{email}</span>. Open the email
+                  and click the link to set a new password. The link works only once and expires
+                  within an hour.
+                </AlertDescription>
+              </Alert>
+            ) : (
+              <form onSubmit={handleForgot} className="space-y-4 pt-2">
+                <div className="space-y-2">
+                  <Label htmlFor="forgot-email">Account email</Label>
+                  <Input
+                    id="forgot-email"
+                    type="email"
+                    placeholder="admin@bsm.sg"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
+                </div>
+                {error && (
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>{error}</AlertDescription>
+                  </Alert>
+                )}
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                  Send reset link
+                </Button>
+              </form>
+            )}
+            <button
+              type="button"
+              className="mx-auto mt-3 flex text-xs text-muted-foreground underline-offset-4 hover:text-primary hover:underline"
+              onClick={() => {
+                setActiveTab("signin");
+                setForgotSent(false);
+                setError(null);
+              }}
+            >
+              Back to sign in
+            </button>
+          </TabsContent>
         </Tabs>
       </CardContent>
       <CardFooter className="text-center text-xs text-muted-foreground">
