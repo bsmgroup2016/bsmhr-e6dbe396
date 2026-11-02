@@ -44,6 +44,7 @@ import { AutomationCentre } from "@/components/settings/automation-centre";
 import { CompanyLogos } from "@/components/settings/company-logos";
 import { PaymentDetails } from "@/components/settings/payment-details";
 import { ChangeLoginEmail } from "@/components/settings/change-login-email";
+import { ChangePassword } from "@/components/settings/change-password";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({
@@ -52,6 +53,8 @@ export const Route = createFileRoute("/_authenticated/settings")({
       { name: "description", content: "System settings and configuration." },
       { property: "og:title", content: "Settings — BSM Workforce & Operations" },
       { property: "og:description", content: "System settings and configuration." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: SettingsPage,
@@ -217,6 +220,7 @@ export default function SettingsPage() {
           </TabsContent>
 
           <TabsContent value="security" className="mt-4 space-y-4">
+            <ChangePassword />
             <ChangeLoginEmail />
             <div className="rounded-xl border bg-card p-5 shadow-sm">
               <div className="flex items-center gap-2 mb-4">
