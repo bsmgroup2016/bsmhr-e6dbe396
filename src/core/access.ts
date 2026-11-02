@@ -58,6 +58,7 @@ export const ROUTE_ROLES: Record<string, readonly AppAuthRole[]> = {
   "/approvals": BACK_OFFICE,
   "/reports": [...BACK_OFFICE, "accounts"],
   "/assistant": BACK_OFFICE,
+  "/live-chat": BACK_OFFICE,
   "/users": ["admin"],
   "/audit-logs": ["admin", "it"],
   "/settings": ["admin"],

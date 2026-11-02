@@ -34,6 +34,7 @@ import {
   UserPlus,
   Users,
   Wallet,
+  MessageCircle,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -123,6 +124,7 @@ const navGroups: { label: string; items: NavItem[] }[] = [
 
 const adminItems: NavItem[] = [
   { title: "AI Assistant", url: "/assistant", icon: Bot },
+  { title: "Live Chat Inbox", url: "/live-chat", icon: MessageCircle },
   { title: "Approvals", url: "/approvals", icon: ClipboardList },
   { title: "Reports", url: "/reports", icon: ClipboardList },
   { title: "Users & Permissions", url: "/users", icon: ShieldCheck },

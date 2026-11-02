@@ -38,6 +38,7 @@ import { Route as AuthenticatedDriversRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedFinanceRouteImport } from './routes/_authenticated/finance'
 import { Route as AuthenticatedInventoryRouteImport } from './routes/_authenticated/inventory'
 import { Route as AuthenticatedLeaveRouteImport } from './routes/_authenticated/leave'
+import { Route as AuthenticatedLiveChatRouteImport } from './routes/_authenticated/live-chat'
 import { Route as AuthenticatedMomRouteImport } from './routes/_authenticated/mom'
 import { Route as AuthenticatedMyPortalRouteImport } from './routes/_authenticated/my-portal'
 import { Route as AuthenticatedOperationsRouteImport } from './routes/_authenticated/operations'
@@ -64,6 +65,7 @@ import { Route as ApiPublicAiStatusRouteImport } from './routes/api/public/ai-st
 import { Route as ApiPublicApiIntegrationsRouteImport } from './routes/api/public/api-integrations'
 import { Route as ApiPublicAssistantRouteImport } from './routes/api/public/assistant'
 import { Route as ApiPublicAutomationRunRouteImport } from './routes/api/public/automation-run'
+import { Route as ApiPublicLiveChatRouteImport } from './routes/api/public/live-chat'
 import { Route as ApiPublicNotifyLeaveRouteImport } from './routes/api/public/notify-leave'
 import { Route as ApiPublicOcrRouteImport } from './routes/api/public/ocr'
 import { Route as ApiPublicProvisionEmployeeRouteImport } from './routes/api/public/provision-employee'
@@ -246,6 +248,11 @@ const AuthenticatedLeaveRoute = AuthenticatedLeaveRouteImport.update({
   path: '/leave',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedLiveChatRoute = AuthenticatedLiveChatRouteImport.update({
+  id: '/live-chat',
+  path: '/live-chat',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedMomRoute = AuthenticatedMomRouteImport.update({
   id: '/mom',
   path: '/mom',
@@ -382,6 +389,11 @@ const ApiPublicAssistantRoute = ApiPublicAssistantRouteImport.update({
 const ApiPublicAutomationRunRoute = ApiPublicAutomationRunRouteImport.update({
   id: '/api/public/automation-run',
   path: '/api/public/automation-run',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicLiveChatRoute = ApiPublicLiveChatRouteImport.update({
+  id: '/api/public/live-chat',
+  path: '/api/public/live-chat',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicNotifyLeaveRoute = ApiPublicNotifyLeaveRouteImport.update({
@@ -574,6 +586,7 @@ export interface FileRoutesByFullPath {
   '/finance': typeof AuthenticatedFinanceRoute
   '/inventory': typeof AuthenticatedInventoryRoute
   '/leave': typeof AuthenticatedLeaveRoute
+  '/live-chat': typeof AuthenticatedLiveChatRoute
   '/mom': typeof AuthenticatedMomRoute
   '/my-portal': typeof AuthenticatedMyPortalRoute
   '/operations': typeof AuthenticatedOperationsRoute
@@ -600,6 +613,7 @@ export interface FileRoutesByFullPath {
   '/api/public/api-integrations': typeof ApiPublicApiIntegrationsRoute
   '/api/public/assistant': typeof ApiPublicAssistantRoute
   '/api/public/automation-run': typeof ApiPublicAutomationRunRoute
+  '/api/public/live-chat': typeof ApiPublicLiveChatRoute
   '/api/public/notify-leave': typeof ApiPublicNotifyLeaveRoute
   '/api/public/ocr': typeof ApiPublicOcrRoute
   '/api/public/provision-employee': typeof ApiPublicProvisionEmployeeRoute
@@ -660,6 +674,7 @@ export interface FileRoutesByTo {
   '/finance': typeof AuthenticatedFinanceRoute
   '/inventory': typeof AuthenticatedInventoryRoute
   '/leave': typeof AuthenticatedLeaveRoute
+  '/live-chat': typeof AuthenticatedLiveChatRoute
   '/mom': typeof AuthenticatedMomRoute
   '/my-portal': typeof AuthenticatedMyPortalRoute
   '/operations': typeof AuthenticatedOperationsRoute
@@ -687,6 +702,7 @@ export interface FileRoutesByTo {
   '/api/public/api-integrations': typeof ApiPublicApiIntegrationsRoute
   '/api/public/assistant': typeof ApiPublicAssistantRoute
   '/api/public/automation-run': typeof ApiPublicAutomationRunRoute
+  '/api/public/live-chat': typeof ApiPublicLiveChatRoute
   '/api/public/notify-leave': typeof ApiPublicNotifyLeaveRoute
   '/api/public/ocr': typeof ApiPublicOcrRoute
   '/api/public/provision-employee': typeof ApiPublicProvisionEmployeeRoute
@@ -749,6 +765,7 @@ export interface FileRoutesById {
   '/_authenticated/finance': typeof AuthenticatedFinanceRoute
   '/_authenticated/inventory': typeof AuthenticatedInventoryRoute
   '/_authenticated/leave': typeof AuthenticatedLeaveRoute
+  '/_authenticated/live-chat': typeof AuthenticatedLiveChatRoute
   '/_authenticated/mom': typeof AuthenticatedMomRoute
   '/_authenticated/my-portal': typeof AuthenticatedMyPortalRoute
   '/_authenticated/operations': typeof AuthenticatedOperationsRoute
@@ -776,6 +793,7 @@ export interface FileRoutesById {
   '/api/public/api-integrations': typeof ApiPublicApiIntegrationsRoute
   '/api/public/assistant': typeof ApiPublicAssistantRoute
   '/api/public/automation-run': typeof ApiPublicAutomationRunRoute
+  '/api/public/live-chat': typeof ApiPublicLiveChatRoute
   '/api/public/notify-leave': typeof ApiPublicNotifyLeaveRoute
   '/api/public/ocr': typeof ApiPublicOcrRoute
   '/api/public/provision-employee': typeof ApiPublicProvisionEmployeeRoute
@@ -839,6 +857,7 @@ export interface FileRouteTypes {
     | '/finance'
     | '/inventory'
     | '/leave'
+    | '/live-chat'
     | '/mom'
     | '/my-portal'
     | '/operations'
@@ -865,6 +884,7 @@ export interface FileRouteTypes {
     | '/api/public/api-integrations'
     | '/api/public/assistant'
     | '/api/public/automation-run'
+    | '/api/public/live-chat'
     | '/api/public/notify-leave'
     | '/api/public/ocr'
     | '/api/public/provision-employee'
@@ -925,6 +945,7 @@ export interface FileRouteTypes {
     | '/finance'
     | '/inventory'
     | '/leave'
+    | '/live-chat'
     | '/mom'
     | '/my-portal'
     | '/operations'
@@ -952,6 +973,7 @@ export interface FileRouteTypes {
     | '/api/public/api-integrations'
     | '/api/public/assistant'
     | '/api/public/automation-run'
+    | '/api/public/live-chat'
     | '/api/public/notify-leave'
     | '/api/public/ocr'
     | '/api/public/provision-employee'
@@ -1013,6 +1035,7 @@ export interface FileRouteTypes {
     | '/_authenticated/finance'
     | '/_authenticated/inventory'
     | '/_authenticated/leave'
+    | '/_authenticated/live-chat'
     | '/_authenticated/mom'
     | '/_authenticated/my-portal'
     | '/_authenticated/operations'
@@ -1040,6 +1063,7 @@ export interface FileRouteTypes {
     | '/api/public/api-integrations'
     | '/api/public/assistant'
     | '/api/public/automation-run'
+    | '/api/public/live-chat'
     | '/api/public/notify-leave'
     | '/api/public/ocr'
     | '/api/public/provision-employee'
@@ -1082,6 +1106,7 @@ export interface RootRouteChildren {
   ApiPublicApiIntegrationsRoute: typeof ApiPublicApiIntegrationsRoute
   ApiPublicAssistantRoute: typeof ApiPublicAssistantRoute
   ApiPublicAutomationRunRoute: typeof ApiPublicAutomationRunRoute
+  ApiPublicLiveChatRoute: typeof ApiPublicLiveChatRoute
   ApiPublicNotifyLeaveRoute: typeof ApiPublicNotifyLeaveRoute
   ApiPublicOcrRoute: typeof ApiPublicOcrRoute
   ApiPublicProvisionEmployeeRoute: typeof ApiPublicProvisionEmployeeRoute
@@ -1314,6 +1339,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedLeaveRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/live-chat': {
+      id: '/_authenticated/live-chat'
+      path: '/live-chat'
+      fullPath: '/live-chat'
+      preLoaderRoute: typeof AuthenticatedLiveChatRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/mom': {
       id: '/_authenticated/mom'
       path: '/mom'
@@ -1494,6 +1526,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/automation-run'
       fullPath: '/api/public/automation-run'
       preLoaderRoute: typeof ApiPublicAutomationRunRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/live-chat': {
+      id: '/api/public/live-chat'
+      path: '/api/public/live-chat'
+      fullPath: '/api/public/live-chat'
+      preLoaderRoute: typeof ApiPublicLiveChatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/notify-leave': {
@@ -1741,6 +1780,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedFinanceRoute: typeof AuthenticatedFinanceRoute
   AuthenticatedInventoryRoute: typeof AuthenticatedInventoryRoute
   AuthenticatedLeaveRoute: typeof AuthenticatedLeaveRoute
+  AuthenticatedLiveChatRoute: typeof AuthenticatedLiveChatRoute
   AuthenticatedMomRoute: typeof AuthenticatedMomRoute
   AuthenticatedMyPortalRoute: typeof AuthenticatedMyPortalRoute
   AuthenticatedOperationsRoute: typeof AuthenticatedOperationsRoute
@@ -1791,6 +1831,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedFinanceRoute: AuthenticatedFinanceRoute,
   AuthenticatedInventoryRoute: AuthenticatedInventoryRoute,
   AuthenticatedLeaveRoute: AuthenticatedLeaveRoute,
+  AuthenticatedLiveChatRoute: AuthenticatedLiveChatRoute,
   AuthenticatedMomRoute: AuthenticatedMomRoute,
   AuthenticatedMyPortalRoute: AuthenticatedMyPortalRoute,
   AuthenticatedOperationsRoute: AuthenticatedOperationsRoute,
@@ -1900,6 +1941,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicApiIntegrationsRoute: ApiPublicApiIntegrationsRoute,
   ApiPublicAssistantRoute: ApiPublicAssistantRoute,
   ApiPublicAutomationRunRoute: ApiPublicAutomationRunRoute,
+  ApiPublicLiveChatRoute: ApiPublicLiveChatRoute,
   ApiPublicNotifyLeaveRoute: ApiPublicNotifyLeaveRoute,
   ApiPublicOcrRoute: ApiPublicOcrRoute,
   ApiPublicProvisionEmployeeRoute: ApiPublicProvisionEmployeeRoute,
