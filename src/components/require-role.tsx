@@ -30,7 +30,7 @@ export function RequireRole({ path, children }: { path: string; children: ReactN
             need access.
           </p>
           <Button asChild size="sm" className="mt-4">
-            <Link to="/">Back to dashboard</Link>
+            <Link to="/dashboard">Back to dashboard</Link>
           </Button>
         </div>
       </div>

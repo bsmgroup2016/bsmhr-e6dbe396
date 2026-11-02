@@ -50,7 +50,7 @@ function AdminLoginPage() {
       setError("This account is not an administrator. Please use the regular sign-in page.");
       return;
     }
-    window.location.href = "/";
+    window.location.href = "/dashboard";
   };
 
   return (
