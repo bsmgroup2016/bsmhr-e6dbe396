@@ -62,6 +62,7 @@ import { Route as AuthenticatedClientsIdRouteImport } from './routes/_authentica
 import { Route as AuthenticatedCompaniesIdRouteImport } from './routes/_authenticated/companies_.$id'
 import { Route as AuthenticatedWorkforceSlugRouteImport } from './routes/_authenticated/workforce_.$slug'
 import { Route as ApiPublicAiStatusRouteImport } from './routes/api/public/ai-status'
+import { Route as ApiPublicAiTrainingRouteImport } from './routes/api/public/ai-training'
 import { Route as ApiPublicApiIntegrationsRouteImport } from './routes/api/public/api-integrations'
 import { Route as ApiPublicAssistantRouteImport } from './routes/api/public/assistant'
 import { Route as ApiPublicAutomationRunRouteImport } from './routes/api/public/automation-run'
@@ -375,6 +376,11 @@ const ApiPublicAiStatusRoute = ApiPublicAiStatusRouteImport.update({
   path: '/api/public/ai-status',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicAiTrainingRoute = ApiPublicAiTrainingRouteImport.update({
+  id: '/api/public/ai-training',
+  path: '/api/public/ai-training',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicApiIntegrationsRoute =
   ApiPublicApiIntegrationsRouteImport.update({
     id: '/api/public/api-integrations',
@@ -610,6 +616,7 @@ export interface FileRoutesByFullPath {
   '/companies/$id': typeof AuthenticatedCompaniesIdRoute
   '/workforce/$slug': typeof AuthenticatedWorkforceSlugRoute
   '/api/public/ai-status': typeof ApiPublicAiStatusRoute
+  '/api/public/ai-training': typeof ApiPublicAiTrainingRoute
   '/api/public/api-integrations': typeof ApiPublicApiIntegrationsRoute
   '/api/public/assistant': typeof ApiPublicAssistantRoute
   '/api/public/automation-run': typeof ApiPublicAutomationRunRoute
@@ -699,6 +706,7 @@ export interface FileRoutesByTo {
   '/companies/$id': typeof AuthenticatedCompaniesIdRoute
   '/workforce/$slug': typeof AuthenticatedWorkforceSlugRoute
   '/api/public/ai-status': typeof ApiPublicAiStatusRoute
+  '/api/public/ai-training': typeof ApiPublicAiTrainingRoute
   '/api/public/api-integrations': typeof ApiPublicApiIntegrationsRoute
   '/api/public/assistant': typeof ApiPublicAssistantRoute
   '/api/public/automation-run': typeof ApiPublicAutomationRunRoute
@@ -790,6 +798,7 @@ export interface FileRoutesById {
   '/_authenticated/companies_/$id': typeof AuthenticatedCompaniesIdRoute
   '/_authenticated/workforce_/$slug': typeof AuthenticatedWorkforceSlugRoute
   '/api/public/ai-status': typeof ApiPublicAiStatusRoute
+  '/api/public/ai-training': typeof ApiPublicAiTrainingRoute
   '/api/public/api-integrations': typeof ApiPublicApiIntegrationsRoute
   '/api/public/assistant': typeof ApiPublicAssistantRoute
   '/api/public/automation-run': typeof ApiPublicAutomationRunRoute
@@ -881,6 +890,7 @@ export interface FileRouteTypes {
     | '/companies/$id'
     | '/workforce/$slug'
     | '/api/public/ai-status'
+    | '/api/public/ai-training'
     | '/api/public/api-integrations'
     | '/api/public/assistant'
     | '/api/public/automation-run'
@@ -970,6 +980,7 @@ export interface FileRouteTypes {
     | '/companies/$id'
     | '/workforce/$slug'
     | '/api/public/ai-status'
+    | '/api/public/ai-training'
     | '/api/public/api-integrations'
     | '/api/public/assistant'
     | '/api/public/automation-run'
@@ -1060,6 +1071,7 @@ export interface FileRouteTypes {
     | '/_authenticated/companies_/$id'
     | '/_authenticated/workforce_/$slug'
     | '/api/public/ai-status'
+    | '/api/public/ai-training'
     | '/api/public/api-integrations'
     | '/api/public/assistant'
     | '/api/public/automation-run'
@@ -1103,6 +1115,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   ApiPublicAiStatusRoute: typeof ApiPublicAiStatusRoute
+  ApiPublicAiTrainingRoute: typeof ApiPublicAiTrainingRoute
   ApiPublicApiIntegrationsRoute: typeof ApiPublicApiIntegrationsRoute
   ApiPublicAssistantRoute: typeof ApiPublicAssistantRoute
   ApiPublicAutomationRunRoute: typeof ApiPublicAutomationRunRoute
@@ -1505,6 +1518,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/ai-status'
       fullPath: '/api/public/ai-status'
       preLoaderRoute: typeof ApiPublicAiStatusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/ai-training': {
+      id: '/api/public/ai-training'
+      path: '/api/public/ai-training'
+      fullPath: '/api/public/ai-training'
+      preLoaderRoute: typeof ApiPublicAiTrainingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/api-integrations': {
@@ -1938,6 +1958,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   ApiPublicAiStatusRoute: ApiPublicAiStatusRoute,
+  ApiPublicAiTrainingRoute: ApiPublicAiTrainingRoute,
   ApiPublicApiIntegrationsRoute: ApiPublicApiIntegrationsRoute,
   ApiPublicAssistantRoute: ApiPublicAssistantRoute,
   ApiPublicAutomationRunRoute: ApiPublicAutomationRunRoute,

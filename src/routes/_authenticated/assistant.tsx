@@ -7,6 +7,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TrainingPanel } from "@/components/assistant/training-panel";
+import { useAuth } from "@/lib/auth";
 
 export const Route = createFileRoute("/_authenticated/assistant")({
   head: () => ({
@@ -21,6 +24,24 @@ export const Route = createFileRoute("/_authenticated/assistant")({
   }),
   component: AssistantPage,
 });
+
+function AssistantPage() {
+  const { isAdmin } = useAuth();
+  return (
+    <AppShell>
+      <Tabs defaultValue="chat" className="mx-auto max-w-5xl">
+        {isAdmin && (
+          <TabsList className="mb-3">
+            <TabsTrigger value="chat">Chat</TabsTrigger>
+            <TabsTrigger value="training">Chatbot Training</TabsTrigger>
+          </TabsList>
+        )}
+        <TabsContent value="chat"><ChatPanel /></TabsContent>
+        {isAdmin && <TabsContent value="training"><TrainingPanel /></TabsContent>}
+      </Tabs>
+    </AppShell>
+  );
+}
 
 type Msg = { role: "user" | "assistant"; content: string; provider?: string; error?: boolean };
 
@@ -37,7 +58,7 @@ async function authHeader() {
   return t ? { Authorization: `Bearer ${t}` } : ({} as Record<string, string>);
 }
 
-function AssistantPage() {
+function ChatPanel() {
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
@@ -80,8 +101,7 @@ function AssistantPage() {
   }
 
   return (
-    <AppShell>
-      <div className="mx-auto flex h-[calc(100vh-8rem)] max-w-4xl flex-col gap-4">
+      <div className="mx-auto flex h-[calc(100vh-11rem)] max-w-4xl flex-col gap-4">
         <div className="flex items-start justify-between gap-3">
           <div>
             <h1 className="text-2xl font-semibold tracking-tight">AI Assistant</h1>
@@ -162,6 +182,5 @@ function AssistantPage() {
           </Button>
         </form>
       </div>
-    </AppShell>
   );
 }
