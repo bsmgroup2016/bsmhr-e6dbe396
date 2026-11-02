@@ -15,7 +15,7 @@ import {
   Plus,
 } from "lucide-react";
 import { SmtpSettings } from "@/components/settings/smtp-settings";
-import { AiSettings } from "@/components/settings/ai-settings";
+import { AiSettings, OcrSettings } from "@/components/settings/ai-settings";
 import { Badge } from "@/components/ui/badge";
 
 import { AppShell } from "@/components/app-shell";
@@ -120,7 +120,7 @@ export default function SettingsPage() {
             <TabsTrigger value="general">General</TabsTrigger>
             <TabsTrigger value="notifications">Notifications</TabsTrigger>
             <TabsTrigger value="security">Security</TabsTrigger>
-            <TabsTrigger value="ai">AI Center</TabsTrigger>
+            <TabsTrigger value="ai">AI Chatbot</TabsTrigger>
             <TabsTrigger value="ocr">OCR</TabsTrigger>
             <TabsTrigger value="smtp">SMTP</TabsTrigger>
             <TabsTrigger value="payments">Payments</TabsTrigger>
