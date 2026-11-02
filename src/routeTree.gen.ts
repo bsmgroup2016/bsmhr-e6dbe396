@@ -64,6 +64,7 @@ import { Route as ApiPublicAiStatusRouteImport } from './routes/api/public/ai-st
 import { Route as ApiPublicApiIntegrationsRouteImport } from './routes/api/public/api-integrations'
 import { Route as ApiPublicAssistantRouteImport } from './routes/api/public/assistant'
 import { Route as ApiPublicAutomationRunRouteImport } from './routes/api/public/automation-run'
+import { Route as ApiPublicLiveChatRouteImport } from './routes/api/public/live-chat'
 import { Route as ApiPublicNotifyLeaveRouteImport } from './routes/api/public/notify-leave'
 import { Route as ApiPublicOcrRouteImport } from './routes/api/public/ocr'
 import { Route as ApiPublicProvisionEmployeeRouteImport } from './routes/api/public/provision-employee'
@@ -384,6 +385,11 @@ const ApiPublicAutomationRunRoute = ApiPublicAutomationRunRouteImport.update({
   path: '/api/public/automation-run',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicLiveChatRoute = ApiPublicLiveChatRouteImport.update({
+  id: '/api/public/live-chat',
+  path: '/api/public/live-chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicNotifyLeaveRoute = ApiPublicNotifyLeaveRouteImport.update({
   id: '/api/public/notify-leave',
   path: '/api/public/notify-leave',
@@ -600,6 +606,7 @@ export interface FileRoutesByFullPath {
   '/api/public/api-integrations': typeof ApiPublicApiIntegrationsRoute
   '/api/public/assistant': typeof ApiPublicAssistantRoute
   '/api/public/automation-run': typeof ApiPublicAutomationRunRoute
+  '/api/public/live-chat': typeof ApiPublicLiveChatRoute
   '/api/public/notify-leave': typeof ApiPublicNotifyLeaveRoute
   '/api/public/ocr': typeof ApiPublicOcrRoute
   '/api/public/provision-employee': typeof ApiPublicProvisionEmployeeRoute
@@ -687,6 +694,7 @@ export interface FileRoutesByTo {
   '/api/public/api-integrations': typeof ApiPublicApiIntegrationsRoute
   '/api/public/assistant': typeof ApiPublicAssistantRoute
   '/api/public/automation-run': typeof ApiPublicAutomationRunRoute
+  '/api/public/live-chat': typeof ApiPublicLiveChatRoute
   '/api/public/notify-leave': typeof ApiPublicNotifyLeaveRoute
   '/api/public/ocr': typeof ApiPublicOcrRoute
   '/api/public/provision-employee': typeof ApiPublicProvisionEmployeeRoute
@@ -776,6 +784,7 @@ export interface FileRoutesById {
   '/api/public/api-integrations': typeof ApiPublicApiIntegrationsRoute
   '/api/public/assistant': typeof ApiPublicAssistantRoute
   '/api/public/automation-run': typeof ApiPublicAutomationRunRoute
+  '/api/public/live-chat': typeof ApiPublicLiveChatRoute
   '/api/public/notify-leave': typeof ApiPublicNotifyLeaveRoute
   '/api/public/ocr': typeof ApiPublicOcrRoute
   '/api/public/provision-employee': typeof ApiPublicProvisionEmployeeRoute
@@ -865,6 +874,7 @@ export interface FileRouteTypes {
     | '/api/public/api-integrations'
     | '/api/public/assistant'
     | '/api/public/automation-run'
+    | '/api/public/live-chat'
     | '/api/public/notify-leave'
     | '/api/public/ocr'
     | '/api/public/provision-employee'
@@ -952,6 +962,7 @@ export interface FileRouteTypes {
     | '/api/public/api-integrations'
     | '/api/public/assistant'
     | '/api/public/automation-run'
+    | '/api/public/live-chat'
     | '/api/public/notify-leave'
     | '/api/public/ocr'
     | '/api/public/provision-employee'
@@ -1040,6 +1051,7 @@ export interface FileRouteTypes {
     | '/api/public/api-integrations'
     | '/api/public/assistant'
     | '/api/public/automation-run'
+    | '/api/public/live-chat'
     | '/api/public/notify-leave'
     | '/api/public/ocr'
     | '/api/public/provision-employee'
@@ -1082,6 +1094,7 @@ export interface RootRouteChildren {
   ApiPublicApiIntegrationsRoute: typeof ApiPublicApiIntegrationsRoute
   ApiPublicAssistantRoute: typeof ApiPublicAssistantRoute
   ApiPublicAutomationRunRoute: typeof ApiPublicAutomationRunRoute
+  ApiPublicLiveChatRoute: typeof ApiPublicLiveChatRoute
   ApiPublicNotifyLeaveRoute: typeof ApiPublicNotifyLeaveRoute
   ApiPublicOcrRoute: typeof ApiPublicOcrRoute
   ApiPublicProvisionEmployeeRoute: typeof ApiPublicProvisionEmployeeRoute
@@ -1496,6 +1509,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicAutomationRunRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/live-chat': {
+      id: '/api/public/live-chat'
+      path: '/api/public/live-chat'
+      fullPath: '/api/public/live-chat'
+      preLoaderRoute: typeof ApiPublicLiveChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/notify-leave': {
       id: '/api/public/notify-leave'
       path: '/api/public/notify-leave'
@@ -1900,6 +1920,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicApiIntegrationsRoute: ApiPublicApiIntegrationsRoute,
   ApiPublicAssistantRoute: ApiPublicAssistantRoute,
   ApiPublicAutomationRunRoute: ApiPublicAutomationRunRoute,
+  ApiPublicLiveChatRoute: ApiPublicLiveChatRoute,
   ApiPublicNotifyLeaveRoute: ApiPublicNotifyLeaveRoute,
   ApiPublicOcrRoute: ApiPublicOcrRoute,
   ApiPublicProvisionEmployeeRoute: ApiPublicProvisionEmployeeRoute,
