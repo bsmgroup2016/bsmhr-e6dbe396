@@ -15,7 +15,7 @@ import {
   Plus,
 } from "lucide-react";
 import { SmtpSettings } from "@/components/settings/smtp-settings";
-import { AiSettings, OcrSettings } from "@/components/settings/ai-settings";
+import { ApiIntegrationSettings } from "@/components/settings/ai-settings";
 import { Badge } from "@/components/ui/badge";
 
 import { AppShell } from "@/components/app-shell";
@@ -246,8 +246,7 @@ export default function SettingsPage() {
           </TabsContent>
 
           <TabsContent value="api" className="mt-4 space-y-4">
-            <OcrSettings />
-            <AiSettings />
+            <ApiIntegrationSettings />
           </TabsContent>
 
 
