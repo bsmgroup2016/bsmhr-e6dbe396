@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { canAccessKey, r2Client, safeKey, verifyUser } from "@/lib/r2.server";
+import { canAccessKey, r2FetchObject, safeKey, verifyUser } from "@/lib/r2.server";
 
 export const Route = createFileRoute("/api/public/r2-file")({
   server: {
@@ -12,8 +12,7 @@ export const Route = createFileRoute("/api/public/r2-file")({
         if (!(await canAccessKey(userId, key)))
           return new Response("Not found", { status: 404 });
         try {
-          const { client, base } = r2Client();
-          const res = await client.fetch(`${base}/${key}`);
+          const res = await r2FetchObject(key);
           if (!res.ok) return new Response("Not found", { status: 404 });
           return new Response(res.body, {
             headers: {

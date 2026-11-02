@@ -90,7 +90,7 @@ export const Route = createFileRoute("/api/public/v1/uploads")({
         const contentType = file.type || "application/octet-stream";
 
         try {
-          const { client, base } = r2Client();
+          const { client, base } = r2Client(key);
           const put = await client.fetch(`${base}/${key}`, {
             method: "PUT",
             body: await file.arrayBuffer(),
