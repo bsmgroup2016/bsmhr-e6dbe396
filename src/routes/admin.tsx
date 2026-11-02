@@ -28,20 +28,6 @@ function AdminLoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [forgot, setForgot] = useState(false);
-  const [sent, setSent] = useState(false);
-
-  const onForgot = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setLoading(true);
-    const { error: err } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
-    setLoading(false);
-    if (err) setError(err.message);
-    else setSent(true);
-  };
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,35 +64,6 @@ function AdminLoginPage() {
           <CardDescription>Restricted area. Admin accounts only.</CardDescription>
         </CardHeader>
         <CardContent>
-          {forgot ? (
-            <form onSubmit={onForgot} className="space-y-4">
-              {sent ? (
-                <Alert>
-                  <AlertDescription>If this email exists, a reset link has been sent. Check your inbox.</AlertDescription>
-                </Alert>
-              ) : (
-                <div className="space-y-2">
-                  <Label htmlFor="admin-reset-email">Admin email</Label>
-                  <Input id="admin-reset-email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
-                </div>
-              )}
-              {error && (
-                <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
-              {!sent && (
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Send reset link
-                </Button>
-              )}
-              <button type="button" className="w-full text-sm text-muted-foreground hover:text-foreground" onClick={() => { setForgot(false); setSent(false); setError(null); }}>
-                Back to sign in
-              </button>
-            </form>
-          ) : (
           <form onSubmit={onSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="admin-email">Email</Label>
@@ -126,11 +83,7 @@ function AdminLoginPage() {
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Sign in as Admin
             </Button>
-            <button type="button" className="w-full text-sm text-muted-foreground hover:text-foreground" onClick={() => { setForgot(true); setError(null); }}>
-              Forgot password?
-            </button>
           </form>
-          )}
         </CardContent>
       </Card>
     </div>
