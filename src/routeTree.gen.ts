@@ -27,6 +27,7 @@ import { Route as AuthenticatedCompaniesRouteImport } from './routes/_authentica
 import { Route as AuthenticatedComplianceRouteImport } from './routes/_authenticated/compliance'
 import { Route as AuthenticatedContractsRouteImport } from './routes/_authenticated/contracts'
 import { Route as AuthenticatedCrmRouteImport } from './routes/_authenticated/crm'
+import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedDeployedWorkersRouteImport } from './routes/_authenticated/deployed-workers'
 import { Route as AuthenticatedDeploymentHistoryRouteImport } from './routes/_authenticated/deployment-history'
 import { Route as AuthenticatedDocumentsRouteImport } from './routes/_authenticated/documents'
@@ -182,6 +183,11 @@ const AuthenticatedContractsRoute = AuthenticatedContractsRouteImport.update({
 const AuthenticatedCrmRoute = AuthenticatedCrmRouteImport.update({
   id: '/crm',
   path: '/crm',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedDeployedWorkersRoute =
@@ -544,6 +550,7 @@ export interface FileRoutesByFullPath {
   '/compliance': typeof AuthenticatedComplianceRoute
   '/contracts': typeof AuthenticatedContractsRoute
   '/crm': typeof AuthenticatedCrmRoute
+  '/dashboard': typeof AuthenticatedDashboardRoute
   '/deployed-workers': typeof AuthenticatedDeployedWorkersRoute
   '/deployment-history': typeof AuthenticatedDeploymentHistoryRoute
   '/documents': typeof AuthenticatedDocumentsRoute
@@ -627,6 +634,7 @@ export interface FileRoutesByTo {
   '/compliance': typeof AuthenticatedComplianceRoute
   '/contracts': typeof AuthenticatedContractsRoute
   '/crm': typeof AuthenticatedCrmRoute
+  '/dashboard': typeof AuthenticatedDashboardRoute
   '/deployed-workers': typeof AuthenticatedDeployedWorkersRoute
   '/deployment-history': typeof AuthenticatedDeploymentHistoryRoute
   '/documents': typeof AuthenticatedDocumentsRoute
@@ -713,6 +721,7 @@ export interface FileRoutesById {
   '/_authenticated/compliance': typeof AuthenticatedComplianceRoute
   '/_authenticated/contracts': typeof AuthenticatedContractsRoute
   '/_authenticated/crm': typeof AuthenticatedCrmRoute
+  '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/deployed-workers': typeof AuthenticatedDeployedWorkersRoute
   '/_authenticated/deployment-history': typeof AuthenticatedDeploymentHistoryRoute
   '/_authenticated/documents': typeof AuthenticatedDocumentsRoute
@@ -800,6 +809,7 @@ export interface FileRouteTypes {
     | '/compliance'
     | '/contracts'
     | '/crm'
+    | '/dashboard'
     | '/deployed-workers'
     | '/deployment-history'
     | '/documents'
@@ -883,6 +893,7 @@ export interface FileRouteTypes {
     | '/compliance'
     | '/contracts'
     | '/crm'
+    | '/dashboard'
     | '/deployed-workers'
     | '/deployment-history'
     | '/documents'
@@ -968,6 +979,7 @@ export interface FileRouteTypes {
     | '/_authenticated/compliance'
     | '/_authenticated/contracts'
     | '/_authenticated/crm'
+    | '/_authenticated/dashboard'
     | '/_authenticated/deployed-workers'
     | '/_authenticated/deployment-history'
     | '/_authenticated/documents'
@@ -1196,6 +1208,13 @@ declare module '@tanstack/react-router' {
       path: '/crm'
       fullPath: '/crm'
       preLoaderRoute: typeof AuthenticatedCrmRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/dashboard': {
+      id: '/_authenticated/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/deployed-workers': {
@@ -1670,6 +1689,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedComplianceRoute: typeof AuthenticatedComplianceRoute
   AuthenticatedContractsRoute: typeof AuthenticatedContractsRoute
   AuthenticatedCrmRoute: typeof AuthenticatedCrmRoute
+  AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedDeployedWorkersRoute: typeof AuthenticatedDeployedWorkersRoute
   AuthenticatedDeploymentHistoryRoute: typeof AuthenticatedDeploymentHistoryRoute
   AuthenticatedDocumentsRoute: typeof AuthenticatedDocumentsRoute
@@ -1719,6 +1739,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedComplianceRoute: AuthenticatedComplianceRoute,
   AuthenticatedContractsRoute: AuthenticatedContractsRoute,
   AuthenticatedCrmRoute: AuthenticatedCrmRoute,
+  AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedDeployedWorkersRoute: AuthenticatedDeployedWorkersRoute,
   AuthenticatedDeploymentHistoryRoute: AuthenticatedDeploymentHistoryRoute,
   AuthenticatedDocumentsRoute: AuthenticatedDocumentsRoute,

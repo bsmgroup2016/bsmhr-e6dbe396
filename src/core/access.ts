@@ -17,7 +17,7 @@ const STAFF: AppAuthRole[] = ["admin", "manager", "hr", "supervisor"];
 const BACK_OFFICE: AppAuthRole[] = ["admin", "manager", "hr"];
 const FINANCE: AppAuthRole[] = ["admin", "manager", "accounts"];
 const PAYROLL: AppAuthRole[] = [...BACK_OFFICE, "accounts"];
-export const OPEN_ROUTES = ["/"];
+export const OPEN_ROUTES = ["/", "/dashboard"];
 export const ROUTE_ROLES: Record<string, readonly AppAuthRole[]> = {
   "/my-portal": AUTH_ROLES,
   "/qr-punch": AUTH_ROLES,

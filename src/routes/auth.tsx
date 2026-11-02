@@ -30,7 +30,7 @@ function AuthPage() {
 
   // If already authenticated, redirect to dashboard
   if (isAuthenticated && !isLoading) {
-    router.navigate({ to: "/" });
+    router.navigate({ to: "/dashboard" });
   }
 
   return (

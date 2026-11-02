@@ -18,7 +18,7 @@ export const Route = createFileRoute("/_authenticated")({
     const { data: roleRows, error: roleError } = await supabase.from("user_roles").select("role").eq("user_id", data.user.id);
     if (roleError) throw new Error("Could not verify account permissions.");
     const roles = (roleRows ?? []).map((row) => String(row.role));
-    if (!canAccess(location.pathname, roles)) throw redirect({ to: "/" });
+    if (!canAccess(location.pathname, roles)) throw redirect({ to: "/dashboard" });
     return { user: data.user, roles };
   },
   component: AuthenticatedLayout,
