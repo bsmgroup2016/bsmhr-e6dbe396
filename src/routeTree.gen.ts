@@ -60,6 +60,7 @@ import { Route as AuthenticatedWorkforceRouteImport } from './routes/_authentica
 import { Route as AuthenticatedClientsIdRouteImport } from './routes/_authenticated/clients_.$id'
 import { Route as AuthenticatedCompaniesIdRouteImport } from './routes/_authenticated/companies_.$id'
 import { Route as AuthenticatedWorkforceSlugRouteImport } from './routes/_authenticated/workforce_.$slug'
+import { Route as ApiPublicAiAlertsRouteImport } from './routes/api/public/ai-alerts'
 import { Route as ApiPublicAiStatusRouteImport } from './routes/api/public/ai-status'
 import { Route as ApiPublicAiTrainingRouteImport } from './routes/api/public/ai-training'
 import { Route as ApiPublicApiIntegrationsRouteImport } from './routes/api/public/api-integrations'
@@ -365,6 +366,11 @@ const AuthenticatedWorkforceSlugRoute =
     path: '/workforce/$slug',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const ApiPublicAiAlertsRoute = ApiPublicAiAlertsRouteImport.update({
+  id: '/api/public/ai-alerts',
+  path: '/api/public/ai-alerts',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicAiStatusRoute = ApiPublicAiStatusRouteImport.update({
   id: '/api/public/ai-status',
   path: '/api/public/ai-status',
@@ -608,6 +614,7 @@ export interface FileRoutesByFullPath {
   '/clients/$id': typeof AuthenticatedClientsIdRoute
   '/companies/$id': typeof AuthenticatedCompaniesIdRoute
   '/workforce/$slug': typeof AuthenticatedWorkforceSlugRoute
+  '/api/public/ai-alerts': typeof ApiPublicAiAlertsRoute
   '/api/public/ai-status': typeof ApiPublicAiStatusRoute
   '/api/public/ai-training': typeof ApiPublicAiTrainingRoute
   '/api/public/api-integrations': typeof ApiPublicApiIntegrationsRoute
@@ -697,6 +704,7 @@ export interface FileRoutesByTo {
   '/clients/$id': typeof AuthenticatedClientsIdRoute
   '/companies/$id': typeof AuthenticatedCompaniesIdRoute
   '/workforce/$slug': typeof AuthenticatedWorkforceSlugRoute
+  '/api/public/ai-alerts': typeof ApiPublicAiAlertsRoute
   '/api/public/ai-status': typeof ApiPublicAiStatusRoute
   '/api/public/ai-training': typeof ApiPublicAiTrainingRoute
   '/api/public/api-integrations': typeof ApiPublicApiIntegrationsRoute
@@ -788,6 +796,7 @@ export interface FileRoutesById {
   '/_authenticated/clients_/$id': typeof AuthenticatedClientsIdRoute
   '/_authenticated/companies_/$id': typeof AuthenticatedCompaniesIdRoute
   '/_authenticated/workforce_/$slug': typeof AuthenticatedWorkforceSlugRoute
+  '/api/public/ai-alerts': typeof ApiPublicAiAlertsRoute
   '/api/public/ai-status': typeof ApiPublicAiStatusRoute
   '/api/public/ai-training': typeof ApiPublicAiTrainingRoute
   '/api/public/api-integrations': typeof ApiPublicApiIntegrationsRoute
@@ -879,6 +888,7 @@ export interface FileRouteTypes {
     | '/clients/$id'
     | '/companies/$id'
     | '/workforce/$slug'
+    | '/api/public/ai-alerts'
     | '/api/public/ai-status'
     | '/api/public/ai-training'
     | '/api/public/api-integrations'
@@ -968,6 +978,7 @@ export interface FileRouteTypes {
     | '/clients/$id'
     | '/companies/$id'
     | '/workforce/$slug'
+    | '/api/public/ai-alerts'
     | '/api/public/ai-status'
     | '/api/public/ai-training'
     | '/api/public/api-integrations'
@@ -1058,6 +1069,7 @@ export interface FileRouteTypes {
     | '/_authenticated/clients_/$id'
     | '/_authenticated/companies_/$id'
     | '/_authenticated/workforce_/$slug'
+    | '/api/public/ai-alerts'
     | '/api/public/ai-status'
     | '/api/public/ai-training'
     | '/api/public/api-integrations'
@@ -1102,6 +1114,7 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRoute
   AuthRoute: typeof AuthRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  ApiPublicAiAlertsRoute: typeof ApiPublicAiAlertsRoute
   ApiPublicAiStatusRoute: typeof ApiPublicAiStatusRoute
   ApiPublicAiTrainingRoute: typeof ApiPublicAiTrainingRoute
   ApiPublicApiIntegrationsRoute: typeof ApiPublicApiIntegrationsRoute
@@ -1493,6 +1506,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/workforce/$slug'
       preLoaderRoute: typeof AuthenticatedWorkforceSlugRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/api/public/ai-alerts': {
+      id: '/api/public/ai-alerts'
+      path: '/api/public/ai-alerts'
+      fullPath: '/api/public/ai-alerts'
+      preLoaderRoute: typeof ApiPublicAiAlertsRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/public/ai-status': {
       id: '/api/public/ai-status'
@@ -1936,6 +1956,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRoute,
   AuthRoute: AuthRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  ApiPublicAiAlertsRoute: ApiPublicAiAlertsRoute,
   ApiPublicAiStatusRoute: ApiPublicAiStatusRoute,
   ApiPublicAiTrainingRoute: ApiPublicAiTrainingRoute,
   ApiPublicApiIntegrationsRoute: ApiPublicApiIntegrationsRoute,

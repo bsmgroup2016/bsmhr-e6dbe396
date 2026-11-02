@@ -82,7 +82,59 @@ const tools = [
       parameters: { type: "object", properties: { table: { type: "string", enum: ASSISTANT_TABLES } }, required: ["table"] },
     },
   },
+  {
+    type: "function",
+    function: {
+      name: "workforce_alerts",
+      description: "Live check of everything that needs attention: expired / expiring passports, work permits, passes, insurance, bonds, courses, certificates and uploaded documents, plus today's attendance per project (expected vs present) and absences. Use for questions like 'what is expiring', 'who is absent', 'any problems today'.",
+      parameters: { type: "object", properties: { within_days: { type: "number", description: "Expiry look-ahead window, default 30" } } },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_worker_files",
+      description: "Create secure download links (valid 1 hour) for a worker's P-File and uploaded documents (passport, work permit, certificates...). Search by worker name, P-File number or FIN. Always give the user the links as markdown links.",
+      parameters: {
+        type: "object",
+        properties: {
+          worker: { type: "string", description: "Worker name, P-File number (employee_code) or FIN" },
+          document: { type: "string", description: "Optional: only documents whose type/name contains this, e.g. 'passport'. Use 'pfile' for P-File only." },
+        },
+        required: ["worker"],
+      },
+    },
+  },
 ];
+
+async function workerFiles(args: Record<string, unknown>, auth: string, anon: string, userId?: string) {
+  if (!userId) return { error: "Not available here" };
+  const { findWorkerFiles } = await import("./insights.server");
+  const { canAccessKey, keyFromRef, presignGet } = await import("./r2.server");
+  const found = await findWorkerFiles(String(args.worker ?? ""), auth, anon);
+  if ("error" in found) return found;
+  const want = String(args.document ?? "").toLowerCase().trim();
+  const link = async (ref: string | null | undefined) => {
+    const key = keyFromRef(ref ?? "");
+    if (!key) return null;
+    if (!(await canAccessKey(userId, key))) return "no access";
+    try { return await presignGet(key, 3600); } catch { return null; }
+  };
+  const results = [];
+  for (const m of found.matches) {
+    const files: { name: string; expiry?: string | null; url: string | null }[] = [];
+    if (!want || want.includes("pfile") || want.includes("p-file") || want.includes("p file"))
+      files.push({ name: "P-File", url: await link(m.employee.p_file_url) });
+    if (want !== "pfile")
+      for (const d of m.docs) {
+        const n = `${d.doc_type ?? ""} ${d.name ?? ""}`.trim();
+        if (want && !want.includes("pfile") && !n.toLowerCase().includes(want)) continue;
+        files.push({ name: n || "Document", expiry: d.expiry_date, url: await link(d.file_key || d.file_url) });
+      }
+    results.push({ worker: m.employee.name, pfile_number: m.employee.employee_code, files: files.map((f) => ({ ...f, url: f.url ?? "not uploaded" })) });
+  }
+  return { results, note: "Links expire in 1 hour." };
+}
 
 type Filter = { column: string; op: string; value: string };
 const safeIdent = (s: string) => /^[a-zA-Z0-9_]+$/.test(s);
@@ -106,8 +158,13 @@ function buildQuery(table: string, filters: Filter[] = []) {
   return q;
 }
 
-async function runTool(name: string, args: Record<string, unknown>, auth: string, anon: string): Promise<unknown> {
+async function runTool(name: string, args: Record<string, unknown>, auth: string, anon: string, userId?: string): Promise<unknown> {
   try {
+    if (name === "get_worker_files") return await workerFiles(args, auth, anon, userId);
+    if (name === "workforce_alerts") {
+      const { computeInsights } = await import("./insights.server");
+      return await computeInsights(auth, anon, Math.min(180, Math.max(1, Number(args.within_days) || 30)));
+    }
     const table = String(args.table ?? "");
     if (name === "describe_table") {
       const r = await rest(`${table}?select=*&limit=1`, auth, anon);
@@ -143,11 +200,11 @@ const SYSTEM =
   "You can read live data with the tools: employees (P-File number, designation, pass type/expiry, levy), deployments/assignments, attendance, payroll (CPF, SDL, FWL), leave, " +
   "clients, projects, quotations, invoices, dormitories, vehicles/drivers, inventory/PPE, training, recruitment and more. " +
   "Always look data up with tools before answering factual questions — never guess numbers. Use count_rows for totals. " +
-  "If a column name is unknown, call describe_table. Reply in the user's language, concisely, using tables or bullet lists when helpful. Amounts are SGD.";
+  "If a column name is unknown, call describe_table. For expiries, absences or attendance shortfalls call workforce_alerts. When someone asks for a worker's P-File or documents, call get_worker_files and reply with the download links.  Reply in the user's language, concisely, using tables or bullet lists when helpful. Amounts are SGD.";
 
 export type ChatMsg = { role: "user" | "assistant"; content: string };
 
-export async function runAssistant(messages: ChatMsg[], auth: string, anon: string) {
+export async function runAssistant(messages: ChatMsg[], auth: string, anon: string, userId?: string) {
   const list = await providers();
   if (list.length === 0) throw new Error("AI Assistant keys are not set yet");
   const today = new Date().toISOString().slice(0, 10);
@@ -172,7 +229,7 @@ export async function runAssistant(messages: ChatMsg[], auth: string, anon: stri
         for (const tc of msg.tool_calls) {
           let args: Record<string, unknown> = {};
           try { args = JSON.parse(tc.function.arguments || "{}"); } catch { /* ignore */ }
-          const result = await runTool(tc.function.name, args, auth, anon);
+          const result = await runTool(tc.function.name, args, auth, anon, userId);
           convo.push({ role: "tool", tool_call_id: tc.id, name: tc.function.name, content: JSON.stringify(result).slice(0, 40000) });
         }
       }

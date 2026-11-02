@@ -114,7 +114,7 @@ export const Route = createFileRoute("/api/public/live-chat")({
             .map((m) => ({ role: m.sender === "user" ? ("user" as const) : ("assistant" as const), content: m.content }));
           try {
             const { runAssistant } = await import("@/lib/assistant.server");
-            const out = await runAssistant(history, auth, ANON);
+            const out = await runAssistant(history, auth, ANON, userId);
             await addMsg(chat.id, "ai", out.reply || "(no answer)");
           } catch (e) {
             console.error("live chat AI failed:", e);

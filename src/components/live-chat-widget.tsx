@@ -22,6 +22,22 @@ export async function liveChatFetch(path: string, init?: RequestInit) {
   return json;
 }
 
+/** Render plain text with [label](url) and bare https links as clickable links. */
+function Linkified({ text }: { text: string }) {
+  const parts: React.ReactNode[] = [];
+  const re = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)|(https?:\/\/[^\s)]+)/g;
+  let last = 0;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text))) {
+    if (m.index > last) parts.push(text.slice(last, m.index));
+    const url = m[2] ?? m[3];
+    parts.push(<a key={m.index} href={url} target="_blank" rel="noopener noreferrer" className="font-medium underline">{m[1] ?? "Open link"}</a>);
+    last = m.index + m[0].length;
+  }
+  parts.push(text.slice(last));
+  return <>{parts}</>;
+}
+
 export function MessageBubble({ m, mine }: { m: ChatMessage; mine: boolean }) {
   if (m.sender === "system")
     return <p className="mx-auto max-w-[90%] text-center text-xs text-muted-foreground">{m.content}</p>;
@@ -35,7 +51,7 @@ export function MessageBubble({ m, mine }: { m: ChatMessage; mine: boolean }) {
           mine ? "bg-primary text-primary-foreground" : m.sender === "agent" ? "bg-accent text-accent-foreground" : "bg-muted text-foreground",
         )}
       >
-        {m.content}
+        <Linkified text={m.content} />
       </div>
     </div>
   );
