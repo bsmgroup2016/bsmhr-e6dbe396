@@ -5,6 +5,7 @@ import { MobileNav } from "@/components/nav/mobile-nav";
 import { OfflineBanner } from "@/components/offline-banner";
 import { InstallAppBanner } from "@/components/install-app-banner";
 import { LiveChatWidget } from "@/components/live-chat-widget";
+import { AssistantAlerts } from "@/components/assistant-alerts";
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -21,6 +22,7 @@ export function AppShell({ children }: AppShellProps) {
         <main className="flex-1 p-5 pb-24 sm:p-8 md:pb-10">{children}</main>
         <MobileNav />
         <LiveChatWidget />
+        <AssistantAlerts />
       </SidebarInset>
     </SidebarProvider>
   );
