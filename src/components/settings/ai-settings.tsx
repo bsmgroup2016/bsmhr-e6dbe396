@@ -34,7 +34,7 @@ async function api<T>(method: "GET" | "POST", payload?: Record<string, unknown>)
 }
 
 const PRESETS: Record<string, { url: string; model: string }> = {
-  Gemini: { url: "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", model: "gemini-2.5-flash" },
+  Gemini: { url: "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", model: "gemini-3.8-flash" },
   OpenAI: { url: "https://api.openai.com/v1/chat/completions", model: "gpt-4o" },
   Groq: { url: "https://api.groq.com/openai/v1/chat/completions", model: "openai/gpt-oss-120b" },
   OpenRouter: { url: "https://openrouter.ai/api/v1/chat/completions", model: "openai/gpt-4o-mini" },

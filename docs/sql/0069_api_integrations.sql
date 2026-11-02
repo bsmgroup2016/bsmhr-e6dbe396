@@ -11,7 +11,7 @@ revoke all on public.api_integrations from anon, authenticated;
 grant all on public.api_integrations to service_role;
 insert into public.api_integrations (category, label, url, model, env_key, priority)
 select * from (values
-  ('ocr','Google Gemini (paid)','https://generativelanguage.googleapis.com/v1beta/openai/chat/completions','gemini-2.5-flash','GEMINI_API_KEY',1),
+  ('ocr','Google Gemini (paid)','https://generativelanguage.googleapis.com/v1beta/openai/chat/completions','gemini-3.8-flash','GEMINI_API_KEY',1),
   ('ocr','OpenAI (paid)','https://api.openai.com/v1/chat/completions','gpt-4o','OPENAI_API_KEY',2),
   ('chatbot','Gemini #1','https://generativelanguage.googleapis.com/v1beta/openai/chat/completions','gemini-3.5-flash','ASSISTANT_GEMINI_KEY_1',1),
   ('chatbot','Gemini #2','https://generativelanguage.googleapis.com/v1beta/openai/chat/completions','gemini-3.5-flash','ASSISTANT_GEMINI_KEY_2',2),
