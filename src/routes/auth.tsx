@@ -17,6 +17,8 @@ export const Route = createFileRoute("/auth")({
       { name: "description", content: "Sign in to BSM Engineering workforce management system." },
       { property: "og:title", content: "Sign in — BSM Workforce & Operations" },
       { property: "og:description", content: "Sign in to BSM Engineering workforce management system." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: AuthPage,
@@ -108,7 +110,7 @@ function AuthCard() {
       setError(err.message);
     } else {
       setMessage(
-        "Account created. Check your email to confirm, then sign in. HR will complete your profile details.",
+        "Account created. Check your email to confirm, then sign in. An administrator will assign your role.",
       );
     }
   };

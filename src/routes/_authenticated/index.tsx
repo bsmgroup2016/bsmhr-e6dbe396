@@ -40,6 +40,7 @@ import {
 import { Target, PhoneCall, TrendingUp } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { canAccess } from "@/lib/permissions";
+import { RoleDashboard } from "@/components/role-dashboard";
 import {
   getEmployees,
   getSites,
@@ -68,6 +69,8 @@ export const Route = createFileRoute("/_authenticated/")({
       { name: "description", content: "BSM Engineering operations dashboard for manpower tracking, MOM compliance alerts, and project oversight." },
       { property: "og:title", content: "Dashboard — BSM Workforce & Operations" },
       { property: "og:description", content: "BSM Engineering operations dashboard." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: DashboardPage,
@@ -117,6 +120,12 @@ function PassportIcon({ className }: { className?: string }) {
 }
 
 function DashboardPage() {
+  const { roles } = useAuth();
+  if (!roles.some((role) => ["admin", "manager", "hr"].includes(role))) return <RoleDashboard />;
+  return <OperationsDashboard />;
+}
+
+function OperationsDashboard() {
   const { roles } = useAuth();
   const showCrm = canAccess("/clients", roles);
   // The dashboard is group-wide: it always aggregates all companies,
