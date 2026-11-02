@@ -120,7 +120,6 @@ export default function SettingsPage() {
           <TabsList className="flex h-auto w-full flex-wrap justify-start gap-1 p-1 [&>button]:flex-none [&>button]:px-3">
             <TabsTrigger value="general">General</TabsTrigger>
             <TabsTrigger value="api">API Integration</TabsTrigger>
-            <TabsTrigger value="security">Security</TabsTrigger>
             <TabsTrigger value="smtp">SMTP</TabsTrigger>
             <TabsTrigger value="payments">Payments</TabsTrigger>
             <TabsTrigger value="storage">Storage</TabsTrigger>
@@ -128,6 +127,7 @@ export default function SettingsPage() {
             <TabsTrigger value="automation">Automation</TabsTrigger>
             <TabsTrigger value="health">Health</TabsTrigger>
             <TabsTrigger value="notifications">Notifications</TabsTrigger>
+            <TabsTrigger value="security">Security</TabsTrigger>
           </TabsList>
 
           <TabsContent value="general" className="mt-4 space-y-4">
