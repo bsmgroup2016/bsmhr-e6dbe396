@@ -23,7 +23,7 @@ export function MobileNav() {
     <nav className="fixed inset-x-0 bottom-0 z-40 border-t bg-card/95 backdrop-blur md:hidden">
       <ul className="flex items-stretch justify-around pb-[env(safe-area-inset-bottom)]">
         {visible.map((item) => {
-          const active = item.to === "/" ? pathname === "/" : pathname.startsWith(item.to);
+          const active = pathname.startsWith(item.to);
           const Icon = item.icon;
           return (
             <li key={item.to} className="flex-1">
