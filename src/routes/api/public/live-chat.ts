@@ -107,10 +107,6 @@ export const Route = createFileRoute("/api/public/live-chat")({
             return Response.json({ ok: true });
           }
           await addMsg(chat.id, "user", p.content, userId);
-          if (chat.status === "human") {
-            await touch(chat.id, { unread_agent: true });
-            return Response.json({ ok: true });
-          }
           await touch(chat.id);
           const history = (await messagesOf(chat.id) as { sender: string; content: string }[])
             .filter((m) => m.sender === "user" || m.sender === "ai" || m.sender === "agent")
@@ -122,7 +118,7 @@ export const Route = createFileRoute("/api/public/live-chat")({
             await addMsg(chat.id, "ai", out.reply || "(no answer)");
           } catch (e) {
             console.error("live chat AI failed:", e);
-            await addMsg(chat.id, "system", "The AI assistant is unavailable right now. Press “Talk to a person” and our team will reply.");
+            await addMsg(chat.id, "system", "The AI assistant is unavailable right now. Please try again in a moment.");
           }
           await touch(chat.id);
           return Response.json({ ok: true });

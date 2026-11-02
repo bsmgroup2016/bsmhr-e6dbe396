@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Headset, Loader2, MessageCircle, Plus, Send, UserRound, X } from "lucide-react";
+import { Headset, Loader2, MessageCircle, Plus, Send, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
@@ -104,7 +104,7 @@ export function LiveChatWidget() {
             <Headset className="h-5 w-5" />
             <div className="flex-1">
               <p className="text-sm font-semibold">Live Chat</p>
-              <p className="text-xs opacity-80">{chat?.status === "human" ? "Talking with our team" : "AI assistant · team can join"}</p>
+              <p className="text-xs opacity-80">AI assistant · ask anything</p>
             </div>
             <Button size="icon" variant="ghost" className="h-8 w-8 hover:bg-primary-foreground/10" title="New chat" onClick={() => post({ action: "new" })}>
               <Plus className="h-4 w-4" />
@@ -115,21 +115,16 @@ export function LiveChatWidget() {
           </div>
           <div className="flex-1 space-y-3 overflow-y-auto p-4">
             {messages.length === 0 && (
-              <p className="pt-8 text-center text-sm text-muted-foreground">Hi! Ask me anything about workers, payroll, deployments or billing. Need a person? Press “Talk to a person”.</p>
+              <p className="pt-8 text-center text-sm text-muted-foreground">Hi! Ask me anything about workers, payroll, deployments or billing.</p>
             )}
             {messages.map((m) => <MessageBubble key={m.id} m={m} mine={m.sender === "user"} />)}
-            {busy && chat?.status !== "human" && (
+            {busy && (
               <div className="flex items-center gap-2 text-xs text-muted-foreground"><Loader2 className="h-3 w-3 animate-spin" /> Typing…</div>
             )}
             {error && <p className="text-xs text-destructive">{error}</p>}
             <div ref={endRef} />
           </div>
           <div className="space-y-2 border-t p-3">
-            {chat?.status !== "human" && (
-              <Button variant="outline" size="sm" className="w-full" disabled={busy} onClick={() => post({ action: "request_human" })}>
-                <UserRound className="mr-1 h-4 w-4" /> Talk to a person
-              </Button>
-            )}
             <div className="flex gap-2">
               <Textarea
                 autoFocus
