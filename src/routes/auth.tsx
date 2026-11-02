@@ -169,6 +169,19 @@ function AuthCard() {
                 {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                 Sign in
               </Button>
+              <button
+                type="button"
+                className="mx-auto flex items-center gap-1.5 text-xs text-muted-foreground underline-offset-4 hover:text-primary hover:underline"
+                onClick={() => {
+                  setForgotSent(false);
+                  setError(null);
+                  setMessage(null);
+                  setActiveTab("forgot");
+                }}
+              >
+                <KeyRound className="h-3.5 w-3.5" />
+                Forgot password?
+              </button>
             </form>
           </TabsContent>
           <TabsContent value="signup">
