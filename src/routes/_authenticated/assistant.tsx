@@ -50,7 +50,9 @@ function AssistantPage() {
       if (res.ok) setProviders(((await res.json()).providers as { name: string }[]).map((p) => p.name));
     })();
   }, []);
-  useEffect(() => endRef.current?.scrollIntoView({ behavior: "smooth" }), [messages, busy]);
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, busy]);
 
   async function send(text: string) {
     const q = text.trim();
