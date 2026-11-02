@@ -58,6 +58,7 @@ function AuthCard() {
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [forgotSent, setForgotSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -98,6 +99,22 @@ function AuthCard() {
       setMessage(
         "Account created. Check your email to confirm, then sign in. HR will complete your profile details.",
       );
+    }
+  };
+
+  const handleForgot = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setMessage(null);
+    setLoading(true);
+    const { error: err } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    setLoading(false);
+    if (err) {
+      setError(err.message);
+    } else {
+      setForgotSent(true);
     }
   };
 
