@@ -144,7 +144,6 @@ export function AppSidebar() {
     .filter((group) => group.items.length > 0);
 
   const isActive = (path: string) => {
-    if (path === "/") return currentPath === "/";
     return currentPath === path || currentPath.startsWith(`${path}/`);
   };
 
