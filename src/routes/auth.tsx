@@ -69,13 +69,24 @@ function AuthCard() {
     setMessage(null);
     setLoading(true);
     const { error: err } = await signIn(email, password);
-    setLoading(false);
     if (err) {
+      setLoading(false);
       setError(err.message);
-    } else {
-      setMessage("Signed in successfully. Redirecting...");
-      window.location.href = "/";
+      return;
     }
+    const { data: u } = await supabase.auth.getUser();
+    if (u.user) {
+      const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", u.user.id);
+      if ((roles ?? []).some((r: { role: string }) => r.role === "admin")) {
+        await supabase.auth.signOut();
+        setLoading(false);
+        setError("Administrator accounts must sign in from the admin login page.");
+        return;
+      }
+    }
+    setLoading(false);
+    setMessage("Signed in successfully. Redirecting...");
+    window.location.href = "/";
   };
 
   const handleSignUp = async (e: React.FormEvent) => {
