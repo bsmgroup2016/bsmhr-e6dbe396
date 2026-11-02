@@ -252,32 +252,7 @@ export default function SettingsPage() {
 
 
           <TabsContent value="ocr" className="mt-4 space-y-4">
-            <AiSettings visionOnly={true} />
-            
-            <div className="rounded-xl border bg-card p-5 shadow-sm">
-              <div className="flex items-center gap-2 mb-4">
-                <Bot className="h-5 w-5 text-primary" />
-                <h2 className="text-lg font-semibold">Advanced OCR Tuning</h2>
-              </div>
-              
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 rounded-lg border bg-background/50">
-                  <div>
-                    <p className="font-medium text-sm">Vision-capable Fallback</p>
-                    <p className="text-xs text-muted-foreground">Automatically route scans to Gemini or Copyfish if OpenAI fails.</p>
-                  </div>
-                  <Switch defaultChecked />
-                </div>
-                
-                <div className="flex items-center justify-between p-4 rounded-lg border bg-background/50">
-                  <div>
-                    <p className="font-medium text-sm">Strict Vision Mode</p>
-                    <p className="text-xs text-muted-foreground">Only use providers that support direct image reading for high accuracy.</p>
-                  </div>
-                  <Switch defaultChecked />
-                </div>
-              </div>
-            </div>
+            <OcrSettings />
           </TabsContent>
 
           <TabsContent value="smtp" className="mt-4 space-y-4">
