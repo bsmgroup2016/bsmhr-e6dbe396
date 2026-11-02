@@ -15,6 +15,7 @@ import {
   Plus,
 } from "lucide-react";
 import { SmtpSettings } from "@/components/settings/smtp-settings";
+import { StorageSettings } from "@/components/settings/storage-settings";
 import { ApiIntegrationSettings } from "@/components/settings/ai-settings";
 import { Badge } from "@/components/ui/badge";
 
@@ -261,23 +262,7 @@ export default function SettingsPage() {
           </TabsContent>
 
           <TabsContent value="storage" className="mt-4 space-y-4">
-            <div className="rounded-xl border bg-card p-5 shadow-sm">
-              <div className="mb-4 flex items-center gap-2">
-                <HardDrive className="h-5 w-5 text-muted-foreground" />
-                <h2 className="text-lg font-semibold">Cloudflare R2 file storage</h2>
-              </div>
-              <p className="mb-4 text-sm text-muted-foreground">
-                All uploaded files (work permits, ICs, certificates, time cards) are stored in your
-                Cloudflare R2 bucket. Your R2 keys are saved securely as project secrets — nothing to
-                fill in here. Only the file link is saved in the database.
-              </p>
-              <div className="flex flex-wrap items-center gap-2">
-                <Button variant="outline" onClick={handleTestR2}>
-                  Test R2 connection
-                </Button>
-                {r2Test && <span className="text-sm text-muted-foreground">{r2Test}</span>}
-              </div>
-            </div>
+            <StorageSettings />
           </TabsContent>
 
           <TabsContent value="data" className="mt-4 space-y-4">
