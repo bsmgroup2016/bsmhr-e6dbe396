@@ -118,7 +118,6 @@ export default function SettingsPage() {
         <Tabs defaultValue="general" className="w-full">
           <TabsList className="flex h-auto w-full flex-wrap justify-start gap-1 p-1 [&>button]:flex-none [&>button]:px-3">
             <TabsTrigger value="general">General</TabsTrigger>
-            <TabsTrigger value="notifications">Notifications</TabsTrigger>
             <TabsTrigger value="security">Security</TabsTrigger>
             <TabsTrigger value="ai">AI Chatbot</TabsTrigger>
             <TabsTrigger value="ocr">OCR</TabsTrigger>
@@ -128,6 +127,7 @@ export default function SettingsPage() {
             <TabsTrigger value="data">Data</TabsTrigger>
             <TabsTrigger value="automation">Automation</TabsTrigger>
             <TabsTrigger value="health">Health</TabsTrigger>
+            <TabsTrigger value="notifications">Notifications</TabsTrigger>
           </TabsList>
 
           <TabsContent value="general" className="mt-4 space-y-4">
