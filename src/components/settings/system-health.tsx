@@ -78,7 +78,7 @@ export function SystemHealth() {
 
     try {
       const ai = await checkAiStatus();
-      const names: Record<string, string> = { lovable: "Lovable AI", openai: "OpenAI" };
+      const names: Record<string, string> = { gemini: "Gemini", openai: "OpenAI" };
       const label = (n: string | null) => (n ? (names[n] ?? n) : "none");
       result.push({
         label: "AI / OCR provider",
