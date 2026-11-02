@@ -2733,6 +2733,40 @@ export function buildClaimSheetRows(employeeId: string, from: string, to: string
     }));
 }
 
+/** Build claim rows from a reviewed time card (human-checked values win over system attendance). */
+export function buildClaimSheetFromCard(card: TimeCard) {
+  const st = getState();
+  const emp = st.employees.find((e) => e.id === card.employeeId);
+  const std = emp?.normalHours && emp.normalHours > 0 ? emp.normalHours : 8;
+  const toMin = (t?: string) => {
+    const m = /^(\d{1,2}):(\d{2})/.exec(t ?? "");
+    return m ? Number(m[1]) * 60 + Number(m[2]) : null;
+  };
+  const att = getAttendanceByEmployee(card.employeeId);
+  return card.entries
+    .filter((e) => e.resolution !== "Ignored" && e.date >= card.periodStart && e.date <= card.periodEnd)
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .map((e) => {
+      const sys = att.find((a) => a.date === e.date);
+      const i = toMin(e.checkIn);
+      const o = toMin(e.checkOut);
+      let total = 0;
+      if (i != null && o != null) total = ((o - i + 1440) % 1440) / 60;
+      else if (sys) total = (sys.hoursWorked ?? 0) + (sys.overtimeHours ?? 0);
+      total = Math.round(total * 100) / 100;
+      return {
+        date: e.date,
+        checkIn: e.checkIn ?? sys?.checkIn,
+        checkOut: e.checkOut ?? sys?.checkOut,
+        normalHours: Math.min(total, std),
+        otHours: Math.max(0, Math.round((total - std) * 100) / 100),
+        status: total > 0 ? "Present" : (sys?.status ?? "Absent"),
+        site: st.sites.find((s) => s.id === sys?.siteId)?.name,
+      };
+    })
+    .filter((r) => r.normalHours > 0 || r.otHours > 0);
+}
+
 export function addClaimSheet(x: Omit<ClaimSheet, "id" | "reference"> & { reference?: string }): ClaimSheet {
   const s = getState();
   const reference = x.reference || `CS-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${s.claimSheets.length + 1}`;

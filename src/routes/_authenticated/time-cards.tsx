@@ -37,6 +37,7 @@ import {
   addClaimSheet,
   addTimeCard,
   buildClaimSheetRows,
+  buildClaimSheetFromCard,
   compareTimeCard,
   deleteClaimSheet,
   deleteTimeCard,
@@ -239,7 +240,7 @@ function TimeCardsPage() {
     const entries = exists
       ? selected.entries.map((e) => (e.date === date ? { ...e, ...patch } : e))
       : [...selected.entries, { date, ...patch }];
-    updateTimeCard(selected.id, { entries });
+    updateTimeCard(selected.id, { entries, ...(selected.status !== "Draft" && ("checkIn" in patch || "checkOut" in patch) ? { status: "Draft" as const } : {}) });
     refresh();
   }
 
@@ -266,11 +267,43 @@ function TimeCardsPage() {
   function finalize(card: TimeCard) {
     const rows = compareTimeCard(card);
     const unresolved = rows.filter((r) => r.state !== "Verified" && !r.resolution).length;
+    if (!card.entries.some((e) => e.checkIn || e.checkOut)) {
+      toast.error("This time card has no times yet — scan or enter them first");
+      return;
+    }
     updateTimeCard(card.id, { status: unresolved ? "Has Mismatches" : "Verified" });
-    refresh();
-    toast[unresolved ? "warning" : "success"](
-      unresolved ? `${unresolved} row(s) still need a decision` : "Time card verified",
+    if (unresolved) {
+      refresh();
+      toast.warning(`${unresolved} row(s) still need a decision`);
+      return;
+    }
+    // Approved: generate the claim sheet from the human-checked card values.
+    const exists = getClaimSheets().some(
+      (s) => s.employeeId === card.employeeId && s.periodStart === card.periodStart && s.periodEnd === card.periodEnd,
     );
+    if (exists) {
+      refresh();
+      toast.success("Time card verified — a claim sheet for this period already exists");
+      return;
+    }
+    const snapshot = buildClaimSheetFromCard({ ...card, status: "Verified" });
+    if (!snapshot.length) {
+      refresh();
+      toast.success("Time card verified — no worked hours to claim");
+      return;
+    }
+    const sheet = addClaimSheet({
+      employeeId: card.employeeId,
+      companyId: employees.find((e) => e.id === card.employeeId)?.companyId,
+      periodStart: card.periodStart,
+      periodEnd: card.periodEnd,
+      totalDays: snapshot.length,
+      totalNormalHours: snapshot.reduce((s, r) => s + r.normalHours, 0),
+      totalOtHours: snapshot.reduce((s, r) => s + r.otHours, 0),
+      snapshot,
+    });
+    refresh();
+    toast.success(`Time card approved — claim sheet ${sheet.reference} created`);
   }
 
   function generateClaimSheet() {

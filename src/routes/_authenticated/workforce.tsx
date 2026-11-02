@@ -232,31 +232,41 @@ const EMPLOYEE_DEMO_ROWS: Record<string, string>[] = [
 ];
 
 function toEmployeeRow(employee: Employee) {
-  return {
-    "P-File Number": employee.employeeCode,
-    Name: employee.name,
-    FIN: employee.fin,
-    Nationality: employee.nationality,
-    "Pass Type": employee.passType,
-    "Pass Expiry": employee.passExpiry,
-    "Days To Expiry": daysUntil(employee.passExpiry) ?? "",
-    Designation: employee.trade,
-    Site: employee.site ?? "",
-    Status: employee.status,
-    "Basic Salary": employee.basicSalary,
-    "Levy Rate": employee.levyRate ?? 0,
-    "Joined On": employee.joinedOn,
-    Phone: employee.phone ?? "",
-    Email: employee.email ?? "",
-    Dormitory: employee.dormitory ?? "",
-  };
+  const e = employee as unknown as Record<string, unknown>;
+  const alias: Record<string, string> = { workPermitExpiry: "workPermitExpiryDate" };
+  const row: Record<string, unknown> = {};
+  for (const c of EMPLOYEE_IMPORT_COLUMNS) {
+    if (c.key === "projectName" || c.key === "clientName") continue;
+    const v = e[alias[c.key] ?? c.key];
+    row[c.label] = v == null || v === "-" ? "" : v;
+  }
+  row["Days To Expiry"] = daysUntil(employee.passExpiry) ?? "";
+  return row;
 }
 
+/** Accepts YYYY-MM-DD, DD/MM/YYYY (Singapore order), DD-MMM-YYYY and Excel serial numbers. */
 function normalizeDate(value: string) {
-  if (!value) return "";
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) return value;
-  return parsed.toISOString().slice(0, 10);
+  const v = (value ?? "").toString().trim();
+  if (!v || v === "-") return "";
+  const iso = (y: number, m: number, d: number) => {
+    const dt = new Date(Date.UTC(y, m - 1, d));
+    return dt.getUTCFullYear() === y && dt.getUTCMonth() === m - 1 && dt.getUTCDate() === d
+      ? dt.toISOString().slice(0, 10)
+      : "";
+  };
+  let m = /^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/.exec(v);
+  if (m) return iso(+m[1], +m[2], +m[3]);
+  m = /^(\d{1,2})[-/.](\d{1,2})[-/.](\d{2,4})$/.exec(v);
+  if (m) {
+    const y = +m[3] < 100 ? 2000 + +m[3] : +m[3];
+    return iso(y, +m[2], +m[1]);
+  }
+  if (/^\d{4,5}(\.\d+)?$/.test(v)) {
+    const dt = new Date(Date.UTC(1899, 11, 30) + Math.floor(Number(v)) * 86400000);
+    return dt.toISOString().slice(0, 10);
+  }
+  const parsed = new Date(v);
+  return Number.isNaN(parsed.getTime()) ? "" : parsed.toISOString().slice(0, 10);
 }
 
 export default function WorkforcePage() {
@@ -418,7 +428,7 @@ export default function WorkforcePage() {
     const errors: string[] = [];
     let imported = 0;
     let updated = 0;
-    const existing = getEmployees();
+    const existing = [...getEmployees()];
     const allProjects = getProjects();
     const allClients = getClients();
     const allSites = getSites();
@@ -482,6 +492,7 @@ export default function WorkforcePage() {
         branch: get("branch") || undefined,
         passportNumber: get("passportNumber") || undefined,
         workPermitNumber: get("workPermitNumber") || undefined,
+        workPermitExpiryDate: normalizeDate(get("workPermitExpiry")) || undefined,
         passportExpiry: normalizeDate(get("passportExpiry")) || undefined,
         dateOfBirth: normalizeDate(get("dateOfBirth")) || undefined,
         gender: (get("gender") || undefined) as Employee["gender"],
@@ -522,8 +533,11 @@ export default function WorkforcePage() {
       const byCode = code
         ? existing.find((e) => (e.employeeCode ?? "").toLowerCase() === code.toLowerCase())
         : undefined;
+      const patch = Object.fromEntries(
+        Object.entries(payload).filter(([, v]) => v !== undefined && v !== "" && v !== "-"),
+      ) as typeof payload;
       if (byCode) {
-        updateEmployee(byCode.id, payload);
+        updateEmployee(byCode.id, patch);
         linkProject(byCode.id, get("projectName"), get("clientName"), joined);
         updated += 1;
         imported += 1;
@@ -531,6 +545,7 @@ export default function WorkforcePage() {
       }
       if (code) {
         const created = addEmployee({ ...payload, employeeCode: code } as never);
+        if (created) existing.push(created);
         if (created) linkProject(created.id, get("projectName"), get("clientName"), joined);
         imported += 1;
         return;
@@ -538,11 +553,12 @@ export default function WorkforcePage() {
 
       const match = fin ? existing.find((e) => e.fin.toUpperCase() === fin) : undefined;
       if (match) {
-        updateEmployee(match.id, payload);
+        updateEmployee(match.id, patch);
         linkProject(match.id, get("projectName"), get("clientName"), joined);
         updated += 1;
       } else {
         const created = addEmployee(payload);
+        if (created) existing.push(created);
         if (created) linkProject(created.id, get("projectName"), get("clientName"), joined);
       }
       imported += 1;

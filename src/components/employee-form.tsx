@@ -220,10 +220,24 @@ export function EmployeeForm({
     if (!value) return 0;
     const el = formRef.current?.elements.namedItem(field) as HTMLInputElement | null;
     if (!el || el.value) return 0;
+    if (el.type === "date") {
+      const v = value.trim();
+      const mon = "jan feb mar apr may jun jul aug sep oct nov dec".split(" ");
+      let m = /^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(v);
+      let iso = m ? `${m[1]}-${m[2].padStart(2, "0")}-${m[3].padStart(2, "0")}` : "";
+      if (!iso && (m = /^(\d{1,2})[/.\-\s](\d{1,2})[/.\-\s](\d{4})$/.exec(v)))
+        iso = `${m[3]}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}`;
+      if (!iso && (m = /^(\d{1,2})[\s\-/]([A-Za-z]{3})[A-Za-z]*[\s\-/,]+(\d{4})$/.exec(v))) {
+        const mi = mon.indexOf(m[2].toLowerCase());
+        if (mi >= 0) iso = `${m[3]}-${String(mi + 1).padStart(2, "0")}-${m[1].padStart(2, "0")}`;
+      }
+      if (!iso) return 0;
+      value = iso;
+    }
     const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
     setter?.call(el, value);
     el.dispatchEvent(new Event("input", { bubbles: true }));
-    return 1;
+    return el.value === value ? 1 : 0;
   }
 
   async function autoFillFromIpa() {

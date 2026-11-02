@@ -182,8 +182,7 @@ export function ImportDialog({
         const guess: Record<string, string> = {};
         for (const column of columns) {
           const hit = detected.find((h) => norm(h) === norm(column.label))
-            ?? detected.find((h) => norm(h) === norm(column.key))
-            ?? detected.find((h) => norm(h).includes(norm(column.label)) && norm(column.label).length > 3);
+            ?? detected.find((h) => norm(h) === norm(column.key));
           if (hit) guess[column.key] = hit;
         }
         setMapping(guess);
