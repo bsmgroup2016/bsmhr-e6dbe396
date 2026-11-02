@@ -37,6 +37,7 @@ import {
   addClaimSheet,
   addTimeCard,
   buildClaimSheetRows,
+  buildClaimSheetFromCard,
   compareTimeCard,
   deleteClaimSheet,
   deleteTimeCard,
