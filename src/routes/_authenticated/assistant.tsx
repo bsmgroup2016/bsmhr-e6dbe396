@@ -23,7 +23,7 @@ export const Route = createFileRoute("/_authenticated/assistant")({
     ],
   }),
   component: AssistantPage,
-}));
+});
 
 function AssistantPage() {
   const { isAdmin } = useAuth();
@@ -42,8 +42,6 @@ function AssistantPage() {
     </AppShell>
   );
 }
-const _unused = (() => ({
-});
 
 type Msg = { role: "user" | "assistant"; content: string; provider?: string; error?: boolean };
 
