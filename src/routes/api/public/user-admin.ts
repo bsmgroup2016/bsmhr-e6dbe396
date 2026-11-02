@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { verifyUser } from "@/lib/r2.server";
+import { AUTH_ROLES } from "@/core/access";
 
 const SUPABASE_URL = "https://thrfyeyqafmdnpexgmlc.supabase.co";
 
@@ -35,8 +36,9 @@ const bodySchema = z.discriminatedUnion("action", [
     password: z.string().min(8).max(72),
     fullName: z.string().max(120).optional(),
     phone: z.string().max(40).optional(),
-    role: z.string().max(40).optional(),
+    role: z.enum([...AUTH_ROLES, "none"]).optional(),
   }),
+  z.object({ action: z.literal("set-role"), id: z.string().uuid(), role: z.enum([...AUTH_ROLES, "none"]) }),
   z.object({ action: z.literal("delete"), ids: z.array(z.string().uuid()).min(1).max(50) }),
   z.object({
     action: z.literal("update"),
@@ -89,6 +91,18 @@ export const Route = createFileRoute("/api/public/user-admin")({
           // Everything else is admin-only.
           if (!(await isAdmin(userId))) return new Response("Forbidden", { status: 403 });
 
+          if (body.action === "set-role") {
+            const auth = request.headers.get("authorization");
+            if (!auth) return new Response("Unauthorized", { status: 401 });
+            const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/set_user_role`, {
+              method: "POST",
+              headers: { apikey: serviceHeaders().apikey, Authorization: auth, "Content-Type": "application/json" },
+              body: JSON.stringify({ target_user: body.id, next_role: body.role === "none" ? null : body.role }),
+            });
+            if (!response.ok) return Response.json({ error: "Could not update role. The account permissions update must be applied first." }, { status: 409 });
+            return Response.json({ ok: true });
+          }
+
           if (body.action === "create") {
             const res = await fetch(`${SUPABASE_URL}/auth/v1/admin/users`, {
               method: "POST",
@@ -114,6 +128,7 @@ export const Route = createFileRoute("/api/public/user-admin")({
               }),
             });
             if (body.role && body.role !== "none") {
+              await rest(`user_roles?user_id=eq.${created.id}`, { method: "DELETE" });
               await rest(`user_roles`, {
                 method: "POST",
                 body: JSON.stringify({ user_id: created.id, role: body.role }),
