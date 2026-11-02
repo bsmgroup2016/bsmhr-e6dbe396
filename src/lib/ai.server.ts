@@ -9,37 +9,38 @@
  * The AI chatbot uses its OWN separate keys (see assistant.server.ts).
  */
 
-export type AiProviderName = "gemini" | "openai";
+import { activeProviders } from "./api-integrations.server";
+
+/** "gemini" / "openai" for the built-in pair; any other provider uses its label. */
+export type AiProviderName = string;
 
 interface ProviderConfig {
   name: AiProviderName;
+  label: string;
   url: string;
   apiKey: string;
   model: string;
-  vision: boolean;
+  extra: Record<string, string>;
 }
 
-const OPENAI_URL = "https://api.openai.com/v1/chat/completions";
-const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
-
-function configured(): ProviderConfig[] {
-  const env = process.env;
-  const list: ProviderConfig[] = [];
-  const gKey = env.GOOGLE_API_KEY || env.GEMINI_API_KEY;
-  if (gKey) {
-    list.push({ name: "gemini", url: GEMINI_URL, apiKey: gKey, model: env.GOOGLE_MODEL || "gemini-2.5-flash", vision: true });
-  }
-  if (env.OPENAI_API_KEY) {
-    list.push({ name: "openai", url: OPENAI_URL, apiKey: env.OPENAI_API_KEY, model: env.OPENAI_MODEL || "gpt-4o", vision: true });
-  }
-  return list;
+/** OCR providers come from Settings → API Integration (fallback order, on/off, keys). */
+async function configured(): Promise<ProviderConfig[]> {
+  const list = await activeProviders("ocr");
+  return list.map((p) => ({
+    name: p.url.includes("googleapis.com") ? "gemini" : p.url.includes("api.openai.com") ? "openai" : p.name,
+    label: p.name,
+    url: p.url,
+    apiKey: p.key,
+    model: p.model,
+    extra: p.extra,
+  }));
 }
 
-/** Which OCR providers this deployment can use right now (for Settings / health). */
-export function aiProviderStatus() {
-  const list = configured();
+/** Which OCR providers this deployment can use right now. */
+export async function aiProviderStatus() {
+  const list = await configured();
   return {
-    providers: list.map((p) => ({ name: p.name, model: p.model, vision: p.vision })),
+    providers: list.map((p) => ({ name: p.name, label: p.label, model: p.model, vision: true })),
     primary: list[0]?.name ?? null,
     fallback: list[1]?.name ?? null,
     backups: list.slice(1).map((p) => p.name),
@@ -88,10 +89,12 @@ function extractJson(text: string): unknown {
 
 /** Ask Gemini / OpenAI for a JSON answer, falling back on failure. */
 export async function askAiJson(req: AiRequest): Promise<unknown> {
-  let list = configured();
+  let list = await configured();
+  // If the pinned provider is off/missing, fall back to the normal order.
+  if (req.only && !list.some((p) => p.name === req.only)) req = { ...req, only: undefined };
   if (req.only) list = list.filter((p) => p.name === req.only);
   if (list.length === 0) {
-    throw new Error("No OCR provider is configured — add the Gemini or OpenAI key in Settings → OCR");
+    throw new Error("No OCR provider is configured — add the Gemini or OpenAI key in Settings → API Integration");
   }
 
   let lastError: Error | null = null;
@@ -99,7 +102,7 @@ export async function askAiJson(req: AiRequest): Promise<unknown> {
     try {
       const res = await fetch(provider.url, {
         method: "POST",
-        headers: { Authorization: `Bearer ${provider.apiKey}`, "Content-Type": "application/json" },
+        headers: { Authorization: `Bearer ${provider.apiKey}`, "Content-Type": "application/json", ...provider.extra },
         body: JSON.stringify(buildBody(provider, req)),
       });
       if (!res.ok) {

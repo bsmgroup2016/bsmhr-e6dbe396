@@ -10,7 +10,7 @@ export const Route = createFileRoute("/api/public/ai-status")({
         if (!userId) return new Response("Unauthorized", { status: 401 });
         if (!(await isAdmin(userId))) return new Response("Forbidden", { status: 403 });
         const { aiProviderStatus } = await import("@/lib/ai.server");
-        return Response.json(aiProviderStatus());
+        return Response.json(await aiProviderStatus());
       },
     },
   },

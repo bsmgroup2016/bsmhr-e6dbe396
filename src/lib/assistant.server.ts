@@ -18,38 +18,15 @@ export const ASSISTANT_TABLES = [
   "leads", "crm_activities", "time_cards", "claim_sheets", "departments", "designations", "audit_logs",
 ] as const;
 
-interface Provider { name: string; url: string; key: string; model: string; extra?: Record<string, string> }
+import { activeProviders } from "./api-integrations.server";
 
-function providers(): Provider[] {
-  const e = process.env;
-  const list: Provider[] = [];
-  const gUrl = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
-  if (e.ASSISTANT_GEMINI_KEY_1) list.push({ name: "Gemini #1", url: gUrl, key: e.ASSISTANT_GEMINI_KEY_1, model: "gemini-3.5-flash", extra: { "x-goog-api-key": e.ASSISTANT_GEMINI_KEY_1 } });
-  if (e.ASSISTANT_GEMINI_KEY_2) list.push({ name: "Gemini #2", url: gUrl, key: e.ASSISTANT_GEMINI_KEY_2, model: "gemini-3.5-flash", extra: { "x-goog-api-key": e.ASSISTANT_GEMINI_KEY_2 } });
-  if (e.ASSISTANT_GROQ_KEY) list.push({ name: "Groq", url: "https://api.groq.com/openai/v1/chat/completions", key: e.ASSISTANT_GROQ_KEY, model: "openai/gpt-oss-120b" });
-  if (e.ASSISTANT_OPENROUTER_KEY) list.push({
-    name: "OpenRouter", url: "https://openrouter.ai/api/v1/chat/completions", key: e.ASSISTANT_OPENROUTER_KEY,
-    model: e.ASSISTANT_OPENROUTER_MODEL || "openai/gpt-4o-mini", extra: { "X-Title": "BSM Workforce Assistant" },
-  });
-  return list;
+/** Chatbot providers come from Settings → API Integration (fallback order, on/off, keys). */
+async function providers() {
+  return activeProviders("chatbot");
 }
 
-export function assistantStatus() {
-  return providers().map((p) => ({ name: p.name, model: p.model, url: p.url }));
-}
-
-/** Send one tiny message to a single chatbot provider to confirm its key works. */
-export async function testAssistantProvider(name: string): Promise<{ success: boolean; error: string | null }> {
-  const p = providers().find((x) => x.name === name);
-  if (!p) return { success: false, error: "Key not added" };
-  const res = await fetch(p.url, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${p.key}`, "Content-Type": "application/json", ...(p.extra ?? {}) },
-    body: JSON.stringify({ model: p.model, messages: [{ role: "user", content: "Reply with OK" }] }),
-  });
-  if (res.ok) return { success: true, error: null };
-  if (res.status === 429) return { success: false, error: "Limit reached for now (the next key will take over)" };
-  return { success: false, error: `${p.name} failed (${res.status}): ${(await res.text()).slice(0, 200)}` };
+export async function assistantStatus() {
+  return (await providers()).map((p) => ({ name: p.name, model: p.model }));
 }
 
 const tools = [
@@ -171,7 +148,7 @@ const SYSTEM =
 export type ChatMsg = { role: "user" | "assistant"; content: string };
 
 export async function runAssistant(messages: ChatMsg[], auth: string, anon: string) {
-  const list = providers();
+  const list = await providers();
   if (list.length === 0) throw new Error("AI Assistant keys are not set yet");
   const today = new Date().toISOString().slice(0, 10);
   let lastErr = "";
@@ -181,7 +158,7 @@ export async function runAssistant(messages: ChatMsg[], auth: string, anon: stri
       for (let step = 0; step < 8; step++) {
         const res = await fetch(p.url, {
           method: "POST",
-          headers: { Authorization: `Bearer ${p.key}`, "Content-Type": "application/json", ...(p.extra ?? {}) },
+          headers: { Authorization: `Bearer ${p.key}`, "Content-Type": "application/json", ...p.extra },
           body: JSON.stringify({ model: p.model, messages: convo, tools, tool_choice: "auto" }),
         });
         if (!res.ok) throw new Error(`${p.name} ${res.status}: ${(await res.text()).slice(0, 200)}`);
