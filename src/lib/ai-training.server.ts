@@ -110,11 +110,10 @@ export async function runCrawl(trigger: "manual" | "auto", withSkills: boolean) 
     for (const t of ASSISTANT_TABLES) {
       try {
         const s = await snapshotTable(t);
-        await db("ai_knowledge?on_conflict=title", {
-          method: "POST",
-          headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
-          body: JSON.stringify({ kind: "snapshot", source: "crawl", title: t, content: s.content, updated_at: new Date().toISOString() }),
-        });
+        const existing = (await db(`ai_knowledge?kind=eq.snapshot&title=eq.${t}&select=id`)).data[0];
+        const row = { kind: "snapshot", source: "crawl", title: t, content: s.content, updated_at: new Date().toISOString() };
+        if (existing) await db(`ai_knowledge?id=eq.${existing.id}`, { method: "PATCH", body: JSON.stringify(row) });
+        else await db("ai_knowledge", { method: "POST", body: JSON.stringify(row) });
         tables++;
         rows += s.rows;
       } catch (e) {
