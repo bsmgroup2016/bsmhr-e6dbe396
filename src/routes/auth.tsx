@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AlertCircle, Building2, Loader2 } from "lucide-react";
+import { AlertCircle, Building2, KeyRound, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export const Route = createFileRoute("/auth")({
@@ -57,6 +58,7 @@ function AuthCard() {
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [forgotSent, setForgotSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -97,6 +99,22 @@ function AuthCard() {
       setMessage(
         "Account created. Check your email to confirm, then sign in. HR will complete your profile details.",
       );
+    }
+  };
+
+  const handleForgot = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setMessage(null);
+    setLoading(true);
+    const { error: err } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    setLoading(false);
+    if (err) {
+      setError(err.message);
+    } else {
+      setForgotSent(true);
     }
   };
 
@@ -151,6 +169,19 @@ function AuthCard() {
                 {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                 Sign in
               </Button>
+              <button
+                type="button"
+                className="mx-auto flex items-center gap-1.5 text-xs text-muted-foreground underline-offset-4 hover:text-primary hover:underline"
+                onClick={() => {
+                  setForgotSent(false);
+                  setError(null);
+                  setMessage(null);
+                  setActiveTab("forgot");
+                }}
+              >
+                <KeyRound className="h-3.5 w-3.5" />
+                Forgot password?
+              </button>
             </form>
           </TabsContent>
           <TabsContent value="signup">
@@ -217,6 +248,53 @@ function AuthCard() {
                 Create account
               </Button>
             </form>
+          </TabsContent>
+          <TabsContent value="forgot">
+            {forgotSent ? (
+              <Alert className="mt-2">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  Reset link sent to <span className="font-medium">{email}</span>. Open the email
+                  and click the link to set a new password. The link works only once and expires
+                  within an hour.
+                </AlertDescription>
+              </Alert>
+            ) : (
+              <form onSubmit={handleForgot} className="space-y-4 pt-2">
+                <div className="space-y-2">
+                  <Label htmlFor="forgot-email">Account email</Label>
+                  <Input
+                    id="forgot-email"
+                    type="email"
+                    placeholder="admin@bsm.sg"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
+                </div>
+                {error && (
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>{error}</AlertDescription>
+                  </Alert>
+                )}
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                  Send reset link
+                </Button>
+              </form>
+            )}
+            <button
+              type="button"
+              className="mx-auto mt-3 flex text-xs text-muted-foreground underline-offset-4 hover:text-primary hover:underline"
+              onClick={() => {
+                setActiveTab("signin");
+                setForgotSent(false);
+                setError(null);
+              }}
+            >
+              Back to sign in
+            </button>
           </TabsContent>
         </Tabs>
       </CardContent>
