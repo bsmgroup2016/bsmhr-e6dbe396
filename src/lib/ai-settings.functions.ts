@@ -14,7 +14,7 @@ export const getAssistantConfig = createServerFn({ method: "GET" }).handler(asyn
   const slots = ["Gemini #1", "Gemini #2", "Groq", "OpenRouter"];
   return slots.map((name) => {
     const found = active.find((a) => a.name === name);
-    return { name, model: found?.model ?? null, configured: !!found };
+    return { name, model: found?.model ?? null, url: found?.url ?? null, configured: !!found };
   });
 });
 
@@ -32,5 +32,17 @@ export const testAiProvider = createServerFn({ method: "POST" })
       return { success: true, response: res as any, error: null };
     } catch (e) {
       return { success: false, error: e instanceof Error ? e.message : String(e), response: null };
+    }
+  });
+
+/** Test one chatbot provider. */
+export const testAssistantKey = createServerFn({ method: "POST" })
+  .inputValidator((data) => z.object({ provider: z.enum(["Gemini #1", "Gemini #2", "Groq", "OpenRouter"]) }).parse(data))
+  .handler(async ({ data }) => {
+    try {
+      const { testAssistantProvider } = await import("./assistant.server");
+      return await testAssistantProvider(data.provider);
+    } catch (e) {
+      return { success: false, error: e instanceof Error ? e.message : String(e) };
     }
   });
