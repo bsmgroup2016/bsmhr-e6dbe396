@@ -74,6 +74,7 @@ import { Route as ApiPublicR2StatusRouteImport } from './routes/api/public/r2-st
 import { Route as ApiPublicR2UploadRouteImport } from './routes/api/public/r2-upload'
 import { Route as ApiPublicRunAutomationsRouteImport } from './routes/api/public/run-automations'
 import { Route as ApiPublicSendAlertsRouteImport } from './routes/api/public/send-alerts'
+import { Route as ApiPublicSmtpServersRouteImport } from './routes/api/public/smtp-servers'
 import { Route as ApiPublicUserAdminRouteImport } from './routes/api/public/user-admin'
 import { Route as ApiPublicV1AttendanceRouteImport } from './routes/api/public/v1/attendance'
 import { Route as ApiPublicV1ClientsRouteImport } from './routes/api/public/v1/clients'
@@ -434,6 +435,11 @@ const ApiPublicSendAlertsRoute = ApiPublicSendAlertsRouteImport.update({
   path: '/api/public/send-alerts',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicSmtpServersRoute = ApiPublicSmtpServersRouteImport.update({
+  id: '/api/public/smtp-servers',
+  path: '/api/public/smtp-servers',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicUserAdminRoute = ApiPublicUserAdminRouteImport.update({
   id: '/api/public/user-admin',
   path: '/api/public/user-admin',
@@ -604,6 +610,7 @@ export interface FileRoutesByFullPath {
   '/api/public/r2-upload': typeof ApiPublicR2UploadRoute
   '/api/public/run-automations': typeof ApiPublicRunAutomationsRoute
   '/api/public/send-alerts': typeof ApiPublicSendAlertsRoute
+  '/api/public/smtp-servers': typeof ApiPublicSmtpServersRoute
   '/api/public/user-admin': typeof ApiPublicUserAdminRoute
   '/api/public/v1/attendance': typeof ApiPublicV1AttendanceRouteWithChildren
   '/api/public/v1/clients': typeof ApiPublicV1ClientsRoute
@@ -690,6 +697,7 @@ export interface FileRoutesByTo {
   '/api/public/r2-upload': typeof ApiPublicR2UploadRoute
   '/api/public/run-automations': typeof ApiPublicRunAutomationsRoute
   '/api/public/send-alerts': typeof ApiPublicSendAlertsRoute
+  '/api/public/smtp-servers': typeof ApiPublicSmtpServersRoute
   '/api/public/user-admin': typeof ApiPublicUserAdminRoute
   '/api/public/v1/attendance': typeof ApiPublicV1AttendanceRouteWithChildren
   '/api/public/v1/clients': typeof ApiPublicV1ClientsRoute
@@ -778,6 +786,7 @@ export interface FileRoutesById {
   '/api/public/r2-upload': typeof ApiPublicR2UploadRoute
   '/api/public/run-automations': typeof ApiPublicRunAutomationsRoute
   '/api/public/send-alerts': typeof ApiPublicSendAlertsRoute
+  '/api/public/smtp-servers': typeof ApiPublicSmtpServersRoute
   '/api/public/user-admin': typeof ApiPublicUserAdminRoute
   '/api/public/v1/attendance': typeof ApiPublicV1AttendanceRouteWithChildren
   '/api/public/v1/clients': typeof ApiPublicV1ClientsRoute
@@ -866,6 +875,7 @@ export interface FileRouteTypes {
     | '/api/public/r2-upload'
     | '/api/public/run-automations'
     | '/api/public/send-alerts'
+    | '/api/public/smtp-servers'
     | '/api/public/user-admin'
     | '/api/public/v1/attendance'
     | '/api/public/v1/clients'
@@ -952,6 +962,7 @@ export interface FileRouteTypes {
     | '/api/public/r2-upload'
     | '/api/public/run-automations'
     | '/api/public/send-alerts'
+    | '/api/public/smtp-servers'
     | '/api/public/user-admin'
     | '/api/public/v1/attendance'
     | '/api/public/v1/clients'
@@ -1039,6 +1050,7 @@ export interface FileRouteTypes {
     | '/api/public/r2-upload'
     | '/api/public/run-automations'
     | '/api/public/send-alerts'
+    | '/api/public/smtp-servers'
     | '/api/public/user-admin'
     | '/api/public/v1/attendance'
     | '/api/public/v1/clients'
@@ -1080,6 +1092,7 @@ export interface RootRouteChildren {
   ApiPublicR2UploadRoute: typeof ApiPublicR2UploadRoute
   ApiPublicRunAutomationsRoute: typeof ApiPublicRunAutomationsRoute
   ApiPublicSendAlertsRoute: typeof ApiPublicSendAlertsRoute
+  ApiPublicSmtpServersRoute: typeof ApiPublicSmtpServersRoute
   ApiPublicUserAdminRoute: typeof ApiPublicUserAdminRoute
   ApiPublicV1AttendanceRoute: typeof ApiPublicV1AttendanceRouteWithChildren
   ApiPublicV1ClientsRoute: typeof ApiPublicV1ClientsRoute
@@ -1553,6 +1566,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicSendAlertsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/smtp-servers': {
+      id: '/api/public/smtp-servers'
+      path: '/api/public/smtp-servers'
+      fullPath: '/api/public/smtp-servers'
+      preLoaderRoute: typeof ApiPublicSmtpServersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/user-admin': {
       id: '/api/public/user-admin'
       path: '/api/public/user-admin'
@@ -1890,6 +1910,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicR2UploadRoute: ApiPublicR2UploadRoute,
   ApiPublicRunAutomationsRoute: ApiPublicRunAutomationsRoute,
   ApiPublicSendAlertsRoute: ApiPublicSendAlertsRoute,
+  ApiPublicSmtpServersRoute: ApiPublicSmtpServersRoute,
   ApiPublicUserAdminRoute: ApiPublicUserAdminRoute,
   ApiPublicV1AttendanceRoute: ApiPublicV1AttendanceRouteWithChildren,
   ApiPublicV1ClientsRoute: ApiPublicV1ClientsRoute,
