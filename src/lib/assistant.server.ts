@@ -151,10 +151,12 @@ export async function runAssistant(messages: ChatMsg[], auth: string, anon: stri
   const list = await providers();
   if (list.length === 0) throw new Error("AI Assistant keys are not set yet");
   const today = new Date().toISOString().slice(0, 10);
+  const { knowledgePrompt } = await import("./ai-training.server");
+  const trained = await knowledgePrompt();
   let lastErr = "";
   for (const p of list) {
     try {
-      const convo: Record<string, unknown>[] = [{ role: "system", content: `${SYSTEM} Today is ${today}.` }, ...messages];
+      const convo: Record<string, unknown>[] = [{ role: "system", content: `${SYSTEM} Today is ${today}.${trained}` }, ...messages];
       for (let step = 0; step < 8; step++) {
         const res = await fetch(p.url, {
           method: "POST",
