@@ -43,6 +43,7 @@ import { SystemHealth } from "@/components/settings/system-health";
 import { AutomationCentre } from "@/components/settings/automation-centre";
 import { CompanyLogos } from "@/components/settings/company-logos";
 import { PaymentDetails } from "@/components/settings/payment-details";
+import { ChangeLoginEmail } from "@/components/settings/change-login-email";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({
@@ -216,6 +217,7 @@ export default function SettingsPage() {
           </TabsContent>
 
           <TabsContent value="security" className="mt-4 space-y-4">
+            <ChangeLoginEmail />
             <div className="rounded-xl border bg-card p-5 shadow-sm">
               <div className="flex items-center gap-2 mb-4">
                 <Shield className="h-5 w-5 text-muted-foreground" />
