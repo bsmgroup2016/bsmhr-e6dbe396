@@ -1,333 +1,263 @@
-import { useEffect, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Mail, Save, Send, Loader2, Eye, EyeOff, CheckCircle2, AlertCircle } from "lucide-react";
+import {
+  Mail, Save, Send, Loader2, CheckCircle2, AlertCircle, ArrowUp, ArrowDown, Pencil, Trash2, Plus, Star, RotateCcw,
+} from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  getSmtpSettings,
-  saveSmtpSettings,
-  testSmtpSettings,
-} from "@/lib/smtp-settings.functions";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+type Server = {
+  id: string; label: string; host: string; port: number; secure: boolean; username: string | null;
+  fromEmail: string; fromName: string | null; priority: number; enabled: boolean; dailyLimit: number | null;
+  sentToday: number; hasPassword: boolean; status: string | null; cooldownUntil: string | null;
+  lastError: string | null; lastUsedAt: string | null;
+};
+type Data = { servers: Server[]; global: { primaryProvider: "resend" | "smtp"; failoverEnabled: boolean }; resendConfigured: boolean };
+
+async function api<T>(method: "GET" | "POST", payload?: Record<string, unknown>): Promise<T> {
+  const { data } = await supabase.auth.getSession();
+  const res = await fetch("/api/public/smtp-servers", {
+    method,
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${data.session?.access_token ?? ""}` },
+    body: payload ? JSON.stringify(payload) : undefined,
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error((json as { error?: string }).error ?? "Request failed");
+  return json as T;
+}
+
+const PRESETS: Record<string, { host: string; port: number; secure: boolean }> = {
+  Gmail: { host: "smtp.gmail.com", port: 587, secure: false },
+  "Outlook / 365": { host: "smtp.office365.com", port: 587, secure: false },
+  Zoho: { host: "smtp.zoho.com", port: 465, secure: true },
+  Brevo: { host: "smtp-relay.brevo.com", port: 587, secure: false },
+  Resend: { host: "smtp.resend.com", port: 465, secure: true },
+};
+
+function ServerForm({ initial, onCancel, onSaved }: { initial?: Server; onCancel: () => void; onSaved: () => void }) {
+  const [f, setF] = useState({
+    label: initial?.label ?? "", host: initial?.host ?? "", port: initial?.port ?? 587, secure: initial?.secure ?? false,
+    username: initial?.username ?? "", password: "", fromEmail: initial?.fromEmail ?? "", fromName: initial?.fromName ?? "BSM Workforce",
+    enabled: initial?.enabled ?? true, dailyLimit: initial?.dailyLimit ? String(initial.dailyLimit) : "",
+  });
+  const [saving, setSaving] = useState(false);
+  const set = (k: keyof typeof f, v: unknown) => setF((p) => ({ ...p, [k]: v }));
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      await api("POST", {
+        action: initial ? "update" : "create",
+        ...(initial ? { id: initial.id } : {}),
+        ...f,
+        port: Number(f.port),
+        dailyLimit: f.dailyLimit ? Number(f.dailyLimit) : null,
+        password: f.password || undefined,
+      });
+      toast.success("SMTP saved");
+      onSaved();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="mt-3 space-y-3 rounded-md border border-dashed bg-muted/40 p-3">
+      {!initial && (
+        <div className="flex flex-wrap gap-2">
+          <span className="self-center text-xs text-muted-foreground">Quick fill:</span>
+          {Object.entries(PRESETS).map(([n, p]) => (
+            <Button key={n} type="button" variant="outline" size="sm" className="h-7 text-xs"
+              onClick={() => setF((x) => ({ ...x, ...p, label: x.label || n }))}>{n}</Button>
+          ))}
+        </div>
+      )}
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="space-y-1.5"><Label className="text-xs">Name</Label><Input value={f.label} onChange={(e) => set("label", e.target.value)} placeholder="e.g. Gmail main" /></div>
+        <div className="space-y-1.5"><Label className="text-xs">Daily limit (blank = no limit)</Label><Input type="number" value={f.dailyLimit} onChange={(e) => set("dailyLimit", e.target.value)} placeholder="e.g. 500" /></div>
+        <div className="space-y-1.5"><Label className="text-xs">Host</Label><Input value={f.host} onChange={(e) => set("host", e.target.value)} placeholder="smtp.yourdomain.com" /></div>
+        <div className="space-y-1.5"><Label className="text-xs">Port</Label><Input type="number" value={f.port} onChange={(e) => set("port", e.target.value)} /></div>
+        <div className="space-y-1.5"><Label className="text-xs">Username</Label><Input value={f.username} onChange={(e) => set("username", e.target.value)} /></div>
+        <div className="space-y-1.5">
+          <Label className="text-xs">{initial?.hasPassword ? "New password (blank = keep current)" : "Password / API key"}</Label>
+          <Input type="password" autoComplete="off" value={f.password} onChange={(e) => set("password", e.target.value)} />
+        </div>
+        <div className="space-y-1.5"><Label className="text-xs">From email</Label><Input value={f.fromEmail} onChange={(e) => set("fromEmail", e.target.value)} placeholder="no-reply@yourdomain.com" /></div>
+        <div className="space-y-1.5"><Label className="text-xs">From name</Label><Input value={f.fromName} onChange={(e) => set("fromName", e.target.value)} /></div>
+      </div>
+      <div className="flex flex-wrap gap-6">
+        <label className="flex items-center gap-2 text-xs"><Switch checked={f.secure} onCheckedChange={(v) => set("secure", v)} /> SSL (port 465)</label>
+        <label className="flex items-center gap-2 text-xs"><Switch checked={f.enabled} onCheckedChange={(v) => set("enabled", v)} /> Turned on</label>
+      </div>
+      <div className="flex justify-end gap-2">
+        <Button variant="ghost" size="sm" onClick={onCancel}>Cancel</Button>
+        <Button size="sm" disabled={saving || !f.label || !f.host || !f.fromEmail} onClick={save}>
+          {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />} Save
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function ServerRow({ s, index, total, onChanged }: { s: Server; index: number; total: number; onChanged: () => void }) {
+  const [editing, setEditing] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [testTo, setTestTo] = useState("");
+  const [testing, setTesting] = useState(false);
+
+  const run = async (payload: Record<string, unknown>, ok: string) => {
+    setBusy(true);
+    try {
+      await api("POST", payload);
+      toast.success(ok);
+      onChanged();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const test = async () => {
+    setTesting(true);
+    try {
+      const r = await api<{ success: boolean; error: string | null }>("POST", { action: "test", id: s.id, to: testTo });
+      r.success ? toast.success(`Test email sent via ${s.label}`) : toast.error(`${s.label}: ${r.error}`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed");
+    } finally {
+      setTesting(false);
+    }
+  };
+
+  const ready = !s.status;
+  return (
+    <div className={`rounded-lg border bg-background/50 p-4 ${s.enabled ? "" : "opacity-60"} ${index === 0 && ready ? "border-primary/50" : ""}`}>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-3">
+          <div className="flex flex-col">
+            <Button variant="ghost" size="icon" className="h-5 w-5" disabled={busy || index === 0} aria-label="Move up"
+              onClick={() => run({ action: "move", id: s.id, direction: "up" }, "Order updated")}><ArrowUp className="h-3 w-3" /></Button>
+            <Button variant="ghost" size="icon" className="h-5 w-5" disabled={busy || index === total - 1} aria-label="Move down"
+              onClick={() => run({ action: "move", id: s.id, direction: "down" }, "Order updated")}><ArrowDown className="h-3 w-3" /></Button>
+          </div>
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs text-muted-foreground">#{index + 1}</span>
+              <span className="font-semibold">{s.label}</span>
+              {ready ? (
+                <Badge variant="outline" className="gap-1 text-[10px]"><CheckCircle2 className="h-3 w-3 text-primary" /> Ready</Badge>
+              ) : (
+                <Badge variant="outline" className="gap-1 text-[10px] text-destructive"><AlertCircle className="h-3 w-3" /> {s.status}</Badge>
+              )}
+            </div>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              {s.host}:{s.port} · {s.fromEmail} · Sent today {s.sentToday}{s.dailyLimit ? ` / ${s.dailyLimit}` : ""}
+            </p>
+            {s.cooldownUntil && s.status && <p className="text-[11px] text-muted-foreground">Back in use after {new Date(s.cooldownUntil).toLocaleTimeString()}</p>}
+            {s.lastError && <p className="mt-0.5 break-all text-[11px] text-destructive">Last error: {s.lastError}</p>}
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Switch checked={s.enabled} disabled={busy} aria-label="On / off"
+            onCheckedChange={(v) => run({ action: "toggle", id: s.id, enabled: v }, v ? "Turned on" : "Turned off")} />
+          {index > 0 && (
+            <Button variant="outline" size="sm" disabled={busy} onClick={() => run({ action: "move", id: s.id, direction: "top" }, `${s.label} is now the main SMTP`)}>
+              <Star className="h-3 w-3" /> Use this first
+            </Button>
+          )}
+          {s.status && s.status !== "Turned off" && (
+            <Button variant="ghost" size="sm" disabled={busy} onClick={() => run({ action: "reset", id: s.id }, "Ready again")}>
+              <RotateCcw className="h-3 w-3" /> Reset
+            </Button>
+          )}
+          <Button variant="ghost" size="sm" onClick={() => setEditing(!editing)}><Pencil className="h-3 w-3" /> Edit</Button>
+          <Button variant="ghost" size="sm" className="text-destructive" disabled={busy} aria-label="Remove"
+            onClick={() => confirm(`Remove ${s.label}?`) && run({ action: "delete", id: s.id }, "Removed")}><Trash2 className="h-3 w-3" /></Button>
+        </div>
+      </div>
+      <div className="mt-3 flex flex-wrap gap-2">
+        <Input className="h-8 max-w-xs text-xs" type="email" placeholder="Send test email to…" value={testTo} onChange={(e) => setTestTo(e.target.value)} />
+        <Button size="sm" variant="outline" disabled={!testTo || testing} onClick={test}>
+          {testing ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />} Test
+        </Button>
+      </div>
+      {editing && <ServerForm initial={s} onCancel={() => setEditing(false)} onSaved={() => { setEditing(false); onChanged(); }} />}
+    </div>
+  );
+}
 
 export function SmtpSettings() {
   const qc = useQueryClient();
-  const load = useServerFn(getSmtpSettings);
-  const save = useServerFn(saveSmtpSettings);
-  const test = useServerFn(testSmtpSettings);
+  const { data, isLoading, error } = useQuery({ queryKey: ["smtp-servers"], queryFn: () => api<Data>("GET") });
+  const [adding, setAdding] = useState(false);
+  const refresh = () => qc.invalidateQueries({ queryKey: ["smtp-servers"] });
 
-  const { data, isLoading } = useQuery({ queryKey: ["smtp-settings"], queryFn: () => load() });
+  const setGlobal = async (g: Record<string, unknown>) => {
+    try {
+      await api("POST", { action: "global", ...g });
+      toast.success("Saved");
+      refresh();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed");
+    }
+  };
 
-  const [form, setForm] = useState({
-    enabled: false,
-    primaryProvider: "resend" as "resend" | "smtp",
-    host: "",
-    port: 587,
-    secure: false,
-    username: "",
-    password: "",
-    fromEmail: "",
-    fromName: "",
-    maxAttempts: 3,
-    retryDelayMs: 1000,
-    backoffMultiplier: 2,
-    failoverEnabled: true,
-    switchBack: true,
-  });
-  const [showKey, setShowKey] = useState(false);
-  const [testTo, setTestTo] = useState("");
-
-  useEffect(() => {
-    if (!data) return;
-    setForm({
-      enabled: data.enabled,
-      primaryProvider: data.primaryProvider,
-      host: data.host ?? "",
-      port: data.port ?? 587,
-      secure: data.secure,
-      username: data.username ?? "",
-      password: "",
-      fromEmail: data.fromEmail ?? "",
-      fromName: data.fromName ?? "",
-      maxAttempts: data.maxAttempts ?? 3,
-      retryDelayMs: data.retryDelayMs ?? 1000,
-      backoffMultiplier: data.backoffMultiplier ?? 2,
-      failoverEnabled: data.failoverEnabled ?? true,
-      switchBack: data.switchBack ?? true,
-    });
-  }, [data]);
-
-  const saveMutation = useMutation({
-    mutationFn: () => save({ data: form }),
-    onSuccess: (res: any) => {
-      if (res.success) {
-        toast.success("SMTP settings saved");
-        setForm((f) => ({ ...f, password: "" }));
-        qc.invalidateQueries({ queryKey: ["smtp-settings"] });
-      } else toast.error(res.error || "Could not save settings");
-    },
-    onError: () => toast.error("Could not save settings"),
-  });
-
-  const testMutation = useMutation({
-    mutationFn: () => test({ data: { to: testTo } }),
-    onSuccess: (res: any) => {
-      if (res.success) toast.success(`Test email sent to ${testTo}`);
-      else toast.error(`Test failed: ${res.error}`);
-    },
-    onError: () => toast.error("Test failed"),
-  });
-
-  const set = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) =>
-    setForm((f) => ({ ...f, [k]: v }));
+  if (isLoading) return <div className="p-8 text-center text-sm text-muted-foreground">Loading SMTP…</div>;
+  if (error || !data) return <div className="rounded-xl border bg-card p-5 text-sm text-destructive">{(error as Error)?.message ?? "Failed"}</div>;
+  const readyCount = data.servers.filter((s) => !s.status).length;
 
   return (
     <div className="space-y-4">
       <div className="rounded-xl border bg-card p-5 shadow-sm">
-        <div className="mb-4 flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <Mail className="h-5 w-5 text-primary" />
-            <h2 className="text-lg font-semibold">Email delivery</h2>
-          </div>
-          {data?.usable ? (
-            <Badge variant="secondary" className="gap-1">
-              <CheckCircle2 className="h-3 w-3" /> SMTP ready
-            </Badge>
-          ) : (
-            <Badge variant="outline" className="gap-1">
-              <AlertCircle className="h-3 w-3" /> SMTP not configured
-            </Badge>
-          )}
+        <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2"><Mail className="h-5 w-5 text-primary" /><h2 className="text-lg font-semibold">Email delivery</h2></div>
+          <Badge variant="outline">{readyCount} of {data.servers.length} SMTP ready</Badge>
         </div>
         <p className="mb-4 text-sm text-muted-foreground">
-          Resend is used by default. If a send fails, the system automatically retries through your
-          own SMTP server. You can also make SMTP the primary sender.
+          Emails go through the first ready SMTP server. If it fails or reaches its limit, the next one takes over automatically,
+          and it comes back into use once it is ready again (next day for a daily limit, 1 hour after a provider limit, 5 minutes after an error).
         </p>
         <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label>Primary sender</Label>
-            <Select
-              value={form.primaryProvider}
-              onValueChange={(v) => set("primaryProvider", v as "resend" | "smtp")}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Main sender</Label>
+            <Select value={data.global.primaryProvider} onValueChange={(v) => setGlobal({ primaryProvider: v })}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="resend">Resend API (fallback: SMTP)</SelectItem>
-                <SelectItem value="smtp">My SMTP server (fallback: Resend)</SelectItem>
+                <SelectItem value="smtp">My SMTP servers</SelectItem>
+                <SelectItem value="resend">Resend{data.resendConfigured ? "" : " (not set up)"}</SelectItem>
               </SelectContent>
             </Select>
           </div>
-          <div className="flex items-end justify-between rounded-lg border bg-background/50 p-4">
-            <div>
-              <p className="text-sm font-medium">Enable SMTP</p>
-              <p className="text-xs text-muted-foreground">Allow sending through your server.</p>
-            </div>
-            <Switch checked={form.enabled} onCheckedChange={(v) => set("enabled", v)} />
-          </div>
+          <label className="flex items-center justify-between gap-3 rounded-lg border bg-background/50 p-3">
+            <span>
+              <span className="block text-sm font-medium">Use the other sender as backup</span>
+              <span className="text-xs text-muted-foreground">If every SMTP fails, try Resend (or the reverse).</span>
+            </span>
+            <Switch checked={data.global.failoverEnabled} onCheckedChange={(v) => setGlobal({ failoverEnabled: v })} />
+          </label>
         </div>
       </div>
 
       <div className="rounded-xl border bg-card p-5 shadow-sm">
-        <h2 className="mb-4 text-lg font-semibold">SMTP server</h2>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="smtp-host">Host</Label>
-            <Input
-              id="smtp-host"
-              placeholder="smtp.yourdomain.com"
-              value={form.host}
-              onChange={(e) => set("host", e.target.value)}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="smtp-port">Port</Label>
-            <Input
-              id="smtp-port"
-              type="number"
-              value={form.port}
-              onChange={(e) => set("port", Number(e.target.value) || 587)}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="smtp-user">Username</Label>
-            <Input
-              id="smtp-user"
-              placeholder="notifications@yourdomain.com"
-              value={form.username}
-              onChange={(e) => set("username", e.target.value)}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="smtp-pass">Password / API key</Label>
-            <div className="flex gap-2">
-              <Input
-                id="smtp-pass"
-                type={showKey ? "text" : "password"}
-                placeholder={data?.hasPassword ? "•••••••• (saved)" : "Enter password"}
-                value={form.password}
-                onChange={(e) => set("password", e.target.value)}
-              />
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                onClick={() => setShowKey((s) => !s)}
-              >
-                {showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </Button>
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="smtp-from">From email</Label>
-            <Input
-              id="smtp-from"
-              placeholder="no-reply@yourdomain.com"
-              value={form.fromEmail}
-              onChange={(e) => set("fromEmail", e.target.value)}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="smtp-fromname">From name</Label>
-            <Input
-              id="smtp-fromname"
-              placeholder="BSM Workforce"
-              value={form.fromName}
-              onChange={(e) => set("fromName", e.target.value)}
-            />
-          </div>
-          <div className="flex items-center justify-between rounded-lg border bg-background/50 p-4 sm:col-span-2">
-            <div>
-              <p className="text-sm font-medium">Use implicit TLS (SSL)</p>
-              <p className="text-xs text-muted-foreground">
-                On for port 465. Leave off for port 587 (STARTTLS).
-              </p>
-            </div>
-            <Switch checked={form.secure} onCheckedChange={(v) => set("secure", v)} />
-          </div>
+        <h2 className="mb-1 text-lg font-semibold">SMTP servers</h2>
+        <p className="mb-4 text-sm text-muted-foreground">Tried from top to bottom. Use the arrows or "Use this first" to switch.</p>
+        <div className="space-y-3">
+          {data.servers.map((s, i) => <ServerRow key={s.id} s={s} index={i} total={data.servers.length} onChanged={refresh} />)}
+          {data.servers.length === 0 && <p className="text-sm text-muted-foreground">No SMTP server added yet.</p>}
         </div>
-        <div className="mt-4 flex flex-wrap items-center gap-2">
-          <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending || isLoading}>
-            {saveMutation.isPending ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <Save className="mr-2 h-4 w-4" />
-            )}
-            Save settings
-          </Button>
-          <Input
-            className="w-56"
-            placeholder="test@example.com"
-            value={testTo}
-            onChange={(e) => setTestTo(e.target.value)}
-          />
-          <Button
-            variant="outline"
-            onClick={() => testMutation.mutate()}
-            disabled={testMutation.isPending || !testTo}
-          >
-            {testMutation.isPending ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <Send className="mr-2 h-4 w-4" />
-            )}
-            Send test email
-          </Button>
-        </div>
-      </div>
-
-      <div className="rounded-xl border bg-card p-5 shadow-sm">
-        <h2 className="mb-1 text-lg font-semibold">Failover & retry</h2>
-        <p className="mb-4 text-sm text-muted-foreground">
-          If the primary sender fails, each send is retried with exponential backoff, then
-          automatically switched to the other sender. Retry delay grows by the multiplier on every
-          attempt.
-        </p>
-        <div className="grid gap-4 sm:grid-cols-3">
-          <div className="space-y-2">
-            <Label htmlFor="smtp-attempts">Attempts per sender</Label>
-            <Input
-              id="smtp-attempts"
-              type="number"
-              min={1}
-              max={10}
-              value={form.maxAttempts}
-              onChange={(e) => set("maxAttempts", Math.max(1, Number(e.target.value) || 1))}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="smtp-delay">Initial retry delay (ms)</Label>
-            <Input
-              id="smtp-delay"
-              type="number"
-              min={0}
-              max={60000}
-              step={500}
-              value={form.retryDelayMs}
-              onChange={(e) => set("retryDelayMs", Math.max(0, Number(e.target.value) || 0))}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="smtp-backoff">Backoff multiplier</Label>
-            <Input
-              id="smtp-backoff"
-              type="number"
-              min={1}
-              max={10}
-              step={0.5}
-              value={form.backoffMultiplier}
-              onChange={(e) => set("backoffMultiplier", Math.max(1, Number(e.target.value) || 1))}
-            />
-          </div>
-        </div>
-        <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          <div className="flex items-center justify-between rounded-lg border bg-background/50 p-4">
-            <div>
-              <p className="text-sm font-medium">Automatic failover</p>
-              <p className="text-xs text-muted-foreground">
-                Switch to the other sender when the primary keeps failing.
-              </p>
-            </div>
-            <Switch
-              checked={form.failoverEnabled}
-              onCheckedChange={(v) => set("failoverEnabled", v)}
-            />
-          </div>
-          <div className="flex items-center justify-between rounded-lg border bg-background/50 p-4">
-            <div>
-              <p className="text-sm font-medium">Switch back and retry</p>
-              <p className="text-xs text-muted-foreground">
-                After the backup also fails, try the primary sender one more round.
-              </p>
-            </div>
-            <Switch checked={form.switchBack} onCheckedChange={(v) => set("switchBack", v)} />
-          </div>
-        </div>
-        <p className="mt-3 text-xs text-muted-foreground">
-          Order: {form.primaryProvider === "smtp" ? "SMTP" : "Resend"} x {form.maxAttempts}
-          {form.failoverEnabled
-            ? ` -> ${form.primaryProvider === "smtp" ? "Resend" : "SMTP"} x ${form.maxAttempts}${form.switchBack ? ` -> ${form.primaryProvider === "smtp" ? "SMTP" : "Resend"} x ${form.maxAttempts}` : ""}`
-            : ""}
-        </p>
-      </div>
-
-      <div>
-        {data?.updatedAt && (
-          <p className="mt-3 text-xs text-muted-foreground">
-            Last updated {new Date(data.updatedAt).toLocaleString()}
-          </p>
+        {adding ? (
+          <ServerForm onCancel={() => setAdding(false)} onSaved={() => { setAdding(false); refresh(); }} />
+        ) : (
+          <Button variant="outline" className="mt-4 w-full border-dashed" onClick={() => setAdding(true)}><Plus className="h-4 w-4" /> Add SMTP server</Button>
         )}
       </div>
     </div>

@@ -70,54 +70,32 @@ export async function restPost(path: string, rows: unknown[]): Promise<number> {
 }
 
 async function sendMailInternal({ to, subject, html }: MailInput) {
-  const { loadSmtpConfig, sendViaSmtp, smtpUsable } = await import("./smtp.server");
-  let cfg = null as Awaited<ReturnType<typeof loadSmtpConfig>> | null;
+  const { loadGlobal, sendViaSmtpPool, smtpPoolReady } = await import("./smtp.server");
+  let primary: "resend" | "smtp" = "resend";
+  let failover = true;
+  let smtpReady = false;
   try {
-    cfg = await loadSmtpConfig();
+    const g = await loadGlobal();
+    primary = g.primaryProvider;
+    failover = g.failoverEnabled;
+    smtpReady = await smtpPoolReady();
   } catch {
-    cfg = null;
+    /* settings unavailable — use Resend */
   }
 
-  const smtpReady = !!cfg && smtpUsable(cfg);
-  const maxAttempts = Math.max(1, cfg?.maxAttempts ?? 3);
-  const baseDelay = Math.max(0, cfg?.retryDelayMs ?? 1000);
-  const factor = Math.max(1, cfg?.backoffMultiplier ?? 2);
-  const failover = cfg ? cfg.failoverEnabled : true;
-  const switchBack = cfg ? cfg.switchBack : true;
-
-  const trySmtp = () => sendViaSmtp(cfg!, { to, subject, html });
-  const tryResend = () => sendViaResend({ to, subject, html });
-
-  // Ordered channel list: primary first, then failover (and optional switch back).
-  const primaryIsSmtp = smtpReady && cfg!.primaryProvider === "smtp";
-  const channels: { name: string; run: () => Promise<{ id: string }> }[] = [];
-  if (primaryIsSmtp) {
-    channels.push({ name: "SMTP", run: trySmtp });
-    if (failover) channels.push({ name: "Resend", run: tryResend });
-    if (failover && switchBack) channels.push({ name: "SMTP (retry)", run: trySmtp });
-  } else {
-    channels.push({ name: "Resend", run: tryResend });
-    if (failover && smtpReady) channels.push({ name: "SMTP", run: trySmtp });
-    if (failover && smtpReady && switchBack)
-      channels.push({ name: "Resend (retry)", run: tryResend });
-  }
+  const smtp = { name: "SMTP", run: () => sendViaSmtpPool({ to, subject, html }) };
+  const resend = { name: "Resend", run: () => sendViaResend({ to, subject, html }) };
+  const channels = primary === "smtp" && smtpReady
+    ? [smtp, ...(failover ? [resend] : [])]
+    : [resend, ...(failover && smtpReady ? [smtp] : [])];
 
   let lastError: unknown = new Error("No email channel available");
-  for (const channel of channels) {
-    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-      try {
-        const res = await channel.run();
-        if (channel.name !== channels[0]!.name || attempt > 1)
-          console.log(`Email sent via ${channel.name} (attempt ${attempt})`);
-        return res;
-      } catch (e) {
-        lastError = e;
-        console.error(`Email send failed via ${channel.name} (attempt ${attempt}/${maxAttempts}):`, e);
-        if (attempt < maxAttempts) {
-          const wait = Math.round(baseDelay * Math.pow(factor, attempt - 1));
-          if (wait > 0) await new Promise((r) => setTimeout(r, wait));
-        }
-      }
+  for (const ch of channels) {
+    try {
+      return await ch.run();
+    } catch (e) {
+      lastError = e;
+      console.error(`Email send failed via ${ch.name}:`, e);
     }
   }
   throw lastError instanceof Error ? lastError : new Error(String(lastError));
