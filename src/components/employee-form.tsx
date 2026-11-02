@@ -147,7 +147,7 @@ export function employeeFromForm(fd: FormData): Partial<Employee> {
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="space-y-2">
+    <div className="space-y-2" data-field={label}>
       <Label className="text-xs text-muted-foreground">{label}</Label>
       {children}
     </div>
@@ -253,9 +253,25 @@ export function EmployeeForm({
     else toast.success(`${filled} field(s) filled from the IPA — verify before saving`);
   }
 
+  const [tab, setTab] = useState("personal");
+  const invalidToastRef = useRef(false);
+
   return (
     <form
       ref={formRef}
+      onInvalidCapture={(e) => {
+        const el = e.target as HTMLElement;
+        const panel = el.closest("[data-tab-panel]") as HTMLElement | null;
+        const t = panel?.dataset.tabPanel;
+        if (t && t !== tab) setTab(t);
+        if (!invalidToastRef.current) {
+          invalidToastRef.current = true;
+          const label = el.closest("[data-field]")?.getAttribute("data-field") || (el as HTMLInputElement).name;
+          toast.error(`Please fill in "${label}"${t ? ` on the ${t === "pass" ? "Work pass" : t === "pay" ? "Compensation" : t[0].toUpperCase() + t.slice(1)} tab` : ""}`);
+          setTimeout(() => { invalidToastRef.current = false; }, 300);
+          setTimeout(() => el.focus?.(), 50);
+        }
+      }}
       onSubmit={(e) => {
         e.preventDefault();
         onSubmit(new FormData(e.currentTarget));
@@ -303,7 +319,7 @@ export function EmployeeForm({
         ) : null}
       </div>
 
-      <Tabs defaultValue="personal">
+      <Tabs value={tab} onValueChange={setTab}>
         <TabsList className="flex w-full flex-wrap">
           <TabsTrigger value="personal">Personal</TabsTrigger>
           <TabsTrigger value="employment">Employment</TabsTrigger>
@@ -311,7 +327,7 @@ export function EmployeeForm({
           <TabsTrigger value="pay">Compensation</TabsTrigger>
         </TabsList>
 
-        <TabsContent forceMount value="personal" className="mt-4 space-y-4 data-[state=inactive]:hidden">
+        <TabsContent forceMount data-tab-panel="personal" value="personal" className="mt-4 space-y-4 data-[state=inactive]:hidden">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label="Full legal name">
               <Input name="name" defaultValue={employee?.name} required />
@@ -384,7 +400,7 @@ export function EmployeeForm({
           />
         </TabsContent>
 
-        <TabsContent forceMount value="employment" className="mt-4 space-y-4 data-[state=inactive]:hidden">
+        <TabsContent forceMount data-tab-panel="employment" value="employment" className="mt-4 space-y-4 data-[state=inactive]:hidden">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label="Department">
               <Input name="department" defaultValue={employee?.department ?? ""} />
@@ -443,7 +459,7 @@ export function EmployeeForm({
           </Field>
         </TabsContent>
 
-        <TabsContent forceMount value="pass" className="mt-4 space-y-4 data-[state=inactive]:hidden">
+        <TabsContent forceMount data-tab-panel="pass" value="pass" className="mt-4 space-y-4 data-[state=inactive]:hidden">
           <div className="rounded-lg border p-3">
             <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
               <p className="text-sm font-medium">IPA copy (In-Principle Approval)</p>
@@ -559,7 +575,7 @@ export function EmployeeForm({
           </div>
         </TabsContent>
 
-        <TabsContent forceMount value="pay" className="mt-4 space-y-4 data-[state=inactive]:hidden">
+        <TabsContent forceMount data-tab-panel="pay" value="pay" className="mt-4 space-y-4 data-[state=inactive]:hidden">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label={staff ? "Monthly salary ($)" : "Basic rate / day ($)"}>
               <Input name="basicSalary" type="number" step="0.01" defaultValue={employee?.basicSalary ?? 0} required />

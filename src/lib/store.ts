@@ -209,7 +209,16 @@ export function addEmployee(employee: Omit<Employee, "id" | "employeeCode" | "cr
     nextEmployeeCode(employee.branch ?? "");
   const row: Employee = { ...employee, id: newId(), employeeCode: nextCode, createdAt: now, updatedAt: now };
   setState({ ...s, employees: [row, ...s.employees] });
-  void supabase.from("employees").insert({ id: row.id, ...toEmployee(row) }).then(({ error }) => fail("employees", error));
+  void supabase.from("employees").insert({ id: row.id, ...toEmployee(row) }).then(({ error }) => {
+    if (!error) return;
+    fail("employees", error);
+    // Roll back the optimistic row so the list matches what was actually saved.
+    const cur = getState();
+    setState({ ...cur, employees: cur.employees.filter((e) => e.id !== row.id) });
+    if (typeof window !== "undefined") {
+      void import("sonner").then(({ toast }) => toast.error(`Could not save ${row.name}: ${error.message}`));
+    }
+  });
   addAuditLog("CREATE", "Employee", row.id, `Created employee ${row.name} (${row.employeeCode})`);
   return row;
 }

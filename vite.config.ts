@@ -14,6 +14,18 @@ export default defineConfig({
     server: { entry: "server" },
   },
   vite: {
+    // Pre-bundle UI deps up front so a late dependency discovery can't reload
+    // React mid-session (mixed ?v= hashes => "Cannot read properties of null (reading 'useMemo')").
+    optimizeDeps: {
+      include: [
+        "sonner",
+        "@radix-ui/react-popover",
+        "@radix-ui/react-dialog",
+        "@radix-ui/react-tabs",
+        "@radix-ui/react-select",
+        "@radix-ui/react-alert-dialog",
+      ],
+    },
     plugins: [
       VitePWA({
         // Shell-only offline support. Registration happens in src/lib/pwa.ts,
