@@ -7,6 +7,9 @@ export const Route = createFileRoute("/api/public/provision-employee")({
         const { provisionEmployee, verifyToken } = await import("@/lib/provision.server");
         const user = await verifyToken(request);
         if (!user) return new Response("Unauthorized", { status: 401 });
+        const { userRoles } = await import("@/lib/r2.server");
+        const roles = await userRoles(user.id);
+        if (!roles.includes("employee")) return new Response("Administrator approval required", { status: 403 });
 
         let phone = "";
         try {
