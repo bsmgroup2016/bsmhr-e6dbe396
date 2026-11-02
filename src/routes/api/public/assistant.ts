@@ -38,7 +38,7 @@ export const Route = createFileRoute("/api/public/assistant")({
           const { runAssistant } = await import("@/lib/assistant.server");
           const authorization = request.headers.get("authorization");
           if (!authorization) return new Response("Unauthorized", { status: 401 });
-          const out = await runAssistant(parsed.messages, authorization, ANON);
+          const out = await runAssistant(parsed.messages, authorization, ANON, userId);
           return Response.json(out);
         } catch (e) {
           return Response.json({ error: e instanceof Error ? e.message : "Assistant failed" }, { status: 502 });
