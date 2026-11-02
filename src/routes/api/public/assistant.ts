@@ -22,7 +22,7 @@ export const Route = createFileRoute("/api/public/assistant")({
         if (!userId) return new Response("Unauthorized", { status: 401 });
         if (!canAccess("/assistant", await userRoles(userId))) return new Response("Forbidden", { status: 403 });
         const { assistantStatus } = await import("@/lib/assistant.server");
-        return Response.json({ providers: assistantStatus() });
+        return Response.json({ providers: await assistantStatus() });
       },
       POST: async ({ request }) => {
         const userId = await verifyUser(request);

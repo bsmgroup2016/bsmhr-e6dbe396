@@ -61,6 +61,7 @@ import { Route as AuthenticatedClientsIdRouteImport } from './routes/_authentica
 import { Route as AuthenticatedCompaniesIdRouteImport } from './routes/_authenticated/companies_.$id'
 import { Route as AuthenticatedWorkforceSlugRouteImport } from './routes/_authenticated/workforce_.$slug'
 import { Route as ApiPublicAiStatusRouteImport } from './routes/api/public/ai-status'
+import { Route as ApiPublicApiIntegrationsRouteImport } from './routes/api/public/api-integrations'
 import { Route as ApiPublicAssistantRouteImport } from './routes/api/public/assistant'
 import { Route as ApiPublicAutomationRunRouteImport } from './routes/api/public/automation-run'
 import { Route as ApiPublicNotifyLeaveRouteImport } from './routes/api/public/notify-leave'
@@ -366,6 +367,12 @@ const ApiPublicAiStatusRoute = ApiPublicAiStatusRouteImport.update({
   path: '/api/public/ai-status',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicApiIntegrationsRoute =
+  ApiPublicApiIntegrationsRouteImport.update({
+    id: '/api/public/api-integrations',
+    path: '/api/public/api-integrations',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicAssistantRoute = ApiPublicAssistantRouteImport.update({
   id: '/api/public/assistant',
   path: '/api/public/assistant',
@@ -584,6 +591,7 @@ export interface FileRoutesByFullPath {
   '/companies/$id': typeof AuthenticatedCompaniesIdRoute
   '/workforce/$slug': typeof AuthenticatedWorkforceSlugRoute
   '/api/public/ai-status': typeof ApiPublicAiStatusRoute
+  '/api/public/api-integrations': typeof ApiPublicApiIntegrationsRoute
   '/api/public/assistant': typeof ApiPublicAssistantRoute
   '/api/public/automation-run': typeof ApiPublicAutomationRunRoute
   '/api/public/notify-leave': typeof ApiPublicNotifyLeaveRoute
@@ -669,6 +677,7 @@ export interface FileRoutesByTo {
   '/companies/$id': typeof AuthenticatedCompaniesIdRoute
   '/workforce/$slug': typeof AuthenticatedWorkforceSlugRoute
   '/api/public/ai-status': typeof ApiPublicAiStatusRoute
+  '/api/public/api-integrations': typeof ApiPublicApiIntegrationsRoute
   '/api/public/assistant': typeof ApiPublicAssistantRoute
   '/api/public/automation-run': typeof ApiPublicAutomationRunRoute
   '/api/public/notify-leave': typeof ApiPublicNotifyLeaveRoute
@@ -756,6 +765,7 @@ export interface FileRoutesById {
   '/_authenticated/companies_/$id': typeof AuthenticatedCompaniesIdRoute
   '/_authenticated/workforce_/$slug': typeof AuthenticatedWorkforceSlugRoute
   '/api/public/ai-status': typeof ApiPublicAiStatusRoute
+  '/api/public/api-integrations': typeof ApiPublicApiIntegrationsRoute
   '/api/public/assistant': typeof ApiPublicAssistantRoute
   '/api/public/automation-run': typeof ApiPublicAutomationRunRoute
   '/api/public/notify-leave': typeof ApiPublicNotifyLeaveRoute
@@ -843,6 +853,7 @@ export interface FileRouteTypes {
     | '/companies/$id'
     | '/workforce/$slug'
     | '/api/public/ai-status'
+    | '/api/public/api-integrations'
     | '/api/public/assistant'
     | '/api/public/automation-run'
     | '/api/public/notify-leave'
@@ -928,6 +939,7 @@ export interface FileRouteTypes {
     | '/companies/$id'
     | '/workforce/$slug'
     | '/api/public/ai-status'
+    | '/api/public/api-integrations'
     | '/api/public/assistant'
     | '/api/public/automation-run'
     | '/api/public/notify-leave'
@@ -1014,6 +1026,7 @@ export interface FileRouteTypes {
     | '/_authenticated/companies_/$id'
     | '/_authenticated/workforce_/$slug'
     | '/api/public/ai-status'
+    | '/api/public/api-integrations'
     | '/api/public/assistant'
     | '/api/public/automation-run'
     | '/api/public/notify-leave'
@@ -1054,6 +1067,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   ApiPublicAiStatusRoute: typeof ApiPublicAiStatusRoute
+  ApiPublicApiIntegrationsRoute: typeof ApiPublicApiIntegrationsRoute
   ApiPublicAssistantRoute: typeof ApiPublicAssistantRoute
   ApiPublicAutomationRunRoute: typeof ApiPublicAutomationRunRoute
   ApiPublicNotifyLeaveRoute: typeof ApiPublicNotifyLeaveRoute
@@ -1446,6 +1460,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/ai-status'
       fullPath: '/api/public/ai-status'
       preLoaderRoute: typeof ApiPublicAiStatusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/api-integrations': {
+      id: '/api/public/api-integrations'
+      path: '/api/public/api-integrations'
+      fullPath: '/api/public/api-integrations'
+      preLoaderRoute: typeof ApiPublicApiIntegrationsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/assistant': {
@@ -1856,6 +1877,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   ApiPublicAiStatusRoute: ApiPublicAiStatusRoute,
+  ApiPublicApiIntegrationsRoute: ApiPublicApiIntegrationsRoute,
   ApiPublicAssistantRoute: ApiPublicAssistantRoute,
   ApiPublicAutomationRunRoute: ApiPublicAutomationRunRoute,
   ApiPublicNotifyLeaveRoute: ApiPublicNotifyLeaveRoute,

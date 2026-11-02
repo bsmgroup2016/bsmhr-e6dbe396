@@ -13,3 +13,4 @@
 - Shared role access rules live in src/core/access.ts and deny unlisted routes by default; web navigation reuses them, while RLS and authenticated API checks enforce data access independently.
 - Role assignments use an admin-verified endpoint backed by an atomic database RPC, so a failed replacement cannot silently remove existing permissions.
 - Time-card scans and attendance selfies (folders in SCAN_FOLDERS) are written to a secondary R2 bucket (R2_SCANS_*); reads try it first then fall back to the main bucket, so older files keep working.
+- OCR and chatbot provider lists (URL, model, key override, on/off, fallback order) live in the service-role-only api_integrations table, edited via admin-only /api/public/api-integrations; keys fall back to platform secrets named in env_key and are never returned to the browser.
