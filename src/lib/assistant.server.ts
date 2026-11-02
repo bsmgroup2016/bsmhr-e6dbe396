@@ -35,7 +35,21 @@ function providers(): Provider[] {
 }
 
 export function assistantStatus() {
-  return providers().map((p) => ({ name: p.name, model: p.model }));
+  return providers().map((p) => ({ name: p.name, model: p.model, url: p.url }));
+}
+
+/** Send one tiny message to a single chatbot provider to confirm its key works. */
+export async function testAssistantProvider(name: string): Promise<{ success: boolean; error: string | null }> {
+  const p = providers().find((x) => x.name === name);
+  if (!p) return { success: false, error: "Key not added" };
+  const res = await fetch(p.url, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${p.key}`, "Content-Type": "application/json", ...(p.extra ?? {}) },
+    body: JSON.stringify({ model: p.model, messages: [{ role: "user", content: "Reply with OK" }] }),
+  });
+  if (res.ok) return { success: true, error: null };
+  if (res.status === 429) return { success: false, error: "Limit reached for now (the next key will take over)" };
+  return { success: false, error: `${p.name} failed (${res.status}): ${(await res.text()).slice(0, 200)}` };
 }
 
 const tools = [
