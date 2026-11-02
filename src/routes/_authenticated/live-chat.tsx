@@ -50,7 +50,9 @@ function InboxPage() {
     const t = setInterval(load, 4000);
     return () => clearInterval(t);
   }, [load]);
-  useEffect(() => endRef.current?.scrollIntoView(), [messages.length]);
+  useEffect(() => {
+    endRef.current?.scrollIntoView();
+  }, [messages.length]);
 
   async function act(payload: Record<string, unknown>) {
     setBusy(true);
