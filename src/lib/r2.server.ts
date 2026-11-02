@@ -15,16 +15,56 @@ export function r2Env() {
   return { accountId, accessKeyId, secretAccessKey, bucket };
 }
 
-export function r2Client() {
-  const { accountId, accessKeyId, secretAccessKey, bucket } = r2Env();
+function makeClient(e: { accountId: string; accessKeyId: string; secretAccessKey: string; bucket: string }) {
   const client = new AwsClient({
-    accessKeyId,
-    secretAccessKey,
+    accessKeyId: e.accessKeyId,
+    secretAccessKey: e.secretAccessKey,
     service: "s3",
     region: "auto",
   });
-  const base = `https://${accountId}.r2.cloudflarestorage.com/${bucket}`;
-  return { client, base };
+  return { client, base: `https://${e.accountId}.r2.cloudflarestorage.com/${e.bucket}` };
+}
+
+/** Folders stored in the secondary "scans" bucket (time cards + attendance selfies). */
+export const SCAN_FOLDERS = ["time-cards", "attendance"];
+
+export function isScanKey(key: string) {
+  return SCAN_FOLDERS.includes(safeKey(key).split("/")[0]);
+}
+
+function scansEnv() {
+  const accountId = process.env.R2_SCANS_ACCOUNT_ID;
+  const accessKeyId = process.env.R2_SCANS_ACCESS_KEY_ID;
+  const secretAccessKey = process.env.R2_SCANS_SECRET_ACCESS_KEY;
+  const bucket = process.env.R2_SCANS_BUCKET_NAME;
+  if (!accountId || !accessKeyId || !secretAccessKey || !bucket) return null;
+  return { accountId, accessKeyId, secretAccessKey, bucket };
+}
+
+/** Client for writing `key`: scan folders go to the secondary bucket when configured. */
+export function r2Client(key?: string) {
+  const s = key && isScanKey(key) ? scansEnv() : null;
+  return makeClient(s ?? r2Env());
+}
+
+/** Candidate buckets for reading `key` (scan bucket first, then main for older files). */
+export function r2ReadClients(key: string) {
+  const list = [] as ReturnType<typeof makeClient>[];
+  const s = isScanKey(key) ? scansEnv() : null;
+  if (s) list.push(makeClient(s));
+  list.push(makeClient(r2Env()));
+  return list;
+}
+
+/** Fetch an object from whichever bucket holds it. */
+export async function r2FetchObject(key: string, init?: RequestInit) {
+  const clients = r2ReadClients(key);
+  let last: Response | null = null;
+  for (const { client, base } of clients) {
+    last = await client.fetch(`${base}/${key}`, init);
+    if (last.ok) return last;
+  }
+  return last!;
 }
 
 /** Verify the caller's Supabase access token. Returns the user id or null. */
@@ -152,7 +192,13 @@ export function keyFromRef(ref: string): string {
 
 /** Create a short-lived presigned GET url for an object (default 5 minutes). */
 export async function presignGet(key: string, expiresIn = 300): Promise<string> {
-  const { client, base } = r2Client();
+  const clients = r2ReadClients(key);
+  let pick = clients[clients.length - 1];
+  if (clients.length > 1) {
+    const head = await clients[0].client.fetch(`${clients[0].base}/${key}`, { method: "HEAD" });
+    if (head.ok) pick = clients[0];
+  }
+  const { client, base } = pick;
   const signed = await client.sign(
     new Request(`${base}/${key}?X-Amz-Expires=${expiresIn}`),
     { aws: { signQuery: true } },
