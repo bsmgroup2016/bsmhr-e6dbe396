@@ -13,7 +13,6 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
-import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedAccommodationRouteImport } from './routes/_authenticated/accommodation'
 import { Route as AuthenticatedAlertsRouteImport } from './routes/_authenticated/alerts'
 import { Route as AuthenticatedApprovalsRouteImport } from './routes/_authenticated/approvals'
@@ -27,6 +26,7 @@ import { Route as AuthenticatedCompaniesRouteImport } from './routes/_authentica
 import { Route as AuthenticatedComplianceRouteImport } from './routes/_authenticated/compliance'
 import { Route as AuthenticatedContractsRouteImport } from './routes/_authenticated/contracts'
 import { Route as AuthenticatedCrmRouteImport } from './routes/_authenticated/crm'
+import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedDeployedWorkersRouteImport } from './routes/_authenticated/deployed-workers'
 import { Route as AuthenticatedDeploymentHistoryRouteImport } from './routes/_authenticated/deployment-history'
 import { Route as AuthenticatedDocumentsRouteImport } from './routes/_authenticated/documents'
@@ -112,11 +112,6 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
   path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const AuthenticatedAccommodationRoute =
   AuthenticatedAccommodationRouteImport.update({
     id: '/accommodation',
@@ -182,6 +177,11 @@ const AuthenticatedContractsRoute = AuthenticatedContractsRouteImport.update({
 const AuthenticatedCrmRoute = AuthenticatedCrmRouteImport.update({
   id: '/crm',
   path: '/crm',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedDeployedWorkersRoute =
@@ -527,7 +527,7 @@ const ApiPublicV1PayrollIdPayslipRoute =
   } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof AuthenticatedIndexRoute
+  '/': typeof AuthenticatedRouteRouteWithChildren
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -544,6 +544,7 @@ export interface FileRoutesByFullPath {
   '/compliance': typeof AuthenticatedComplianceRoute
   '/contracts': typeof AuthenticatedContractsRoute
   '/crm': typeof AuthenticatedCrmRoute
+  '/dashboard': typeof AuthenticatedDashboardRoute
   '/deployed-workers': typeof AuthenticatedDeployedWorkersRoute
   '/deployment-history': typeof AuthenticatedDeploymentHistoryRoute
   '/documents': typeof AuthenticatedDocumentsRoute
@@ -611,6 +612,7 @@ export interface FileRoutesByFullPath {
   '/api/public/v1/payroll/$id/payslip': typeof ApiPublicV1PayrollIdPayslipRoute
 }
 export interface FileRoutesByTo {
+  '/': typeof AuthenticatedRouteRouteWithChildren
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -627,6 +629,7 @@ export interface FileRoutesByTo {
   '/compliance': typeof AuthenticatedComplianceRoute
   '/contracts': typeof AuthenticatedContractsRoute
   '/crm': typeof AuthenticatedCrmRoute
+  '/dashboard': typeof AuthenticatedDashboardRoute
   '/deployed-workers': typeof AuthenticatedDeployedWorkersRoute
   '/deployment-history': typeof AuthenticatedDeploymentHistoryRoute
   '/documents': typeof AuthenticatedDocumentsRoute
@@ -656,7 +659,6 @@ export interface FileRoutesByTo {
   '/transport': typeof AuthenticatedTransportRoute
   '/users': typeof AuthenticatedUsersRoute
   '/workforce': typeof AuthenticatedWorkforceRoute
-  '/': typeof AuthenticatedIndexRoute
   '/clients/$id': typeof AuthenticatedClientsIdRoute
   '/companies/$id': typeof AuthenticatedCompaniesIdRoute
   '/workforce/$slug': typeof AuthenticatedWorkforceSlugRoute
@@ -713,6 +715,7 @@ export interface FileRoutesById {
   '/_authenticated/compliance': typeof AuthenticatedComplianceRoute
   '/_authenticated/contracts': typeof AuthenticatedContractsRoute
   '/_authenticated/crm': typeof AuthenticatedCrmRoute
+  '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/deployed-workers': typeof AuthenticatedDeployedWorkersRoute
   '/_authenticated/deployment-history': typeof AuthenticatedDeploymentHistoryRoute
   '/_authenticated/documents': typeof AuthenticatedDocumentsRoute
@@ -742,7 +745,6 @@ export interface FileRoutesById {
   '/_authenticated/transport': typeof AuthenticatedTransportRoute
   '/_authenticated/users': typeof AuthenticatedUsersRoute
   '/_authenticated/workforce': typeof AuthenticatedWorkforceRoute
-  '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/clients_/$id': typeof AuthenticatedClientsIdRoute
   '/_authenticated/companies_/$id': typeof AuthenticatedCompaniesIdRoute
   '/_authenticated/workforce_/$slug': typeof AuthenticatedWorkforceSlugRoute
@@ -800,6 +802,7 @@ export interface FileRouteTypes {
     | '/compliance'
     | '/contracts'
     | '/crm'
+    | '/dashboard'
     | '/deployed-workers'
     | '/deployment-history'
     | '/documents'
@@ -867,6 +870,7 @@ export interface FileRouteTypes {
     | '/api/public/v1/payroll/$id/payslip'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/'
     | '/admin'
     | '/auth'
     | '/reset-password'
@@ -883,6 +887,7 @@ export interface FileRouteTypes {
     | '/compliance'
     | '/contracts'
     | '/crm'
+    | '/dashboard'
     | '/deployed-workers'
     | '/deployment-history'
     | '/documents'
@@ -912,7 +917,6 @@ export interface FileRouteTypes {
     | '/transport'
     | '/users'
     | '/workforce'
-    | '/'
     | '/clients/$id'
     | '/companies/$id'
     | '/workforce/$slug'
@@ -968,6 +972,7 @@ export interface FileRouteTypes {
     | '/_authenticated/compliance'
     | '/_authenticated/contracts'
     | '/_authenticated/crm'
+    | '/_authenticated/dashboard'
     | '/_authenticated/deployed-workers'
     | '/_authenticated/deployment-history'
     | '/_authenticated/documents'
@@ -997,7 +1002,6 @@ export interface FileRouteTypes {
     | '/_authenticated/transport'
     | '/_authenticated/users'
     | '/_authenticated/workforce'
-    | '/_authenticated/'
     | '/_authenticated/clients_/$id'
     | '/_authenticated/companies_/$id'
     | '/_authenticated/workforce_/$slug'
@@ -1100,13 +1104,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/': {
-      id: '/_authenticated/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof AuthenticatedIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/accommodation': {
       id: '/_authenticated/accommodation'
       path: '/accommodation'
@@ -1196,6 +1193,13 @@ declare module '@tanstack/react-router' {
       path: '/crm'
       fullPath: '/crm'
       preLoaderRoute: typeof AuthenticatedCrmRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/dashboard': {
+      id: '/_authenticated/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/deployed-workers': {
@@ -1670,6 +1674,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedComplianceRoute: typeof AuthenticatedComplianceRoute
   AuthenticatedContractsRoute: typeof AuthenticatedContractsRoute
   AuthenticatedCrmRoute: typeof AuthenticatedCrmRoute
+  AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedDeployedWorkersRoute: typeof AuthenticatedDeployedWorkersRoute
   AuthenticatedDeploymentHistoryRoute: typeof AuthenticatedDeploymentHistoryRoute
   AuthenticatedDocumentsRoute: typeof AuthenticatedDocumentsRoute
@@ -1699,7 +1704,6 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedTransportRoute: typeof AuthenticatedTransportRoute
   AuthenticatedUsersRoute: typeof AuthenticatedUsersRoute
   AuthenticatedWorkforceRoute: typeof AuthenticatedWorkforceRoute
-  AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedClientsIdRoute: typeof AuthenticatedClientsIdRoute
   AuthenticatedCompaniesIdRoute: typeof AuthenticatedCompaniesIdRoute
   AuthenticatedWorkforceSlugRoute: typeof AuthenticatedWorkforceSlugRoute
@@ -1719,6 +1723,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedComplianceRoute: AuthenticatedComplianceRoute,
   AuthenticatedContractsRoute: AuthenticatedContractsRoute,
   AuthenticatedCrmRoute: AuthenticatedCrmRoute,
+  AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedDeployedWorkersRoute: AuthenticatedDeployedWorkersRoute,
   AuthenticatedDeploymentHistoryRoute: AuthenticatedDeploymentHistoryRoute,
   AuthenticatedDocumentsRoute: AuthenticatedDocumentsRoute,
@@ -1748,7 +1753,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedTransportRoute: AuthenticatedTransportRoute,
   AuthenticatedUsersRoute: AuthenticatedUsersRoute,
   AuthenticatedWorkforceRoute: AuthenticatedWorkforceRoute,
-  AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedClientsIdRoute: AuthenticatedClientsIdRoute,
   AuthenticatedCompaniesIdRoute: AuthenticatedCompaniesIdRoute,
   AuthenticatedWorkforceSlugRoute: AuthenticatedWorkforceSlugRoute,

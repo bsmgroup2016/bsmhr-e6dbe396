@@ -62,7 +62,7 @@ import { getAssignments } from "@/lib/store";
 import { activeAssignedEmployeeIds, isEmployeeAvailable } from "@/lib/availability";
 import { isCountableWorker } from "@/lib/workforce-split";
 
-export const Route = createFileRoute("/_authenticated/")({
+export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
     meta: [
       { title: "Dashboard | BSM Engineering Workforce & Operations" },
