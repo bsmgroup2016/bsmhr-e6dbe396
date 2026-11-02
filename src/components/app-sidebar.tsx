@@ -34,6 +34,7 @@ import {
   UserPlus,
   Users,
   Wallet,
+  MessageCircle,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";

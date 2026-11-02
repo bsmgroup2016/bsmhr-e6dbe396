@@ -38,6 +38,7 @@ import { Route as AuthenticatedDriversRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedFinanceRouteImport } from './routes/_authenticated/finance'
 import { Route as AuthenticatedInventoryRouteImport } from './routes/_authenticated/inventory'
 import { Route as AuthenticatedLeaveRouteImport } from './routes/_authenticated/leave'
+import { Route as AuthenticatedLiveChatRouteImport } from './routes/_authenticated/live-chat'
 import { Route as AuthenticatedMomRouteImport } from './routes/_authenticated/mom'
 import { Route as AuthenticatedMyPortalRouteImport } from './routes/_authenticated/my-portal'
 import { Route as AuthenticatedOperationsRouteImport } from './routes/_authenticated/operations'
@@ -245,6 +246,11 @@ const AuthenticatedInventoryRoute = AuthenticatedInventoryRouteImport.update({
 const AuthenticatedLeaveRoute = AuthenticatedLeaveRouteImport.update({
   id: '/leave',
   path: '/leave',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedLiveChatRoute = AuthenticatedLiveChatRouteImport.update({
+  id: '/live-chat',
+  path: '/live-chat',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedMomRoute = AuthenticatedMomRouteImport.update({
@@ -580,6 +586,7 @@ export interface FileRoutesByFullPath {
   '/finance': typeof AuthenticatedFinanceRoute
   '/inventory': typeof AuthenticatedInventoryRoute
   '/leave': typeof AuthenticatedLeaveRoute
+  '/live-chat': typeof AuthenticatedLiveChatRoute
   '/mom': typeof AuthenticatedMomRoute
   '/my-portal': typeof AuthenticatedMyPortalRoute
   '/operations': typeof AuthenticatedOperationsRoute
@@ -667,6 +674,7 @@ export interface FileRoutesByTo {
   '/finance': typeof AuthenticatedFinanceRoute
   '/inventory': typeof AuthenticatedInventoryRoute
   '/leave': typeof AuthenticatedLeaveRoute
+  '/live-chat': typeof AuthenticatedLiveChatRoute
   '/mom': typeof AuthenticatedMomRoute
   '/my-portal': typeof AuthenticatedMyPortalRoute
   '/operations': typeof AuthenticatedOperationsRoute
@@ -757,6 +765,7 @@ export interface FileRoutesById {
   '/_authenticated/finance': typeof AuthenticatedFinanceRoute
   '/_authenticated/inventory': typeof AuthenticatedInventoryRoute
   '/_authenticated/leave': typeof AuthenticatedLeaveRoute
+  '/_authenticated/live-chat': typeof AuthenticatedLiveChatRoute
   '/_authenticated/mom': typeof AuthenticatedMomRoute
   '/_authenticated/my-portal': typeof AuthenticatedMyPortalRoute
   '/_authenticated/operations': typeof AuthenticatedOperationsRoute
@@ -848,6 +857,7 @@ export interface FileRouteTypes {
     | '/finance'
     | '/inventory'
     | '/leave'
+    | '/live-chat'
     | '/mom'
     | '/my-portal'
     | '/operations'
@@ -935,6 +945,7 @@ export interface FileRouteTypes {
     | '/finance'
     | '/inventory'
     | '/leave'
+    | '/live-chat'
     | '/mom'
     | '/my-portal'
     | '/operations'
@@ -1024,6 +1035,7 @@ export interface FileRouteTypes {
     | '/_authenticated/finance'
     | '/_authenticated/inventory'
     | '/_authenticated/leave'
+    | '/_authenticated/live-chat'
     | '/_authenticated/mom'
     | '/_authenticated/my-portal'
     | '/_authenticated/operations'
@@ -1325,6 +1337,13 @@ declare module '@tanstack/react-router' {
       path: '/leave'
       fullPath: '/leave'
       preLoaderRoute: typeof AuthenticatedLeaveRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/live-chat': {
+      id: '/_authenticated/live-chat'
+      path: '/live-chat'
+      fullPath: '/live-chat'
+      preLoaderRoute: typeof AuthenticatedLiveChatRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/mom': {
@@ -1761,6 +1780,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedFinanceRoute: typeof AuthenticatedFinanceRoute
   AuthenticatedInventoryRoute: typeof AuthenticatedInventoryRoute
   AuthenticatedLeaveRoute: typeof AuthenticatedLeaveRoute
+  AuthenticatedLiveChatRoute: typeof AuthenticatedLiveChatRoute
   AuthenticatedMomRoute: typeof AuthenticatedMomRoute
   AuthenticatedMyPortalRoute: typeof AuthenticatedMyPortalRoute
   AuthenticatedOperationsRoute: typeof AuthenticatedOperationsRoute
@@ -1811,6 +1831,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedFinanceRoute: AuthenticatedFinanceRoute,
   AuthenticatedInventoryRoute: AuthenticatedInventoryRoute,
   AuthenticatedLeaveRoute: AuthenticatedLeaveRoute,
+  AuthenticatedLiveChatRoute: AuthenticatedLiveChatRoute,
   AuthenticatedMomRoute: AuthenticatedMomRoute,
   AuthenticatedMyPortalRoute: AuthenticatedMyPortalRoute,
   AuthenticatedOperationsRoute: AuthenticatedOperationsRoute,
