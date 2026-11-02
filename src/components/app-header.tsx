@@ -15,6 +15,7 @@ import {
 import { Link } from "@tanstack/react-router";
 
 import { buildAlerts } from "@/lib/alerts";
+import { AiNoticesTray } from "@/components/assistant-alerts";
 import { useAuth } from "@/lib/auth";
 import { canAccess } from "@/core/access";
 import { Button } from "@/components/ui/button";
@@ -137,6 +138,7 @@ export function AppHeader() {
             </DropdownMenuContent>
           </DropdownMenu>}
 
+          <AiNoticesTray />
           {canAccess("/alerts", roles) && <Tooltip>
             <TooltipTrigger asChild>
               <Button
