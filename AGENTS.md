@@ -8,3 +8,5 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- Account security forms live in focused Settings components and use the signed-in browser auth client with current-password verification, so credential changes never require privileged keys in the browser.
