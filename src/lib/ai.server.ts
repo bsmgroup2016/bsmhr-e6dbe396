@@ -63,7 +63,9 @@ function buildBody(provider: ProviderConfig, req: AiRequest) {
   const userContent = req.dataUrl
     ? [
         { type: "text", text: prompt },
-        { type: "image_url", image_url: { url: req.dataUrl } },
+        req.dataUrl.startsWith("data:application/pdf") && provider.name !== "gemini"
+          ? { type: "file", file: { filename: "document.pdf", file_data: req.dataUrl } }
+          : { type: "image_url", image_url: { url: req.dataUrl } },
       ]
     : prompt;
   return {

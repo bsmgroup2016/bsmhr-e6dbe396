@@ -50,9 +50,11 @@ export function r2Client(key?: string) {
 /** Candidate buckets for reading `key` (scan bucket first, then main for older files). */
 export function r2ReadClients(key: string) {
   const list = [] as ReturnType<typeof makeClient>[];
-  const s = isScanKey(key) ? scansEnv() : null;
-  if (s) list.push(makeClient(s));
-  list.push(makeClient(r2Env()));
+  const s = scansEnv();
+  const main = makeClient(r2Env());
+  if (s && isScanKey(key)) list.push(makeClient(s), main);
+  else if (s) list.push(main, makeClient(s));
+  else list.push(main);
   return list;
 }
 
@@ -193,10 +195,10 @@ export function keyFromRef(ref: string): string {
 /** Create a short-lived presigned GET url for an object (default 5 minutes). */
 export async function presignGet(key: string, expiresIn = 300): Promise<string> {
   const clients = r2ReadClients(key);
-  let pick = clients[clients.length - 1];
-  if (clients.length > 1) {
-    const head = await clients[0].client.fetch(`${clients[0].base}/${key}`, { method: "HEAD" });
-    if (head.ok) pick = clients[0];
+  let pick = clients[0];
+  for (const c of clients) {
+    const head = await c.client.fetch(`${c.base}/${key}`, { method: "HEAD" });
+    if (head.ok) { pick = c; break; }
   }
   const { client, base } = pick;
   const signed = await client.sign(

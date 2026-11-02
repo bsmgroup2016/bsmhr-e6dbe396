@@ -252,11 +252,29 @@ function toEmployeeRow(employee: Employee) {
   };
 }
 
+/** Accepts YYYY-MM-DD, DD/MM/YYYY (Singapore order), DD-MMM-YYYY and Excel serial numbers. */
 function normalizeDate(value: string) {
-  if (!value) return "";
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) return value;
-  return parsed.toISOString().slice(0, 10);
+  const v = (value ?? "").toString().trim();
+  if (!v || v === "-") return "";
+  const iso = (y: number, m: number, d: number) => {
+    const dt = new Date(Date.UTC(y, m - 1, d));
+    return dt.getUTCFullYear() === y && dt.getUTCMonth() === m - 1 && dt.getUTCDate() === d
+      ? dt.toISOString().slice(0, 10)
+      : "";
+  };
+  let m = /^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/.exec(v);
+  if (m) return iso(+m[1], +m[2], +m[3]);
+  m = /^(\d{1,2})[-/.](\d{1,2})[-/.](\d{2,4})$/.exec(v);
+  if (m) {
+    const y = +m[3] < 100 ? 2000 + +m[3] : +m[3];
+    return iso(y, +m[2], +m[1]);
+  }
+  if (/^\d{4,5}(\.\d+)?$/.test(v)) {
+    const dt = new Date(Date.UTC(1899, 11, 30) + Math.floor(Number(v)) * 86400000);
+    return dt.toISOString().slice(0, 10);
+  }
+  const parsed = new Date(v);
+  return Number.isNaN(parsed.getTime()) ? "" : parsed.toISOString().slice(0, 10);
 }
 
 export default function WorkforcePage() {
