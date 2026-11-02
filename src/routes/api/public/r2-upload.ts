@@ -42,7 +42,7 @@ export const Route = createFileRoute("/api/public/r2-upload")({
         const key = `${folder}/${Date.now()}-${crypto.randomUUID()}.${ext}`;
 
         try {
-          const { client, base } = r2Client();
+          const { client, base } = r2Client(key);
           const put = await client.fetch(`${base}/${key}`, {
             method: "PUT",
             body: await file.arrayBuffer(),

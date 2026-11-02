@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { isAdmin, r2Client, safeKey, unregisterObject, verifyUser } from "@/lib/r2.server";
+import { isAdmin, r2ReadClients, safeKey, unregisterObject, verifyUser } from "@/lib/r2.server";
 
 export const Route = createFileRoute("/api/public/r2-delete")({
   server: {
@@ -12,10 +12,11 @@ export const Route = createFileRoute("/api/public/r2-delete")({
         const key = safeKey(body.key || "");
         if (!key) return new Response("Missing key", { status: 400 });
         try {
-          const { client, base } = r2Client();
-          const res = await client.fetch(`${base}/${key}`, { method: "DELETE" });
-          if (!res.ok && res.status !== 404) {
-            return new Response(`Delete failed (${res.status})`, { status: 502 });
+          for (const { client, base } of r2ReadClients(key)) {
+            const res = await client.fetch(`${base}/${key}`, { method: "DELETE" });
+            if (!res.ok && res.status !== 404) {
+              return new Response(`Delete failed (${res.status})`, { status: 502 });
+            }
           }
           await unregisterObject(key);
         } catch {
