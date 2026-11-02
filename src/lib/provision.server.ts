@@ -65,7 +65,6 @@ export async function provisionEmployee(
     `employees?select=id,employee_code&user_id=eq.${userId}&limit=1`,
   );
   if (existing.length) {
-    await grantEmployeeRole(userId);
     return { employeeId: existing[0].id, employeeCode: existing[0].employee_code, created: false };
   }
 
@@ -81,7 +80,6 @@ export async function provisionEmployee(
       method: "PATCH",
       body: JSON.stringify({ user_id: userId, phone: phone || undefined }),
     });
-    await grantEmployeeRole(userId);
     return { employeeId: byEmail[0].id, employeeCode: byEmail[0].employee_code, created: false };
   }
 
@@ -104,24 +102,11 @@ export async function provisionEmployee(
       branch: "Unassigned",
     }),
   });
-  await grantEmployeeRole(userId);
   return {
     employeeId: inserted[0]?.id ?? "",
     employeeCode: inserted[0]?.employee_code ?? employee_code,
     created: true,
   };
-}
-
-async function grantEmployeeRole(userId: string) {
-  const roles = await rest<{ role: string }>(
-    `user_roles?select=role&user_id=eq.${userId}`,
-  );
-  if (roles.length) return;
-  await rest("user_roles", {
-    method: "POST",
-    headers: { Prefer: "resolution=ignore-duplicates" },
-    body: JSON.stringify({ user_id: userId, role: "employee" }),
-  });
 }
 
 /** Validate a Supabase access token and return { id, email } or null. */

@@ -4,27 +4,38 @@ import { supabase } from "@/integrations/supabase/client";
 import { hydrateStore, subscribe } from "@/lib/store";
 import { RequireRole } from "@/components/require-role";
 import { Loader2 } from "lucide-react";
+import { useAuth } from "@/lib/auth";
+import { canAccess, hasAssignedRole } from "@/core/access";
+import { WelcomeDashboard } from "@/components/role-dashboard";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
-  beforeLoad: async () => {
+  beforeLoad: async ({ location }) => {
     const { data, error } = await supabase.auth.getUser();
     if (error || !data.user) {
       throw redirect({ to: "/auth" });
     }
-    return { user: data.user };
+    const { data: roleRows, error: roleError } = await supabase.from("user_roles").select("role").eq("user_id", data.user.id);
+    if (roleError) throw new Error("Could not verify account permissions.");
+    const roles = (roleRows ?? []).map((row) => String(row.role));
+    if (!canAccess(location.pathname, roles)) throw redirect({ to: "/" });
+    return { user: data.user, roles };
   },
   component: AuthenticatedLayout,
 });
 
 function AuthenticatedLayout() {
+  const { roles, isLoading } = useAuth();
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [, force] = useState(0);
   const pathname = useRouterState({ select: (r) => r.location.pathname });
 
   useEffect(() => {
+    if (isLoading || !hasAssignedRole(roles) || !canAccess(pathname, roles)) return;
     let alive = true;
+    setReady(false);
+    setError(null);
     hydrateStore()
       .then(() => alive && setReady(true))
       .catch((e: Error) => alive && setError(e.message));
@@ -33,7 +44,10 @@ function AuthenticatedLayout() {
       alive = false;
       unsub();
     };
-  }, []);
+  }, [isLoading, roles.join(","), pathname]);
+
+  if (!isLoading && !hasAssignedRole(roles)) return <WelcomeDashboard />;
+  if (!isLoading && !canAccess(pathname, roles)) return <RequireRole path={pathname}><Outlet /></RequireRole>;
 
   if (error) {
     return (

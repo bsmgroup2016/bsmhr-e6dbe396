@@ -235,6 +235,7 @@ export async function requireAuth(
 
   const ctx = await authenticate(request);
   if (!ctx) return { response: fail(401, "unauthorized", "Valid access token required") };
+  if (!ctx.roles.length) return { response: fail(403, "role_required", "Administrator approval required") };
 
   // Per-user guard on the specific endpoint budget.
   const userGuard = await enforceRateLimit(request, bucketName, `user:${ctx.userId}`);

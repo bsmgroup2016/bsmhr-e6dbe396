@@ -63,7 +63,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { ROLE_LABELS, type AppAuthRole } from "@/lib/permissions";
-import { createUser, deleteUsers, updateUser } from "@/lib/user-admin";
+import { createUser, deleteUsers, updateUser, setUserRole } from "@/lib/user-admin";
 import { uploadToR2 } from "@/lib/r2";
 
 const roles: AppAuthRole[] = [
@@ -71,6 +71,9 @@ const roles: AppAuthRole[] = [
   "manager",
   "hr",
   "supervisor",
+  "driver",
+  "accounts",
+  "it",
   "employee",
   "client_user",
 ];
@@ -116,6 +119,8 @@ export const Route = createFileRoute("/_authenticated/users")({
       { name: "description", content: "Manage system users, roles and access permissions." },
       { property: "og:title", content: "Users & Permissions — BSM Workforce & Operations" },
       { property: "og:description", content: "Manage system users, roles and access permissions." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: UsersPage,
@@ -178,26 +183,15 @@ export default function UsersPage() {
 
   async function changeRole(u: SystemUser, role: AppAuthRole | "none") {
     setSavingId(u.id);
-    const { error: delErr } = await supabase.from("user_roles").delete().eq("user_id", u.id);
-    if (delErr) {
-      toast.error(delErr.message);
+    try {
+      await setUserRole(u.id, role);
+      setUsers((prev) => prev.map((x) => x.id === u.id ? { ...x, role: role === "none" ? null : role } : x));
+      toast.success(role === "none" ? "Role removed — welcome-only access" : `Role updated to ${role.replace("_", " ")}`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not update role");
+    } finally {
       setSavingId(null);
-      return;
     }
-    if (role === "none") {
-      setSavingId(null);
-      toast.success("Role removed — user is now a normal user");
-      setUsers((prev) => prev.map((x) => (x.id === u.id ? { ...x, role: null } : x)));
-      return;
-    }
-    const { error } = await supabase.from("user_roles").insert({ user_id: u.id, role });
-    setSavingId(null);
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
-    toast.success(`Role updated to ${role.replace("_", " ")}`);
-    setUsers((prev) => prev.map((x) => (x.id === u.id ? { ...x, role } : x)));
   }
 
   async function toggleActive(u: SystemUser) {

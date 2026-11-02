@@ -16,6 +16,7 @@ import { Link } from "@tanstack/react-router";
 
 import { buildAlerts } from "@/lib/alerts";
 import { useAuth } from "@/lib/auth";
+import { canAccess } from "@/core/access";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -53,11 +54,13 @@ function readSeen(): string[] {
 }
 
 export function AppHeader() {
-  const { user, signOut } = useAuth();
+  const { user, roles, signOut } = useAuth();
+  const canSearch = roles.includes("admin");
+  const visibleCreateItems = quickCreateItems.filter((item) => canAccess(item.to, roles));
   const initials = user?.email?.slice(0, 2).toUpperCase() ?? "BS";
-  const alerts = buildAlerts();
+  const alerts = canAccess("/alerts", roles) ? buildAlerts() : [];
   const [searchOpen, setSearchOpen] = useState(false);
-  useGlobalSearchHotkey(useCallback(() => setSearchOpen(true), []));
+  useGlobalSearchHotkey(useCallback(() => { if (canSearch) setSearchOpen(true); }, [canSearch]));
 
   const [seen, setSeen] = useState<string[]>([]);
   useEffect(() => setSeen(readSeen()), []);
@@ -90,6 +93,7 @@ export function AppHeader() {
         </div>
 
         <div className="flex flex-1 items-center justify-end gap-2">
+          {canSearch && <>
           <button
             type="button"
             onClick={() => setSearchOpen(true)}
@@ -111,8 +115,9 @@ export function AppHeader() {
             <span className="sr-only">Search</span>
           </Button>
           <GlobalSearchDialog open={searchOpen} onOpenChange={setSearchOpen} />
+          </>}
 
-          <DropdownMenu>
+          {visibleCreateItems.length > 0 && <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button size="sm" className="hidden gap-1 sm:flex">
                 <Plus className="h-4 w-4" />
@@ -122,7 +127,7 @@ export function AppHeader() {
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>Quick create</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              {quickCreateItems.map((item) => (
+              {visibleCreateItems.map((item) => (
                 <DropdownMenuItem key={item.label} asChild>
                   <Link to={item.to} search={item.search}>
                     {item.label}
@@ -130,9 +135,9 @@ export function AppHeader() {
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>
-          </DropdownMenu>
+          </DropdownMenu>}
 
-          <Tooltip>
+          {canAccess("/alerts", roles) && <Tooltip>
             <TooltipTrigger asChild>
               <Button
                 asChild
@@ -152,9 +157,9 @@ export function AppHeader() {
               </Button>
             </TooltipTrigger>
             <TooltipContent>Alerts Centre</TooltipContent>
-          </Tooltip>
+          </Tooltip>}
 
-          <Tooltip>
+          {canAccess("/my-portal", roles) && <Tooltip>
             <TooltipTrigger asChild>
               <Button
                 asChild
@@ -169,7 +174,7 @@ export function AppHeader() {
               </Button>
             </TooltipTrigger>
             <TooltipContent>My Portal</TooltipContent>
-          </Tooltip>
+          </Tooltip>}
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

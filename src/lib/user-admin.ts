@@ -18,6 +18,10 @@ export function recordLogin() {
   return call({ action: "record-login" }).catch(() => undefined);
 }
 
+export function setUserRole(id: string, role: string) {
+  return call({ action: "set-role", id, role });
+}
+
 export function createUser(input: {
   email: string;
   password: string;

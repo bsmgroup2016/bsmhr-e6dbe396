@@ -10,3 +10,5 @@
 <!-- LOVABLE:END -->
 
 - Account security forms live in focused Settings components and use the signed-in browser auth client with current-password verification, so credential changes never require privileged keys in the browser.
+- Shared role access rules live in src/core/access.ts and deny unlisted routes by default; web navigation reuses them, while RLS and authenticated API checks enforce data access independently.
+- Role assignments use an admin-verified endpoint backed by an atomic database RPC, so a failed replacement cannot silently remove existing permissions.
