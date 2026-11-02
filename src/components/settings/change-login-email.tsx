@@ -8,12 +8,16 @@ import { Label } from "@/components/ui/label";
 
 export function ChangeLoginEmail() {
   const [current, setCurrent] = useState("");
+  const [pending, setPending] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setCurrent(data.user?.email ?? ""));
+    supabase.auth.getUser().then(({ data }) => {
+      setCurrent(data.user?.email ?? "");
+      setPending(data.user?.new_email ?? "");
+    });
   }, []);
 
   async function submit(e: React.FormEvent) {
@@ -32,6 +36,7 @@ export function ChangeLoginEmail() {
       );
       if (error) throw error;
       toast.success("Confirmation sent. Click the link in both your old and new inbox to finish.");
+      setPending(next);
       setEmail("");
       setPassword("");
     } catch (err) {
@@ -50,6 +55,11 @@ export function ChangeLoginEmail() {
       <p className="text-sm text-muted-foreground mb-4">
         Current: <span className="font-medium text-foreground">{current || "—"}</span>
       </p>
+      {pending && (
+        <p className="text-sm text-muted-foreground mb-4">
+          Waiting for confirmation: <span className="font-medium text-foreground">{pending}</span>. Until the link is clicked, keep signing in with the current email.
+        </p>
+      )}
       <form onSubmit={submit} className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="new-email">New email</Label>
