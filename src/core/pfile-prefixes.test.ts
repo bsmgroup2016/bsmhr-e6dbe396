@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import { nextPFileNumber, prefixesForCompany } from "./pfile-prefixes";
 
 describe("P-File prefixes", () => {
