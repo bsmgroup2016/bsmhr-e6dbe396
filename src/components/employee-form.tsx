@@ -563,19 +563,14 @@ export function EmployeeForm({
               name="ipaDocumentUrl"
               label="Upload IPA copy (PDF)"
               folder="ipa"
+              display="document"
+              documentLabel="IPA"
+              accept=".pdf"
               defaultValue={ipaUrl}
               onUploaded={(url) => setIpaUrl(url)}
             />
-            {ipaUrl ? (
-              <div className="mt-3 overflow-hidden rounded-md border">
-                <iframe src={ipaUrl} title="IPA preview" className="h-[420px] w-full bg-muted" />
-                <p className="border-t px-3 py-1.5 text-xs text-muted-foreground">
-                  Use “Auto-fill from IPA” to read this document, then check every value below.
-                </p>
-              </div>
-            ) : null}
           </div>
-          <FileUpload name="workPermitUpload" label="Work Permit upload" folder="documents" accept=".pdf,.jpg,.jpeg,.png,.webp" onUploaded={(url) => void autoFillDocument("workpermit", url)} />
+          <FileUpload name="workPermitUpload" label="Work Permit upload" folder="documents" display="document" documentLabel="Work Permit" accept=".pdf,.jpg,.jpeg,.png,.webp" onUploaded={(url) => void autoFillDocument("workpermit", url)} />
           {readAgain("workpermit")}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label="IPA approval date">

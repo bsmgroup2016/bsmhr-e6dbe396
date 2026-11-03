@@ -20,7 +20,8 @@ interface FileUploadProps {
   /** Replaces the default helper text in the drop zone. */
   hint?: string;
   onUploaded?: (url: string, key: string) => void;
-  display?: "link" | "photo" | "particular";
+  display?: "link" | "photo" | "particular" | "document";
+  documentLabel?: string;
 }
 
 export function FileUpload({
@@ -33,6 +34,7 @@ export function FileUpload({
   hint,
   onUploaded,
   display = "link",
+  documentLabel = "Particular",
 }: FileUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [url, setUrl] = useState(defaultValue);
@@ -82,7 +84,8 @@ export function FileUpload({
         const objectUrl = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = objectUrl;
-        a.download = "Particular.pdf";
+        const extension = ({ "application/pdf": "pdf", "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp", "image/heic": "heic" } as Record<string, string>)[blob.type.split(";")[0]];
+        a.download = fileName || `${documentLabel.replace(/[^\w.-]+/g, "-")}${extension ? `.${extension}` : ""}`;
         document.body.appendChild(a);
         a.click();
         a.remove();
@@ -106,15 +109,15 @@ export function FileUpload({
             <R2Image src={url} alt="Employee profile photo" className="h-28 w-28 rounded-lg border object-cover" fallback={<div className="flex h-28 w-28 items-center justify-center rounded-lg border bg-muted text-center text-xs text-muted-foreground">Photo unavailable</div>} />
           )}
           <div className="flex flex-wrap gap-2">
-            {display === "particular" && <Button type="button" variant="outline" size="sm" disabled={action !== null || progress !== null} onClick={() => void fileAction("download")}>
-              {action === "download" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />} Download Particular
+            {display !== "photo" && <Button type="button" variant="outline" size="sm" disabled={action !== null || progress !== null} onClick={() => void fileAction("download")}>
+              {action === "download" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />} Download {documentLabel}
             </Button>}
             <Button type="button" variant="outline" size="sm" disabled={progress !== null} onClick={() => { if (inputRef.current) { inputRef.current.value = ""; inputRef.current.click(); } }}>
               {progress !== null ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-              {progress !== null ? `Uploading — ${progress}%` : display === "photo" ? "Replace photo" : "Replace Particular"}
+              {progress !== null ? `Uploading — ${progress}%` : display === "photo" ? "Replace photo" : `Replace ${documentLabel}`}
             </Button>
           </div>
-          {display === "particular" && <Button type="button" variant="link" size="sm" className="h-auto px-0 text-xs text-muted-foreground" disabled={action !== null || progress !== null} onClick={() => void fileAction("copy")}>
+          {display !== "photo" && <Button type="button" variant="link" size="sm" className="h-auto px-0 text-xs text-muted-foreground" disabled={action !== null || progress !== null} onClick={() => void fileAction("copy")}>
             {action === "copy" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Copy className="h-3 w-3" />}
             {copied ? "Download link copied (expires in 5 minutes)" : "Copy download link"}
           </Button>}
