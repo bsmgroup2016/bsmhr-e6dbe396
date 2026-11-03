@@ -71,6 +71,7 @@ export async function archiveConfigure(patch: Partial<ArchiveSettings>, holds?: 
   await write(controlKey, c, etag); return c.settings;
 }
 export async function startArchiveRun(confirmed: boolean) {
+  if (process.env.ARCHIVE_EXECUTION_ENABLED !== "true") throw new Error("Cleanup is locked until the R2 and controlled deletion safety checks are completed. Dry run remains available.");
   if (!confirmed) throw new Error("The first cleanup needs your confirmation.");
   const preview = await archiveDryRun(); const { value: c, etag } = await control();
   if (c.active || (c.leaseUntil && c.leaseUntil > Date.now())) throw new Error("A run already exists. Resume it instead.");
@@ -90,6 +91,7 @@ async function catalogRun(run: Run) {
   const next = value.filter((r) => r.id !== run.id); next.push(row); await write(key, next, etag);
 }
 export async function archiveStep() {
+  if (process.env.ARCHIVE_EXECUTION_ENABLED !== "true") throw new Error("Cleanup is locked pending safety verification.");
   const loaded = await control(); const c = loaded.value;
   if (!c.active || c.settings.paused) return { idle: true };
   if (c.leaseUntil && c.leaseUntil > Date.now()) throw new Error("Another archive step is running.");

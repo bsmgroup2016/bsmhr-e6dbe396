@@ -15,6 +15,8 @@ The approved design is archived under `.lovable/plan/`. The new admin-only Setti
 
 No first cleanup or archive upload was run during implementation. Automatic mode defaults to off. No scheduler has been provisioned yet. Before enabling production cleanup:
 
+`ARCHIVE_EXECUTION_ENABLED` is an additional server-only execution lock, unset by default. Both starting and advancing real cleanup reject requests until this is explicitly enabled after safety verification. Dry run and private browsing remain available.
+
 1. Publish the new controls and run a signed-in dry run.
 2. Perform controlled R2 upload/read-back/conditional-write checks and transactional deletion tests with disposable fixtures, including concurrent writes, without touching existing HR records.
 3. Confirm the actual first cleanup in Settings after checking holds.
