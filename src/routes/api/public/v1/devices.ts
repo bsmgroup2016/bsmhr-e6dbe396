@@ -1,3 +1,4 @@
+import { UNAVAILABLE_TABLES } from "@/core/data-tables";
 import { createFileRoute } from "@tanstack/react-router";
 import { fail, ok, preflight, readJson, requireAuth, sbRest, sbSelect } from "@/lib/api-v1.server";
 
@@ -20,6 +21,7 @@ export const Route = createFileRoute("/api/public/v1/devices")({
       GET: async ({ request }) => {
         const auth = await requireAuth(request, "devices");
         if ("response" in auth) return auth.response;
+        if (UNAVAILABLE_TABLES.has("device_tokens")) return fail(503, "feature_unavailable", "This feature is unavailable: device_tokens is not present in the connected database.");
         const rows = await sbSelect<Record<string, unknown>>(
           auth.ctx,
           `device_tokens?select=id,platform,app_version,device_model,enabled,last_seen_at&order=last_seen_at.desc&limit=50`,
@@ -39,6 +41,7 @@ export const Route = createFileRoute("/api/public/v1/devices")({
       POST: async ({ request }) => {
         const auth = await requireAuth(request, "devices");
         if ("response" in auth) return auth.response;
+        if (UNAVAILABLE_TABLES.has("device_tokens")) return fail(503, "feature_unavailable", "This feature is unavailable: device_tokens is not present in the connected database.");
         const { ctx } = auth;
         const body = await readJson<Body>(request);
         const token = (body?.token ?? "").trim();
@@ -69,6 +72,7 @@ export const Route = createFileRoute("/api/public/v1/devices")({
       DELETE: async ({ request }) => {
         const auth = await requireAuth(request, "devices");
         if ("response" in auth) return auth.response;
+        if (UNAVAILABLE_TABLES.has("device_tokens")) return fail(503, "feature_unavailable", "This feature is unavailable: device_tokens is not present in the connected database.");
         const url = new URL(request.url);
         const body = await readJson<Body>(request);
         const token = (body?.token ?? url.searchParams.get("token") ?? "").trim();

@@ -174,8 +174,6 @@ export default function AccommodationPage() {
           <TabsList className="w-full justify-start overflow-x-auto">
             <TabsTrigger value="allocations">Current Residents</TabsTrigger>
             <TabsTrigger value="dormitories">Dormitories</TabsTrigger>
-            <TabsTrigger value="invoices">Billing & Recs</TabsTrigger>
-            <TabsTrigger value="inspections">Inspections</TabsTrigger>
             <TabsTrigger value="history">Movement Tracking</TabsTrigger>
             <TabsTrigger value="mom-address">MOM Notification</TabsTrigger>
           </TabsList>

@@ -1,3 +1,4 @@
+import { assertAvailableTable } from "@/core/data-tables";
 /**
  * Push notifications (Firebase Cloud Messaging HTTP v1).
  *
@@ -130,6 +131,7 @@ export interface PushResult {
  * Invalid tokens are disabled so we stop pushing to uninstalled apps.
  */
 export async function sendPush(input: PushInput): Promise<PushResult> {
+  assertAvailableTable("notifications");
   const userIds = [...new Set(input.userIds.filter(Boolean))];
   const result: PushResult = { stored: 0, sent: 0, failed: 0, configured: pushConfigured() };
   if (!userIds.length) return result;

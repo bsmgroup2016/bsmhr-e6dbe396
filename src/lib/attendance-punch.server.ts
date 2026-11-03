@@ -1,3 +1,4 @@
+import { UNAVAILABLE_TABLES } from "@/core/data-tables";
 /**
  * Shared punch application used by both the single punch endpoint and the
  * offline batch sync endpoint.
@@ -52,8 +53,7 @@ export async function applyPunch(
   employeeId: string,
   source = "mobile",
 ): Promise<PunchOutcome> {
-  return { clientEventId: event.clientEventId?.trim() || null, status: "error", message: "QR/mobile attendance punches are unavailable: attendance_events is not present in the connected database. Use manual attendance instead." };
-  /* Punch processing is retained for a future explicitly approved schema reconciliation.
+  if (UNAVAILABLE_TABLES.has("attendance_events")) return { clientEventId: event.clientEventId?.trim() || null, status: "error", message: "QR/mobile attendance punches are unavailable: attendance_events is not present in the connected database. Use manual attendance instead." };
   const clientEventId = event.clientEventId?.trim() || null;
   const date =
     event.date ??

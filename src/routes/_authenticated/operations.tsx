@@ -283,7 +283,7 @@ export default function OperationsPage() {
         <Tabs value={tab} onValueChange={setTab}>
           <TabsList>
             <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="requests">Manpower Requests</TabsTrigger>
+
             <TabsTrigger value="assignments">Assignments</TabsTrigger>
             <TabsTrigger value="available">Available Workers</TabsTrigger>
             <TabsTrigger value="deployed">Deployed Workers</TabsTrigger>

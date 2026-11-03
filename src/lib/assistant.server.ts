@@ -10,8 +10,8 @@ export const ASSISTANT_TABLES = [
   "employees", "companies", "clients", "projects", "sites", "assignments", "attendance",
   "payroll_entries", "leave_requests", "medical_claims", "employee_documents", "employee_certifications",
   "employee_loans", "loan_repayments", "approvals", "invoices", "payment_receipts", "expenses",
-  "quotations", "client_contracts", "rate_agreements", "manpower_requests", "manpower_request_items",
-  "dormitories", "bed_allocations", "dormitory_invoices", "dormitory_inspections", "dormitory_movements",
+  "quotations", "client_contracts", "rate_agreements",
+  "dormitories", "bed_allocations",
   "vehicles", "trips", "driver_profiles", "driver_fuel_logs", "driver_incidents",
   "assets", "asset_issuances", "inventory_items", "stock_movements", "purchase_orders",
   "training_courses", "training_records", "safety_incidents", "job_requisitions", "candidates",
@@ -166,6 +166,7 @@ async function runTool(name: string, args: Record<string, unknown>, auth: string
       return await computeInsights(auth, anon, Math.min(180, Math.max(1, Number(args.within_days) || 30)));
     }
     const table = String(args.table ?? "");
+    if (!(ASSISTANT_TABLES as readonly string[]).includes(table)) return { error: "This data collection is unavailable." };
     if (name === "describe_table") {
       const r = await rest(`${table}?select=*&limit=1`, auth, anon);
       if ("error" in r) return r;
