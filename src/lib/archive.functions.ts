@@ -1,4 +1,4 @@
-import { createServerFn } from "@tanstack/react-start";
+import { createServerFn, createMiddleware } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
 import { z } from "zod";
 import { ARCHIVE_TABLES } from "@/core/archive-policy";
@@ -11,7 +11,13 @@ const schema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("settings"), monthly: z.boolean().optional(), paused: z.boolean().optional() }),
   z.object({ action: z.literal("holds"), holds: z.array(z.object({ table: z.enum(ARCHIVE_TABLES), id: z.string().min(1).max(300), reason: z.string().min(1).max(200) })).max(2000) }),
 ]);
+const sessionMiddleware = createMiddleware({ type: "function" }).client(async ({ next }) => {
+  const { supabase } = await import("@/integrations/supabase/client");
+  const { data } = await supabase.auth.getSession();
+  return next({ headers: { Authorization: `Bearer ${data.session?.access_token ?? ""}` } });
+});
 export const archiveAction = createServerFn({ method: "POST" })
+  .middleware([sessionMiddleware])
   .inputValidator((input: unknown) => schema.parse(input))
   .handler(async ({ data }) => {
     const archive = await import("@/lib/archive.server");

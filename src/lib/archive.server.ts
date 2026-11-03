@@ -42,9 +42,7 @@ function service() {
 export async function requireArchiveAdmin(request: Request) {
   const bearer = request.headers.get("authorization"); if (!bearer?.startsWith("Bearer ")) throw new Error("Unauthorized");
   // Verify session and role through the caller's RLS client, before opening privileged clients.
-  const anon = "eyJhbGciOiJIUzI1NiIsInJlZiI6IkpXVCJ9.eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9";
   const publicKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRocmZ5ZXlxYWZtZG5wZXhnbWxjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUyNTMzNTcsImV4cCI6MjEwMDgyOTM1N30.4EGhaZVMSZYI2NPo6mdzBLgKbZJjlVqJ-cdm7VqDvrQ";
-  void anon;
   const caller = createClient("https://thrfyeyqafmdnpexgmlc.supabase.co", publicKey, { auth: { persistSession: false, autoRefreshToken: false }, global: { headers: { Authorization: bearer } } });
   const { data: user, error } = await caller.auth.getUser(bearer.slice(7)); if (error || !user.user) throw new Error("Unauthorized");
   const { data: roles, error: roleError } = await caller.from("user_roles").select("role").eq("user_id", user.user.id);

@@ -46,6 +46,8 @@ import { CompanyLogos } from "@/components/settings/company-logos";
 import { PaymentDetails } from "@/components/settings/payment-details";
 import { ChangeLoginEmail } from "@/components/settings/change-login-email";
 import { ChangePassword } from "@/components/settings/change-password";
+import { ArchiveSettings } from "@/components/settings/archive-settings";
+import { useAuth } from "@/lib/auth";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({
@@ -62,6 +64,7 @@ export const Route = createFileRoute("/_authenticated/settings")({
 });
 
 export default function SettingsPage() {
+  const { isAdmin } = useAuth();
   const branches = getBranches();
   const [currentBranch, setBranch] = useState(getCurrentBranch());
   const [exportData, setExportData] = useState("");
@@ -123,6 +126,7 @@ export default function SettingsPage() {
             <TabsTrigger value="smtp">SMTP</TabsTrigger>
             <TabsTrigger value="payments">Payments</TabsTrigger>
             <TabsTrigger value="storage">Storage</TabsTrigger>
+            {isAdmin && <TabsTrigger value="archive">Archive &amp; Clean</TabsTrigger>}
             <TabsTrigger value="data">Data</TabsTrigger>
             <TabsTrigger value="automation">Automation</TabsTrigger>
             <TabsTrigger value="health">Health</TabsTrigger>
@@ -264,6 +268,7 @@ export default function SettingsPage() {
           <TabsContent value="storage" className="mt-4 space-y-4">
             <StorageSettings />
           </TabsContent>
+          {isAdmin && <TabsContent value="archive" className="mt-4 space-y-4"><ArchiveSettings /></TabsContent>}
 
           <TabsContent value="data" className="mt-4 space-y-4">
             <div className="rounded-xl border bg-card p-5 shadow-sm">
