@@ -1,4 +1,7 @@
 # Role-based account access
+- [ ] Phase 1: replace navigation-wide hydration with session/company on-demand cache and successful-write invalidation.
+- [ ] Phase 1: paginate attendance and asset issuances with company/period filters, exact totals, and complete exports.
+- [ ] Phase 1: explicit projections, missing-table guards, regression checks, and exact changed-file report.
 - [x] Provide provisional Excel bulk-upload templates and Excel export for Staff Directory, Staff Attendance and Staff Payroll.
 - [ ] Finalize staff bulk-upload field mapping and saving: waiting for the user's updated Excel files.
 - [x] Restrict ordinary signup accounts to a welcome-only dashboard without business data loading.
