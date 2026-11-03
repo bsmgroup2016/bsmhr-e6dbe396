@@ -70,7 +70,7 @@ export async function exportCombinedClaims(sheets: ClaimSheet[], employees: Empl
     used.add(name.toUpperCase());
     let page = base;
     if (index === 0) page.name = name;
-    else { page = workbook.addWorksheet(name); page.model = { ...baseModel, name, id: page.id } as typeof baseModel; }
+    else { page = workbook.addWorksheet(name); page.model = { ...baseModel, name, id: page.id } as typeof baseModel; for (const range of (baseModel as { merges?: string[] }).merges ?? []) { try { page.mergeCells(range); } catch { /* already merged */ } } }
 
     page.getCell("A1").value = group.clientName ? group.clientName.toUpperCase() : null;
     page.getCell("A2").value = group.projectName ? group.projectName.toUpperCase() : null;
