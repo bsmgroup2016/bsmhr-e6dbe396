@@ -1,3 +1,4 @@
+import { IPA_DETAIL_FIELDS, ipaDetailsFromForm } from "@/core/ipa-detail-fields";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,7 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { AlertTriangle, Sparkles, Wand2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -72,6 +73,7 @@ export function employeeFromForm(fd: FormData): Partial<Employee> {
   const n = (k: string) => Number((fd.get(k) as string) || 0) || 0;
   const date = (k: string) => s(k) || undefined;
   const out: Record<string, unknown> = {
+    ...ipaDetailsFromForm(fd),
     employeeCode: s("employeeCode") || undefined,
     name: s("name"),
     preferredName: s("preferredName") || undefined,
@@ -174,8 +176,17 @@ function Pick({
   defaultValue?: string;
   placeholder?: string;
 }) {
+  const [selected, setSelected] = useState(defaultValue ?? "");
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const detail = (event as CustomEvent<{ field: string; value: string }>).detail;
+      if (detail.field === name && !selected && options.includes(detail.value)) setSelected(detail.value);
+    };
+    document.addEventListener("employee-autofill", handler);
+    return () => document.removeEventListener("employee-autofill", handler);
+  }, [name, selected, options]);
   return (
-    <Select name={name} defaultValue={defaultValue}>
+    <Select name={name} value={selected} onValueChange={setSelected}>
       <SelectTrigger>
         <SelectValue placeholder={placeholder ?? "Select"} />
       </SelectTrigger>
@@ -234,6 +245,11 @@ export function EmployeeForm({
   function fill(field: string, value?: string) {
     if (!value) return 0;
     const el = formRef.current?.elements.namedItem(field);
+    if (el instanceof HTMLSelectElement) {
+      if (el.value || !Array.from(el.options).some((option) => option.value === value)) return 0;
+      document.dispatchEvent(new CustomEvent("employee-autofill", { detail: { field, value } }));
+      return 1;
+    }
     if (!(el instanceof HTMLInputElement) && !(el instanceof HTMLTextAreaElement)) return 0;
     if (!el || el.value) return 0;
     if (el.type === "date") {
@@ -295,6 +311,13 @@ export function EmployeeForm({
   function readAgain(kind: EmployeeDocumentKind) {
     const url = documentRefs[kind];
     return <Button type="button" size="sm" variant="outline" disabled={!url || documentReading > 0} onClick={() => url && void autoFillDocument(kind, url)}><Sparkles className="mr-1 h-4 w-4" />Read {kind === "workpermit" ? "Work Permit" : kind === "particular" ? "Particular" : kind === "csoc" ? "CSOC" : "Passport"}</Button>;
+  }
+
+
+  function ipaFields(section: string) {
+    return <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">{IPA_DETAIL_FIELDS.filter((field) => field.section === section).map((field) => <Field key={field.key} label={field.label}>
+      {field.kind === "yesno" ? <Pick name={field.key} options={["Yes", "No"]} defaultValue={values?.[field.key] as string | undefined} /> : <Input name={field.key} type={field.kind === "number" ? "number" : "text"} step={field.kind === "number" ? "0.01" : undefined} min={field.kind === "number" ? "0" : undefined} defaultValue={values?.[field.key] ?? ""} />}
+    </Field>)}</div>;
   }
 
   const [tab, setTab] = useState("personal");
@@ -370,6 +393,7 @@ export function EmployeeForm({
           <TabsTrigger value="employment">Employment</TabsTrigger>
           <TabsTrigger value="pass">Work pass</TabsTrigger>
           <TabsTrigger value="pay">Compensation</TabsTrigger>
+          <TabsTrigger value="agency">Agency</TabsTrigger>
         </TabsList>
 
         <TabsContent forceMount data-tab-panel="personal" value="personal" className="mt-4 space-y-4 data-[state=inactive]:hidden">
@@ -409,6 +433,7 @@ export function EmployeeForm({
               <Input name="postalCode" defaultValue={values?.postalCode ?? ""} />
             </Field>
           </div>
+          {ipaFields("personal")}
           <Field label="Singapore address">
             <Input name="address" defaultValue={values?.address ?? ""} />
           </Field>
@@ -516,6 +541,7 @@ export function EmployeeForm({
               <Input name="exitReason" defaultValue={values?.exitReason ?? ""} />
             </Field>
           </div>
+          {ipaFields("employment")}
           <Field label="Internal notes (HR only)">
             <Textarea name="internalNotes" defaultValue={values?.internalNotes ?? ""} rows={3} />
           </Field>
@@ -680,9 +706,13 @@ export function EmployeeForm({
               <Pick name="paymentMethod" options={PAYMENT_METHODS} defaultValue={values?.paymentMethod ?? "Bank Transfer"} />
             </Field>
           </div>
+          {ipaFields("pay")}
           <Field label="Remarks">
             <Textarea name="remarks" defaultValue={values?.remarks ?? ""} rows={2} />
           </Field>
+        </TabsContent>
+        <TabsContent forceMount data-tab-panel="agency" value="agency" className="mt-4 space-y-4 data-[state=inactive]:hidden">
+          {ipaFields("agency")}
         </TabsContent>
       </Tabs>
 

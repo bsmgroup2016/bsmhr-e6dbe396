@@ -111,6 +111,29 @@ export interface Employee {
   lastWorkingDate?: string;
   exitReason?: string;
   internalNotes?: string;
+  // Printed IPA particulars; independent of operational payroll settings.
+  highestQualification?: string;
+  fatherName?: string;
+  motherName?: string;
+  criminalRecord?: "Yes" | "No";
+  industry?: string;
+  occupationCode?: string;
+  housingProvided?: "Yes" | "No";
+  basicMonthlySalary?: number;
+  housingDeduction?: number;
+  otherDeduction?: number;
+  monthlySalaryAfterDeductions?: number;
+  normalHoursPerWeek?: number;
+  workingDaysPerWeek?: number;
+  dailyRestDayRate?: number;
+  agencyName?: string;
+  agencyLicence?: string;
+  agencyAddress?: string;
+  agencyPhone?: string;
+  agencyFee?: number;
+  overseasCosts?: number;
+  employeePaidFees?: "Yes" | "No";
+
   // --- Phase 2: identity / compensation ---
   passportNumber?: string;
   passportExpiry?: string;
