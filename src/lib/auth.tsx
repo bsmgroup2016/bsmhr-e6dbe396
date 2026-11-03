@@ -6,6 +6,17 @@ import {
   useCallback,
   type ReactNode,
 } from "react";
+
+// The auth context must keep a single module identity across the app. When
+// this file is hot-reloaded, importers can end up with two different
+// AuthContext instances ("useAuth must be used within AuthProvider").
+// Forcing a full page reload keeps the module graph consistent.
+if (import.meta.hot) {
+  import.meta.hot.accept(() => {
+    window.location.reload();
+  });
+}
+
 import { supabase } from "@/integrations/supabase/client";
 import { clearSessionStore } from "@/lib/store";
 import type { User, Session } from "@supabase/supabase-js";
