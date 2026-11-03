@@ -7,6 +7,7 @@ import {
 
 import { AppShell } from "@/components/app-shell";
 import { R2Image } from "@/components/r2-image";
+import { deletePFileReference } from "@/core/p-file-deletion";
 import { EmployeeForm, employeeFromForm } from "@/components/employee-form";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -529,11 +530,10 @@ function PFilePanel({
     setError(null);
     setBusy("delete");
     try {
-      await deleteFromR2(url);
-    } catch {
-      // File may already be gone from storage — still clear the record.
+      await deletePFileReference(url, deleteFromR2, () => onChange(undefined));
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Delete failed. The P-File reference has been kept.");
     } finally {
-      onChange(undefined);
       setBusy(null);
     }
   }
