@@ -135,6 +135,10 @@ export function employeeFromForm(fd: FormData): Partial<Employee> {
     internalNotes: s("internalNotes") || undefined,
     photoUrl: s("photoUrl") || undefined,
     ipaDocumentUrl: s("ipaDocumentUrl") || undefined,
+    declaredSalary: fd.has("declaredSalary") && s("declaredSalary") !== "" ? n("declaredSalary") : undefined,
+    fixedAllowance: fd.has("fixedAllowance") && s("fixedAllowance") !== "" ? n("fixedAllowance") : undefined,
+    ipaIssueDate: date("ipaIssueDate"),
+    ipaExpiryDate: date("ipaExpiryDate"),
     pFileUrl: s("pFileUrl") || undefined,
   };
   // Drop keys whose input was not rendered in this form, so a partial form
@@ -187,23 +191,26 @@ export function EmployeeForm({
   employee,
   onSubmit,
   submitLabel,
+  initialValues,
 }: {
   employee?: Employee;
+  initialValues?: Partial<Employee>;
   onSubmit: (data: FormData) => void;
   submitLabel?: string;
 }) {
+  const values = employee ?? initialValues;
   const prefixes = useMemo(() => getBranchPrefixes(), []);
-  const [branch, setBranch] = useState(employee?.branch ?? prefixes[0]?.name ?? "Unassigned");
+  const [branch, setBranch] = useState(values?.branch ?? prefixes[0]?.name ?? "Unassigned");
   const [code, setCode] = useState(
-    employee?.employeeCode ?? nextEmployeeCode(employee?.branch ?? prefixes[0]?.name),
+    values?.employeeCode ?? nextEmployeeCode(values?.branch ?? prefixes[0]?.name),
   );
-  const [ipaUrl, setIpaUrl] = useState(employee?.ipaDocumentUrl ?? "");
+  const [ipaUrl, setIpaUrl] = useState(values?.ipaDocumentUrl ?? "");
   const [scanning, setScanning] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
 
   const taken = code.trim() ? isEmployeeCodeTaken(code, employee?.id) : false;
   const expectedPrefix = prefixForBranch(branch);
-  const staff = isOfficeStaff({ department: employee?.department, trade: employee?.trade });
+  const staff = isOfficeStaff({ department: values?.department, trade: values?.trade });
   const idFieldLabel = staff ? "Employee ID" : "P-File Number (primary identifier)";
   const prefixMismatch =
     !staff &&
@@ -344,65 +351,65 @@ export function EmployeeForm({
         <TabsContent forceMount data-tab-panel="personal" value="personal" className="mt-4 space-y-4 data-[state=inactive]:hidden">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label="Full legal name">
-              <Input name="name" defaultValue={employee?.name} required />
+              <Input name="name" defaultValue={values?.name} required />
             </Field>
             <Field label="Preferred name">
-              <Input name="preferredName" defaultValue={employee?.preferredName ?? ""} />
+              <Input name="preferredName" defaultValue={values?.preferredName ?? ""} />
             </Field>
             <Field label="Date of birth">
-              <Input name="dateOfBirth" type="date" defaultValue={dateValue(employee?.dateOfBirth)} />
+              <Input name="dateOfBirth" type="date" defaultValue={dateValue(values?.dateOfBirth)} />
             </Field>
             <Field label="Gender">
-              <Pick name="gender" options={["Male", "Female", "Other"]} defaultValue={employee?.gender} />
+              <Pick name="gender" options={["Male", "Female", "Other"]} defaultValue={values?.gender} />
             </Field>
             <Field label="Nationality">
-              <Input name="nationality" defaultValue={employee?.nationality} required />
+              <Input name="nationality" defaultValue={values?.nationality} required />
             </Field>
             <Field label="Marital status">
               <Pick
                 name="maritalStatus"
                 options={["Single", "Married", "Divorced", "Widowed"]}
-                defaultValue={employee?.maritalStatus}
+                defaultValue={values?.maritalStatus}
               />
             </Field>
             <Field label="Email">
-              <Input name="email" type="email" defaultValue={employee?.email ?? ""} />
+              <Input name="email" type="email" defaultValue={values?.email ?? ""} />
             </Field>
             <Field label="Mobile phone">
-              <Input name="phone" defaultValue={employee?.phone ?? ""} />
+              <Input name="phone" defaultValue={values?.phone ?? ""} />
             </Field>
             <Field label="Alternative phone">
-              <Input name="altPhone" defaultValue={employee?.altPhone ?? ""} />
+              <Input name="altPhone" defaultValue={values?.altPhone ?? ""} />
             </Field>
             <Field label="Postal code">
-              <Input name="postalCode" defaultValue={employee?.postalCode ?? ""} />
+              <Input name="postalCode" defaultValue={values?.postalCode ?? ""} />
             </Field>
           </div>
           <Field label="Singapore address">
-            <Input name="address" defaultValue={employee?.address ?? ""} />
+            <Input name="address" defaultValue={values?.address ?? ""} />
           </Field>
           <Field label="Home-country address">
-            <Input name="homeCountryAddress" defaultValue={employee?.homeCountryAddress ?? ""} />
+            <Input name="homeCountryAddress" defaultValue={values?.homeCountryAddress ?? ""} />
           </Field>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label="Emergency contact name">
-              <Input name="emergencyContact" defaultValue={employee?.emergencyContact ?? ""} />
+              <Input name="emergencyContact" defaultValue={values?.emergencyContact ?? ""} />
             </Field>
             <Field label="Relationship">
-              <Input name="emergencyRelation" defaultValue={employee?.emergencyRelation ?? ""} />
+              <Input name="emergencyRelation" defaultValue={values?.emergencyRelation ?? ""} />
             </Field>
             <Field label="Emergency phone">
-              <Input name="emergencyPhone" defaultValue={employee?.emergencyPhone ?? ""} />
+              <Input name="emergencyPhone" defaultValue={values?.emergencyPhone ?? ""} />
             </Field>
             <Field label="Emergency email">
-              <Input name="emergencyEmail" defaultValue={employee?.emergencyEmail ?? ""} />
+              <Input name="emergencyEmail" defaultValue={values?.emergencyEmail ?? ""} />
             </Field>
           </div>
           <FileUpload
             name="photoUrl"
             label="Profile photo (stored in Cloudflare R2)"
             folder="photos"
-            defaultValue={employee?.photoUrl || ""}
+            defaultValue={values?.photoUrl || ""}
           />
           <FileUpload
             name="pFileUrl"
@@ -410,66 +417,66 @@ export function EmployeeForm({
             folder="p-files"
             accept=".pdf"
             hint="Upload the employee's scanned P-File as a PDF"
-            defaultValue={employee?.pFileUrl || ""}
+            defaultValue={values?.pFileUrl || ""}
           />
         </TabsContent>
 
         <TabsContent forceMount data-tab-panel="employment" value="employment" className="mt-4 space-y-4 data-[state=inactive]:hidden">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label="Department">
-              <Input name="department" defaultValue={employee?.department ?? ""} />
+              <Input name="department" defaultValue={values?.department ?? ""} />
             </Field>
             <Field label="Employment type">
-              <Pick name="employmentType" options={EMPLOYMENT_TYPES} defaultValue={employee?.employmentType ?? "Full Time"} />
+              <Pick name="employmentType" options={EMPLOYMENT_TYPES} defaultValue={values?.employmentType ?? "Full Time"} />
             </Field>
             <Field label="Worker category">
-              <Pick name="workerCategory" options={WORKER_CATEGORIES} defaultValue={employee?.workerCategory ?? "General Worker"} />
+              <Pick name="workerCategory" options={WORKER_CATEGORIES} defaultValue={values?.workerCategory ?? "General Worker"} />
             </Field>
             <Field label="Job title">
-              <Input name="jobTitle" defaultValue={employee?.jobTitle ?? ""} />
+              <Input name="jobTitle" defaultValue={values?.jobTitle ?? ""} />
             </Field>
             <Field label="Designation">
-              <Pick name="trade" options={TRADES} defaultValue={employee?.trade || TRADES[0]} />
+              <Pick name="trade" options={values?.trade && !TRADES.includes(values.trade) ? [values.trade, ...TRADES] : TRADES} defaultValue={values?.trade || TRADES[0]} />
             </Field>
             <Field label="Secondary skills">
-              <Input name="secondarySkills" defaultValue={employee?.secondarySkills ?? ""} placeholder="Comma separated" />
+              <Input name="secondarySkills" defaultValue={values?.secondarySkills ?? ""} placeholder="Comma separated" />
             </Field>
             <Field label="Application date">
-              <Input name="applicationDate" type="date" defaultValue={dateValue(employee?.applicationDate)} />
+              <Input name="applicationDate" type="date" defaultValue={dateValue(values?.applicationDate)} />
             </Field>
             <Field label="Joining date">
-              <Input name="joinedOn" type="date" defaultValue={dateValue(employee?.joinedOn)} required />
+              <Input name="joinedOn" type="date" defaultValue={dateValue(values?.joinedOn)} required />
             </Field>
             <Field label="Confirmation date">
-              <Input name="confirmationDate" type="date" defaultValue={dateValue(employee?.confirmationDate)} />
+              <Input name="confirmationDate" type="date" defaultValue={dateValue(values?.confirmationDate)} />
             </Field>
             <Field label="Contract start">
-              <Input name="contractStart" type="date" defaultValue={dateValue(employee?.contractStart)} />
+              <Input name="contractStart" type="date" defaultValue={dateValue(values?.contractStart)} />
             </Field>
             <Field label="Contract end">
-              <Input name="contractEnd" type="date" defaultValue={dateValue(employee?.contractEnd)} />
+              <Input name="contractEnd" type="date" defaultValue={dateValue(values?.contractEnd)} />
             </Field>
             <Field label="Employment status">
-              <Pick name="status" options={EMPLOYEE_STATUSES} defaultValue={employee?.status || "Active"} />
+              <Pick name="status" options={EMPLOYEE_STATUSES} defaultValue={values?.status || "Active"} />
             </Field>
             <Field label="Deployment status">
-              <Pick name="deploymentStatus" options={DEPLOYMENT_STATUSES} defaultValue={employee?.deploymentStatus ?? "Available"} />
+              <Pick name="deploymentStatus" options={DEPLOYMENT_STATUSES} defaultValue={values?.deploymentStatus ?? "Available"} />
             </Field>
             <Field label="Reporting manager">
-              <Input name="reportingManager" defaultValue={employee?.reportingManager ?? ""} />
+              <Input name="reportingManager" defaultValue={values?.reportingManager ?? ""} />
             </Field>
             <Field label="Site supervisor">
-              <Input name="siteSupervisor" defaultValue={employee?.siteSupervisor ?? ""} />
+              <Input name="siteSupervisor" defaultValue={values?.siteSupervisor ?? ""} />
             </Field>
             <Field label="Last working date">
-              <Input name="lastWorkingDate" type="date" defaultValue={dateValue(employee?.lastWorkingDate)} />
+              <Input name="lastWorkingDate" type="date" defaultValue={dateValue(values?.lastWorkingDate)} />
             </Field>
             <Field label="Exit reason">
-              <Input name="exitReason" defaultValue={employee?.exitReason ?? ""} />
+              <Input name="exitReason" defaultValue={values?.exitReason ?? ""} />
             </Field>
           </div>
           <Field label="Internal notes (HR only)">
-            <Textarea name="internalNotes" defaultValue={employee?.internalNotes ?? ""} rows={3} />
+            <Textarea name="internalNotes" defaultValue={values?.internalNotes ?? ""} rows={3} />
           </Field>
         </TabsContent>
 
@@ -522,68 +529,74 @@ export function EmployeeForm({
             ) : null}
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Field label="IPA approval date">
+              <Input name="ipaIssueDate" type="date" defaultValue={dateValue(values?.ipaIssueDate)} />
+            </Field>
+            <Field label="IPA approval expiry">
+              <Input name="ipaExpiryDate" type="date" defaultValue={dateValue(values?.ipaExpiryDate)} />
+            </Field>
             <Field label="FIN / NRIC">
-              <Input name="fin" defaultValue={employee?.fin} required />
+              <Input name="fin" defaultValue={values?.fin} required />
             </Field>
             <Field label="Pass type">
-              <Pick name="passType" options={PASS_TYPES} defaultValue={employee?.passType || "Work Permit"} />
+              <Pick name="passType" options={PASS_TYPES} defaultValue={values?.passType || "Work Permit"} />
             </Field>
             <Field label="Citizenship / PR status (CPF)">
               <Pick
                 name="prStatus"
                 options={["Citizen", "PR Year 1", "PR Year 2", "PR Year 3+"]}
-                defaultValue={employee?.prStatus || "Citizen"}
+                defaultValue={values?.prStatus || "Citizen"}
               />
             </Field>
             <Field label="Ethnic group (SHG fund)">
               <Pick
                 name="ethnicGroup"
                 options={["Chinese", "Malay", "Indian", "Eurasian", "Others"]}
-                defaultValue={employee?.ethnicGroup || "Others"}
+                defaultValue={values?.ethnicGroup || "Others"}
               />
             </Field>
             <Field label="Religion (MBMF)">
               <Pick
                 name="religion"
                 options={["Non-Muslim", "Muslim"]}
-                defaultValue={employee?.religion || "Non-Muslim"}
+                defaultValue={values?.religion || "Non-Muslim"}
               />
             </Field>
             <Field label="Work Permit number">
-              <Input name="workPermitNumber" defaultValue={employee?.workPermitNumber ?? ""} />
+              <Input name="workPermitNumber" defaultValue={values?.workPermitNumber ?? ""} />
             </Field>
             <Field label="Work Permit issue date">
-              <Input name="workPermitIssueDate" type="date" defaultValue={dateValue(employee?.workPermitIssueDate)} />
+              <Input name="workPermitIssueDate" type="date" defaultValue={dateValue(values?.workPermitIssueDate)} />
             </Field>
             <Field label="Work Permit expiry date">
-              <Input name="workPermitExpiryDate" type="date" defaultValue={dateValue(employee?.workPermitExpiryDate)} />
+              <Input name="workPermitExpiryDate" type="date" defaultValue={dateValue(values?.workPermitExpiryDate)} />
             </Field>
             <Field label="Pass expiry">
-              <Input name="passExpiry" type="date" defaultValue={dateValue(employee?.passExpiry)} />
+              <Input name="passExpiry" type="date" defaultValue={dateValue(values?.passExpiry)} />
             </Field>
             <Field label="Passport number">
-              <Input name="passportNumber" defaultValue={employee?.passportNumber ?? ""} />
+              <Input name="passportNumber" defaultValue={values?.passportNumber ?? ""} />
             </Field>
             <Field label="Passport expiry">
-              <Input name="passportExpiry" type="date" defaultValue={dateValue(employee?.passportExpiry)} />
+              <Input name="passportExpiry" type="date" defaultValue={dateValue(values?.passportExpiry)} />
             </Field>
             <Field label="Dormitory / accommodation">
-              <Input name="dormitory" defaultValue={employee?.dormitory ?? ""} />
+              <Input name="dormitory" defaultValue={values?.dormitory ?? ""} />
             </Field>
             <Field label="Dormitory address">
-              <Input name="dormitoryAddress" defaultValue={employee?.dormitoryAddress ?? ""} />
+              <Input name="dormitoryAddress" defaultValue={values?.dormitoryAddress ?? ""} />
             </Field>
             <Field label="Medical insurance expiry">
-              <Input name="medicalInsuranceExpiry" type="date" defaultValue={dateValue(employee?.medicalInsuranceExpiry)} />
+              <Input name="medicalInsuranceExpiry" type="date" defaultValue={dateValue(values?.medicalInsuranceExpiry)} />
             </Field>
             <Field label="Medical examination due">
-              <Input name="medicalCheckupDue" type="date" defaultValue={dateValue(employee?.medicalCheckupDue)} />
+              <Input name="medicalCheckupDue" type="date" defaultValue={dateValue(values?.medicalCheckupDue)} />
             </Field>
             <Field label="Levy tier (MOM)">
               <Pick
                 name="levyTier"
                 options={["Higher Skilled", "Basic Skilled"]}
-                defaultValue={employee?.levyTier ?? "Basic Skilled"}
+                defaultValue={values?.levyTier ?? "Basic Skilled"}
               />
             </Field>
           </div>
@@ -592,40 +605,46 @@ export function EmployeeForm({
         <TabsContent forceMount data-tab-panel="pay" value="pay" className="mt-4 space-y-4 data-[state=inactive]:hidden">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label={staff ? "Monthly salary ($)" : "Basic rate / day ($)"}>
-              <Input name="basicSalary" type="number" step="0.01" defaultValue={employee?.basicSalary ?? 0} required />
+              <Input name="basicSalary" type="number" step="0.01" defaultValue={values?.basicSalary ?? 0} required />
             </Field>
             {staff ? null : (
               <Field label="OT rate per hour ($)">
-                <Input name="otRate" type="number" step="0.01" defaultValue={employee?.otRate ?? 0} />
+                <Input name="otRate" type="number" step="0.01" defaultValue={values?.otRate ?? 0} />
               </Field>
             )}
             <Field label="Normal working hours / day">
-              <Input name="normalHours" type="number" step="0.5" defaultValue={employee?.normalHours ?? 8} />
+              <Input name="normalHours" type="number" step="0.5" defaultValue={values?.normalHours ?? 8} />
             </Field>
             <Field label="Monthly levy ($)">
-              <Input name="levyRate" type="number" step="0.01" defaultValue={employee?.levyRate ?? 0} />
+              <Input name="levyRate" type="number" step="0.01" defaultValue={values?.levyRate ?? 0} />
+            </Field>
+            <Field label="MOM declared monthly salary ($)">
+              <Input name="declaredSalary" type="number" step="0.01" defaultValue={values?.declaredSalary ?? ""} />
+            </Field>
+            <Field label="Fixed monthly allowances ($)">
+              <Input name="fixedAllowance" type="number" step="0.01" defaultValue={values?.fixedAllowance ?? ""} />
             </Field>
             <Field label="Payroll group">
-              <Input name="payrollGroup" defaultValue={employee?.payrollGroup ?? ""} />
+              <Input name="payrollGroup" defaultValue={values?.payrollGroup ?? ""} />
             </Field>
             <Field label="Payroll frequency">
-              <Pick name="payrollFrequency" options={PAYROLL_FREQUENCIES} defaultValue={employee?.payrollFrequency ?? "Monthly"} />
+              <Pick name="payrollFrequency" options={PAYROLL_FREQUENCIES} defaultValue={values?.payrollFrequency ?? "Monthly"} />
             </Field>
             <Field label="Bank name">
-              <Input name="bankName" defaultValue={employee?.bankName ?? ""} />
+              <Input name="bankName" defaultValue={values?.bankName ?? ""} />
             </Field>
             <Field label="Bank account reference">
-              <Input name="bankAccount" defaultValue={employee?.bankAccount ?? ""} />
+              <Input name="bankAccount" defaultValue={values?.bankAccount ?? ""} />
             </Field>
             <Field label="Account holder name">
-              <Input name="accountHolderName" defaultValue={employee?.accountHolderName ?? ""} />
+              <Input name="accountHolderName" defaultValue={values?.accountHolderName ?? ""} />
             </Field>
             <Field label="Payment method">
-              <Pick name="paymentMethod" options={PAYMENT_METHODS} defaultValue={employee?.paymentMethod ?? "Bank Transfer"} />
+              <Pick name="paymentMethod" options={PAYMENT_METHODS} defaultValue={values?.paymentMethod ?? "Bank Transfer"} />
             </Field>
           </div>
           <Field label="Remarks">
-            <Textarea name="remarks" defaultValue={employee?.remarks ?? ""} rows={2} />
+            <Textarea name="remarks" defaultValue={values?.remarks ?? ""} rows={2} />
           </Field>
         </TabsContent>
       </Tabs>
