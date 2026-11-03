@@ -29,6 +29,8 @@ import { findEmployeeByParam } from "@/lib/employee-slug";
 import { isOfficeStaff } from "@/lib/workforce-split";
 import { uploadToR2, deleteFromR2, openR2File, downloadR2File, r2FileName } from "@/lib/r2";
 
+const FORM_TABS = ["personal", "employment", "pass", "pay", "documents"];
+
 export const Route = createFileRoute("/_authenticated/workforce_/$slug")({
   head: () => ({
     meta: [
@@ -87,7 +89,8 @@ function Grid({ children }: { children: React.ReactNode }) {
 function EmployeeProfilePage() {
   const { slug } = Route.useParams();
   const navigate = useNavigate();
-  const [, force] = useState(0);
+  const [version, force] = useState(0);
+  const [profileTab, setProfileTab] = useState("overview");
   const [editing, setEditing] = useState(false);
   const employee = findEmployeeByParam(getEmployees(), slug);
 
