@@ -9,6 +9,7 @@ import { AppShell } from "@/components/app-shell";
 import { R2Image } from "@/components/r2-image";
 import { deletePFileReference } from "@/core/p-file-deletion";
 import { EmployeeForm, employeeFromForm } from "@/components/employee-form";
+import { IPA_DETAIL_FIELDS } from "@/core/ipa-detail-fields";
 import { employeeFormDocuments } from "@/core/employee-form-documents";
 import { addDocument } from "@/lib/store";
 import { Button } from "@/components/ui/button";
@@ -40,6 +41,12 @@ export const Route = createFileRoute("/_authenticated/workforce_/$slug")({
   }),
   component: EmployeeProfilePage,
 });
+
+function IpaItems({ employee, section }: { employee: Employee; section: string }) {
+  return <>{IPA_DETAIL_FIELDS.filter((field) => field.section === section).map((field) =>
+    <Item key={field.key} label={field.label} value={employee[field.key]} />,
+  )}</>;
+}
 
 function daysUntil(iso?: string): number | null {
   if (!iso || iso === "-") return null;
@@ -239,6 +246,8 @@ function EmployeeProfilePage() {
             <TabsTrigger value="employment">Employment</TabsTrigger>
             <TabsTrigger value="pass">Work pass</TabsTrigger>
             <TabsTrigger value="pay">Compensation</TabsTrigger>
+            <TabsTrigger value="agency">Agency</TabsTrigger>
+            <TabsTrigger value="employer">Employer / application</TabsTrigger>
             {!staff ? <TabsTrigger value="assignments">Assignments</TabsTrigger> : null}
             {!staff ? <TabsTrigger value="attendance">Attendance</TabsTrigger> : null}
             <TabsTrigger value="payroll">Payroll</TabsTrigger>
@@ -303,6 +312,7 @@ function EmployeeProfilePage() {
               <Item label="Bank name" value={employee.bankName} />
               <Item label="Bank account" value={employee.bankAccount} />
               <Item label="Payment method" value={employee.paymentMethod} />
+              <IpaItems employee={employee} section="personal" />
             </Grid>
           </TabsContent>
 
@@ -328,6 +338,7 @@ function EmployeeProfilePage() {
               <Item label="Payroll frequency" value={employee.payrollFrequency} />
               <Item label="Last working date" value={employee.lastWorkingDate} />
               <Item label="Exit reason" value={employee.exitReason} />
+              <IpaItems employee={employee} section="employment" />
             </Grid>
           </TabsContent>
 
@@ -340,6 +351,7 @@ function EmployeeProfilePage() {
               <Item label="Passport number" value={employee.passportNumber} />
               <Item label="Passport expiry" value={employee.passportExpiry} />
               <Item label="Accommodation" value={employee.dormitory} />
+              <IpaItems employee={employee} section="pass" />
             </Grid>
           </TabsContent>
 
@@ -349,7 +361,7 @@ function EmployeeProfilePage() {
                 label={staff ? "Fixed salary / month" : "Basic rate / day"}
                 value={`$${employee.basicSalary.toLocaleString()}`}
               />
-              <Item label="IPA basic monthly salary" value={employee.basicMonthlySalary != null ? `$${employee.basicMonthlySalary.toLocaleString()}` : undefined} />
+              <IpaItems employee={employee} section="pay" />
               <Item label="MOM declared monthly salary" value={employee.declaredSalary != null ? `$${employee.declaredSalary.toLocaleString()}` : undefined} />
               {!staff ? (
                 <>
@@ -366,6 +378,8 @@ function EmployeeProfilePage() {
             </Grid>
           </TabsContent>
 
+          <TabsContent value="agency" className="mt-4"><Grid><IpaItems employee={employee} section="agency" /></Grid></TabsContent>
+          <TabsContent value="employer" className="mt-4"><Grid><IpaItems employee={employee} section="employer" /></Grid></TabsContent>
           <TabsContent value="assignments" className="mt-4">
             <SimpleTable
               headers={["Project", "Site", "Start", "End", "Status"]}

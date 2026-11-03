@@ -1,0 +1,27 @@
+-- Printed IPA particulars only: nullable columns, no backfill or RLS/payroll changes.
+ALTER TABLE public.employees
+  ADD COLUMN IF NOT EXISTS ipa_country_of_birth text,
+  ADD COLUMN IF NOT EXISTS ipa_race text,
+  ADD COLUMN IF NOT EXISTS ipa_previously_sc_pr text,
+  ADD COLUMN IF NOT EXISTS ipa_ever_arrested text,
+  ADD COLUMN IF NOT EXISTS ipa_ever_convicted text,
+  ADD COLUMN IF NOT EXISTS ipa_address_history text,
+  ADD COLUMN IF NOT EXISTS ipa_travel_document_type text,
+  ADD COLUMN IF NOT EXISTS ipa_immigration_status text,
+  ADD COLUMN IF NOT EXISTS ipa_employer_name text,
+  ADD COLUMN IF NOT EXISTS ipa_employer_cpf_submission text,
+  ADD COLUMN IF NOT EXISTS ipa_employer_uen text,
+  ADD COLUMN IF NOT EXISTS ipa_employer_business_activity text,
+  ADD COLUMN IF NOT EXISTS ipa_employer_registered_address text,
+  ADD COLUMN IF NOT EXISTS ipa_employer_correspondence_address text,
+  ADD COLUMN IF NOT EXISTS ipa_employer_phone text,
+  ADD COLUMN IF NOT EXISTS ipa_sb_transmission_ref text,
+  ADD COLUMN IF NOT EXISTS ipa_temporary_permit text,
+  ADD COLUMN IF NOT EXISTS ipa_housing_allowance numeric,
+  ADD COLUMN IF NOT EXISTS ipa_transport_allowance numeric,
+  ADD COLUMN IF NOT EXISTS ipa_other_allowances numeric,
+  ADD COLUMN IF NOT EXISTS ipa_has_fixed_allowances text,
+  ADD COLUMN IF NOT EXISTS ipa_has_fixed_deductions text,
+  ADD COLUMN IF NOT EXISTS ipa_total_fixed_deductions numeric,
+  ADD COLUMN IF NOT EXISTS ipa_agency_used text;
+NOTIFY pgrst, 'reload schema';

@@ -133,6 +133,30 @@ export interface Employee {
   agencyFee?: number;
   overseasCosts?: number;
   employeePaidFees?: "Yes" | "No";
+  countryOfBirth?: string;
+  raceAsDeclared?: string;
+  previouslySingaporeCitizenPr?: "Yes" | "No";
+  everArrested?: "Yes" | "No";
+  everConvicted?: "Yes" | "No";
+  addressHistory?: string;
+  travelDocumentType?: string;
+  immigrationStatusAtApplication?: string;
+  employerName?: string;
+  employerCpfSubmissionNumber?: string;
+  employerUen?: string;
+  employerBusinessActivity?: string;
+  employerRegisteredAddress?: string;
+  employerCorrespondenceAddress?: string;
+  employerPhone?: string;
+  sbTransmissionReference?: string;
+  temporaryPermitUponApproval?: "Yes" | "No";
+  monthlyHousingAllowance?: number;
+  monthlyTransportAllowance?: number;
+  otherMonthlyAllowances?: number;
+  hasFixedMonthlyAllowances?: "Yes" | "No";
+  hasFixedMonthlyDeductions?: "Yes" | "No";
+  totalFixedMonthlyDeductions?: number;
+  agencyUsed?: "Yes" | "No";
 
   // --- Phase 2: identity / compensation ---
   passportNumber?: string;
