@@ -1,3 +1,4 @@
+import { IPA_DETAIL_FIELDS } from "@/core/ipa-detail-fields";
 // Supabase data layer: maps DB rows (snake_case) <-> app types (camelCase).
 import { apiData } from "@/lib/api-client";
 import { assertAvailableTable, TABLE_COLUMNS } from "@/core/data-tables";
@@ -54,6 +55,7 @@ export const fromCompany = (r: Row): Company => ({
 });
 
 export const fromEmployee = (r: Row): Employee => ({
+  ...Object.fromEntries(IPA_DETAIL_FIELDS.map((f) => [f.key, r[f.column] == null ? undefined : f.kind === "number" ? Number(r[f.column]) : r[f.column]])),
   id: r.id, employeeCode: r.employee_code, name: r.name, nationality: r.nationality ?? "",
   fin: r.fin ?? "", passType: (r.pass_type ?? "Work Permit") as Employee["passType"],
   passExpiry: d(r.pass_expiry) ?? "-", trade: r.trade ?? "", site: null,
@@ -237,6 +239,7 @@ export const fromAuditLog = (r: Row): AuditLog => ({
 const nullDate = (v?: string | null) => (v && v !== "-" ? v.slice(0, 10) : null);
 
 export const toEmployee = (e: Partial<Employee>): Row => ({
+  ...Object.fromEntries(IPA_DETAIL_FIELDS.filter((f) => f.key in e).map((f) => [f.column, e[f.key] ?? null])),
   employee_code: e.employeeCode, name: e.name, nationality: e.nationality, fin: e.fin,
   pass_type: e.passType, pass_expiry: nullDate(e.passExpiry), trade: e.trade, status: e.status,
   basic_salary: e.basicSalary, levy_rate: e.levyRate, joined_on: nullDate(e.joinedOn),

@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test";
 import { ipaEmployeeDefaults } from "./ipa-registration";
+import { IPA_DETAIL_FIELDS, ipaDetailsFromForm } from "./ipa-detail-fields";
 
 test("IPA dates never become work-permit expiry or joining dates", () => {
   const values = ipaEmployeeDefaults({ applicationDate: "2024-10-10", ipaIssueDate: "2024-10-14", ipaExpiryDate: "2025-01-10" }, "r2://ipa/sample.pdf");
@@ -8,6 +9,32 @@ test("IPA dates never become work-permit expiry or joining dates", () => {
   expect(values.passExpiry).toBeUndefined();
   expect(values.workPermitIssueDate).toBeUndefined();
   expect(values.joinedOn).toBeUndefined();
+});
+
+const particulars = {
+  highestQualification: "Secondary 2", fatherName: "MD ANIS LAMI", motherName: "MST NASIMA BEGUM", criminalRecord: "No",
+  industry: "Process", occupationCode: "81509C", housingProvided: "Yes",
+  basicMonthlySalary: 400, housingDeduction: 0, otherDeduction: 0, monthlySalaryAfterDeductions: 400,
+  normalHoursPerWeek: 44, workingDaysPerWeek: 6, dailyRestDayRate: 15.38,
+  agencyName: "DIRECTION OVERSEAS PTE. LTD.", agencyLicence: "22C1248",
+  agencyAddress: "5 Soon Lee Street, #04-38 Pioneer Point, Singapore 627607", agencyPhone: "8471 8667",
+  agencyFee: 200, overseasCosts: 0, employeePaidFees: "Yes",
+};
+for (const field of IPA_DETAIL_FIELDS) {
+  test(`IPA ${field.key} autofills and survives editable form submission`, () => {
+    const expected = particulars[field.key];
+    const mapped = ipaEmployeeDefaults(particulars, "r2://ipa/sample.pdf");
+    expect(mapped[field.key]).toBe(expected);
+    const fd = new FormData();
+    fd.set(field.key, String(expected));
+    expect(ipaDetailsFromForm(fd)[field.key]).toBe(expected);
+  });
+}
+test("empty IPA amount remains unknown rather than becoming zero", () => {
+  const fd = new FormData();
+  fd.set("agencyFee", "");
+  expect(ipaDetailsFromForm(fd).agencyFee).toBeUndefined();
+  expect(ipaDetailsFromForm(fd).basicMonthlySalary).toBeUndefined();
 });
 test("IPA sample salary and weekly hours retain distinct meanings and printed zero", () => {
   const values = ipaEmployeeDefaults({ declaredSalary: 400, fixedAllowance: 0, otRate: 3.15, levyRate: 650, normalHoursPerWeek: 44, workingDaysPerWeek: 6, dailyRestDayRate: 15.38, housingDeduction: 0 }, "r2://ipa/sample.pdf");
