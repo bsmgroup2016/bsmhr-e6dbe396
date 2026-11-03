@@ -758,12 +758,12 @@ export function EmployeeForm({
           {readAgain("particular")}
             <EmployeeSavedDocuments documents={savedDocuments.filter((file) => employeeDocumentSection(file) === "Particular")} exclude={[values?.pFileUrl || ""]} />
           </section>
-          <section className="space-y-3 border-b pb-5" aria-label="Bank Card documents">
-            <h3 className="text-sm font-semibold">6. Bank Card</h3>
-          <FileUpload name="bankCardUpload" label="Bank Card upload" folder="documents" display="document" documentLabel="Bank Card" defaultValue={storedDocs.bankCardUpload || ""} accept=".pdf,.jpg,.jpeg,.png,.webp" />
-            <EmployeeSavedDocuments documents={savedDocuments.filter((file) => employeeDocumentSection(file) === "Bank Card")} exclude={[storedDocs.bankCardUpload || ""]} />
+          <section className="space-y-3 border-b pb-5" aria-label="Bank Documents documents">
+            <h3 className="text-sm font-semibold">6. Bank Documents</h3>
+          <FileUpload name="bankDocumentsUpload" label="Bank Documents upload" folder="documents" display="document" documentLabel="Bank Documents" defaultValue={storedDocs.bankDocumentsUpload || ""} accept=".pdf,.jpg,.jpeg,.png,.webp" />
+            <EmployeeSavedDocuments documents={savedDocuments.filter((file) => employeeDocumentSection(file) === "Bank Documents")} exclude={[storedDocs.bankDocumentsUpload || ""]} />
           </section>
-          {Array.from(new Set(savedDocuments.map(employeeDocumentSection))).filter((section) => !["IPA", "Passport", "Work Permit", "CSOC", "Particular", "Bank Card"].includes(section)).sort().map((section, index) => <section key={section} className="space-y-3 border-b pb-5" aria-label={`${section} documents`}>
+          {Array.from(new Set(savedDocuments.map(employeeDocumentSection))).filter((section) => !["IPA", "Passport", "Work Permit", "CSOC", "Particular", "Bank Documents"].includes(section)).sort().map((section, index) => <section key={section} className="space-y-3 border-b pb-5" aria-label={`${section} documents`}>
             <h3 className="text-sm font-semibold">{index + 7}. {section}</h3>
             <EmployeeSavedDocuments documents={savedDocuments.filter((file) => employeeDocumentSection(file) === section)} />
           </section>)}

@@ -32,25 +32,25 @@ test("saved Work Permit shows again in the form, newest first", () => {
   ])).toEqual({ workPermitUpload: "new.pdf", passportUpload: "pp.pdf" });
 });
 
-test("Bank Card upload uses existing bank document records and is not duplicated on re-save", () => {
+test("Bank Documents upload saves one bank document record and is not duplicated on re-save", () => {
   const fd = new FormData();
-  fd.set("bankCardUpload", "r2://documents/bank-card.pdf");
+  fd.set("bankDocumentsUpload", "r2://documents/bank-card.pdf");
   fd.set("bankAccount", "455-03577-5");
-  expect(employeeFormDocuments(fd)).toEqual([{ type: "Bank Letter", name: "Bank Card", fileUrl: "r2://documents/bank-card.pdf", expiryDate: undefined, docNumber: "455-03577-5", status: "Pending", verified: false }]);
+  expect(employeeFormDocuments(fd)).toEqual([{ type: "Bank Document", name: "Bank Documents", fileUrl: "r2://documents/bank-card.pdf", expiryDate: undefined, docNumber: "455-03577-5", status: "Pending", verified: false }]);
   expect(employeeFormDocuments(fd, [{ fileUrl: "r2://documents/bank-card.pdf" }])).toEqual([]);
 });
 
-test("Bank Card restores its own file without replacing it with a bank letter", () => {
+test("Bank Documents restore the newest bank record across both bank types", () => {
   expect(storedFormDocumentUrls([
     { type: "Bank Letter", name: "Bank Card", fileUrl: "card.pdf", uploadedAt: "2026-11-02" },
-    { type: "Bank Letter", name: "Bank Letter", fileUrl: "letter.pdf", uploadedAt: "2026-11-03" },
-  ])).toEqual({ bankCardUpload: "card.pdf" });
+    { type: "Bank Document", name: "Bank Documents", fileUrl: "letter.pdf", uploadedAt: "2026-11-03" },
+  ])).toEqual({ bankDocumentsUpload: "letter.pdf" });
 });
 
 test("saved documents are classified into their original sections", () => {
   expect(employeeDocumentSection({ type: "IPA Letter", name: "IPA" })).toBe("IPA");
   expect(employeeDocumentSection({ type: "P-File", name: "Particular" })).toBe("Particular");
   expect(employeeDocumentSection({ type: "Safety Certificate", name: "CSOC" })).toBe("CSOC");
-  expect(employeeDocumentSection({ type: "Bank Letter", name: "Bank Card" })).toBe("Bank Card");
-  expect(employeeDocumentSection({ type: "Bank Letter", name: "Bank Letter" })).toBe("Bank Letter");
+  expect(employeeDocumentSection({ type: "Bank Letter", name: "Bank Card" })).toBe("Bank Documents");
+  expect(employeeDocumentSection({ type: "Bank Document", name: "Bank Documents" })).toBe("Bank Documents");
 });
