@@ -9,6 +9,8 @@ import { AppShell } from "@/components/app-shell";
 import { R2Image } from "@/components/r2-image";
 import { deletePFileReference } from "@/core/p-file-deletion";
 import { EmployeeForm, employeeFromForm } from "@/components/employee-form";
+import { employeeFormDocuments } from "@/core/employee-form-documents";
+import { addDocument } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -448,6 +450,7 @@ function EmployeeProfilePage() {
               employee={employee}
               onSubmit={(fd) => {
                 updateEmployee(employee.id, employeeFromForm(fd));
+                for (const document of employeeFormDocuments(fd)) addDocument({ ...document, employeeId: employee.id });
                 setEditing(false);
                 force((n) => n + 1);
               }}

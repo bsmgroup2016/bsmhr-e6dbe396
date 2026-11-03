@@ -30,6 +30,7 @@
 - Combined claim Excel exports use a sanitized copy of the supplied workbook layout with dynamic ExcelJS loading; never import sample workers or infer financial rates from example amounts, to preserve formatting without contaminating live business data.
 - Employee creation uses a registration-method wrapper around the existing EmployeeForm; editing uses EmployeeForm directly to preserve existing edit behavior.
 - IPA extraction maps only semantically equivalent fields into editable registration defaults; additional particulars remain labeled in internal notes and the complete source stays in R2, avoiding schema changes and salary/date conflation.
+- Employee document autofill uses source-specific allowlists and fills only empty editable fields; passport/permit uploads use existing employee_documents records while CSOC uses existing safety-course fields, avoiding new schema and mixed-up expiries.
 
 ## Permanent data placement rules
 

@@ -23,6 +23,8 @@ import { AppShell } from "@/components/app-shell";
 import { R2Image } from "@/components/r2-image";
 import { EmployeeForm, employeeFromForm, WORKER_CATEGORIES, DEPLOYMENT_STATUSES } from "@/components/employee-form";
 import { EmployeeRegistration } from "@/components/employee-registration";
+import { employeeFormDocuments } from "@/core/employee-form-documents";
+import { addDocument } from "@/lib/store";
 import { ExportButton, ImportDialog } from "@/components/data-io";
 import { PFileDownloadButton } from "@/components/p-file-download-button";
 import { PFileBulkDownloadButton } from "@/components/p-file-bulk-download-button";
@@ -571,7 +573,7 @@ export default function WorkforcePage() {
   }
 
   function handleCreate(formData: FormData) {
-    addEmployee({
+    const created = addEmployee({
       ...employeeFromForm(formData),
       site: null,
       companyId:
@@ -579,6 +581,7 @@ export default function WorkforcePage() {
         getCurrentCompany() ??
         companies[0]?.id,
     } as Omit<Employee, "id" | "employeeCode" | "createdAt" | "updatedAt">);
+    for (const document of employeeFormDocuments(formData)) addDocument({ ...document, employeeId: created.id });
     setIsCreateOpen(false);
     refresh();
   }
@@ -586,6 +589,7 @@ export default function WorkforcePage() {
   function handleEdit(formData: FormData) {
     if (!editingEmployee) return;
     updateEmployee(editingEmployee.id, employeeFromForm(formData));
+    for (const document of employeeFormDocuments(formData)) addDocument({ ...document, employeeId: editingEmployee.id });
     setEditingEmployee(null);
     refresh();
   }
