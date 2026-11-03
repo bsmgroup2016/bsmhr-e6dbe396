@@ -7,6 +7,8 @@
  * Manual entry still works everywhere, OCR only pre-fills.
  */
 import { supabase } from "@/integrations/supabase/client";
+import type { IpaExtract } from "@/core/ipa-registration";
+export type { IpaExtract } from "@/core/ipa-registration";
 
 const OCR_URL = "/api/public/ocr";
 const AI_STATUS_URL = "/api/public/ai-status";
@@ -68,18 +70,6 @@ export const OCR_NOT_CONFIGURED = "OCR could not read this file — fill manuall
 export function isOcrConfigured(): boolean {
   return true;
 }
-
-export type IpaExtract = {
-  name?: string;
-  fin?: string;
-  passportNumber?: string;
-  workPermitNumber?: string;
-  nationality?: string;
-  dateOfBirth?: string;
-  issueDate?: string;
-  expiryDate?: string;
-  occupation?: string;
-};
 
 export type TimeCardExtractRow = {
   date: string;

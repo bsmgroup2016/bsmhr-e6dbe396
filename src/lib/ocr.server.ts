@@ -4,6 +4,7 @@
  */
 import { askAiJson } from "@/lib/ai.server";
 import { keyFromRef, presignGet } from "@/lib/r2.server";
+import { IPA_INSTRUCTION, type IpaExtract } from "@/core/ipa-registration";
 
 /** Fetch an R2 object (by key) as a data URL. Only our own bucket is readable. */
 async function fetchAsDataUrl(ref: string) {
@@ -28,11 +29,9 @@ async function readFile(ref: string, instruction: string) {
 export async function readIpa(ref: string) {
   const data = await readFile(
     ref,
-    "This is a Singapore MOM In-Principle Approval (IPA) letter or work pass card. " +
-      "Return a JSON object with any of these keys you can read: name, fin, passportNumber, " +
-      "workPermitNumber, nationality, dateOfBirth, issueDate, expiryDate, occupation, declaredSalary.",
+    IPA_INSTRUCTION,
   );
-  return data as Record<string, string>;
+  return data as IpaExtract;
 }
 
 type TcRow = { date: string; checkIn?: string; checkOut?: string; workerName?: string; employeeCode?: string; fin?: string; projectName?: string; siteName?: string };
