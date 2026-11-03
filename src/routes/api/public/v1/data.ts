@@ -60,6 +60,30 @@ export const Route = createFileRoute("/api/public/v1/data")({
           q.set("select", `${columns},assets!inner(company_id,category)`);
           q.set("assets.category", `eq.${category}`);
         }
+        if (p.search) {
+          const needle = `*${p.search.replace(/[*,()]/g, "")}*`;
+          const matchingIds = async (source: string, conditions: string) => {
+            const ids: string[] = [];
+            for (let offset = 0; ; offset += 200) {
+              const params = new URLSearchParams({ select: "id", or: conditions, order: "id.asc", limit: "200", offset: String(offset) });
+              const res = await sbRest(auth.ctx, `${source}?${params}`);
+              if (!res.ok) throw new Error("Search unavailable");
+              const rows = await res.json() as { id: string }[];
+              ids.push(...rows.map((row) => row.id));
+              if (rows.length < 200) return ids;
+            }
+          };
+          try {
+            const [assets, employees] = await Promise.all([
+              matchingIds("assets", `(name.ilike.${needle})`),
+              matchingIds("employees", `(name.ilike.${needle},employee_code.ilike.${needle})`),
+            ]);
+            const conditions = [`receipt_no.ilike.${needle}`];
+            if (assets.length) conditions.push(`asset_id.in.(${assets.join(",")})`);
+            if (employees.length) conditions.push(`employee_id.in.(${employees.join(",")})`);
+            q.set("or", `(${conditions.join(",")})`);
+          } catch { return fail(502, "search_failed", "Could not search complete issuance history"); }
+        }
       }
       if (p.url.searchParams.get("summary") === "1" && ["attendance", "asset_issuances"].includes(table)) {
         if (table === "asset_issuances") q.set("select", `${columns},assets!inner(company_id,category,unit_cost)`);
