@@ -2815,7 +2815,11 @@ export function buildClaimSheetFromCard(card: TimeCard) {
         normalHours: Math.min(total, std),
         otHours: Math.max(0, Math.round((total - std) * 100) / 100),
         status: total > 0 ? "Present" : (sys?.status ?? "Absent"),
-        site: st.sites.find((s) => s.id === sys?.siteId)?.name,
+        site: st.sites.find((s) => s.id === (e.siteId ?? sys?.siteId))?.name,
+        siteId: e.siteId ?? sys?.siteId,
+        projectId: e.projectId ?? st.sites.find((s) => s.id === (e.siteId ?? sys?.siteId))?.projectId,
+        projectName: st.projects.find((p) => p.id === (e.projectId ?? st.sites.find((s) => s.id === (e.siteId ?? sys?.siteId))?.projectId))?.name,
+        employeeId: card.employeeId,
       };
     })
     .filter((r) => r.normalHours > 0 || r.otHours > 0);

@@ -35,11 +35,11 @@ export async function readIpa(ref: string) {
   return data as Record<string, string>;
 }
 
-type TcRow = { date: string; checkIn?: string; checkOut?: string };
+type TcRow = { date: string; checkIn?: string; checkOut?: string; workerName?: string; employeeCode?: string; fin?: string; projectName?: string; siteName?: string };
 const TC_READ =
   "This is a scanned monthly physical time card. Return a JSON array of rows, one per printed day, " +
-  'each like {"date":"YYYY-MM-DD","checkIn":"HH:MM","checkOut":"HH:MM"}. ' +
-  "Use 24-hour times. Skip days with no punches. Return [] if the card is unreadable.";
+  'each like {"date":"YYYY-MM-DD","checkIn":"HH:MM","checkOut":"HH:MM","workerName":"printed worker name","employeeCode":"printed P-file number","fin":"printed FIN","projectName":"printed project","siteName":"printed site"}. ' +
+  "Repeat the printed card identity and project/site header on each row. Omit any field not legible on the card; never infer an identity or project. Read month and year from the card to produce full dates; never assume the current month. Use 24-hour times. Skip days with no punches. Return [] if the card is unreadable.";
 
 const asRows = (d: unknown): TcRow[] =>
   (Array.isArray(d) ? d : Array.isArray((d as { rows?: unknown })?.rows) ? (d as { rows: unknown[] }).rows : [])
