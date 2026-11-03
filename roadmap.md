@@ -1,5 +1,6 @@
 # Role-based account access
-- [ ] Add all requested IPA personal, employment, compensation and agency fields with editable autofill, persistence and focused tests.
+- [x] Add 21 dedicated IPA personal, employment, compensation and agency fields; live schema read-back confirms all columns, 48 tests and isolated desktop/mobile form checks passed.
+- [ ] New IPA particulars: real signed-in upload/save/read-back remains blocked by unavailable external-project browser session; existing employee data was not backfilled.
 - [x] Document understanding: automatic IPA/passport/WP/CSOC reading, abbreviation-aware mapping and source-specific safe filling; 15 tests and isolated form checks passed.
 - [ ] Document understanding: real signed-in upload/OCR/save/read-back unavailable for the external project's current browser session.
 - [x] Employee expiry autofill: Personal passport upload; Particular and work-permit extraction; editable CSOC expiry; existing workforce Excel mapping retained. Nine tests and isolated desktop/mobile form checks passed.

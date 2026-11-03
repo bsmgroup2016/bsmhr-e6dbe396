@@ -388,7 +388,7 @@ export function EmployeeForm({
       </div>
 
       <Tabs value={tab} onValueChange={setTab}>
-        <TabsList className="flex w-full flex-wrap">
+        <TabsList className="flex h-auto min-h-10 w-full flex-wrap">
           <TabsTrigger value="personal">Personal</TabsTrigger>
           <TabsTrigger value="employment">Employment</TabsTrigger>
           <TabsTrigger value="pass">Work pass</TabsTrigger>
