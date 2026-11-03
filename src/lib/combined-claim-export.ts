@@ -9,6 +9,7 @@ export async function exportCombinedClaims(sheets: ClaimSheet[], employees: Empl
   await workbook.xlsx.load(await response.arrayBuffer());
   const page = workbook.worksheets[0];
   if (!page) throw new Error("Claim layout is missing");
+  for (let col = 2; col <= 43; col++) page.getColumn(col).hidden = false;
   page.getCell("B1").value = title;
   const groups = new Map<string, ClaimSheet[]>();
   for (const sheet of sheets) { const key = sheet.employeeId ?? ""; groups.set(key, [...(groups.get(key) ?? []), sheet]); }
@@ -42,9 +43,11 @@ export async function exportCombinedClaims(sheets: ClaimSheet[], employees: Empl
     page.getCell(`AM${row}`).value = "Billing rates, costs and MRT require confirmation";
     for (let col = 2; col <= 43; col++) { page.getCell(row, col).font = { name: "Arial", size: 10 }; page.getCell(row, col).alignment = { vertical: "middle", wrapText: true }; }
     page.getRow(row).height = 42;
+    page.getRow(row).hidden = false;
     row++;
   }
   page.getCell(`B${row}`).value = "TOTAL";
+  page.getRow(row).hidden = false;
   for (const col of ["AC", "AD", "AE", "AI"]) {
     let total = 0;
     for (let r = 4; r < row; r++) { const cell = page.getCell(`${col}${r}`); total += Number(cell.result ?? cell.value ?? 0); }
