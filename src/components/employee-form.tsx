@@ -402,8 +402,8 @@ export function EmployeeForm({
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList className="flex h-auto min-h-10 w-full flex-wrap">
           <TabsTrigger value="personal">Personal</TabsTrigger>
-          <TabsTrigger value="employment">Employment &amp; Certificate</TabsTrigger>
-          <TabsTrigger value="pass">Work pass</TabsTrigger>
+          <TabsTrigger value="employment">Employment</TabsTrigger>
+          <TabsTrigger value="pass">Work pass &amp; Certificate</TabsTrigger>
           <TabsTrigger value="pay">Compensation</TabsTrigger>
           <TabsTrigger value="documents">Documents</TabsTrigger>
         </TabsList>
