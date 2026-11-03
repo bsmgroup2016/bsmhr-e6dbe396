@@ -34,12 +34,25 @@ Also return dedicated keys highestQualification, fatherName, motherName, crimina
 Also return countryOfBirth, raceAsDeclared (verbatim race, NOT the payroll ethnic group), previouslySingaporeCitizenPr (historical Yes/No, NOT current CPF status), everArrested and everConvicted (separate Yes/No answers), addressHistory (addresses with their printed years of stay), travelDocumentType, immigrationStatusAtApplication (e.g. NOT IN SINGAPORE, never the new work-pass type), employerCpfSubmissionNumber, employerUen, employerBusinessActivity, employerRegisteredAddress (address under company particulars), employerCorrespondenceAddress (approval-letter address), employerPhone, sbTransmissionReference, temporaryPermitUponApproval (Yes/No), monthlyHousingAllowance, monthlyTransportAllowance, otherMonthlyAllowances, hasFixedMonthlyAllowances (Yes/No), hasFixedMonthlyDeductions (Yes/No), totalFixedMonthlyDeductions and agencyUsed (Yes/No). Keep employer addresses separate when different. Employer phone/address must NOT populate worker phone/address. Extract only printed employee-specific amounts; generic security-bond or insurance requirements are not proof of an actual policy.
 Also return additionalDetails as an array of {label,value,page} for ALL other printed employee-specific details: country of birth, race, qualifications, parents, employer addresses/contact/business activity/CPF submission number, occupation code, agency licence/address/phone/overseas fees, breakdown of allowances/deductions, security-bond reference and any other particulars not covered by the keys. Preserve conflicting printed details separately with page labels. Exclude blank fields, signatures, generic legal instructions and duplicate translations. Keep labels and values in English; keep names/numbers verbatim. Return {} if not an IPA/work-pass document.`;
 
+const NUMERIC_DIRECT = new Set(["declaredSalary", "fixedAllowance", "otRate", "levyRate"]);
+
+/** Accepts numbers or printed amounts such as "S$ 1,200.50", "44.0" or "6.000". */
+export function ipaNumber(value: unknown): number | undefined {
+  if (typeof value === "number") return Number.isFinite(value) ? value : undefined;
+  if (typeof value !== "string") return undefined;
+  const cleaned = value.replace(/S\$|SGD|\$|,/gi, "").trim();
+  if (!/^-?\d+(\.\d+)?$/.test(cleaned)) return undefined;
+  return Number(cleaned);
+}
+
 export function ipaEmployeeDefaults(data: IpaExtract, fileUrl: string, branch?: string): Partial<Employee> {
   const values: Partial<Employee> = { ipaDocumentUrl: fileUrl, branch };
   const direct = ["name", "fin", "passportNumber", "passportExpiry", "workPermitNumber", "nationality", "dateOfBirth", "applicationDate", "ipaIssueDate", "ipaExpiryDate", "phone", "email", "homeCountryAddress", "declaredSalary", "fixedAllowance", "otRate", "levyRate"] as const;
   for (const key of direct) {
     const value = data[key];
-    if (value !== undefined && value !== null && value !== "") Object.assign(values, { [key]: value });
+    if (value === undefined || value === null || value === "") continue;
+    if (NUMERIC_DIRECT.has(key)) { const n = ipaNumber(value); if (n !== undefined) Object.assign(values, { [key]: n }); }
+    else Object.assign(values, { [key]: value });
   }
   for (const field of IPA_DETAIL_FIELDS) {
     const value = data[field.key as keyof IpaExtract];
@@ -48,10 +61,12 @@ export function ipaEmployeeDefaults(data: IpaExtract, fileUrl: string, branch?: 
       const normalized = String(value).trim().toLowerCase();
       if (["yes", "no"].includes(normalized)) Object.assign(values, { [field.key]: normalized === "yes" ? "Yes" : "No" });
     } else if (field.kind === "number") {
-      if (typeof value === "number" && Number.isFinite(value)) Object.assign(values, { [field.key]: value });
+      const n = ipaNumber(value);
+      if (n !== undefined) Object.assign(values, { [field.key]: n });
     } else if (typeof value === "string") Object.assign(values, { [field.key]: value });
   }
-  if (["Male", "Female", "Other"].includes(data.gender ?? "")) values.gender = data.gender as Employee["gender"];
+  const gender = data.gender ? data.gender.charAt(0).toUpperCase() + data.gender.slice(1).toLowerCase() : "";
+  if (["Male", "Female", "Other"].includes(gender)) values.gender = gender as Employee["gender"];
   if (["Single", "Married", "Divorced", "Widowed"].includes(data.maritalStatus ?? "")) values.maritalStatus = data.maritalStatus as Employee["maritalStatus"];
   if (["Muslim", "Non-Muslim"].includes(data.religion ?? "")) values.religion = data.religion as Employee["religion"];
   if (["Work Permit", "S Pass", "Employment Pass"].includes(data.passType ?? "")) values.passType = data.passType as PassType;
