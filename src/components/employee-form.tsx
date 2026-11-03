@@ -405,7 +405,6 @@ export function EmployeeForm({
           <TabsTrigger value="employment">Employment</TabsTrigger>
           <TabsTrigger value="pass">Work pass</TabsTrigger>
           <TabsTrigger value="pay">Compensation</TabsTrigger>
-          <TabsTrigger value="agency">Agency</TabsTrigger>
           <TabsTrigger value="documents">Documents</TabsTrigger>
         </TabsList>
 
@@ -538,6 +537,8 @@ export function EmployeeForm({
           {ipaFields("employment")}
           <h3 className="border-t pt-4 text-sm font-semibold">Employer / application</h3>
           {ipaFields("employer")}
+          <h3 className="border-t pt-4 text-sm font-semibold">Employment agency</h3>
+          {ipaFields("agency")}
           <Field label="Internal notes (HR only)">
             <Textarea name="internalNotes" defaultValue={values?.internalNotes ?? ""} rows={3} />
           </Field>
@@ -665,9 +666,6 @@ export function EmployeeForm({
           <Field label="Remarks">
             <Textarea name="remarks" defaultValue={values?.remarks ?? ""} rows={2} />
           </Field>
-        </TabsContent>
-        <TabsContent forceMount data-tab-panel="agency" value="agency" className="mt-4 space-y-4 data-[state=inactive]:hidden">
-          {ipaFields("agency")}
         </TabsContent>
         <TabsContent forceMount data-tab-panel="documents" value="documents" className="mt-4 space-y-6 data-[state=inactive]:hidden">
           <section className="space-y-3 border-b pb-5" aria-label="IPA documents">
