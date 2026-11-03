@@ -32,7 +32,7 @@ const pages: Record<string, CollectionKey[]> = {
   "driver-compliance": ["employees", "vehicles", "driverProfiles", "driverIncidents", "fuelLogs"],
   "driver-dispatch": ["employees", "vehicles", "sites", "driverProfiles"],
   "driver-duty": ["trips", "vehicles", "employees", "sites", "driverProfiles"],
-  assets: ["assets", "employees", "sites", "issuances"],
+  assets: ["assets", "employees", "sites"],
   inventory: ["inventory", "movements", "purchaseOrders", "sites", "employees"],
   training: ["courses", "trainings", "incidents", "employees", "sites"],
   recruitment: ["requisitions", "candidates", "clients", "sites", "employees", "branchPrefixes"],

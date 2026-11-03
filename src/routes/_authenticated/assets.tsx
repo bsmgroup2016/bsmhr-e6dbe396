@@ -1,4 +1,10 @@
-import { useMemo, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { historyQueryOptions, historySummaryOptions, allHistory } from "@/lib/history-data";
+import { fromIssuance } from "@/lib/db";
+import { HistoryPagination } from "@/components/history-pagination";
+import { useAuth } from "@/lib/auth";
+import { mergeHistoryRows } from "@/lib/store";
 import { createFileRoute } from "@tanstack/react-router";
 import {
   Boxes, HardHat, PackageCheck, AlertTriangle, Plus, Search, Trash2, Undo2, Download,
@@ -29,6 +35,7 @@ import { exportRows } from "@/lib/xlsx";
 import type { Asset, AssetIssuance } from "@/lib/types";
 
 export const Route = createFileRoute("/_authenticated/assets")({
+  validateSearch: (s: Record<string, unknown>) => ({ offset: Math.max(0, Number(s.offset) || 0), from: String(s.from ?? ""), to: String(s.to ?? ""), status: String(s.status ?? "all"), category: String(s.category ?? "all"), search: String(s.search ?? "") }),
   head: () => ({
     meta: [
       { title: "Assets & PPE — BSM Workforce & Operations" },
@@ -39,7 +46,7 @@ export const Route = createFileRoute("/_authenticated/assets")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: AssetsPage,
+  component: () => <Suspense fallback={<div className="p-8 text-sm text-muted-foreground">Loading inventory…</div>}><AssetsPage /></Suspense>,
 });
 
 const today = () => new Date().toISOString().slice(0, 10);
@@ -71,21 +78,32 @@ const addMonths = (dateStr: string, months: number) => {
 export default function AssetsPage() {
   const companyId = getCurrentCompany();
   const [assets, setAssets] = useState(getAssets());
-  const [issuances, setIssuances] = useState(getIssuances());
+  const params = Route.useSearch();
+  const navigate = Route.useNavigate();
+  const { user } = useAuth();
+  const setParam = (key: "offset" | "from" | "to" | "status" | "category" | "search", value: string | number) => void navigate({ search: (prev) => ({ ...prev, [key]: value, ...(key !== "offset" ? { offset: 0 } : {}) }) });
+  const filters = { companyId, from: params.from, to: params.to, status: params.status, category: params.category, search: params.search };
+  const { data: page } = useSuspenseQuery(historyQueryOptions("asset_issuances", user?.id ?? "", filters, params.offset));
+  const { data: stats } = useSuspenseQuery(historySummaryOptions("asset_issuances", user?.id ?? "", { companyId }));
+  const issuances = page.rows.map(fromIssuance);
+  mergeHistoryRows("issuances", issuances);
   const [employees] = useState(getEmployees());
   const [sites] = useState(getSites());
-  const [search, setSearch] = useState("");
+  const search = params.search;
+  const setSearch = (value: string) => setParam("search", value);
   const [assetOpen, setAssetOpen] = useState(false);
   const [issueOpen, setIssueOpen] = useState(false);
   const [assetForm, setAssetForm] = useState(emptyAsset);
   const [issueForm, setIssueForm] = useState(emptyIssue);
-  const [statusFilter, setStatusFilter] = useState<"all" | AssetIssuance["status"] | "Overdue" | "Unacknowledged">("all");
-  const [categoryFilter, setCategoryFilter] = useState<"all" | Asset["category"]>("all");
+  const statusFilter = params.status;
+  const setStatusFilter = (value: string) => setParam("status", value);
+  const categoryFilter = params.category;
+  const setCategoryFilter = (value: string) => setParam("category", value);
   const [ledgerWorker, setLedgerWorker] = useState<string | null>(null);
 
   function refresh() {
     setAssets(getAssets());
-    setIssuances(getIssuances());
+
   }
 
   const scopedAssets = useMemo(
@@ -105,69 +123,25 @@ export default function AssetsPage() {
   const siteName = (id?: string) => sites.find((s) => s.id === id)?.name ?? "—";
 
   const totalValue = scopedAssets.reduce((s, a) => s + a.quantity * a.unitCost, 0);
-  const outNow = scopedIssues.filter((i) => i.status === "Issued").length;
+  const outNow = stats.counts.Issued ?? 0;
   const alerts = assetAlerts().filter((x) => assetIds.has(x.asset.id));
-  const overdue = overdueIssuances().filter((i) => assetIds.has(i.assetId));
-  const dueReplacement = scopedIssues.filter(
-    (i) => i.status === "Issued" && !!i.replacementDue && i.replacementDue <= today(),
-  );
-  const unacknowledged = scopedIssues.filter((i) => i.status === "Issued" && !i.acknowledged);
-  const recovery = scopedIssues.reduce((s, i) => s + (i.costRecovery ?? 0), 0);
+  const overdue = { length: stats.overdue };
+  const dueReplacement = { length: stats.replacement };
+  const unacknowledged = { length: stats.unacknowledged };
+  const recovery = stats.recovery;
+  const issuedQty = (id: string) => stats.issuedQuantity[id] ?? 0;
+  const availableQty = (id: string) => Math.max(0, (assets.find((asset) => asset.id === id)?.quantity ?? 0) - issuedQty(id));
 
   const q = search.trim().toLowerCase();
-  const filteredIssues = scopedIssues
-    .filter(
-      (i) =>
-        !q ||
-        assetName(i.assetId).toLowerCase().includes(q) ||
-        empName(i.employeeId).toLowerCase().includes(q) ||
-        empCode(i.employeeId).toLowerCase().includes(q) ||
-        (i.receiptNo ?? "").toLowerCase().includes(q),
-    )
-    .filter((i) => {
-      if (statusFilter === "all") return true;
-      if (statusFilter === "Overdue") return i.status === "Issued" && !!i.dueDate && i.dueDate < today();
-      if (statusFilter === "Unacknowledged") return i.status === "Issued" && !i.acknowledged;
-      return i.status === statusFilter;
-    })
-    .filter((i) => categoryFilter === "all" || assetCategory(i.assetId) === categoryFilter)
-    .sort((a, b) => (b.issueDate ?? "").localeCompare(a.issueDate ?? ""));
-
-  /** Per-worker PPE ledger: who has what, since when, and outstanding value. */
-  const workerLedger = useMemo(() => {
-    const map = new Map<string, AssetIssuance[]>();
-    for (const i of scopedIssues) {
-      const list = map.get(i.employeeId) ?? [];
-      list.push(i);
-      map.set(i.employeeId, list);
-    }
-    const rows = [...map.entries()].map(([employeeId, list]) => {
-      const held = list.filter((i) => i.status === "Issued");
-      return {
-        employeeId,
-        name: empName(employeeId),
-        code: empCode(employeeId),
-        total: list.length,
-        holding: held.reduce((s, i) => s + i.quantity, 0),
-        lastIssue: list.map((i) => i.issueDate).sort().reverse()[0] ?? "",
-        pendingAck: held.filter((i) => !i.acknowledged).length,
-        dueReplacement: held.filter((i) => !!i.replacementDue && i.replacementDue <= today()).length,
-        lost: list.filter((i) => i.status === "Lost" || i.status === "Damaged").length,
-        value: held.reduce((s, i) => s + i.quantity * assetCost(i.assetId), 0),
-        recovery: list.reduce((s, i) => s + (i.costRecovery ?? 0), 0),
-      };
-    });
-    const needle = q;
-    return rows
-      .filter((r) => !needle || r.name.toLowerCase().includes(needle) || r.code.toLowerCase().includes(needle))
-      .sort((a, b) => b.holding - a.holding);
-  }, [scopedIssues, q]);
-
-  const ledgerRows = ledgerWorker
-    ? scopedIssues
-        .filter((i) => i.employeeId === ledgerWorker)
-        .sort((a, b) => (b.issueDate ?? "").localeCompare(a.issueDate ?? ""))
-    : [];
+  const filteredIssues = scopedIssues;
+  const workerLedger = stats.workers.map((worker) => ({ ...worker, name: empName(worker.employeeId), code: empCode(worker.employeeId) }))
+    .filter((worker) => !q || worker.name.toLowerCase().includes(q) || worker.code.toLowerCase().includes(q))
+    .sort((a, b) => b.holding - a.holding);
+  const [ledgerRows, setLedgerRows] = useState<AssetIssuance[]>([]);
+  async function openLedger(employeeId: string) {
+    try { setLedgerRows(await allHistory<AssetIssuance>("asset_issuances", { companyId, employeeId })); setLedgerWorker(employeeId); }
+    catch (error) { toast.error(error instanceof Error ? error.message : "Could not load PPE history"); }
+  }
 
   const filteredAssets = scopedAssets.filter(
     (a) =>
@@ -192,7 +166,7 @@ export default function AssetsPage() {
 
   function saveIssue() {
     if (!issueForm.assetId || !issueForm.employeeId) return toast.error("Asset and worker required");
-    const available = assetAvailableQty(issueForm.assetId);
+    const available = availableQty(issueForm.assetId);
     if (issueForm.quantity > available) return toast.error(`Only ${available} available in stock`);
     const asset = assets.find((a) => a.id === issueForm.assetId);
     issueAsset({
@@ -205,7 +179,7 @@ export default function AssetsPage() {
         undefined,
       ackDate: issueForm.acknowledged ? issueForm.ackDate || issueForm.issueDate : undefined,
       issuedBy: issueForm.issuedBy || undefined,
-      receiptNo: issueForm.receiptNo || `PPE-${String(issuances.length + 1).padStart(4, "0")}`,
+      receiptNo: issueForm.receiptNo || `PPE-${String(stats.total + 1).padStart(4, "0")}`,
       size: issueForm.size || undefined,
     });
     setIssueForm(emptyIssue);
@@ -230,9 +204,11 @@ export default function AssetsPage() {
     toast.success(status === "Returned" ? "Item returned" : `Marked as ${status.toLowerCase()}`);
   }
 
-  function handleExport() {
-    void exportRows(
-      filteredIssues.map((i) => ({
+  async function handleExport() {
+    try {
+    const rows = await allHistory<AssetIssuance>("asset_issuances", filters);
+    await exportRows(
+      rows.map((i) => ({
         Asset: assetName(i.assetId),
         "Asset code": assetCode(i.assetId),
         Category: assetCategory(i.assetId) ?? "",
@@ -257,6 +233,8 @@ export default function AssetsPage() {
       })),
       "assets-issuance", "Issuance",
     );
+    toast.success(`${rows.length} records exported`);
+    } catch (error) { toast.error(error instanceof Error ? error.message : "Export failed"); }
   }
 
   return (
@@ -267,7 +245,7 @@ export default function AssetsPage() {
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">Inventory &amp; PPE</h1>
             <p className="text-sm text-muted-foreground">Inventory management, PPE issuance, equipment register and calibration tracking.</p>
           </div>
-          <Button size="sm" variant="outline" className="mt-2 sm:mt-0" onClick={handleExport} disabled={filteredIssues.length === 0}>
+          <Button size="sm" variant="outline" className="mt-2 sm:mt-0" onClick={handleExport} disabled={page.total === 0}>
             <Download className="mr-1 h-4 w-4" /> Export
           </Button>
         </div>
@@ -312,6 +290,8 @@ export default function AssetsPage() {
                   <Input type="search" placeholder="Search asset, worker or receipt no..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
+                  <Input type="date" aria-label="Issuance period start" value={params.from} onChange={(event) => setParam("from", event.target.value)} className="w-40" />
+                  <Input type="date" aria-label="Issuance period end" value={params.to} onChange={(event) => setParam("to", event.target.value)} className="w-40" />
                   <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as typeof statusFilter)}>
                     <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
                     <SelectContent>
@@ -350,7 +330,7 @@ export default function AssetsPage() {
                           <SelectContent>
                             {scopedAssets.map((a) => (
                               <SelectItem key={a.id} value={a.id}>
-                                {a.name} ({assetAvailableQty(a.id)} available)
+                                {a.name} ({availableQty(a.id)} available)
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -512,6 +492,7 @@ export default function AssetsPage() {
                 </Table>
               </div>
             </div>
+            <HistoryPagination offset={params.offset} total={page.total} onChange={(offset) => setParam("offset", offset)} />
           </TabsContent>
 
           <TabsContent value="workers" className="mt-4">
@@ -561,7 +542,7 @@ export default function AssetsPage() {
                           <TableCell>${w.value.toFixed(2)}</TableCell>
                           <TableCell>
                             <div className="flex justify-end">
-                              <Button size="icon" variant="ghost" title="View history" onClick={() => setLedgerWorker(w.employeeId)}>
+                              <Button size="icon" variant="ghost" title="View history" onClick={() => void openLedger(w.employeeId)}>
                                 <Eye className="h-4 w-4" />
                               </Button>
                             </div>
@@ -649,9 +630,9 @@ export default function AssetsPage() {
                           </TableCell>
                           <TableCell>{a.category}</TableCell>
                           <TableCell>
-                            <span className="font-medium">{assetAvailableQty(a.id)}</span>
-                            <span className="text-xs text-muted-foreground"> / {a.quantity} ({assetIssuedQty(a.id)} out)</span>
-                            {a.minStock && assetAvailableQty(a.id) < a.minStock ? (
+                            <span className="font-medium">{availableQty(a.id)}</span>
+                            <span className="text-xs text-muted-foreground"> / {a.quantity} ({issuedQty(a.id)} out)</span>
+                            {a.minStock && availableQty(a.id) < a.minStock ? (
                               <div className="text-xs text-destructive">Below min stock ({a.minStock})</div>
                             ) : null}
                           </TableCell>
