@@ -22,6 +22,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { sessionDataCache } from "@/lib/session-data-cache";
 import { pageCollections } from "@/lib/page-data";
 import { assertAvailableTable } from "@/core/data-tables";
+import { claimCardLocation } from "@/core/time-card-matching";
 import { computeStatutory, round2 } from "@/lib/sg-payroll";
 import {
   loadCollection, COLLECTIONS, type CollectionKey, toEmployee, toClient, toProject, toSite, toAssignment,
