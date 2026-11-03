@@ -20,6 +20,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   getBranchPrefixes,
+  getDocumentsByEmployee,
   isEmployeeCodeTaken,
   nextEmployeeCode,
   prefixForBranch,
@@ -29,7 +30,6 @@ import { ipaEmployeeDefaults } from "@/core/ipa-registration";
 import { documentEmployeeFields, type EmployeeDocumentKind } from "@/core/employee-document-fields";
 import { isOfficeStaff } from "@/lib/workforce-split";
 import { storedFormDocumentUrls } from "@/core/employee-form-documents";
-import { getDocumentsByEmployee } from "@/lib/store";
 import type {
   DeploymentStatus,
   Employee,
