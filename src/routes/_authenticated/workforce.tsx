@@ -899,7 +899,7 @@ export default function WorkforcePage() {
                     <Input
                       id="wf-search"
                       type="search"
-                      placeholder="Name, P-File, FIN, project, designation…"
+                      placeholder="Name, Particular, FIN, project, designation…"
                       value={search}
                       onChange={(e) => { setSearch(e.target.value); setPage(1); }}
                       className="h-9 pl-9"
@@ -930,7 +930,7 @@ export default function WorkforcePage() {
                     <Input
                       id="wf-search"
                       type="search"
-                      placeholder="Name, P-File, FIN, project, designation…"
+                      placeholder="Name, Particular, FIN, project, designation…"
                       value={search}
                       onChange={(e) => { setSearch(e.target.value); setPage(1); }}
                       className="h-9 pl-9"
@@ -1010,7 +1010,7 @@ export default function WorkforcePage() {
                             >
                               {e.name}
                             </Link>
-                            <div>P-File No: {e.employeeCode}</div>
+                            <div>Particular No: {e.employeeCode}</div>
                             <div>FIN: {e.fin || "—"}</div>
                             <div>Basic Rate: ${e.basicSalary.toLocaleString()}/day</div>
                           </div>
