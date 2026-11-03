@@ -477,6 +477,25 @@ export function EmployeeForm({
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label="Passport number"><Input name="passportNumber" defaultValue={values?.passportNumber ?? ""} /></Field>
             <Field label="Passport expiry"><Input name="passportExpiry" type="date" defaultValue={dateValue(values?.passportExpiry)} /></Field>
+            <Field label="Dormitory / accommodation">
+              <Input name="dormitory" defaultValue={values?.dormitory ?? ""} />
+            </Field>
+            <Field label="Dormitory address">
+              <Input name="dormitoryAddress" defaultValue={values?.dormitoryAddress ?? ""} />
+            </Field>
+            <Field label="Medical insurance expiry">
+              <Input name="medicalInsuranceExpiry" type="date" defaultValue={dateValue(values?.medicalInsuranceExpiry)} />
+            </Field>
+            <Field label="Medical examination due">
+              <Input name="medicalCheckupDue" type="date" defaultValue={dateValue(values?.medicalCheckupDue)} />
+            </Field>
+            <Field label="Levy tier (MOM)">
+              <Pick
+                name="levyTier"
+                options={["Higher Skilled", "Basic Skilled"]}
+                defaultValue={values?.levyTier ?? "Basic Skilled"}
+              />
+            </Field>
           </div>
         </TabsContent>
 
@@ -598,25 +617,6 @@ export function EmployeeForm({
             <Field label="CSOC / SCOS course type"><Input name="safetyCourseType" defaultValue={values?.safetyCourseType ?? ""} /></Field>
             <Field label="CSOC / SCOS certificate number"><Input name="safetyCourseNo" defaultValue={values?.safetyCourseNo ?? ""} /></Field>
             <Field label="CSOC / SCOS expiry"><Input name="safetyCourseExpiry" type="date" defaultValue={dateValue(values?.safetyCourseExpiry)} /></Field>
-            <Field label="Dormitory / accommodation">
-              <Input name="dormitory" defaultValue={values?.dormitory ?? ""} />
-            </Field>
-            <Field label="Dormitory address">
-              <Input name="dormitoryAddress" defaultValue={values?.dormitoryAddress ?? ""} />
-            </Field>
-            <Field label="Medical insurance expiry">
-              <Input name="medicalInsuranceExpiry" type="date" defaultValue={dateValue(values?.medicalInsuranceExpiry)} />
-            </Field>
-            <Field label="Medical examination due">
-              <Input name="medicalCheckupDue" type="date" defaultValue={dateValue(values?.medicalCheckupDue)} />
-            </Field>
-            <Field label="Levy tier (MOM)">
-              <Pick
-                name="levyTier"
-                options={["Higher Skilled", "Basic Skilled"]}
-                defaultValue={values?.levyTier ?? "Basic Skilled"}
-              />
-            </Field>
           </div>
           {ipaFields("pass")}
         </TabsContent>
