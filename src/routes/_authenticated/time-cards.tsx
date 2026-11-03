@@ -12,6 +12,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
@@ -89,7 +90,9 @@ function TimeCardsPage() {
 
   const [cards, setCards] = useState(getTimeCards());
   const [sheets, setSheets] = useState(getClaimSheets());
-  const [employeeId, setEmployeeId] = useState(scoped[0]?.id ?? "");
+  const [employeeId, setEmployeeId] = useState("");
+  const [pendingFiles, setPendingFiles] = useState<FileList | null>(null);
+  const [activeTab, setActiveTab] = useState("cards");
   const [month, setMonth] = useState(() => new Date().toISOString().slice(0, 7));
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
@@ -194,7 +197,7 @@ function TimeCardsPage() {
         setProgress({ done: i + 1, total: files.length });
       }
       refresh();
-      if (lastId) setSelectedId(lastId);
+      if (lastId) { setSelectedId(lastId); setActiveTab("cards"); }
       if (totalRows > 0) {
         toast.success(`Scanned ${totalRows} row(s) from ${files.length} card(s)`);
       }
@@ -398,7 +401,10 @@ function TimeCardsPage() {
             <FileSpreadsheet className="h-5 w-5 text-primary" />
             <h2 className="text-lg font-semibold text-foreground">Generate Claim Sheet</h2>
           </div>
-          <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_auto]">
+          <ol className="flex flex-wrap gap-x-6 gap-y-2 text-sm font-medium text-muted-foreground">
+            <li className="text-primary">1. Upload time cards</li><li>2. OCR & review</li><li>3. Generate claim sheet</li>
+          </ol>
+          <div className="grid items-end gap-4 md:grid-cols-2">
             <div className="min-w-0 space-y-2">
               <Label htmlFor="claim-project">Project</Label>
               <Select value={projectId} onValueChange={setProjectId}>
@@ -413,52 +419,40 @@ function TimeCardsPage() {
               <Label htmlFor="claim-month">Claim period</Label>
               <Input id="claim-month" type="month" value={month} onChange={(event) => setMonth(event.target.value)} />
             </div>
-            <Button type="button" disabled className="gap-2"><FileSpreadsheet className="h-4 w-4" />Generate claim sheet</Button>
           </div>
-          <p className="text-sm text-muted-foreground">Excel template pending — project claim generation will be available after the sample is confirmed.</p>
+          <div className="flex flex-wrap items-center gap-3 border border-dashed border-border bg-muted/30 p-5">
+            <ScanLine className="h-8 w-8 shrink-0 text-primary" />
+            <div className="min-w-0 flex-1"><h3 className="font-medium">Scanned time cards</h3><p className="text-sm text-muted-foreground">PDF or images</p></div>
+            <Button asChild disabled={uploading || !projectId || !month} className="gap-2">
+              <Label htmlFor="claim-upload" className={uploading || !projectId || !month ? "pointer-events-none opacity-50" : "cursor-pointer"}><Upload className="h-4 w-4" />{uploading ? "Processing…" : "Upload & extract"}</Label>
+            </Button>
+            <input id="claim-upload" className="hidden" type="file" multiple accept="image/*,application/pdf" disabled={uploading || !projectId || !month} onChange={(event) => { if (event.target.files?.length) { setEmployeeId(""); setPendingFiles(event.target.files); } event.target.value = ""; }} />
+          </div>
+          {uploading && <p role="status" className="text-sm text-primary">{progress ? `Extracting time cards ${progress.done}/${progress.total}…` : "Processing time cards…"}</p>}
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" disabled={!selected} onClick={() => setActiveTab("cards")} className="gap-2"><ScanLine className="h-4 w-4" />Review extracted data</Button>
+            <Button disabled={!selected || uploading} onClick={() => { if (selected) { finalize(selected); setActiveTab("cards"); } }} className="gap-2"><FileSpreadsheet className="h-4 w-4" />Approve & generate claim sheet</Button>
+          </div>
         </section>
 
-        <Tabs defaultValue="sheets">
+        <Dialog open={pendingFiles !== null} onOpenChange={(open) => { if (!open) setPendingFiles(null); }}>
+          <DialogContent>
+            <DialogHeader><DialogTitle>Confirm time-card worker</DialogTitle></DialogHeader>
+            <p className="text-sm text-muted-foreground">{pendingFiles?.length ?? 0} file(s). All selected cards must belong to the same worker.</p>
+            <Label>Worker on these cards</Label>
+            <Select value={employeeId} onValueChange={setEmployeeId}><SelectTrigger><SelectValue placeholder="Match the worker on the time card" /></SelectTrigger><SelectContent>{scoped.map((employee) => <SelectItem key={employee.id} value={employee.id}>{employee.name} ({employee.employeeCode})</SelectItem>)}</SelectContent></Select>
+            <Button disabled={!employeeId} onClick={() => { const files = pendingFiles; setPendingFiles(null); void handleUpload(files); }}><ScanLine className="mr-2 h-4 w-4" />Start OCR</Button>
+          </DialogContent>
+        </Dialog>
+
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList>
             <TabsTrigger value="sheets">Claim sheets</TabsTrigger>
             <TabsTrigger value="cards">Time cards</TabsTrigger>
           </TabsList>
 
           <TabsContent value="cards" className="mt-4 space-y-4">
-        <div className="grid gap-4 border-b border-border py-4 sm:grid-cols-2 lg:grid-cols-3">
-          <div className="space-y-2">
-            <Label>Employee</Label>
-            <Select value={employeeId} onValueChange={setEmployeeId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select employee" />
-              </SelectTrigger>
-              <SelectContent>
-                {scoped.map((e) => (
-                  <SelectItem key={e.id} value={e.id}>
-                    {e.name} ({e.employeeCode})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="tc-month">Period (month)</Label>
-            <Input id="tc-month" type="month" value={month} onChange={(e) => setMonth(e.target.value)} />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="tc-file">Scanned time card</Label>
-            <Input
-              id="tc-file"
-              type="file"
-              multiple
-              accept="image/*,application/pdf"
-              disabled={uploading}
-              onChange={(e) => {
-                void handleUpload(e.target.files);
-                e.target.value = "";
-              }}
-            />
-          </div>
+        <div className="space-y-3 border-b border-border py-4">
           <div className="flex items-end gap-2 sm:col-span-2 lg:col-span-3">
             <div>
               <div className="relative">
