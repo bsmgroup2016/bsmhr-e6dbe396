@@ -15,7 +15,7 @@ export async function historyPage(table: "attendance" | "asset_issuances", filte
 
 export async function allHistory<T extends Attendance | AssetIssuance>(table: "attendance" | "asset_issuances", filters: HistoryFilters): Promise<T[]> {
   const rows = await collectAllPages((offset, limit) => historyPage(table, filters, offset, limit));
-  return rows.map(table === "attendance" ? fromAttendance : fromIssuance) as T[];
+  return rows.map((row) => table === "attendance" ? fromAttendance(row) : fromIssuance(row)) as T[];
 }
 
 export function historyQueryOptions(table: "attendance" | "asset_issuances", userId: string, filters: HistoryFilters, offset: number) {

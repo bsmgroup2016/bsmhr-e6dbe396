@@ -10,7 +10,8 @@ const map = mapDriverTaskRow;
 export async function listDriverTasks(): Promise<DriverTask[]> {
   const { data, error } = await supabase
     .from("driver_tasks")
-    .select(TABLE_COLUMNS.driver_tasks)
+    .select(String(TABLE_COLUMNS.driver_tasks))
+    .returns<Row[]>()
     .order("scheduled_at", { ascending: true });
   if (error) throw error;
   return (data ?? []).map(map);

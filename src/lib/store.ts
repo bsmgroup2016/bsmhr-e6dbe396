@@ -147,7 +147,7 @@ function setState(next: AppState) {
 
 export function subscribe(listener: () => void) {
   listeners.add(listener);
-  return () => listeners.delete(listener);
+  return () => { listeners.delete(listener); };
 }
 
 function newId(): string {
@@ -185,7 +185,7 @@ export async function ensureStoreCollections(keys: CollectionKey[]): Promise<voi
     key === "attendance" || key === "issuances" ? { companyId } : { cacheCompany: companyId },
   )));
   if (epoch !== generation || companyId !== getCurrentCompany()) return;
-  const next = { ...getState(), ...Object.assign({}, ...results) };
+  const next: AppState = results.reduce((current, result) => ({ ...current, ...result }), getState());
   // Preserve the employee/site relation formerly materialized by loadAll.
   const names = new Map(next.sites.map((site) => [site.id, site.name]));
   const byEmployee = new Map<string, string>();
@@ -231,6 +231,15 @@ export function invalidateStoreTable(table: string) {
   if (keys.includes(dependent as CollectionKey)) {
     void ensureStoreCollections([dependent as CollectionKey]).catch((error) => console.error("Data refresh failed", error));
   }
+}
+
+/** Page results support existing synchronous edit actions without pretending to be all history. */
+export function mergeHistoryRows(key: "attendance" | "issuances", rows: Attendance[] | AssetIssuance[]) {
+  const current = getState();
+  const merged = new Map<string, Attendance | AssetIssuance>(current[key].map((row) => [row.id, row]));
+  for (const row of rows) merged.set(row.id, row);
+  // No notification during render: history subscribers already hold this response.
+  state = { ...current, [key]: [...merged.values()] };
 }
 
 /* ---------------- employees ---------------- */
