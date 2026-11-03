@@ -245,8 +245,8 @@ function EmployeeProfilePage() {
           <TabsList className="flex w-full flex-wrap">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="personal">Personal</TabsTrigger>
-            <TabsTrigger value="employment">Employment &amp; Certificate</TabsTrigger>
-            <TabsTrigger value="pass">Work pass</TabsTrigger>
+            <TabsTrigger value="employment">Employment</TabsTrigger>
+            <TabsTrigger value="pass">Work pass &amp; Certificate</TabsTrigger>
             <TabsTrigger value="pay">Compensation</TabsTrigger>
             <TabsTrigger value="employer">Employer / application</TabsTrigger>
             {!staff ? <TabsTrigger value="assignments">Assignments</TabsTrigger> : null}
