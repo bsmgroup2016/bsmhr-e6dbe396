@@ -1,5 +1,6 @@
 # Role-based account access
-- [ ] Document understanding: automatic IPA/passport/WP/CSOC reading, abbreviation-aware mapping, safe field filling and regression checks.
+- [x] Document understanding: automatic IPA/passport/WP/CSOC reading, abbreviation-aware mapping and source-specific safe filling; 15 tests and isolated form checks passed.
+- [ ] Document understanding: real signed-in upload/OCR/save/read-back unavailable for the external project's current browser session.
 - [x] Employee expiry autofill: Personal passport upload; Particular and work-permit extraction; editable CSOC expiry; existing workforce Excel mapping retained. Nine tests and isolated desktop/mobile form checks passed.
 - [ ] Employee expiry autofill: real signed-in document upload/OCR/save/read-back blocked by unavailable external-project session and missing real Particular/passport/permit samples.
 - [x] IPA registration: automatic full-document extraction, editable employee form and retained source/details; supplied 16-page IPA returned 33 fields plus 28 extra particulars, 7 tests passed and isolated form checks passed.
