@@ -22,7 +22,7 @@ export function employeeFormDocuments(fd: FormData, existing: Pick<EmployeeDocum
 }
 
 /** Latest stored file per form upload field, so saved documents show again when editing. */
-export function storedFormDocumentUrls(documents: Pick<EmployeeDocument, "type" | "fileUrl" | "uploadedAt">[]): Partial<Record<FormDocumentField, string>> {
+export function storedFormDocumentUrls(documents: (Pick<EmployeeDocument, "type" | "fileUrl" | "uploadedAt"> & Partial<Pick<EmployeeDocument, "name">>)[]): Partial<Record<FormDocumentField, string>> {
   const out: Partial<Record<FormDocumentField, string>> = {};
   const sorted = [...documents].sort((a, b) => String(b.uploadedAt ?? "").localeCompare(String(a.uploadedAt ?? "")));
   for (const [field, type] of FORM_DOCUMENTS) {

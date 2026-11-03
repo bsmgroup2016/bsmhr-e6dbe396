@@ -29,7 +29,8 @@ import { OCR_NOT_CONFIGURED, extractIpaData, extractPassportData, extractParticu
 import { ipaEmployeeDefaults } from "@/core/ipa-registration";
 import { documentEmployeeFields, type EmployeeDocumentKind } from "@/core/employee-document-fields";
 import { isOfficeStaff } from "@/lib/workforce-split";
-import { storedFormDocumentUrls } from "@/core/employee-form-documents";
+import { employeeDocumentSection, storedFormDocumentUrls } from "@/core/employee-form-documents";
+import { EmployeeSavedDocuments } from "@/components/employee-saved-documents";
 import type {
   DeploymentStatus,
   Employee,
@@ -220,7 +221,8 @@ export function EmployeeForm({
   submitLabel?: string;
 }) {
   const values = employee ?? initialValues;
-  const storedDocs = useMemo(() => (employee?.id ? storedFormDocumentUrls(getDocumentsByEmployee(employee.id)) : {}), [employee?.id]);
+  const savedDocuments = employee?.id ? getDocumentsByEmployee(employee.id) : [];
+  const storedDocs = storedFormDocumentUrls(savedDocuments);
   const [issueDate, setIssueDate] = useState(dateValue(values?.workPermitIssueDate));
   const [permitType, setPermitType] = useState(values?.passType || "Work Permit");
   const estimatedExpiry = estimatedWorkPermitExpiry(issueDate, permitType);
@@ -233,7 +235,7 @@ export function EmployeeForm({
   const [scanning, setScanning] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
   const [documentReading, setDocumentReading] = useState(0);
-  const [documentRefs, setDocumentRefs] = useState<Partial<Record<EmployeeDocumentKind, string>>>({ particular: values?.pFileUrl });
+  const [documentRefs, setDocumentRefs] = useState<Partial<Record<EmployeeDocumentKind, string>>>({ particular: values?.pFileUrl, passport: storedDocs.passportUpload, workpermit: storedDocs.workPermitUpload, csoc: storedDocs.csocUpload });
   const readingKinds = useRef(new Set<EmployeeDocumentKind>());
 
   const taken = code.trim() ? isEmployeeCodeTaken(code, employee?.id) : false;
@@ -404,7 +406,7 @@ export function EmployeeForm({
           <TabsTrigger value="pass">Work pass</TabsTrigger>
           <TabsTrigger value="pay">Compensation</TabsTrigger>
           <TabsTrigger value="agency">Agency</TabsTrigger>
-          <TabsTrigger value="employer">Employer / application</TabsTrigger>
+          <TabsTrigger value="documents">Documents</TabsTrigger>
         </TabsList>
 
         <TabsContent forceMount data-tab-panel="personal" value="personal" className="mt-4 space-y-4 data-[state=inactive]:hidden">
@@ -473,32 +475,10 @@ export function EmployeeForm({
             accept=".jpg,.jpeg,.png,.webp,.heic"
             defaultValue={values?.photoUrl || ""}
           />
-          <FileUpload
-            name="passportUpload"
-            label="Passport upload"
-            folder="documents"
-            display="document"
-            documentLabel="Passport"
-            defaultValue={storedDocs.passportUpload || ""}
-            accept=".pdf,.jpg,.jpeg,.png,.webp"
-            onUploaded={(url) => void autoFillDocument("passport", url)}
-          />
-          {readAgain("passport")}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label="Passport number"><Input name="passportNumber" defaultValue={values?.passportNumber ?? ""} /></Field>
             <Field label="Passport expiry"><Input name="passportExpiry" type="date" defaultValue={dateValue(values?.passportExpiry)} /></Field>
           </div>
-          <FileUpload
-            name="pFileUrl"
-            label="Particular document (PDF)"
-            folder="p-files"
-            display="particular"
-            accept=".pdf"
-            hint="Upload the employee's scanned Particular as a PDF"
-            defaultValue={values?.pFileUrl || ""}
-            onUploaded={(url) => void autoFillDocument("particular", url)}
-          />
-          {readAgain("particular")}
         </TabsContent>
 
         <TabsContent forceMount data-tab-panel="employment" value="employment" className="mt-4 space-y-4 data-[state=inactive]:hidden">
@@ -556,58 +536,14 @@ export function EmployeeForm({
             </Field>
           </div>
           {ipaFields("employment")}
+          <h3 className="border-t pt-4 text-sm font-semibold">Employer / application</h3>
+          {ipaFields("employer")}
           <Field label="Internal notes (HR only)">
             <Textarea name="internalNotes" defaultValue={values?.internalNotes ?? ""} rows={3} />
           </Field>
         </TabsContent>
 
         <TabsContent forceMount data-tab-panel="pass" value="pass" className="mt-4 space-y-4 data-[state=inactive]:hidden">
-          <div className="rounded-lg border p-3">
-            <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-              <p className="text-sm font-medium">IPA copy (In-Principle Approval)</p>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        disabled={!isOcrConfigured() || !ipaUrl || scanning}
-                        onClick={() => void autoFillFromIpa()}
-                      >
-                        {scanning ? (
-                          <Wand2 className="mr-1 h-4 w-4 animate-pulse" />
-                        ) : (
-                          <Sparkles className="mr-1 h-4 w-4" />
-                        )}
-                        {scanning ? "Reading IPA…" : "Auto-fill from IPA"}
-                      </Button>
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    {ipaUrl
-                      ? "Reads the uploaded IPA and fills empty fields only — always verify."
-                      : "Upload the IPA copy first"}
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
-            <FileUpload
-              name="ipaDocumentUrl"
-              label="Upload IPA copy (PDF)"
-              folder="ipa"
-              display="document"
-              documentLabel="IPA"
-              accept=".pdf"
-              defaultValue={ipaUrl}
-              onUploaded={(url) => { setIpaUrl(url); void autoFillFromIpa(url); }}
-            />
-          </div>
-          <FileUpload name="workPermitUpload" label="Work Permit upload" folder="documents" display="document" documentLabel="Work Permit" defaultValue={storedDocs.workPermitUpload || ""} accept=".pdf,.jpg,.jpeg,.png,.webp" onUploaded={(url) => void autoFillDocument("workpermit", url)} />
-          {readAgain("workpermit")}
-          <FileUpload name="csocUpload" label="CSOC upload" folder="documents" display="document" documentLabel="CSOC" defaultValue={storedDocs.csocUpload || ""} accept=".pdf,.jpg,.jpeg,.png,.webp" onUploaded={(url) => void autoFillDocument("csoc", url)} />
-          {readAgain("csoc")}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label="IPA approval date">
               <Input name="ipaIssueDate" type="date" defaultValue={dateValue(values?.ipaIssueDate)} />
@@ -733,8 +669,104 @@ export function EmployeeForm({
         <TabsContent forceMount data-tab-panel="agency" value="agency" className="mt-4 space-y-4 data-[state=inactive]:hidden">
           {ipaFields("agency")}
         </TabsContent>
-        <TabsContent forceMount data-tab-panel="employer" value="employer" className="mt-4 space-y-4 data-[state=inactive]:hidden">
-          {ipaFields("employer")}
+        <TabsContent forceMount data-tab-panel="documents" value="documents" className="mt-4 space-y-6 data-[state=inactive]:hidden">
+          <section className="space-y-3 border-b pb-5" aria-label="IPA documents">
+            <h3 className="text-sm font-semibold">1. IPA</h3>
+          <div className="rounded-lg border p-3">
+            <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+              <p className="text-sm font-medium">IPA copy (In-Principle Approval)</p>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        disabled={!isOcrConfigured() || !ipaUrl || scanning}
+                        onClick={() => void autoFillFromIpa()}
+                      >
+                        {scanning ? (
+                          <Wand2 className="mr-1 h-4 w-4 animate-pulse" />
+                        ) : (
+                          <Sparkles className="mr-1 h-4 w-4" />
+                        )}
+                        {scanning ? "Reading IPA…" : "Auto-fill from IPA"}
+                      </Button>
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {ipaUrl
+                      ? "Reads the uploaded IPA and fills empty fields only — always verify."
+                      : "Upload the IPA copy first"}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+            <FileUpload
+              name="ipaDocumentUrl"
+              label="Upload IPA copy (PDF)"
+              folder="ipa"
+              display="document"
+              documentLabel="IPA"
+              accept=".pdf"
+              defaultValue={ipaUrl}
+              onUploaded={(url) => { setIpaUrl(url); void autoFillFromIpa(url); }}
+            />
+          </div>
+            <EmployeeSavedDocuments documents={savedDocuments.filter((file) => employeeDocumentSection(file) === "IPA")} exclude={[ipaUrl]} />
+          </section>
+          <section className="space-y-3 border-b pb-5" aria-label="Passport documents">
+            <h3 className="text-sm font-semibold">2. Passport</h3>
+          <FileUpload
+            name="passportUpload"
+            label="Passport upload"
+            folder="documents"
+            display="document"
+            documentLabel="Passport"
+            defaultValue={storedDocs.passportUpload || ""}
+            accept=".pdf,.jpg,.jpeg,.png,.webp"
+            onUploaded={(url) => void autoFillDocument("passport", url)}
+          />
+          {readAgain("passport")}
+            <EmployeeSavedDocuments documents={savedDocuments.filter((file) => employeeDocumentSection(file) === "Passport")} exclude={[storedDocs.passportUpload || ""]} />
+          </section>
+          <section className="space-y-3 border-b pb-5" aria-label="Work Permit documents">
+            <h3 className="text-sm font-semibold">3. Work Permit</h3>
+          <FileUpload name="workPermitUpload" label="Work Permit upload" folder="documents" display="document" documentLabel="Work Permit" defaultValue={storedDocs.workPermitUpload || ""} accept=".pdf,.jpg,.jpeg,.png,.webp" onUploaded={(url) => void autoFillDocument("workpermit", url)} />
+          {readAgain("workpermit")}
+            <EmployeeSavedDocuments documents={savedDocuments.filter((file) => employeeDocumentSection(file) === "Work Permit")} exclude={[storedDocs.workPermitUpload || ""]} />
+          </section>
+          <section className="space-y-3 border-b pb-5" aria-label="CSOC documents">
+            <h3 className="text-sm font-semibold">4. CSOC</h3>
+          <FileUpload name="csocUpload" label="CSOC upload" folder="documents" display="document" documentLabel="CSOC" defaultValue={storedDocs.csocUpload || ""} accept=".pdf,.jpg,.jpeg,.png,.webp" onUploaded={(url) => void autoFillDocument("csoc", url)} />
+          {readAgain("csoc")}
+            <EmployeeSavedDocuments documents={savedDocuments.filter((file) => employeeDocumentSection(file) === "CSOC")} exclude={[storedDocs.csocUpload || ""]} />
+          </section>
+          <section className="space-y-3 border-b pb-5" aria-label="Particular documents">
+            <h3 className="text-sm font-semibold">5. Particular</h3>
+          <FileUpload
+            name="pFileUrl"
+            label="Particular document (PDF)"
+            folder="p-files"
+            display="particular"
+            accept=".pdf"
+            hint="Upload the employee's scanned Particular as a PDF"
+            defaultValue={values?.pFileUrl || ""}
+            onUploaded={(url) => void autoFillDocument("particular", url)}
+          />
+          {readAgain("particular")}
+            <EmployeeSavedDocuments documents={savedDocuments.filter((file) => employeeDocumentSection(file) === "Particular")} exclude={[values?.pFileUrl || ""]} />
+          </section>
+          <section className="space-y-3 border-b pb-5" aria-label="Bank Card documents">
+            <h3 className="text-sm font-semibold">6. Bank Card</h3>
+          <FileUpload name="bankCardUpload" label="Bank Card upload" folder="documents" display="document" documentLabel="Bank Card" defaultValue={storedDocs.bankCardUpload || ""} accept=".pdf,.jpg,.jpeg,.png,.webp" />
+            <EmployeeSavedDocuments documents={savedDocuments.filter((file) => employeeDocumentSection(file) === "Bank Card")} exclude={[storedDocs.bankCardUpload || ""]} />
+          </section>
+          {Array.from(new Set(savedDocuments.map(employeeDocumentSection))).filter((section) => !["IPA", "Passport", "Work Permit", "CSOC", "Particular", "Bank Card"].includes(section)).sort().map((section, index) => <section key={section} className="space-y-3 border-b pb-5" aria-label={`${section} documents`}>
+            <h3 className="text-sm font-semibold">{index + 7}. {section}</h3>
+            <EmployeeSavedDocuments documents={savedDocuments.filter((file) => employeeDocumentSection(file) === section)} />
+          </section>)}
         </TabsContent>
       </Tabs>
 
