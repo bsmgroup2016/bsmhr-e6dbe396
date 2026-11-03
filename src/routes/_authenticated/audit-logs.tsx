@@ -23,7 +23,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { AUDIT_PAGE_SIZE, auditLogsQueryOptions, type LogRow } from "@/lib/audit-log-data";
+import { AUDIT_PAGE_SIZE, auditLogsQueryOptions } from "@/lib/audit-log-data";
+import { useAuth } from "@/lib/auth";
 import { exportCsv, timestampedName } from "@/lib/xlsx";
 
 const actions = ["CREATE", "UPDATE", "DELETE", "LOGIN", "EXPORT", "APPROVE", "REJECT"];
@@ -53,7 +54,7 @@ export const Route = createFileRoute("/_authenticated/audit-logs")({
     from: s.from ?? "", to: s.to ?? "", search: s.search ?? "",
   }),
   loaderDeps: ({ search: { page, action, entity, from, to } }) => ({ page, action, entity, from, to }),
-  loader: async ({ context, deps }) => { await context.queryClient.ensureQueryData(auditLogsQueryOptions(deps)); },
+  loader: async ({ context, deps }) => { await context.queryClient.ensureQueryData(auditLogsQueryOptions(deps, context.user.id)); },
   errorComponent: ({ error }) => { const router = useRouter(); return <div role="alert" className="p-6"><p>{error.message}</p><Button onClick={() => void router.invalidate()}>Retry</Button></div>; },
   notFoundComponent: () => <div className="p-6">Audit logs not found.</div>,
   head: () => ({
@@ -73,7 +74,9 @@ export default function AuditLogsPage() {
   const params = Route.useSearch();
   const navigate = Route.useNavigate();
   const queryClient = useQueryClient();
-  const options = auditLogsQueryOptions(params);
+  const { user } = useAuth();
+  const { page, action, entity, from: periodFrom, to: periodTo } = params;
+  const options = auditLogsQueryOptions({ page, action, entity, from: periodFrom, to: periodTo }, user?.id ?? "");
   const { data, isFetching: loading } = useSuspenseQuery(options);
   const logs = data.rows;
   const { search, action: actionFilter, entity: entityFilter, from, to } = params;

@@ -10,9 +10,9 @@ export function auditPageRange(page: number): [number, number] {
   return [start, start + AUDIT_PAGE_SIZE - 1];
 }
 
-export function auditLogsQueryOptions(filters: AuditFilters) {
+export function auditLogsQueryOptions(filters: AuditFilters, userId: string) {
   return queryOptions({
-    queryKey: ["audit-log-page", filters],
+    queryKey: ["audit-log-page", userId, filters],
     queryFn: async () => {
       const columns: string = "id,action,entity_type,entity_id,user_name,details,created_at";
       let query = supabase.from("audit_logs").select(columns, { count: "exact" })
