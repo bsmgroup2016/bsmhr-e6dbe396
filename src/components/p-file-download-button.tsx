@@ -23,9 +23,9 @@ export function PFileDownloadButton({ pFileUrl, name, code }: PFileDownloadButto
     setBusy(true);
     try {
       const safe = `${code ? `${code}-` : ""}${name}`.replace(/[^\w.-]+/g, "-");
-      await downloadR2File(pFileUrl, `P-File-${safe}.pdf`);
+      await downloadR2File(pFileUrl, `Particular-${safe}.pdf`);
     } catch {
-      toast.error("Could not download P-File");
+      toast.error("Could not download Particular");
     } finally {
       setBusy(false);
     }
@@ -36,8 +36,8 @@ export function PFileDownloadButton({ pFileUrl, name, code }: PFileDownloadButto
       size="icon"
       variant="outline"
       className="h-8 w-8 border-emerald-500/30 text-emerald-600 hover:bg-emerald-500/10 disabled:opacity-40"
-      aria-label={pFileUrl ? `Download P-File of ${name}` : `No P-File uploaded for ${name}`}
-      title={pFileUrl ? "Download P-File (PDF)" : "No P-File uploaded"}
+      aria-label={pFileUrl ? `Download Particular of ${name}` : `No Particular uploaded for ${name}`}
+      title={pFileUrl ? "Download Particular (PDF)" : "No Particular uploaded"}
       disabled={!pFileUrl || busy}
       onClick={handleClick}
     >

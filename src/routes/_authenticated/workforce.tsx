@@ -783,7 +783,7 @@ export default function WorkforcePage() {
               {availableOnly && (
                 <PFileBulkDownloadButton
                   people={filtered}
-                  zipBaseName="Available-Workers-P-Files"
+                  zipBaseName="Available-Workers-Particulars"
                 />
               )}
             </div>
