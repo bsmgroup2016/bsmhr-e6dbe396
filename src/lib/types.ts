@@ -355,6 +355,7 @@ export type DocumentType =
   | "Training Certificate"
   | "Contract"
   | "Bank Letter"
+  | "Bank Document"
   | "Other";
 
 export type DocumentStatus = "Valid" | "Expiring Soon" | "Expired" | "Pending" | "Superseded";
