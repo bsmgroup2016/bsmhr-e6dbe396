@@ -25,6 +25,7 @@ import {
 } from "@/lib/store";
 import { exportRows } from "@/lib/xlsx";
 import type { TrainingCourse, TrainingRecord, SafetyIncident } from "@/lib/types";
+import { COURSE_GROUPS, missingCourses } from "@/core/training-courses";
 
 export const Route = createFileRoute("/_authenticated/training")({
   head: () => ({
@@ -42,7 +43,6 @@ export const Route = createFileRoute("/_authenticated/training")({
 
 const today = () => new Date().toISOString().slice(0, 10);
 
-const categories: TrainingCourse["category"][] = ["Safety", "Statutory", "Skill", "Induction", "Other"];
 const trainingStatuses: TrainingRecord["status"][] = ["Scheduled", "Completed", "Failed", "Expired"];
 const incidentTypes: SafetyIncident["incidentType"][] = [
   "Near Miss", "First Aid", "Injury", "Property Damage", "Dangerous Occurrence", "Fatality", "Other",
@@ -69,20 +69,6 @@ const emptyIncident = {
   status: "Open" as SafetyIncident["status"],
 };
 
-/** MOM/WSH standard course catalogue for Singapore construction & marine work. */
-const WSH_STANDARD_COURSES: Array<Omit<TrainingCourse, "id" | "createdAt" | "updatedAt" | "companyId">> = [
-  { code: "SOC", name: "Construction Safety Orientation Course (CSOC)", category: "Statutory", provider: "MOM ATP", validityMonths: 24, mandatory: true, cost: 0, remarks: "Required for all construction workers" },
-  { code: "MSOC", name: "Marine Safety Orientation Course (MSOC)", category: "Statutory", provider: "MOM ATP", validityMonths: 24, mandatory: false, cost: 0, remarks: "Shipyard / marine sector" },
-  { code: "SSIC", name: "Shipyard Safety Instruction Course (SSIC)", category: "Statutory", provider: "MOM ATP", validityMonths: 24, mandatory: false, cost: 0, remarks: "Shipyard entry pass" },
-  { code: "WAH", name: "Work at Height Course for Workers", category: "Safety", provider: "MOM ATP", validityMonths: 24, mandatory: true, cost: 0, remarks: "WSH (WAH) Regulations" },
-  { code: "WAH-S", name: "Work at Height Course for Supervisors", category: "Safety", provider: "MOM ATP", validityMonths: 24, mandatory: false, cost: 0, remarks: "Supervisors only" },
-  { code: "CSE", name: "Confined Space Entry / Safety Assessor", category: "Safety", provider: "MOM ATP", validityMonths: 24, mandatory: false, cost: 0, remarks: "Confined space works" },
-  { code: "MSE", name: "Metal Scaffold Erector Course", category: "Skill", provider: "MOM ATP", validityMonths: 24, mandatory: false, cost: 0, remarks: "Scaffold erection" },
-  { code: "SSLO", name: "Supervise Safe Lifting Operations", category: "Safety", provider: "MOM ATP", validityMonths: 24, mandatory: false, cost: 0, remarks: "Lifting supervisor" },
-  { code: "RSS", name: "Rigger & Signalman Course", category: "Skill", provider: "MOM ATP", validityMonths: 24, mandatory: false, cost: 0, remarks: "Lifting crew" },
-  { code: "FIRSTAID", name: "Occupational First Aid Course", category: "Safety", provider: "MOM ATP", validityMonths: 36, mandatory: false, cost: 0, remarks: "1 first-aider per 100 workers" },
-  { code: "SITE-IND", name: "Site Induction & Toolbox Briefing", category: "Induction", provider: "In-house", validityMonths: 12, mandatory: true, cost: 0, remarks: "Before deployment" },
-];
 
 export default function TrainingPage() {
   const companyId = getCurrentCompany();
@@ -143,13 +129,20 @@ export default function TrainingPage() {
   }
 
   function seedWshCourses() {
-    const existing = new Set(courses.map((c) => (c.code ?? "").toUpperCase()));
-    const missing = WSH_STANDARD_COURSES.filter((c) => !existing.has((c.code ?? "").toUpperCase()));
-    if (!missing.length) return toast.info("All WSH standard courses already exist");
-    for (const c of missing) addCourse({ ...c, companyId: companyId || undefined });
+    const missing = missingCourses(courses.map((c) => c.code));
+    if (!missing.length) return toast.info("All Singapore courses already exist");
+    for (const c of missing) addCourse({ ...c });
     refresh();
-    toast.success(`${missing.length} WSH standard courses added`);
+    toast.success(`${missing.length} courses added`);
   }
+
+  function openRecord(courseId = "") {
+    setRecordForm({ ...emptyRecord, completionDate: today(), courseId });
+    setRecordOpen(true);
+  }
+
+  const certifiedCount = (courseId: string) =>
+    new Set(scopedRecords.filter((r) => r.courseId === courseId && r.status === "Completed").map((r) => r.employeeId)).size;
 
   function saveRecord() {
     if (!recordForm.courseId || !recordForm.employeeId) return toast.error("Course and worker required");
