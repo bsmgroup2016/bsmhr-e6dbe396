@@ -33,6 +33,7 @@
 - Employee document autofill uses source-specific allowlists and fills only empty editable fields; passport/permit uploads use existing employee_documents records while CSOC uses existing safety-course fields, avoiding new schema and mixed-up expiries.
 - Employee OCR understands document abbreviations server-side before source-specific mapping; CSOC uploads retain their source in existing employee_documents and map only safety fields, keeping permit/passport dates isolated.
 - Employee photo and document controls opt into FileUpload display modes using signed image reads and authenticated blob downloads; document labels are configurable and replacement retains the previous reference until upload succeeds, without deleting stored files.
+- EmployeeForm groups employer fields under Employment and uploads/history under Documents; Bank Card uses existing Bank Letter records with a distinct name, and saved history is read-only to avoid duplicate registrations or destructive replacement.
 - Work Permit estimates are derived for display/export from the existing issue date through one shared pure helper; they are never saved or imported as official expiry and never feed confirmed-expiry alerts.
 
 ## Permanent data placement rules
