@@ -8,6 +8,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { extractIpaData } from "@/lib/ocr";
 import { ipaEmployeeDefaults, type IpaExtract } from "@/core/ipa-registration";
 import { getBranchPrefixes, nextEmployeeCode, isEmployeeCodeTaken } from "@/lib/store";
+import { prefixesForCompany, nextPFileNumber } from "@/core/pfile-prefixes";
+import { getEmployees } from "@/lib/store";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -21,6 +23,7 @@ export function EmployeeRegistration({ onSubmit }: { onSubmit: (data: FormData) 
   const [revision, setRevision] = useState(0);
   const [company, setCompany] = useState("");
   const [pFile, setPFile] = useState("");
+  const [prefix, setPrefix] = useState("");
   const [confirmed, setConfirmed] = useState<{ code: string; branch: string } | null>(null);
 
   async function readIpa(fileUrl: string) {
@@ -81,7 +84,9 @@ export function EmployeeRegistration({ onSubmit }: { onSubmit: (data: FormData) 
             {matches.length !== 1 && <span className="mt-1 block">Confirm the branch / company.</span>}
           </AlertDescription></Alert>
           {!confirmed ? (() => {
-            const auto = nextEmployeeCode(company);
+            const options = prefixesForCompany(company);
+            const chosen = options.includes(prefix) ? prefix : options[0];
+            const auto = chosen ? nextPFileNumber(chosen, getEmployees().map((e) => e.employeeCode)) : nextEmployeeCode(company);
             const typed = pFile.trim();
             const taken = typed ? isEmployeeCodeTaken(typed) : false;
             return <div className="space-y-4 rounded-lg border p-4">
@@ -91,6 +96,10 @@ export function EmployeeRegistration({ onSubmit }: { onSubmit: (data: FormData) 
                   <Select value={company} onValueChange={setCompany}><SelectTrigger><SelectValue placeholder="Select company" /></SelectTrigger>
                     <SelectContent>{getBranchPrefixes().map((b) => <SelectItem key={b.id} value={b.name}>{b.name}</SelectItem>)}</SelectContent></Select>
                 </div>
+                {options.length > 1 && <div className="space-y-2"><Label>P-File prefix</Label>
+                  <Select value={chosen} onValueChange={setPrefix}><SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>{options.map((o) => <SelectItem key={o} value={o}>{o}-</SelectItem>)}</SelectContent></Select>
+                </div>}
                 <div className="space-y-2"><Label htmlFor="ipa-pfile">P-File number (optional)</Label>
                   <Input id="ipa-pfile" value={pFile} placeholder={auto} onChange={(e) => setPFile(e.target.value)} />
                   <p className={taken ? "text-xs text-destructive" : "text-xs text-muted-foreground"}>{taken ? "This number is already used." : `Leave blank to use the next number: ${auto}`}</p>
