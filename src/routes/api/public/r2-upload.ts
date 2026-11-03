@@ -3,6 +3,7 @@ import {
   ALLOWED_EXT,
   r2Client,
   registerObject,
+  ObjectMetadataError,
   uploadAllowance,
   uploadsToday,
   verifyUser,
@@ -60,7 +61,8 @@ export const Route = createFileRoute("/api/public/r2-upload")({
             employee_id: employeeId,
             uploaded_by: userId,
           });
-        } catch {
+        } catch (error) {
+          if (error instanceof ObjectMetadataError) return new Response(error.message, { status: 502 });
           return new Response("R2 upload failed", { status: 500 });
         }
 

@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { updateEmployee } from "@/lib/store";
 import { uploadToR2 } from "@/lib/r2";
+import { R2Image } from "@/components/r2-image";
 import type { Employee } from "@/lib/types";
 
 type Field = { key: keyof Employee; label: string; type?: string; area?: boolean };
@@ -98,7 +99,7 @@ export function SelfProfileForm({
       <div className="flex flex-wrap items-center gap-4">
         <div className="h-16 w-16 overflow-hidden rounded-full border bg-muted">
           {form.photoUrl ? (
-            <img src={form.photoUrl} alt="Profile" className="h-full w-full object-cover" />
+            <R2Image src={form.photoUrl} alt="Profile" className="h-full w-full object-cover" />
           ) : null}
         </div>
         <div>

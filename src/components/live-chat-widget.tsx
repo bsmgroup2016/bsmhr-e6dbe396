@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { hasAssignedRole } from "@/core/access";
 import { cn } from "@/lib/utils";
+import { mergeChatMessages, type ChatCursor } from "@/core/chat-pagination";
 
 export type ChatMessage = { id: string; sender: "user" | "ai" | "agent" | "system"; content: string; author_name?: string | null; created_at: string };
 type Chat = { id: string; status: "ai" | "human" | "closed" } | null;
@@ -65,16 +66,31 @@ export function LiveChatWidget() {
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [hasOlder, setHasOlder] = useState(false);
+  const [cursor, setCursor] = useState<ChatCursor | null>(null);
+  const [loadingOlder, setLoadingOlder] = useState(false);
+  const chatIdRef = useRef<string | null>(null);
+  const loadingRef = useRef(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const skipScrollRef = useRef(false);
   const endRef = useRef<HTMLDivElement>(null);
   const allowed = !!user && hasAssignedRole(roles);
 
   const load = useCallback(async () => {
+    if (loadingRef.current) return;
+    loadingRef.current = true;
     try {
       const d = await liveChatFetch("");
+      const changed = chatIdRef.current !== (d.chat?.id ?? null);
+      chatIdRef.current = d.chat?.id ?? null;
       setChat(d.chat);
-      setMessages(d.messages ?? []);
+      setMessages((current) => changed ? d.messages ?? [] : mergeChatMessages(current.filter((m) => !m.id.startsWith("tmp-")), d.messages ?? []));
+      if (changed || !chatIdRef.current) { setHasOlder(d.hasOlder ?? false); setCursor(d.nextCursor ?? null); }
+      else { setCursor((current) => current ?? d.nextCursor ?? null); }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load chat");
+    } finally {
+      loadingRef.current = false;
     }
   }, []);
 
@@ -86,8 +102,32 @@ export function LiveChatWidget() {
   }, [open, allowed, load]);
 
   useEffect(() => {
+    if (skipScrollRef.current) { skipScrollRef.current = false; return; }
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages.length, busy]);
+
+  useEffect(() => {
+    chatIdRef.current = null;
+    setMessages([]); setChat(null); setHasOlder(false); setCursor(null);
+  }, [user?.id]);
+
+  async function loadOlder() {
+    if (!cursor || loadingOlder) return;
+    const currentChat = chatIdRef.current;
+    const height = scrollRef.current?.scrollHeight ?? 0;
+    const top = scrollRef.current?.scrollTop ?? 0;
+    setLoadingOlder(true);
+    try {
+      const query = new URLSearchParams({ beforeAt: cursor.createdAt, beforeId: cursor.id });
+      const d = await liveChatFetch(`?${query}`);
+      if (chatIdRef.current !== currentChat || d.chat?.id !== currentChat) return;
+      skipScrollRef.current = true;
+      setMessages((current) => mergeChatMessages(current, d.messages ?? []));
+      setHasOlder(d.hasOlder ?? false); setCursor(d.nextCursor ?? null);
+      requestAnimationFrame(() => { if (scrollRef.current) scrollRef.current.scrollTop = top + scrollRef.current.scrollHeight - height; });
+    } catch (e) { setError(e instanceof Error ? e.message : "Could not load older messages"); }
+    finally { setLoadingOlder(false); }
+  }
 
   if (!allowed) return null;
 
@@ -129,7 +169,8 @@ export function LiveChatWidget() {
               <X className="h-4 w-4" />
             </Button>
           </div>
-          <div className="flex-1 space-y-3 overflow-y-auto p-4">
+          <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto p-4">
+            {hasOlder && <Button variant="ghost" size="sm" className="w-full" disabled={loadingOlder} onClick={() => void loadOlder()}>{loadingOlder ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : null}Load older</Button>}
             {messages.length === 0 && (
               <p className="pt-8 text-center text-sm text-muted-foreground">Hi! Ask me anything about workers, payroll, deployments or billing.</p>
             )}

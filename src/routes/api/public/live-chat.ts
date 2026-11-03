@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { verifyUser, userRoles } from "@/lib/r2.server";
 import { hasAssignedRole } from "@/core/access";
+import { chatMessagePage, chatMessageQuery, type ChatCursor, type DatedMessage } from "@/core/chat-pagination";
 
 const SUPABASE_URL = "https://thrfyeyqafmdnpexgmlc.supabase.co";
 const ANON =
@@ -30,7 +31,9 @@ async function openChat(userId: string) {
   const rows = await db(`live_chats?user_id=eq.${userId}&status=neq.closed&order=updated_at.desc&limit=1`);
   return rows[0] ?? null;
 }
-const messagesOf = (chatId: string) => db(`live_chat_messages?chat_id=eq.${chatId}&order=created_at.asc&limit=200`);
+async function messagesOf(chatId: string, before?: ChatCursor) {
+  return chatMessagePage(await db(chatMessageQuery(chatId, before)) as (DatedMessage & { sender: string; content: string })[]);
+}
 async function addMsg(chatId: string, sender: string, content: string, authorId?: string, authorName?: string | null) {
   await db("live_chat_messages", { method: "POST", body: JSON.stringify({ chat_id: chatId, sender, content, author_id: authorId ?? null, author_name: authorName ?? null }) });
 }
@@ -57,16 +60,23 @@ export const Route = createFileRoute("/api/public/live-chat")({
         if (!hasAssignedRole(roles)) return new Response("Forbidden", { status: 403 });
         const url = new URL(request.url);
         const isAgent = roles.some((r) => AGENT_ROLES.includes(r));
+        let before: ChatCursor | undefined;
+        if (url.searchParams.has("beforeAt") || url.searchParams.has("beforeId")) {
+          const parsed = z.object({ createdAt: z.string().datetime({ offset: true }), id: z.string().uuid() }).safeParse({ createdAt: url.searchParams.get("beforeAt"), id: url.searchParams.get("beforeId") });
+          if (!parsed.success) return Response.json({ error: "Invalid message cursor" }, { status: 400 });
+          before = parsed.data;
+        }
         try {
           if (url.searchParams.get("inbox") === "1") {
             if (!isAgent) return new Response("Forbidden", { status: 403 });
             const chatId = url.searchParams.get("chat");
             const chats = await db("live_chats?order=updated_at.desc&limit=100");
-            const messages = chatId && /^[0-9a-f-]{36}$/.test(chatId) ? await messagesOf(chatId) : [];
-            return Response.json({ chats, messages });
+            const page = chatId && /^[0-9a-f-]{36}$/.test(chatId) ? await messagesOf(chatId, before) : { messages: [], hasOlder: false, nextCursor: null };
+            return Response.json({ chats, ...page });
           }
           const chat = await openChat(userId);
-          return Response.json({ chat, messages: chat ? await messagesOf(chat.id) : [], isAgent });
+          const page = chat ? await messagesOf(chat.id, before) : { messages: [], hasOlder: false, nextCursor: null };
+          return Response.json({ chat, ...page, isAgent });
         } catch (e) {
           return Response.json({ error: e instanceof Error ? e.message : "Failed" }, { status: 500 });
         }
@@ -108,7 +118,7 @@ export const Route = createFileRoute("/api/public/live-chat")({
           }
           await addMsg(chat.id, "user", p.content, userId);
           await touch(chat.id);
-          const history = (await messagesOf(chat.id) as { sender: string; content: string }[])
+          const history = (await messagesOf(chat.id)).messages
             .filter((m) => m.sender === "user" || m.sender === "ai" || m.sender === "agent")
             .slice(-30)
             .map((m) => ({ role: m.sender === "user" ? ("user" as const) : ("assistant" as const), content: m.content }));

@@ -7,6 +7,7 @@ import {
 
 import { AppShell } from "@/components/app-shell";
 import { R2Image } from "@/components/r2-image";
+import { deletePFileReference } from "@/core/p-file-deletion";
 import { EmployeeForm, employeeFromForm } from "@/components/employee-form";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -31,6 +32,8 @@ export const Route = createFileRoute("/_authenticated/workforce_/$slug")({
       { name: "description", content: "Full employee profile: personal, employment, pass, payroll and documents." },
       { property: "og:title", content: "Employee profile — BSM Workforce & Operations" },
       { property: "og:description", content: "Full employee profile: personal, employment, pass, payroll and documents." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: EmployeeProfilePage,
@@ -529,11 +532,10 @@ function PFilePanel({
     setError(null);
     setBusy("delete");
     try {
-      await deleteFromR2(url);
-    } catch {
-      // File may already be gone from storage — still clear the record.
+      await deletePFileReference(url, deleteFromR2, () => onChange(undefined));
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Delete failed. The P-File reference has been kept.");
     } finally {
-      onChange(undefined);
       setBusy(null);
     }
   }

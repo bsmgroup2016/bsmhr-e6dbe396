@@ -22,3 +22,5 @@
 - Page data uses an explicit collection dependency map and an identity/company browser cache over caller-RLS API v1 reads; only confirmed writes invalidate affected tables, to avoid navigation-wide reloads.
 - Attendance and issuance list pages use server pagination and exact counts; derived summaries and exports traverse every page, so the REST response cap cannot truncate totals.
 - Known absent tables are guarded and their features hidden or reported unavailable, rather than requested or treated as empty success.
+- Chat history uses newest-first timestamp/id cursor reads and chronological deduplicated display; audit logs use fixed-size caller-RLS ranges, preventing repeated growing-list downloads.
+- Storage metadata registration must succeed before upload success is returned; P-file references clear only after successful storage deletion, preserving references on failure.

@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { isAdmin, r2ReadClients, safeKey, unregisterObject, verifyUser } from "@/lib/r2.server";
+import { isAdmin, r2ReadClients, keyFromRef, unregisterObject, verifyUser } from "@/lib/r2.server";
 
 export const Route = createFileRoute("/api/public/r2-delete")({
   server: {
@@ -9,7 +9,7 @@ export const Route = createFileRoute("/api/public/r2-delete")({
         if (!userId) return new Response("Unauthorized", { status: 401 });
         if (!(await isAdmin(userId))) return new Response("Forbidden", { status: 403 });
         const body = (await request.json().catch(() => ({}))) as { key?: string };
-        const key = safeKey(body.key || "");
+        const key = keyFromRef(typeof body.key === "string" ? body.key : "");
         if (!key) return new Response("Missing key", { status: 400 });
         try {
           for (const { client, base } of r2ReadClients(key)) {

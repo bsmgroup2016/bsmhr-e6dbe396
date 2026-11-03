@@ -1,4 +1,7 @@
 # Role-based account access
+- [x] Phase 2: correct P-file deletion and upload metadata errors; signed, lazy profile images.
+- [x] Phase 2: latest chat messages with older-history paging; fixed-size audit pages; 27 regression tests and read-only live paging checks.
+- [ ] Phase 2: signed-in end-to-end photo/chat/audit checks blocked by unavailable external-project browser session; actual deletion/upload tests not performed to preserve user data.
 - [x] Phase 1: replace navigation-wide hydration with session/company on-demand cache and successful-write invalidation.
 - [x] Phase 1: paginate attendance and asset issuances with company/period filters, exact totals, and complete exports.
 - [ ] Phase 1: authenticated UI regression and actual download checks blocked by unavailable external-project browser session; projections, guards, unit tests, live counts and public route verified.
