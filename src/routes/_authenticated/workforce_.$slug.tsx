@@ -167,6 +167,8 @@ function EmployeeProfilePage() {
                   ) : null}
                   <ExpiryBadge date={employee.passExpiry} label="Pass" />
                   <ExpiryBadge date={employee.passportExpiry} label="Passport" />
+                  <ExpiryBadge date={employee.workPermitExpiryDate} label="Work permit" />
+                  <ExpiryBadge date={employee.safetyCourseExpiry} label="CSOC" />
                 </div>
                 <p className="mt-2 text-xs text-muted-foreground">
                   {activeClient ? `${activeClient.name} • ` : ""}
