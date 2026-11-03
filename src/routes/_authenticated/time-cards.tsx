@@ -13,6 +13,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { matchCardWorker, uniqueCardMatch, type TimeCardIdentity } from "@/core/time-card-matching";
+import { exportCombinedClaims } from "@/lib/combined-claim-export";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
@@ -46,6 +48,7 @@ import {
   getEmployees,
   getProjects,
   getClients,
+  getSites,
   getTimeCards,
   updateTimeCard,
 } from "@/lib/store";
@@ -91,7 +94,11 @@ function TimeCardsPage() {
   const [cards, setCards] = useState(getTimeCards());
   const [sheets, setSheets] = useState(getClaimSheets());
   const [employeeId, setEmployeeId] = useState("");
-  const [pendingFiles, setPendingFiles] = useState<FileList | null>(null);
+  const sites = getSites();
+  const [siteId, setSiteId] = useState("");
+  type PendingScan = { fileName: string; fileUrl: string; entries: TimeCardEntry[]; identity: TimeCardIdentity };
+  const [pendingScans, setPendingScans] = useState<PendingScan[]>([]);
+  const [reviewScan, setReviewScan] = useState<PendingScan | null>(null);
   const [activeTab, setActiveTab] = useState("cards");
   const [month, setMonth] = useState(() => new Date().toISOString().slice(0, 7));
   const [uploading, setUploading] = useState(false);
@@ -147,57 +154,60 @@ function TimeCardsPage() {
   }
 
   async function scanOne(file: File) {
-    const { start, end } = monthRange(month);
-    const uploaded = await uploadToR2(file, "time-cards", undefined, employeeId);
-    let entries: TimeCardEntry[] = [];
+    const uploaded = await uploadToR2(file, "time-cards");
     const ocr = await extractTimeCardData(uploaded.url);
-    if (ocr.ok) {
-      entries = ocr.data.map((r) => ({
+    if (!ocr.ok) throw new Error(ocr.reason);
+    const entries = ocr.data.map((r) => ({
         date: r.date,
         checkIn: r.checkIn,
         checkOut: r.checkOut,
         confidence: r.confidence,
         suggestion: r.suggestion,
       }));
-    }
-    const card = addTimeCard({
-      employeeId,
-      periodStart: start,
-      periodEnd: end,
-      fileUrl: uploaded.url,
-      fileName: file.name,
-      status: "Draft",
-      entries,
-    });
-    return { card, rows: entries.length, reason: ocr.ok ? null : ocr.reason || OCR_NOT_CONFIGURED };
+    return { fileName: file.name, fileUrl: uploaded.url, entries, identity: (ocr.data[0] ?? {}) as TimeCardIdentity };
+  }
+
+  function openScan(scan: PendingScan) {
+    setReviewScan(scan);
+    setEmployeeId(matchCardWorker(scoped, scan.identity));
+    const matchedSite = uniqueCardMatch(sites, scan.identity.siteName, (site) => [site.name, site.code]);
+    setSiteId(matchedSite);
+    setProjectId(sites.find((site) => site.id === matchedSite)?.projectId ?? uniqueCardMatch(projects, scan.identity.projectName, (project) => [project.name, project.code]));
+    setMonth(scan.entries[0]?.date.slice(0, 7) ?? "");
+  }
+
+  function confirmScan() {
+    if (!reviewScan || !employeeId || !projectId || !month) return;
+    const { start, end } = monthRange(month);
+    const card = addTimeCard({ employeeId, periodStart: start, periodEnd: end, fileUrl: reviewScan.fileUrl, fileName: reviewScan.fileName, status: "Draft", entries: reviewScan.entries.map((entry) => ({ ...entry, projectId, siteId: siteId || undefined })) });
+    refresh(); setSelectedId(card.id); setActiveTab("cards");
+    const [next, ...rest] = pendingScans; setPendingScans(rest);
+    if (next) openScan(next); else setReviewScan(null);
   }
 
   async function handleUpload(fileList: FileList | null) {
     const files = fileList ? Array.from(fileList) : [];
     if (files.length === 0) return;
-    if (!employeeId) {
-      toast.error("Select an employee first");
-      return;
-    }
     setUploading(true);
     setProgress({ done: 0, total: files.length });
     try {
-      let lastId: string | null = null;
+      const scans: PendingScan[] = [];
       let totalRows = 0;
       const failed: string[] = [];
       for (const [i, file] of files.entries()) {
         try {
           const res = await scanOne(file);
-          lastId = res.card.id;
-          totalRows += res.rows;
-          if (res.reason) failed.push(`${file.name}: ${res.reason}`);
+          scans.push(res);
+          totalRows += res.entries.length;
         } catch (e) {
           failed.push(`${file.name}: ${e instanceof Error ? e.message : "upload failed"}`);
         }
         setProgress({ done: i + 1, total: files.length });
       }
       refresh();
-      if (lastId) { setSelectedId(lastId); setActiveTab("cards"); }
+      const [first, ...rest] = scans;
+      setPendingScans(rest);
+      if (first) openScan(first);
       if (totalRows > 0) {
         toast.success(`Scanned ${totalRows} row(s) from ${files.length} card(s)`);
       }
@@ -404,7 +414,13 @@ function TimeCardsPage() {
           <ol className="flex flex-wrap gap-x-6 gap-y-2 text-sm font-medium text-muted-foreground">
             <li className="text-primary">1. Upload time cards</li><li>2. OCR & review</li><li>3. Generate claim sheet</li>
           </ol>
-          <div className="grid items-end gap-4 md:grid-cols-2">
+          <div className="flex flex-wrap items-center gap-3 border border-dashed border-border bg-muted/30 p-5">
+            <ScanLine className="h-8 w-8 shrink-0 text-primary" />
+            <div className="min-w-0 flex-1"><h3 className="font-medium">Upload time cards</h3><p className="text-sm text-muted-foreground">PDF or images</p></div>
+            <Button asChild className="gap-2"><Label htmlFor="claim-upload" className={uploading ? "pointer-events-none opacity-50" : "cursor-pointer"}><Upload className="h-4 w-4" />{uploading ? "Reading cards…" : "Upload & extract"}</Label></Button>
+            <input id="claim-upload" className="hidden" type="file" multiple accept="image/*,application/pdf" disabled={uploading || reviewScan !== null} onChange={(event) => { void handleUpload(event.target.files); event.target.value = ""; }} />
+          </div>
+          {selected && <div className="grid items-end gap-4 md:grid-cols-2">
             <div className="min-w-0 space-y-2">
               <Label htmlFor="claim-project">Project</Label>
               <Select value={projectId} onValueChange={setProjectId}>
@@ -419,15 +435,7 @@ function TimeCardsPage() {
               <Label htmlFor="claim-month">Claim period</Label>
               <Input id="claim-month" type="month" value={month} onChange={(event) => setMonth(event.target.value)} />
             </div>
-          </div>
-          <div className="flex flex-wrap items-center gap-3 border border-dashed border-border bg-muted/30 p-5">
-            <ScanLine className="h-8 w-8 shrink-0 text-primary" />
-            <div className="min-w-0 flex-1"><h3 className="font-medium">Scanned time cards</h3><p className="text-sm text-muted-foreground">PDF or images</p></div>
-            <Button asChild disabled={uploading || !projectId || !month} className="gap-2">
-              <Label htmlFor="claim-upload" className={uploading || !projectId || !month ? "pointer-events-none opacity-50" : "cursor-pointer"}><Upload className="h-4 w-4" />{uploading ? "Processing…" : "Upload & extract"}</Label>
-            </Button>
-            <input id="claim-upload" className="hidden" type="file" multiple accept="image/*,application/pdf" disabled={uploading || !projectId || !month} onChange={(event) => { if (event.target.files?.length) { setEmployeeId(""); setPendingFiles(event.target.files); } event.target.value = ""; }} />
-          </div>
+          </div>}
           {uploading && <p role="status" className="text-sm text-primary">{progress ? `Extracting time cards ${progress.done}/${progress.total}…` : "Processing time cards…"}</p>}
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" disabled={!selected} onClick={() => setActiveTab("cards")} className="gap-2"><ScanLine className="h-4 w-4" />Review extracted data</Button>
@@ -435,13 +443,17 @@ function TimeCardsPage() {
           </div>
         </section>
 
-        <Dialog open={pendingFiles !== null} onOpenChange={(open) => { if (!open) setPendingFiles(null); }}>
+        <Dialog open={reviewScan !== null} onOpenChange={(open) => { if (!open) { setReviewScan(null); setPendingScans([]); } }}>
           <DialogContent>
-            <DialogHeader><DialogTitle>Confirm time-card worker</DialogTitle></DialogHeader>
-            <p className="text-sm text-muted-foreground">{pendingFiles?.length ?? 0} file(s). All selected cards must belong to the same worker.</p>
-            <Label>Worker on these cards</Label>
+            <DialogHeader><DialogTitle>Review extracted card details</DialogTitle></DialogHeader>
+            <p className="text-sm text-muted-foreground">{reviewScan?.fileName} · {reviewScan?.entries.length ?? 0} days read</p>
+            <p className="text-sm">{[reviewScan?.identity.workerName, reviewScan?.identity.employeeCode, reviewScan?.identity.projectName, reviewScan?.identity.siteName].filter(Boolean).join(" · ") || "Card identity was unreadable. Confirm the details below."}</p>
+            <Label>Worker</Label>
             <Select value={employeeId} onValueChange={setEmployeeId}><SelectTrigger><SelectValue placeholder="Match the worker on the time card" /></SelectTrigger><SelectContent>{scoped.map((employee) => <SelectItem key={employee.id} value={employee.id}>{employee.name} ({employee.employeeCode})</SelectItem>)}</SelectContent></Select>
-            <Button disabled={!employeeId} onClick={() => { const files = pendingFiles; setPendingFiles(null); void handleUpload(files); }}><ScanLine className="mr-2 h-4 w-4" />Start OCR</Button>
+            <Label>Project</Label><Select value={projectId} onValueChange={(value) => { setProjectId(value); setSiteId(""); }}><SelectTrigger><SelectValue placeholder="Confirm project" /></SelectTrigger><SelectContent>{projects.map((project) => <SelectItem key={project.id} value={project.id}>{project.name}</SelectItem>)}</SelectContent></Select>
+            <Label>Site</Label><Select value={siteId} onValueChange={setSiteId}><SelectTrigger><SelectValue placeholder="Confirm site (optional)" /></SelectTrigger><SelectContent>{sites.filter((site) => site.projectId === projectId).map((site) => <SelectItem key={site.id} value={site.id}>{site.name}</SelectItem>)}</SelectContent></Select>
+            <Label htmlFor="review-month">Period read from card</Label><Input id="review-month" type="month" value={month} onChange={(event) => setMonth(event.target.value)} />
+            <Button disabled={!employeeId || !projectId || !month} onClick={confirmScan}><CheckCircle2 className="mr-2 h-4 w-4" />Confirm & review times</Button>
           </DialogContent>
         </Dialog>
 
@@ -835,6 +847,7 @@ function TimeCardsPage() {
           </TabsContent>
 
           <TabsContent value="sheets" className="mt-4">
+            <Button variant="outline" className="mb-4 gap-2" disabled={!sheets.length} onClick={() => void exportCombinedClaims(sheets.filter((sheet) => (!companyId || sheet.companyId === companyId) && sheet.periodStart.startsWith(month)), employees, `COMBINED CLAIM SHEET — ${month}`).catch((error) => toast.error(error instanceof Error ? error.message : "Export failed"))}><FileSpreadsheet className="h-4 w-4" />Export combined Excel</Button>
             <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
               <Table>
                 <TableHeader>
