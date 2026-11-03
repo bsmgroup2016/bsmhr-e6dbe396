@@ -442,6 +442,8 @@ export interface TimeCardEntry {
   date: string;
   projectId?: string;
   siteId?: string;
+  projectName?: string;
+  siteName?: string;
   checkIn?: string;
   checkOut?: string;
   resolution?: "Accepted" | "Corrected" | "Ignored";

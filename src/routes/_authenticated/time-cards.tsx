@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { matchCardWorker, uniqueCardMatch, type TimeCardIdentity } from "@/core/time-card-matching";
+import { canConfirmCardDetails, matchCardWorker, uniqueCardMatch, type TimeCardIdentity } from "@/core/time-card-matching";
 import { completeTimeCardReview } from "@/core/time-card-review";
 import { exportCombinedClaims, claimSheetTitle } from "@/lib/combined-claim-export";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -98,6 +98,7 @@ function TimeCardsPage() {
   const [employeeId, setEmployeeId] = useState("");
   const sites = getSites();
   const [siteId, setSiteId] = useState("");
+  const [siteName, setSiteName] = useState("");
   type PendingScan = { fileName: string; fileUrl: string; entries: TimeCardEntry[]; identity: TimeCardIdentity };
   const [pendingScans, setPendingScans] = useState<PendingScan[]>([]);
   const [reviewScan, setReviewScan] = useState<PendingScan | null>(null);
@@ -167,7 +168,11 @@ function TimeCardsPage() {
         confidence: r.confidence,
         suggestion: r.suggestion,
       }));
-    return { fileName: file.name, fileUrl: uploaded.url, entries, identity: (ocr.data[0] ?? {}) as TimeCardIdentity };
+    const identity: TimeCardIdentity = {};
+    for (const key of ["workerName", "employeeCode", "fin", "projectName", "siteName"] as const) {
+      identity[key] = ocr.data.find((row) => row[key]?.trim())?.[key];
+    }
+    return { fileName: file.name, fileUrl: uploaded.url, entries, identity };
   }
 
   function openScan(scan: PendingScan) {
@@ -175,14 +180,15 @@ function TimeCardsPage() {
     setEmployeeId(matchCardWorker(scoped, scan.identity));
     const matchedSite = uniqueCardMatch(sites, scan.identity.siteName, (site) => [site.name, site.code]);
     setSiteId(matchedSite);
-    setProjectId(sites.find((site) => site.id === matchedSite)?.projectId ?? uniqueCardMatch(projects, scan.identity.projectName, (project) => [project.name, project.code]));
+    setSiteName(scan.identity.siteName?.trim() ?? "");
+    setProjectId(uniqueCardMatch(projects, scan.identity.projectName, (project) => [project.name, project.code]));
     setMonth(scan.entries[0]?.date.slice(0, 7) ?? "");
   }
 
   function confirmScan() {
-    if (!reviewScan || !employeeId || !projectId || !month) return;
+    if (!reviewScan || !canConfirmCardDetails(employeeId, month, siteName)) return;
     const { start, end } = monthRange(month);
-    const card = addTimeCard({ employeeId, periodStart: start, periodEnd: end, fileUrl: reviewScan.fileUrl, fileName: reviewScan.fileName, status: "Draft", entries: reviewScan.entries.map((entry) => ({ ...entry, projectId, siteId: siteId || undefined })) });
+    const card = addTimeCard({ employeeId, periodStart: start, periodEnd: end, fileUrl: reviewScan.fileUrl, fileName: reviewScan.fileName, status: "Draft", entries: reviewScan.entries.map((entry) => ({ ...entry, projectId: projectId || undefined, projectName: projects.find((project) => project.id === projectId)?.name ?? reviewScan.identity.projectName, siteId: siteId || undefined, siteName: siteName.trim() })) });
     refresh(); setSelectedId(card.id); setActiveTab("cards");
     const [next, ...rest] = pendingScans; setPendingScans(rest);
     if (next) openScan(next); else { setReviewScan(null); setVerificationOpen(true); }
@@ -473,15 +479,17 @@ function TimeCardsPage() {
             <p className="text-sm font-medium text-foreground">Selected card: {empName(selected.employeeId)} · {selected.periodStart} → {selected.periodEnd}</p>
             <div className="grid items-end gap-4 md:grid-cols-2">
             <div className="min-w-0 space-y-2">
-              <Label htmlFor="claim-project">Project</Label>
-              <Select value={selected.entries.find((entry) => entry.projectId)?.projectId ?? ""} onValueChange={(value) => { updateTimeCard(selected.id, { entries: selected.entries.map((entry) => ({ ...entry, projectId: value, siteId: undefined })) }); setProjectId(value); refresh(); }}>
+              <Label htmlFor="claim-project">Project (optional)</Label>
+              <Select value={selected.entries.find((entry) => entry.projectId)?.projectId ?? "none"} onValueChange={(value) => { const id = value === "none" ? undefined : value; updateTimeCard(selected.id, { entries: selected.entries.map((entry) => ({ ...entry, projectId: id, projectName: id ? projects.find((project) => project.id === id)?.name : undefined })) }); setProjectId(id ?? ""); refresh(); }}>
                 <SelectTrigger id="claim-project" className="w-full"><SelectValue placeholder="Select project" /></SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="none">No project selected</SelectItem>
                   {projects.map((project) => <SelectItem key={project.id} value={project.id}>{project.code} — {project.name}</SelectItem>)}
                 </SelectContent>
               </Select>
               {!projects.length && <p className="text-sm text-muted-foreground">No projects available for this company.</p>}
             </div>
+            <div className="space-y-2"><Label htmlFor="claim-site">Site</Label><Input id="claim-site" value={selected.entries.find((entry) => entry.siteName)?.siteName ?? sites.find((site) => site.id === selected.entries.find((entry) => entry.siteId)?.siteId)?.name ?? ""} onChange={(event) => { const name = event.target.value; updateTimeCard(selected.id, { status: "Draft", entries: selected.entries.map((entry) => ({ ...entry, siteName: name, siteId: uniqueCardMatch(sites, name, (site) => [site.name, site.code]) || undefined })) }); refresh(); }} /></div>
             <div className="space-y-2">
               <Label htmlFor="claim-month">Claim period</Label>
               <Input id="claim-month" type="month" value={selected.periodStart.slice(0, 7)} readOnly />
@@ -502,10 +510,10 @@ function TimeCardsPage() {
             <p className="text-sm">{[reviewScan?.identity.workerName, reviewScan?.identity.employeeCode, reviewScan?.identity.projectName, reviewScan?.identity.siteName].filter(Boolean).join(" · ") || "Card identity was unreadable. Confirm the details below."}</p>
             <Label>Worker</Label>
             <Select value={employeeId} onValueChange={setEmployeeId}><SelectTrigger><SelectValue placeholder="Match the worker on the time card" /></SelectTrigger><SelectContent>{scoped.map((employee) => <SelectItem key={employee.id} value={employee.id}>{employee.name} ({employee.employeeCode})</SelectItem>)}</SelectContent></Select>
-            <Label>Project</Label><Select value={projectId} onValueChange={(value) => { setProjectId(value); setSiteId(""); }}><SelectTrigger><SelectValue placeholder="Confirm project" /></SelectTrigger><SelectContent>{projects.map((project) => <SelectItem key={project.id} value={project.id}>{project.name}</SelectItem>)}</SelectContent></Select>
-            <Label>Site</Label><Select value={siteId} onValueChange={setSiteId}><SelectTrigger><SelectValue placeholder="Confirm site (optional)" /></SelectTrigger><SelectContent>{sites.filter((site) => site.projectId === projectId).map((site) => <SelectItem key={site.id} value={site.id}>{site.name}</SelectItem>)}</SelectContent></Select>
+            <Label>Project (optional)</Label><Select value={projectId || "none"} onValueChange={(value) => setProjectId(value === "none" ? "" : value)}><SelectTrigger><SelectValue placeholder="Select project (optional)" /></SelectTrigger><SelectContent><SelectItem value="none">No project selected</SelectItem>{projects.map((project) => <SelectItem key={project.id} value={project.id}>{project.name}</SelectItem>)}</SelectContent></Select>
+            <Label htmlFor="review-site">Site</Label><Input id="review-site" value={siteName} required placeholder="Site name printed on time card" onChange={(event) => { setSiteName(event.target.value); setSiteId(uniqueCardMatch(sites, event.target.value, (site) => [site.name, site.code])); }} />
             <Label htmlFor="review-month">Period read from card</Label><Input id="review-month" type="month" value={month} onChange={(event) => setMonth(event.target.value)} />
-            <Button disabled={!employeeId || !projectId || !month} onClick={confirmScan}><CheckCircle2 className="mr-2 h-4 w-4" />Confirm & review times</Button>
+            <Button disabled={!canConfirmCardDetails(employeeId, month, siteName)} onClick={confirmScan}><CheckCircle2 className="mr-2 h-4 w-4" />Confirm & review times</Button>
           </DialogContent>
         </Dialog>
 

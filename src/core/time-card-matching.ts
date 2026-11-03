@@ -1,6 +1,27 @@
 export interface TimeCardIdentity {
   workerName?: string; employeeCode?: string; fin?: string; projectName?: string; siteName?: string;
 }
+export function canConfirmCardDetails(workerId: string, month: string, siteName: string): boolean {
+  return Boolean(workerId && /^\d{4}-\d{2}$/.test(month) && siteName.trim());
+}
+
+/** Printed names take precedence; do not infer a demo site from attendance. */
+export function claimCardLocation(
+  entry: { siteName?: string; siteId?: string; projectName?: string; projectId?: string },
+  sites: { id: string; name: string; projectId?: string }[],
+  projects: { id: string; name: string }[],
+  attendanceSiteId?: string,
+) {
+  const siteId = entry.siteId ?? (entry.siteName ? undefined : attendanceSiteId);
+  const site = sites.find((item) => item.id === siteId);
+  const projectId = entry.projectId ?? (entry.siteName || entry.projectName ? undefined : site?.projectId);
+  return {
+    siteId,
+    site: entry.siteName || site?.name,
+    projectId,
+    projectName: entry.projectName || projects.find((item) => item.id === projectId)?.name,
+  };
+}
 const normalize = (value?: string) => (value ?? "").toUpperCase().replace(/[^A-Z0-9]/g, "");
 export function uniqueCardMatch<T extends { id: string }>(items: T[], value: string | undefined, fields: (item: T) => (string | undefined)[]): string {
   const key = normalize(value);
