@@ -573,15 +573,16 @@ export default function WorkforcePage() {
   }
 
   function handleCreate(formData: FormData) {
-    const created = addEmployee({
+    addEmployee({
       ...employeeFromForm(formData),
       site: null,
       companyId:
         (companyFilter !== "all" ? companyFilter : undefined) ??
         getCurrentCompany() ??
         companies[0]?.id,
-    } as Omit<Employee, "id" | "employeeCode" | "createdAt" | "updatedAt">);
-    for (const document of employeeFormDocuments(formData)) addDocument({ ...document, employeeId: created.id });
+    } as Omit<Employee, "id" | "employeeCode" | "createdAt" | "updatedAt">, (created) => {
+      for (const document of employeeFormDocuments(formData)) addDocument({ ...document, employeeId: created.id });
+    });
     setIsCreateOpen(false);
     refresh();
   }
