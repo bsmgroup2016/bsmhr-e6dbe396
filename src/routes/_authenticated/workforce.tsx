@@ -24,6 +24,7 @@ import { R2Image } from "@/components/r2-image";
 import { EmployeeForm, employeeFromForm, WORKER_CATEGORIES, DEPLOYMENT_STATUSES } from "@/components/employee-form";
 import { EmployeeRegistration } from "@/components/employee-registration";
 import { employeeFormDocuments } from "@/core/employee-form-documents";
+import { estimatedWorkPermitExpiry, workPermitDatesFromExcel } from "@/core/work-permit-expiry";
 import { addDocument } from "@/lib/store";
 import { ExportButton, ImportDialog } from "@/components/data-io";
 import { PFileDownloadButton } from "@/components/p-file-download-button";
@@ -130,6 +131,7 @@ const EMPLOYEE_IMPORT_COLUMNS: ImportColumn[] = [
   { key: "passType", label: "Pass Type", example: "Work Permit" },
   { key: "passExpiry", label: "Pass Expiry", example: "2027-05-31" },
   { key: "workPermitNumber", label: "Work Permit Number", example: "0-1234567" },
+  { key: "workPermitIssueDate", label: "Work Permit Issue Date", example: "2024-12-20" },
   { key: "workPermitExpiry", label: "Work Permit Expiry", example: "2027-05-31" },
   { key: "branch", label: "Branch", example: "BSM Engineering" },
   { key: "department", label: "Department", example: "Construction" },
@@ -247,6 +249,7 @@ function toEmployeeRow(employee: Employee) {
     row[c.label] = v == null || v === "-" ? "" : v;
   }
   row["Days To Expiry"] = daysUntil(employee.passExpiry) ?? "";
+  row["Estimated Work Permit Expiry (Unverified)"] = estimatedWorkPermitExpiry(employee.workPermitIssueDate, employee.passType) ?? "";
   return row;
 }
 
@@ -499,7 +502,7 @@ export default function WorkforcePage() {
         branch: get("branch") || undefined,
         passportNumber: get("passportNumber") || undefined,
         workPermitNumber: get("workPermitNumber") || undefined,
-        workPermitExpiryDate: normalizeDate(get("workPermitExpiry")) || undefined,
+        ...workPermitDatesFromExcel(normalizeDate(get("workPermitIssueDate")), normalizeDate(get("workPermitExpiry"))),
         passportExpiry: normalizeDate(get("passportExpiry")) || undefined,
         dateOfBirth: normalizeDate(get("dateOfBirth")) || undefined,
         gender: (get("gender") || undefined) as Employee["gender"],
@@ -1212,6 +1215,9 @@ function EmployeeDetail({ employee, onEdit }: { employee: Employee; onEdit: () =
         <DetailItem label="FIN / NRIC" value={employee.fin} />
         <DetailItem label="Pass type" value={employee.passType} />
         <DetailItem label="Pass expiry" value={employee.passExpiry} />
+        <DetailItem label="Work Permit issue date (confirmed)" value={employee.workPermitIssueDate || "—"} />
+        <DetailItem label="Work Permit expiry date" value={employee.workPermitExpiryDate || "—"} />
+        {employee.passType === "Work Permit" && <DetailItem label="Estimated Work Permit expiry — Unverified" value={estimatedWorkPermitExpiry(employee.workPermitIssueDate, employee.passType) || "—"} />}
         <DetailItem label={isOfficeStaff(employee) ? "Monthly salary" : "Basic rate / day"} value={`$${employee.basicSalary.toLocaleString()}`} />
         <DetailItem label="IPA basic monthly salary" value={employee.basicMonthlySalary != null ? `$${employee.basicMonthlySalary.toLocaleString()}` : "—"} />
         <DetailItem

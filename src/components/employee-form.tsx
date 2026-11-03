@@ -1,4 +1,5 @@
 import { IPA_DETAIL_FIELDS, ipaDetailsFromForm } from "@/core/ipa-detail-fields";
+import { estimatedWorkPermitExpiry } from "@/core/work-permit-expiry";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -170,11 +171,13 @@ function Pick({
   options,
   defaultValue,
   placeholder,
+  onValueChange,
 }: {
   name: string;
   options: readonly string[];
   defaultValue?: string;
   placeholder?: string;
+  onValueChange?: (value: string) => void;
 }) {
   const [selected, setSelected] = useState(defaultValue ?? "");
   useEffect(() => {
@@ -186,7 +189,7 @@ function Pick({
     return () => document.removeEventListener("employee-autofill", handler);
   }, [name, selected, options]);
   return (
-    <Select name={name} value={selected} onValueChange={setSelected}>
+    <Select name={name} value={selected} onValueChange={(value) => { setSelected(value); onValueChange?.(value); }}>
       <SelectTrigger>
         <SelectValue placeholder={placeholder ?? "Select"} />
       </SelectTrigger>
@@ -215,6 +218,9 @@ export function EmployeeForm({
   submitLabel?: string;
 }) {
   const values = employee ?? initialValues;
+  const [issueDate, setIssueDate] = useState(dateValue(values?.workPermitIssueDate));
+  const [permitType, setPermitType] = useState(values?.passType || "Work Permit");
+  const estimatedExpiry = estimatedWorkPermitExpiry(issueDate, permitType);
   const prefixes = useMemo(() => getBranchPrefixes(), []);
   const [branch, setBranch] = useState(values?.branch ?? prefixes[0]?.name ?? "Unassigned");
   const [code, setCode] = useState(
@@ -269,6 +275,7 @@ export function EmployeeForm({
     const setter = Object.getOwnPropertyDescriptor(el instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype, "value")?.set;
     setter?.call(el, value);
     el.dispatchEvent(new Event("input", { bubbles: true }));
+    if (field === "workPermitIssueDate") setIssueDate(el.value);
     return el.value === value ? 1 : 0;
   }
 
@@ -606,7 +613,7 @@ export function EmployeeForm({
               <Input name="fin" defaultValue={values?.fin} required />
             </Field>
             <Field label="Pass type">
-              <Pick name="passType" options={PASS_TYPES} defaultValue={values?.passType || "Work Permit"} />
+              <Pick name="passType" options={PASS_TYPES} defaultValue={values?.passType || "Work Permit"} onValueChange={(value) => setPermitType(value as PassType)} />
             </Field>
             <Field label="Citizenship / PR status (CPF)">
               <Pick
@@ -632,12 +639,16 @@ export function EmployeeForm({
             <Field label="Work Permit number">
               <Input name="workPermitNumber" defaultValue={values?.workPermitNumber ?? ""} />
             </Field>
-            <Field label="Work Permit issue date">
-              <Input name="workPermitIssueDate" type="date" defaultValue={dateValue(values?.workPermitIssueDate)} />
+            <Field label="Work Permit issue date (confirmed)">
+              <Input name="workPermitIssueDate" type="date" defaultValue={dateValue(values?.workPermitIssueDate)} onChange={(event) => setIssueDate(event.target.value)} />
             </Field>
             <Field label="Work Permit expiry date">
               <Input name="workPermitExpiryDate" type="date" defaultValue={dateValue(values?.workPermitExpiryDate)} />
             </Field>
+            {permitType === "Work Permit" && <Field label="Estimated Work Permit expiry — Unverified">
+              <p className="text-sm font-medium text-foreground" role="status">{estimatedExpiry || "—"}</p>
+              <p className="text-xs text-muted-foreground">One-year company estimate. Not the confirmed MOM expiry.</p>
+            </Field>}
             <Field label="Pass expiry">
               <Input name="passExpiry" type="date" defaultValue={dateValue(values?.passExpiry)} />
             </Field>
