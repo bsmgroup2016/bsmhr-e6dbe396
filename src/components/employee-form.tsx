@@ -28,6 +28,8 @@ import { OCR_NOT_CONFIGURED, extractIpaData, extractPassportData, extractParticu
 import { ipaEmployeeDefaults } from "@/core/ipa-registration";
 import { documentEmployeeFields, type EmployeeDocumentKind } from "@/core/employee-document-fields";
 import { isOfficeStaff } from "@/lib/workforce-split";
+import { storedFormDocumentUrls } from "@/core/employee-form-documents";
+import { getDocumentsByEmployee } from "@/lib/store";
 import type {
   DeploymentStatus,
   Employee,
@@ -218,6 +220,7 @@ export function EmployeeForm({
   submitLabel?: string;
 }) {
   const values = employee ?? initialValues;
+  const storedDocs = useMemo(() => (employee?.id ? storedFormDocumentUrls(getDocumentsByEmployee(employee.id)) : {}), [employee?.id]);
   const [issueDate, setIssueDate] = useState(dateValue(values?.workPermitIssueDate));
   const [permitType, setPermitType] = useState(values?.passType || "Work Permit");
   const estimatedExpiry = estimatedWorkPermitExpiry(issueDate, permitType);
@@ -474,6 +477,9 @@ export function EmployeeForm({
             name="passportUpload"
             label="Passport upload"
             folder="documents"
+            display="document"
+            documentLabel="Passport"
+            defaultValue={storedDocs.passportUpload || ""}
             accept=".pdf,.jpg,.jpeg,.png,.webp"
             onUploaded={(url) => void autoFillDocument("passport", url)}
           />
@@ -598,9 +604,9 @@ export function EmployeeForm({
               onUploaded={(url) => { setIpaUrl(url); void autoFillFromIpa(url); }}
             />
           </div>
-          <FileUpload name="workPermitUpload" label="Work Permit upload" folder="documents" display="document" documentLabel="Work Permit" accept=".pdf,.jpg,.jpeg,.png,.webp" onUploaded={(url) => void autoFillDocument("workpermit", url)} />
+          <FileUpload name="workPermitUpload" label="Work Permit upload" folder="documents" display="document" documentLabel="Work Permit" defaultValue={storedDocs.workPermitUpload || ""} accept=".pdf,.jpg,.jpeg,.png,.webp" onUploaded={(url) => void autoFillDocument("workpermit", url)} />
           {readAgain("workpermit")}
-          <FileUpload name="csocUpload" label="CSOC upload" folder="documents" display="document" documentLabel="CSOC" accept=".pdf,.jpg,.jpeg,.png,.webp" onUploaded={(url) => void autoFillDocument("csoc", url)} />
+          <FileUpload name="csocUpload" label="CSOC upload" folder="documents" display="document" documentLabel="CSOC" defaultValue={storedDocs.csocUpload || ""} accept=".pdf,.jpg,.jpeg,.png,.webp" onUploaded={(url) => void autoFillDocument("csoc", url)} />
           {readAgain("csoc")}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label="IPA approval date">

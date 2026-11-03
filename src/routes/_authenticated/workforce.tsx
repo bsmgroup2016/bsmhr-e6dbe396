@@ -25,7 +25,7 @@ import { EmployeeForm, employeeFromForm, WORKER_CATEGORIES, DEPLOYMENT_STATUSES 
 import { EmployeeRegistration } from "@/components/employee-registration";
 import { employeeFormDocuments } from "@/core/employee-form-documents";
 import { estimatedWorkPermitExpiry, workPermitDatesFromExcel } from "@/core/work-permit-expiry";
-import { addDocument } from "@/lib/store";
+import { addDocument, getDocumentsByEmployee } from "@/lib/store";
 import { ExportButton, ImportDialog } from "@/components/data-io";
 import { PFileDownloadButton } from "@/components/p-file-download-button";
 import { PFileBulkDownloadButton } from "@/components/p-file-bulk-download-button";
@@ -595,7 +595,7 @@ export default function WorkforcePage() {
   function handleEdit(formData: FormData) {
     if (!editingEmployee) return;
     updateEmployee(editingEmployee.id, employeeFromForm(formData));
-    for (const document of employeeFormDocuments(formData)) addDocument({ ...document, employeeId: editingEmployee.id });
+    for (const document of employeeFormDocuments(formData, getDocumentsByEmployee(editingEmployee.id))) addDocument({ ...document, employeeId: editingEmployee.id });
     setEditingEmployee(null);
     refresh();
   }
