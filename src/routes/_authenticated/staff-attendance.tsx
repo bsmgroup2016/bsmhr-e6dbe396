@@ -39,12 +39,17 @@ import { getEmployees, getAttendance, getCurrentCompany, getLeaveRequests } from
 import { isOfficeStaff } from "@/lib/workforce-split";
 import { exportRows, timestampedName } from "@/lib/xlsx";
 import { toast } from "sonner";
+import { StaffExcelActions } from "@/components/staff-excel-actions";
 
 export const Route = createFileRoute("/_authenticated/staff-attendance")({
   head: () => ({
     meta: [
       { title: "Staff Attendance — BSM Management" },
       { name: "description", content: "Office staff daily attendance tracking." },
+      { property: "og:title", content: "Staff Attendance — BSM Management" },
+      { property: "og:description", content: "Office staff daily attendance tracking." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: StaffAttendancePage,
@@ -124,16 +129,22 @@ function StaffAttendancePage() {
   }, [filteredAttendance]);
 
   const handleExport = async () => {
+    try {
     const rows = filteredAttendance.map(item => ({
-      "Employee ID": item.staff.employeeCode,
+      "P-File No": item.staff.employeeCode,
+      "Date": date,
       "Name": item.staff.name,
       "Department": item.staff.department || "—",
       "Status": item.record.status,
       "Check In": item.record.checkIn || "—",
       "Check Out": item.record.checkOut || "—",
+      "Normal Hours": item.record.hoursWorked ?? 0,
+      "OT Hours": "overtimeHours" in item.record ? item.record.overtimeHours ?? 0 : 0,
+      "Notes": "notes" in item.record ? item.record.notes ?? "" : "",
     }));
     await exportRows(rows, timestampedName(`staff_attendance_${date}`, "xlsx"), "Staff");
     toast.success("Attendance report exported");
+    } catch (error) { toast.error(error instanceof Error ? error.message : "Excel export failed"); }
   };
 
   const notifyLunch = (type: 'start' | 'end') => {
@@ -156,17 +167,14 @@ function StaffAttendancePage() {
             <h1 className="text-2xl font-semibold tracking-tight">Staff Attendance</h1>
             <p className="text-sm text-muted-foreground">Office staff daily attendance, office hours, and monthly basic tracking.</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Input 
               type="date" 
               value={date} 
               onChange={(e) => setDate(e.target.value)} 
               className="w-40"
             />
-            <Button size="sm" variant="outline" onClick={handleExport}>
-              <Download className="mr-2 h-4 w-4" />
-              Export
-            </Button>
+            <StaffExcelActions section="attendance" onExport={handleExport} />
           </div>
         </div>
 

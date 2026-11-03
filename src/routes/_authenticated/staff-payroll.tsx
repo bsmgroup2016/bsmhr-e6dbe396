@@ -18,6 +18,7 @@ import { getEmployees, getAttendance, getCurrentCompany } from "@/lib/store";
 import { isOfficeStaff } from "@/lib/workforce-split";
 import { exportRows, timestampedName } from "@/lib/xlsx";
 import { toast } from "sonner";
+import { StaffExcelActions } from "@/components/staff-excel-actions";
 
 export const Route = createFileRoute("/_authenticated/staff-payroll")({
   head: () => ({
@@ -93,9 +94,11 @@ function StaffPayrollPage() {
   const money = (n: number) => `$${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
   const handleExport = async () => {
+    try {
     await exportRows(
       rows.map((r) => ({
         "P-File No": r.code,
+        Month: month,
         Name: r.name,
         Department: r.department,
         Designation: r.designation,
@@ -111,6 +114,7 @@ function StaffPayrollPage() {
       "Staff Payroll",
     );
     toast.success("Staff payroll exported");
+    } catch (error) { toast.error(error instanceof Error ? error.message : "Excel export failed"); }
   };
 
   return (
@@ -123,12 +127,9 @@ function StaffPayrollPage() {
               Monthly fixed salary for office staff — absent days deducted at salary / {WORKING_DAYS} days, OT added on top.
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Input type="month" value={month} onChange={(e) => setMonth(e.target.value)} className="w-40" />
-            <Button size="sm" variant="outline" onClick={handleExport}>
-              <Download className="mr-2 h-4 w-4" />
-              Export
-            </Button>
+            <StaffExcelActions section="payroll" onExport={handleExport} />
           </div>
         </div>
 

@@ -18,3 +18,4 @@
 - Live chat: tables live_chats/live_chat_messages are service-role-only; all access goes through /api/public/live-chat (agents = admin/manager/hr), AI replies reuse runAssistant with the caller's session.
 - Chatbot training: ai_knowledge/ai_crawl_runs/ai_training_settings are service-role-only, managed via admin-only /api/public/ai-training; an hourly pg_cron tick (x-cron-secret) crawls when due, and runAssistant appends enabled notes/skills/table map to its system prompt.
 - Assistant insights: src/lib/insights.server.ts computes expiries and project attendance shortfalls with the caller's session; reused by the workforce_alerts tool, get_worker_files (1-hour R2 links after canAccessKey) and the staff popup endpoint /api/public/ai-alerts.
+- Staff Excel download controls share one component and CDN-hosted provisional templates; payroll exports remain derived reports, not editable persisted payroll rows.
