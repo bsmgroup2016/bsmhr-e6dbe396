@@ -19,9 +19,12 @@ import type { ClientContract } from "@/lib/types";
 import type { Quotation, QuotationLine } from "@/lib/types";
 import type { MedicalClaim, EmployeeLoan, LoanRepayment, ManpowerRequest, ManpowerRequestItem } from "@/lib/types";
 import { supabase } from "@/integrations/supabase/client";
+import { sessionDataCache } from "@/lib/session-data-cache";
+import { pageCollections } from "@/lib/page-data";
+import { assertAvailableTable } from "@/core/data-tables";
 import { computeStatutory, round2 } from "@/lib/sg-payroll";
 import {
-  loadAll, toEmployee, toClient, toProject, toSite, toAssignment,
+  loadCollection, COLLECTIONS, type CollectionKey, toEmployee, toClient, toProject, toSite, toAssignment,
   toDocument, toAttendance, toPayroll, toApproval, toCompany, toLeave,
   toRate, toInvoice,
   toDormitory, toAllocation, toVehicle, toTrip,
@@ -163,38 +166,71 @@ export function isHydrated() {
   return hydrated;
 }
 
-export async function hydrateStore(): Promise<void> {
-  const data = await loadAll();
-  const { data: authData } = await supabase.auth.getUser();
-  const authUser = authData?.user ?? null;
-  const currentUser =
-    (authUser && data.users.find((u) => u.id === authUser.id)) ||
-    (authUser
-      ? {
-          id: authUser.id,
-          name: (authUser.user_metadata?.full_name as string) ?? authUser.email ?? "User",
-          email: authUser.email ?? "",
-          role: "admin" as User["role"],
-          status: "active" as const,
-          createdAt: authUser.created_at,
-        }
-      : null);
+let sessionIdentity = "";
+let activePath = "/dashboard";
+let generation = 0;
 
-  const storedCompany = typeof window !== "undefined" ? localStorage.getItem("bsm-current-company") : null;
-  const companyId =
-    (storedCompany && data.companies.some((c) => c.id === storedCompany) && storedCompany) ||
-    data.companies[0]?.id ||
-    "";
+export function clearSessionStore() {
+  generation++;
+  sessionIdentity = "";
+  sessionDataCache.useSession("");
+  hydrated = false;
+  setState({ ...emptyState });
+}
 
-  setState({
-    ...emptyState,
-    ...data,
-    branches: defaultBranches,
-    currentBranch: "hq",
-    currentCompany: companyId,
-    currentUser,
-  });
+export async function ensureStoreCollections(keys: CollectionKey[]): Promise<void> {
+  const epoch = generation;
+  const companyId = getCurrentCompany();
+  const results = await Promise.all(keys.map((key) => loadCollection(key,
+    key === "attendance" || key === "issuances" ? { companyId } : { cacheCompany: companyId },
+  )));
+  if (epoch !== generation || companyId !== getCurrentCompany()) return;
+  const next = { ...getState(), ...Object.assign({}, ...results) };
+  // Preserve the employee/site relation formerly materialized by loadAll.
+  const names = new Map(next.sites.map((site) => [site.id, site.name]));
+  const byEmployee = new Map<string, string>();
+  for (const assignment of next.assignments) {
+    const name = names.get(assignment.siteId);
+    if (assignment.status === "Active" && name) byEmployee.set(assignment.employeeId, name);
+  }
+  next.employees = next.employees.map((employee) => ({ ...employee, site: byEmployee.get(employee.id) ?? null }));
+  setState(next);
+}
+
+export async function hydrateStore(pathname = activePath): Promise<void> {
+  activePath = pathname;
+  const { data } = await supabase.auth.getSession();
+  const user = data.session?.user;
+  if (!user) { clearSessionStore(); throw new Error("Please sign in again"); }
+  // Refresh-token rotation is not a new identity; sign-out clears explicitly.
+  if (sessionIdentity !== user.id) {
+    clearSessionStore();
+    sessionIdentity = user.id;
+    sessionDataCache.useSession(user.id);
+  }
+  const epoch = generation;
+  const base = await loadCollection("companies");
+  if (epoch !== generation) return;
+  const companies = base.companies ?? [];
+  const stored = typeof window !== "undefined" ? localStorage.getItem("bsm-current-company") : null;
+  const companyId = getCurrentCompany() || (stored && companies.some((c) => c.id === stored) ? stored : companies[0]?.id ?? "");
+  setState({ ...getState(), companies, currentCompany: companyId, currentUser: {
+    id: user.id, name: user.user_metadata?.full_name ?? user.email ?? "User", email: user.email ?? "",
+    role: getState().currentUser?.role ?? "client", status: "active", createdAt: user.created_at,
+  } });
+  await ensureStoreCollections(pageCollections(pathname).filter((key) => key !== "companies"));
   hydrated = true;
+}
+
+/** Only a confirmed successful write refreshes dependent cache entries. */
+export function invalidateStoreTable(table: string) {
+  sessionDataCache.invalidate(`${table}|`);
+  const dependent = table === "user_roles" || table === "profiles" ? "users" : Object.entries(COLLECTIONS).find(([, c]) => c.table === table)?.[0];
+  if (!dependent || !hydrated) return;
+  const keys = pageCollections(activePath);
+  if (keys.includes(dependent as CollectionKey)) {
+    void ensureStoreCollections([dependent as CollectionKey]).catch((error) => console.error("Data refresh failed", error));
+  }
 }
 
 /* ---------------- employees ---------------- */
@@ -1338,6 +1374,7 @@ export function dormOccupancy(dormitoryId: string): number {
 export function getDormitoryInvoices(): DormitoryInvoice[] { return getState().dormitoryInvoices; }
 
 export function addDormitoryInvoice(x: Omit<DormitoryInvoice, "id" | "createdAt" | "updatedAt">): DormitoryInvoice {
+  assertAvailableTable("dormitory_invoices");
   const s = getState();
   const now = new Date().toISOString();
   const row: DormitoryInvoice = { ...x, id: newId(), createdAt: now, updatedAt: now };
@@ -1349,6 +1386,7 @@ export function addDormitoryInvoice(x: Omit<DormitoryInvoice, "id" | "createdAt"
 }
 
 export function updateDormitoryInvoice(id: string, updates: Partial<DormitoryInvoice>): DormitoryInvoice | undefined {
+  assertAvailableTable("dormitory_invoices");
   const s = getState();
   const existing = s.dormitoryInvoices.find((x) => x.id === id);
   if (!existing) return undefined;
@@ -1361,6 +1399,7 @@ export function updateDormitoryInvoice(id: string, updates: Partial<DormitoryInv
 }
 
 export function deleteDormitoryInvoice(id: string): boolean {
+  assertAvailableTable("dormitory_invoices");
   const s = getState();
   if (!s.dormitoryInvoices.some((x) => x.id === id)) return false;
   setState({ ...s, dormitoryInvoices: s.dormitoryInvoices.filter((x) => x.id !== id) });
@@ -1373,6 +1412,7 @@ export function deleteDormitoryInvoice(id: string): boolean {
 export function getDormitoryInspections(): DormitoryInspection[] { return getState().dormitoryInspections; }
 
 export function addDormitoryInspection(x: Omit<DormitoryInspection, "id" | "createdAt" | "updatedAt">): DormitoryInspection {
+  assertAvailableTable("dormitory_inspections");
   const s = getState();
   const now = new Date().toISOString();
   const row: DormitoryInspection = { ...x, id: newId(), createdAt: now, updatedAt: now };
@@ -1384,6 +1424,7 @@ export function addDormitoryInspection(x: Omit<DormitoryInspection, "id" | "crea
 }
 
 export function updateDormitoryInspection(id: string, updates: Partial<DormitoryInspection>): DormitoryInspection | undefined {
+  assertAvailableTable("dormitory_inspections");
   const s = getState();
   const existing = s.dormitoryInspections.find((x) => x.id === id);
   if (!existing) return undefined;
@@ -1396,6 +1437,7 @@ export function updateDormitoryInspection(id: string, updates: Partial<Dormitory
 }
 
 export function deleteDormitoryInspection(id: string): boolean {
+  assertAvailableTable("dormitory_inspections");
   const s = getState();
   if (!s.dormitoryInspections.some((x) => x.id === id)) return false;
   setState({ ...s, dormitoryInspections: s.dormitoryInspections.filter((x) => x.id !== id) });
@@ -1408,6 +1450,7 @@ export function deleteDormitoryInspection(id: string): boolean {
 export function getDormitoryMovements(): DormitoryMovement[] { return getState().dormitoryMovements; }
 
 export function addDormitoryMovement(x: Omit<DormitoryMovement, "id" | "createdAt">): DormitoryMovement {
+  assertAvailableTable("dormitory_movements");
   const s = getState();
   const now = new Date().toISOString();
   const row: DormitoryMovement = { ...x, id: newId(), createdAt: now };
@@ -2945,6 +2988,7 @@ export function deleteDesignation(id: string) {
 export function getManpowerRequests(): ManpowerRequest[] { return getState().manpowerRequests; }
 
 export function addManpowerRequest(req: Omit<ManpowerRequest, "id" | "createdAt" | "updatedAt">): ManpowerRequest {
+  assertAvailableTable("manpower_requests");
   const s = getState();
   const now = new Date().toISOString();
   const row: ManpowerRequest = {
@@ -2969,6 +3013,7 @@ export function addManpowerRequest(req: Omit<ManpowerRequest, "id" | "createdAt"
 }
 
 export function updateManpowerRequest(id: string, updates: Partial<ManpowerRequest>): ManpowerRequest | undefined {
+  assertAvailableTable("manpower_requests");
   const s = getState();
   const existing = s.manpowerRequests.find(r => r.id === id);
   if (!existing) return undefined;

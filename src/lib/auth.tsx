@@ -7,6 +7,7 @@ import {
   type ReactNode,
 } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { clearSessionStore } from "@/lib/store";
 import type { User, Session } from "@supabase/supabase-js";
 
 import type { AppAuthRole } from "@/lib/permissions";
@@ -79,6 +80,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
         await fetchRoles(newSession.user.id);
       } else {
+        clearSessionStore();
         setRoles([]);
       }
     });
@@ -106,6 +108,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signOut = useCallback(async () => {
+    clearSessionStore();
     await supabase.auth.signOut();
   }, []);
 

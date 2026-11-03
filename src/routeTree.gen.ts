@@ -81,6 +81,7 @@ import { Route as ApiPublicSmtpServersRouteImport } from './routes/api/public/sm
 import { Route as ApiPublicUserAdminRouteImport } from './routes/api/public/user-admin'
 import { Route as ApiPublicV1AttendanceRouteImport } from './routes/api/public/v1/attendance'
 import { Route as ApiPublicV1ClientsRouteImport } from './routes/api/public/v1/clients'
+import { Route as ApiPublicV1DataRouteImport } from './routes/api/public/v1/data'
 import { Route as ApiPublicV1DevicesRouteImport } from './routes/api/public/v1/devices'
 import { Route as ApiPublicV1EmployeesRouteImport } from './routes/api/public/v1/employees'
 import { Route as ApiPublicV1LeaveRouteImport } from './routes/api/public/v1/leave'
@@ -473,6 +474,11 @@ const ApiPublicV1ClientsRoute = ApiPublicV1ClientsRouteImport.update({
   path: '/api/public/v1/clients',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicV1DataRoute = ApiPublicV1DataRouteImport.update({
+  id: '/api/public/v1/data',
+  path: '/api/public/v1/data',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicV1DevicesRoute = ApiPublicV1DevicesRouteImport.update({
   id: '/api/public/v1/devices',
   path: '/api/public/v1/devices',
@@ -635,6 +641,7 @@ export interface FileRoutesByFullPath {
   '/api/public/user-admin': typeof ApiPublicUserAdminRoute
   '/api/public/v1/attendance': typeof ApiPublicV1AttendanceRouteWithChildren
   '/api/public/v1/clients': typeof ApiPublicV1ClientsRoute
+  '/api/public/v1/data': typeof ApiPublicV1DataRoute
   '/api/public/v1/devices': typeof ApiPublicV1DevicesRoute
   '/api/public/v1/employees': typeof ApiPublicV1EmployeesRouteWithChildren
   '/api/public/v1/leave': typeof ApiPublicV1LeaveRouteWithChildren
@@ -725,6 +732,7 @@ export interface FileRoutesByTo {
   '/api/public/user-admin': typeof ApiPublicUserAdminRoute
   '/api/public/v1/attendance': typeof ApiPublicV1AttendanceRouteWithChildren
   '/api/public/v1/clients': typeof ApiPublicV1ClientsRoute
+  '/api/public/v1/data': typeof ApiPublicV1DataRoute
   '/api/public/v1/devices': typeof ApiPublicV1DevicesRoute
   '/api/public/v1/employees': typeof ApiPublicV1EmployeesRouteWithChildren
   '/api/public/v1/leave': typeof ApiPublicV1LeaveRouteWithChildren
@@ -817,6 +825,7 @@ export interface FileRoutesById {
   '/api/public/user-admin': typeof ApiPublicUserAdminRoute
   '/api/public/v1/attendance': typeof ApiPublicV1AttendanceRouteWithChildren
   '/api/public/v1/clients': typeof ApiPublicV1ClientsRoute
+  '/api/public/v1/data': typeof ApiPublicV1DataRoute
   '/api/public/v1/devices': typeof ApiPublicV1DevicesRoute
   '/api/public/v1/employees': typeof ApiPublicV1EmployeesRouteWithChildren
   '/api/public/v1/leave': typeof ApiPublicV1LeaveRouteWithChildren
@@ -909,6 +918,7 @@ export interface FileRouteTypes {
     | '/api/public/user-admin'
     | '/api/public/v1/attendance'
     | '/api/public/v1/clients'
+    | '/api/public/v1/data'
     | '/api/public/v1/devices'
     | '/api/public/v1/employees'
     | '/api/public/v1/leave'
@@ -999,6 +1009,7 @@ export interface FileRouteTypes {
     | '/api/public/user-admin'
     | '/api/public/v1/attendance'
     | '/api/public/v1/clients'
+    | '/api/public/v1/data'
     | '/api/public/v1/devices'
     | '/api/public/v1/employees'
     | '/api/public/v1/leave'
@@ -1090,6 +1101,7 @@ export interface FileRouteTypes {
     | '/api/public/user-admin'
     | '/api/public/v1/attendance'
     | '/api/public/v1/clients'
+    | '/api/public/v1/data'
     | '/api/public/v1/devices'
     | '/api/public/v1/employees'
     | '/api/public/v1/leave'
@@ -1135,6 +1147,7 @@ export interface RootRouteChildren {
   ApiPublicUserAdminRoute: typeof ApiPublicUserAdminRoute
   ApiPublicV1AttendanceRoute: typeof ApiPublicV1AttendanceRouteWithChildren
   ApiPublicV1ClientsRoute: typeof ApiPublicV1ClientsRoute
+  ApiPublicV1DataRoute: typeof ApiPublicV1DataRoute
   ApiPublicV1DevicesRoute: typeof ApiPublicV1DevicesRoute
   ApiPublicV1EmployeesRoute: typeof ApiPublicV1EmployeesRouteWithChildren
   ApiPublicV1LeaveRoute: typeof ApiPublicV1LeaveRouteWithChildren
@@ -1654,6 +1667,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicV1ClientsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/v1/data': {
+      id: '/api/public/v1/data'
+      path: '/api/public/v1/data'
+      fullPath: '/api/public/v1/data'
+      preLoaderRoute: typeof ApiPublicV1DataRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/v1/devices': {
       id: '/api/public/v1/devices'
       path: '/api/public/v1/devices'
@@ -1977,6 +1997,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicUserAdminRoute: ApiPublicUserAdminRoute,
   ApiPublicV1AttendanceRoute: ApiPublicV1AttendanceRouteWithChildren,
   ApiPublicV1ClientsRoute: ApiPublicV1ClientsRoute,
+  ApiPublicV1DataRoute: ApiPublicV1DataRoute,
   ApiPublicV1DevicesRoute: ApiPublicV1DevicesRoute,
   ApiPublicV1EmployeesRoute: ApiPublicV1EmployeesRouteWithChildren,
   ApiPublicV1LeaveRoute: ApiPublicV1LeaveRouteWithChildren,

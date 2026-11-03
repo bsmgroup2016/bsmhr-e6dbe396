@@ -9,6 +9,18 @@ const SUPABASE_PUBLISHABLE_KEY =
 
 // import { supabase } from "@/integrations/supabase/client";
 export const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+  global: {
+    fetch: async (input, init) => {
+      const response = await fetch(input, init);
+      const url = new URL(typeof input === "string" ? input : input instanceof URL ? input.href : input.url);
+      const method = (init?.method ?? (input instanceof Request ? input.method : "GET")).toUpperCase();
+      if (typeof window !== "undefined" && response.ok && ["POST", "PATCH", "DELETE"].includes(method) && url.pathname.startsWith("/rest/v1/") && !url.pathname.includes("/rpc/")) {
+        const table = url.pathname.split("/").pop();
+        window.dispatchEvent(new CustomEvent("bsm:data-write", { detail: table }));
+      }
+      return response;
+    },
+  },
   auth: {
     persistSession: true,
     autoRefreshToken: true,
