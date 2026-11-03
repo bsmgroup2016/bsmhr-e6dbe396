@@ -119,7 +119,7 @@ function expiryBadge(e: { workPermitExpiryDate?: string; passExpiry?: string }) 
 }
 
 const EMPLOYEE_IMPORT_COLUMNS: ImportColumn[] = [
-  { key: "employeeCode", label: "Particular Number", example: "BS-12" },
+  { key: "employeeCode", label: "P-File Number", example: "BS-12" },
   { key: "name", label: "Name", required: true, example: "Rahman Md" },
   { key: "fin", label: "FIN", example: "G1234567X" },
   { key: "passportNumber", label: "Passport Number", example: "BX0912345" },
@@ -625,7 +625,7 @@ export default function WorkforcePage() {
             <DialogContent className="max-h-[90vh] w-[calc(100%-2rem)] overflow-y-auto sm:max-w-3xl">
               <DialogHeader>
                 <DialogTitle>Register new employee</DialogTitle>
-                <DialogDescription>A unique Particular number will be generated automatically.</DialogDescription>
+                <DialogDescription>A unique P-File number will be generated automatically.</DialogDescription>
               </DialogHeader>
               <EmployeeRegistration onSubmit={handleCreate} />
             </DialogContent>
@@ -1020,7 +1020,7 @@ export default function WorkforcePage() {
                             >
                               {e.name}
                             </Link>
-                            <div>Particular No: {e.employeeCode}</div>
+                            <div>P-File No: {e.employeeCode}</div>
                             <div>FIN: {e.fin || "—"}</div>
                             <div>Basic Rate: ${e.basicSalary.toLocaleString()}/day</div>
                           </div>
