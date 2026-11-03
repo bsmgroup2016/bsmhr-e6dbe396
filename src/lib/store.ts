@@ -225,6 +225,8 @@ export async function hydrateStore(pathname = activePath): Promise<void> {
 /** Only a confirmed successful write refreshes dependent cache entries. */
 export function invalidateStoreTable(table: string) {
   sessionDataCache.invalidate(`${table}|`);
+  if (table === "employees") sessionDataCache.invalidate("attendance|");
+  if (table === "employees" || table === "assets") sessionDataCache.invalidate("asset_issuances|");
   const dependent = table === "user_roles" || table === "profiles" ? "users" : Object.entries(COLLECTIONS).find(([, c]) => c.table === table)?.[0];
   if (!dependent || !hydrated) return;
   const keys = pageCollections(activePath);

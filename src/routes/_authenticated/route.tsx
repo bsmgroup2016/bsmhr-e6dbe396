@@ -53,7 +53,7 @@ function AuthenticatedLayout() {
     const written = (event: Event) => {
       const table = String((event as CustomEvent).detail);
       invalidateStoreTable(table);
-      void queryClient.invalidateQueries({ predicate: (query) => ["history", "history-summary"].includes(String(query.queryKey[0])) && query.queryKey[2] === table });
+      void queryClient.invalidateQueries({ predicate: (query) => ["history", "history-summary"].includes(String(query.queryKey[0])) && (query.queryKey[2] === table || table === "employees" || table === "assets" && query.queryKey[2] === "asset_issuances") });
     };
     window.addEventListener("bsm:data-write", written);
     return () => window.removeEventListener("bsm:data-write", written);

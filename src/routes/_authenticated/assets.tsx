@@ -1,4 +1,4 @@
-import { Suspense, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { historyQueryOptions, historySummaryOptions, allHistory } from "@/lib/history-data";
 import { fromIssuance } from "@/lib/db";
@@ -27,7 +27,7 @@ import {
 } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
-  getAssets, getIssuances, getEmployees, getSites, getCurrentCompany,
+  getAssets, getIssuances, getEmployees, getSites, getCurrentCompany, subscribe,
   addAsset, deleteAsset, issueAsset, returnIssuance, deleteIssuance,
   assetAvailableQty, assetIssuedQty, assetAlerts, overdueIssuances, updateIssuance,
 } from "@/lib/store";
@@ -78,6 +78,7 @@ const addMonths = (dateStr: string, months: number) => {
 export default function AssetsPage() {
   const companyId = getCurrentCompany();
   const [assets, setAssets] = useState(getAssets());
+  useEffect(() => subscribe(() => setAssets(getAssets())), []);
   const params = Route.useSearch();
   const navigate = Route.useNavigate();
   const { user } = useAuth();
