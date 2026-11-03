@@ -1,4 +1,5 @@
 # Role-based account access
+- [ ] Archive & Clean: approved design; implementation blocked on approval for a new database cleanup routine to make row checks/deletion atomic and prevent chat cascade races. No cleanup or archive uploads performed.
 - [x] Phase 3: static-only service-worker cache, precached navigation-only offline fallback, consent-based updates, hourly checks; unit and isolated browser tests passed.
 - [ ] Phase 3: published deployment verification awaits publishing; no deployment requested in this phase.
 - [x] Phase 2: correct P-file deletion and upload metadata errors; signed, lazy profile images.
