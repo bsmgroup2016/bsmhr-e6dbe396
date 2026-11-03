@@ -1,4 +1,5 @@
 # Role-based account access
+- [ ] ClaimSheet Generator: upload-first OCR worker/project/site matching with post-read confirmation and sample-layout Excel export.
 - [x] Archive & Clean: approved private atomic routine installed; admin dry-run/confirmation/holds/archive controls and bounded cleanup steps implemented; retention tests and live count-only checks passed.
 - [ ] Archive & Clean: actual R2 verification, signed-in admin UI and controlled deletion/concurrency trials remain unverified; first real cleanup requires separate confirmation. Automatic mode remains off and recurring scheduler is not provisioned.
 - [x] Phase 3: static-only service-worker cache, precached navigation-only offline fallback, consent-based updates, hourly checks; unit and isolated browser tests passed.
