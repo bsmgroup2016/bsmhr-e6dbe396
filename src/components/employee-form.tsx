@@ -1,3 +1,4 @@
+import { prefixesForCompany } from "@/core/pfile-prefixes";
 import { IPA_DETAIL_FIELDS, ipaDetailsFromForm } from "@/core/ipa-detail-fields";
 import { estimatedWorkPermitExpiry } from "@/core/work-permit-expiry";
 import { Button } from "@/components/ui/button";
@@ -215,9 +216,14 @@ export function EmployeeForm({
   submitLabel,
   initialValues,
   initialTab,
+  readOnly,
+  tab: controlledTab,
 }: {
   employee?: Employee;
   initialTab?: string;
+  /** Profile view: same fields, locked except Documents; tab list and identity block hidden. */
+  readOnly?: boolean;
+  tab?: string;
   initialValues?: Partial<Employee>;
   onSubmit: (data: FormData) => void;
   submitLabel?: string;
@@ -241,13 +247,14 @@ export function EmployeeForm({
   const readingKinds = useRef(new Set<EmployeeDocumentKind>());
 
   const taken = code.trim() ? isEmployeeCodeTaken(code, employee?.id) : false;
-  const expectedPrefix = prefixForBranch(branch);
+  const allowedPrefixes = prefixesForCompany(branch);
+  const expectedPrefix = allowedPrefixes.length ? allowedPrefixes.join(" / ") : prefixForBranch(branch);
   const staff = isOfficeStaff({ department: values?.department, trade: values?.trade });
   const idFieldLabel = staff ? "Employee ID" : "P-File Number (primary identifier)";
   const prefixMismatch =
     !staff &&
     code.trim().length > 0 &&
-    !new RegExp(`^${expectedPrefix}\\d+$`, "i").test(code.trim());
+    !(allowedPrefixes.length ? allowedPrefixes : [prefixForBranch(branch)]).some((p) => new RegExp(`^${p}[^a-z0-9]*\\d+$`, "i").test(code.trim()));
 
   function suggest(nextBranch: string) {
     setBranch(nextBranch);
@@ -334,7 +341,8 @@ export function EmployeeForm({
     </Field>)}</div>;
   }
 
-  const [tab, setTab] = useState(initialTab ?? "personal");
+  const [ownTab, setTab] = useState(initialTab ?? "personal");
+  const tab = controlledTab ?? ownTab;
   const invalidToastRef = useRef(false);
 
   return (
@@ -360,7 +368,7 @@ export function EmployeeForm({
       }}
       className="space-y-4"
     >
-      <div className="grid grid-cols-1 gap-4 rounded-lg border bg-muted/30 p-3 sm:grid-cols-2">
+      <div className={readOnly ? "hidden" : "grid grid-cols-1 gap-4 rounded-lg border bg-muted/30 p-3 sm:grid-cols-2"}>
         <Field label={idFieldLabel}>
           <Input
             name="employeeCode"
@@ -401,8 +409,9 @@ export function EmployeeForm({
         ) : null}
       </div>
 
+      <fieldset disabled={readOnly && tab !== "documents"} className="min-w-0 space-y-4">
       <Tabs value={tab} onValueChange={setTab}>
-        <TabsList className="flex h-auto min-h-10 w-full flex-wrap">
+        <TabsList className={readOnly ? "hidden" : "flex h-auto min-h-10 w-full flex-wrap"}>
           <TabsTrigger value="personal">Personal</TabsTrigger>
           <TabsTrigger value="employment">Employment</TabsTrigger>
           <TabsTrigger value="pass">Work pass &amp; Certificate</TabsTrigger>
@@ -765,10 +774,11 @@ export function EmployeeForm({
           </section>)}
         </TabsContent>
       </Tabs>
+      </fieldset>
 
-      <div className="flex justify-end pt-2">
+      <div className={readOnly && tab !== "documents" ? "hidden" : "flex justify-end pt-2"}>
         {documentReading > 0 && <span role="status" className="mr-3 text-sm text-muted-foreground">Reading document…</span>}
-        <Button type="submit" disabled={documentReading > 0 || scanning}>{submitLabel ?? (employee ? "Save changes" : "Register employee")}</Button>
+        <Button type="submit" disabled={documentReading > 0 || scanning}>{submitLabel ?? (readOnly ? "Save documents" : employee ? "Save changes" : "Register employee")}</Button>
       </div>
     </form>
   );
