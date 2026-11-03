@@ -20,6 +20,16 @@ const particulars = {
   agencyName: "DIRECTION OVERSEAS PTE. LTD.", agencyLicence: "22C1248",
   agencyAddress: "5 Soon Lee Street, #04-38 Pioneer Point, Singapore 627607", agencyPhone: "8471 8667",
   agencyFee: 200, overseasCosts: 0, employeePaidFees: "Yes",
+  countryOfBirth: "BANGLADESH", raceAsDeclared: "BANGLADESHI", previouslySingaporeCitizenPr: "No",
+  everArrested: "No", everConvicted: "No", addressHistory: "KAKRABUNIA PATUAKHALI SADAR, BAROBARI - 8600, PATUAKHALI; 2003 till present",
+  travelDocumentType: "PASSPORT", immigrationStatusAtApplication: "NOT IN SINGAPORE",
+  employerName: "PLUTO SYSTEM ENGINEERING PTE. LTD.", employerCpfSubmissionNumber: "201716303C - PTE - 02",
+  employerUen: "201716303C", employerBusinessActivity: "PROCESS INDUSTRY MAINTENANCE",
+  employerRegisteredAddress: "1 SOON LEE STREET, #06-30 PIONEER CENTRE, SINGAPORE 627605",
+  employerCorrespondenceAddress: "5 SOON LEE STREET, #04-49 PIONEER POINT, SINGAPORE 627607",
+  employerPhone: "69800555", sbTransmissionReference: "H704255", temporaryPermitUponApproval: "No",
+  monthlyHousingAllowance: 0, monthlyTransportAllowance: 0, otherMonthlyAllowances: 0,
+  hasFixedMonthlyAllowances: "No", hasFixedMonthlyDeductions: "No", totalFixedMonthlyDeductions: 0, agencyUsed: "Yes",
 };
 for (const field of IPA_DETAIL_FIELDS) {
   test(`IPA ${field.key} autofills and survives editable form submission`, () => {
@@ -29,8 +39,26 @@ for (const field of IPA_DETAIL_FIELDS) {
     const fd = new FormData();
     fd.set(field.key, String(expected));
     expect(ipaDetailsFromForm(fd)[field.key]).toBe(expected);
+    const row = toEmployee(ipaDetailsFromForm(fd));
+    expect(row[field.column]).toBe(expected);
+    expect(fromEmployee(row)[field.key]).toBe(expected);
   });
 }
+test("IPA employer contacts and historical immigration answers never overwrite worker or CPF fields", () => {
+  const mapped = ipaEmployeeDefaults(particulars, "r2://ipa/sample.pdf");
+  expect(mapped.employerPhone).toBe("69800555");
+  expect(mapped.phone).toBeUndefined();
+  expect(mapped.address).toBeUndefined();
+  expect(mapped.prStatus).toBeUndefined();
+  expect(mapped.ethnicGroup).toBeUndefined();
+  expect(mapped.passType).toBeUndefined();
+  expect(mapped.employerRegisteredAddress).not.toBe(mapped.employerCorrespondenceAddress);
+});
+test("separate arrest and conviction answers do not collapse into one another", () => {
+  const mapped = ipaEmployeeDefaults({ everArrested: "Yes", everConvicted: "No" }, "r2://ipa/sample.pdf");
+  expect(mapped.everArrested).toBe("Yes");
+  expect(mapped.everConvicted).toBe("No");
+});
 test("empty IPA amount remains unknown rather than becoming zero", () => {
   const fd = new FormData();
   fd.set("agencyFee", "");

@@ -716,6 +716,9 @@ export function EmployeeForm({
         <TabsContent forceMount data-tab-panel="agency" value="agency" className="mt-4 space-y-4 data-[state=inactive]:hidden">
           {ipaFields("agency")}
         </TabsContent>
+        <TabsContent forceMount data-tab-panel="employer" value="employer" className="mt-4 space-y-4 data-[state=inactive]:hidden">
+          {ipaFields("employer")}
+        </TabsContent>
       </Tabs>
 
       <div className="flex justify-end pt-2">
