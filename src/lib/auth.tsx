@@ -6,6 +6,11 @@ import {
   useCallback,
   type ReactNode,
 } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { clearSessionStore } from "@/lib/store";
+import type { User, Session } from "@supabase/supabase-js";
+
+import type { AppAuthRole } from "@/lib/permissions";
 
 // The auth context must keep a single module identity across the app. When
 // this file is hot-reloaded, importers can end up with two different
@@ -16,12 +21,6 @@ if (import.meta.hot) {
     window.location.reload();
   });
 }
-
-import { supabase } from "@/integrations/supabase/client";
-import { clearSessionStore } from "@/lib/store";
-import type { User, Session } from "@supabase/supabase-js";
-
-import type { AppAuthRole } from "@/lib/permissions";
 
 type AppRole = AppAuthRole;
 
