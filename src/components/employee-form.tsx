@@ -214,8 +214,10 @@ export function EmployeeForm({
   onSubmit,
   submitLabel,
   initialValues,
+  initialTab,
 }: {
   employee?: Employee;
+  initialTab?: string;
   initialValues?: Partial<Employee>;
   onSubmit: (data: FormData) => void;
   submitLabel?: string;
@@ -332,7 +334,7 @@ export function EmployeeForm({
     </Field>)}</div>;
   }
 
-  const [tab, setTab] = useState("personal");
+  const [tab, setTab] = useState(initialTab ?? "personal");
   const invalidToastRef = useRef(false);
 
   return (

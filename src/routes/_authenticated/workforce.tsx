@@ -293,6 +293,7 @@ export default function WorkforcePage() {
   const openCreateFromUrl = routeSearch.new === true;
   const [isCreateOpen, setIsCreateOpen] = useState(openCreateFromUrl);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
+  const [editTab, setEditTab] = useState("personal");
   const [viewingEmployee, setViewingEmployee] = useState<Employee | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Employee | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -1087,7 +1088,7 @@ export default function WorkforcePage() {
                             variant="outline"
                             className="h-8 w-8 border-primary/30 text-primary hover:bg-primary/10"
                             aria-label={`Edit ${e.name}`}
-                            onClick={() => setEditingEmployee(e)}
+                            onClick={() => { setEditTab("personal"); setEditingEmployee(e); }}
                           >
                             <Pencil className="h-3.5 w-3.5" />
                           </Button>
@@ -1149,7 +1150,7 @@ export default function WorkforcePage() {
               <DialogTitle>Edit employee</DialogTitle>
               <DialogDescription>Update worker details for {editingEmployee?.employeeCode}.</DialogDescription>
             </DialogHeader>
-            {editingEmployee && <EmployeeForm employee={editingEmployee} onSubmit={handleEdit} />}
+            {editingEmployee && <EmployeeForm key={`${editingEmployee.id}-${editTab}`} employee={editingEmployee} initialTab={editTab} onSubmit={handleEdit} />}
           </DialogContent>
         </Dialog>
 
@@ -1161,7 +1162,7 @@ export default function WorkforcePage() {
                 {viewingEmployee?.employeeCode} • {viewingEmployee?.trade}
               </SheetDescription>
             </SheetHeader>
-            {viewingEmployee && <EmployeeDetail employee={viewingEmployee} onEdit={() => { setViewingEmployee(null); setEditingEmployee(viewingEmployee); }} />}
+            {viewingEmployee && <EmployeeDetail employee={viewingEmployee} onEdit={() => { setEditTab("personal"); setViewingEmployee(null); setEditingEmployee(viewingEmployee); }} onDocuments={() => { setEditTab("documents"); setViewingEmployee(null); setEditingEmployee(viewingEmployee); }} />}
           </SheetContent>
         </Sheet>
 
@@ -1188,7 +1189,7 @@ export default function WorkforcePage() {
   );
 }
 
-function EmployeeDetail({ employee, onEdit }: { employee: Employee; onEdit: () => void }) {
+function EmployeeDetail({ employee, onEdit, onDocuments }: { employee: Employee; onEdit: () => void; onDocuments: () => void }) {
   const days = daysUntil(employee.passExpiry);
   return (
     <div className="mt-6 space-y-5">
@@ -1252,10 +1253,8 @@ function EmployeeDetail({ employee, onEdit }: { employee: Employee; onEdit: () =
           <Pencil className="mr-2 h-4 w-4" />
           Edit
         </Button>
-        <Button variant="outline" asChild>
-          <Link to="/documents" search={{ employee: employee.id }}>
-            View documents
-          </Link>
+        <Button variant="outline" onClick={onDocuments}>
+          View documents
         </Button>
       </div>
     </div>
