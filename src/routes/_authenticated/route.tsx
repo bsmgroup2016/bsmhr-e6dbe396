@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, Outlet, redirect, useRouterState } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
-import { hydrateStore, subscribe } from "@/lib/store";
+import { hydrateStore, subscribe, getCurrentCompany, invalidateStoreTable } from "@/lib/store";
 import { RequireRole } from "@/components/require-role";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { canAccess, hasAssignedRole } from "@/core/access";
 import { WelcomeDashboard } from "@/components/role-dashboard";
+import { useQueryClient } from "@tanstack/react-query";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -25,18 +26,20 @@ export const Route = createFileRoute("/_authenticated")({
 });
 
 function AuthenticatedLayout() {
-  const { roles, isLoading } = useAuth();
+  const { roles, isLoading, user } = useAuth();
+  const queryClient = useQueryClient();
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [, force] = useState(0);
   const pathname = useRouterState({ select: (r) => r.location.pathname });
+  const companyId = getCurrentCompany();
 
   useEffect(() => {
     if (isLoading || !hasAssignedRole(roles) || !canAccess(pathname, roles)) return;
     let alive = true;
     setReady(false);
     setError(null);
-    hydrateStore()
+    hydrateStore(pathname)
       .then(() => alive && setReady(true))
       .catch((e: Error) => alive && setError(e.message));
     const unsub = subscribe(() => force((n) => n + 1));
@@ -44,7 +47,19 @@ function AuthenticatedLayout() {
       alive = false;
       unsub();
     };
-  }, [isLoading, roles.join(","), pathname]);
+  }, [isLoading, roles.join(","), pathname, companyId]);
+
+  useEffect(() => {
+    const written = (event: Event) => {
+      const table = String((event as CustomEvent).detail);
+      invalidateStoreTable(table);
+      void queryClient.invalidateQueries({ predicate: (query) => ["history", "history-summary"].includes(String(query.queryKey[0])) && (query.queryKey[2] === table || table === "employees" || table === "assets" && query.queryKey[2] === "asset_issuances") });
+    };
+    window.addEventListener("bsm:data-write", written);
+    return () => window.removeEventListener("bsm:data-write", written);
+  }, [queryClient]);
+
+  useEffect(() => { queryClient.removeQueries({ predicate: (query) => ["history", "history-summary"].includes(String(query.queryKey[0])) && query.queryKey[1] !== user?.id }); }, [queryClient, user?.id]);
 
   if (!isLoading && !hasAssignedRole(roles)) return <WelcomeDashboard />;
   if (!isLoading && !canAccess(pathname, roles)) return <RequireRole path={pathname}><Outlet /></RequireRole>;

@@ -1,3 +1,4 @@
+import { UNAVAILABLE_TABLES } from "@/core/data-tables";
 import { createFileRoute } from "@tanstack/react-router";
 import {
   fail,
@@ -28,6 +29,7 @@ export const Route = createFileRoute("/api/public/v1/notifications")({
       GET: async ({ request }) => {
         const auth = await requireAuth(request, "notifications");
         if ("response" in auth) return auth.response;
+        if (UNAVAILABLE_TABLES.has("notifications")) return fail(503, "feature_unavailable", "This feature is unavailable: notifications is not present in the connected database.");
         const p = listParams(request);
         const filters = [
           `select=*`,
@@ -60,6 +62,7 @@ export const Route = createFileRoute("/api/public/v1/notifications")({
       PATCH: async ({ request }) => {
         const auth = await requireAuth(request, "notifications");
         if ("response" in auth) return auth.response;
+        if (UNAVAILABLE_TABLES.has("notifications")) return fail(503, "feature_unavailable", "This feature is unavailable: notifications is not present in the connected database.");
         const body = await readJson<PatchBody>(request);
         const now = new Date().toISOString();
         let path = `notifications?user_id=eq.${auth.ctx.userId}&read_at=is.null`;
@@ -81,6 +84,7 @@ export const Route = createFileRoute("/api/public/v1/notifications")({
       POST: async ({ request }) => {
         const auth = await requireAuth(request, "notifications");
         if ("response" in auth) return auth.response;
+        if (UNAVAILABLE_TABLES.has("notifications")) return fail(503, "feature_unavailable", "This feature is unavailable: notifications is not present in the connected database.");
         if (!hasAnyRole(auth.ctx, ["admin", "hr", "manager", "supervisor"]))
           return fail(403, "forbidden", "Only staff can send notifications");
         const body = await readJson<PostBody>(request);

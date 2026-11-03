@@ -182,7 +182,7 @@ function EmployeeProfilePage() {
                   <Link to="/operations"><Briefcase className="mr-1 h-4 w-4" /> Assign to project</Link>
                 </Button>
                 <Button size="sm" variant="outline" asChild>
-                  <Link to="/time-management"><CalendarCheck className="mr-1 h-4 w-4" /> Record attendance</Link>
+                  <Link to="/time-management" search={{ new: undefined, offset: 0, date: new Date().toISOString().slice(0, 10), month: new Date().toISOString().slice(0, 7), view: "day", company: "", group: "all", status: "all", designation: "all", employee: "all", search: "", noLocation: false }}><CalendarCheck className="mr-1 h-4 w-4" /> Record attendance</Link>
                 </Button>
               </>
             ) : (

@@ -40,29 +40,32 @@ import { autoMapColumns } from "@/lib/ocr";
 
 export function ExportButton({
   rows,
+  loadRows,
   baseName,
   sheetName,
   label = "Export",
   size = "sm",
 }: {
   rows: Record<string, unknown>[];
+  loadRows?: () => Promise<Record<string, unknown>[]>;
   baseName: string;
   sheetName?: string;
   label?: string;
   size?: "sm" | "default";
 }) {
   async function run(kind: "xlsx" | "csv") {
-    if (!rows.length) {
+    try {
+    const completeRows = loadRows ? await loadRows() : rows;
+    if (!completeRows.length) {
       toast.error("Nothing to export", { description: "No rows match the current filters." });
       return;
     }
-    try {
       if (kind === "xlsx") {
-        await exportRows(rows, timestampedName(baseName, "xlsx"), sheetName ?? baseName);
+        await exportRows(completeRows, timestampedName(baseName, "xlsx"), sheetName ?? baseName);
       } else {
-        await exportCsv(rows, timestampedName(baseName, "csv"));
+        await exportCsv(completeRows, timestampedName(baseName, "csv"));
       }
-      toast.success(`Exported ${rows.length} row${rows.length === 1 ? "" : "s"}`);
+      toast.success(`Exported ${completeRows.length} row${completeRows.length === 1 ? "" : "s"}`);
     } catch {
       toast.error("Export failed", { description: "Could not generate the file." });
     }

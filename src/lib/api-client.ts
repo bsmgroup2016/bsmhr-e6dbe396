@@ -41,7 +41,12 @@ export async function apiFetch<T>(
       },
       body: init?.body ? JSON.stringify(init.body) : undefined,
     });
-    return (await res.json()) as ApiEnvelope<T>;
+    const envelope = (await res.json()) as ApiEnvelope<T>;
+    if (res.ok && envelope.ok && init?.method && ["POST", "PATCH", "DELETE"].includes(init.method.toUpperCase()) && typeof window !== "undefined") {
+      const table = path.startsWith("/attendance") ? "attendance" : path.startsWith("/employees") ? "employees" : path.startsWith("/leave") ? "leave_requests" : null;
+      if (table) window.dispatchEvent(new CustomEvent("bsm:data-write", { detail: table }));
+    }
+    return envelope;
   } catch {
     return { ok: false, error: { code: "network_error", message: "Network unavailable" } };
   }

@@ -1,4 +1,10 @@
-import { useMemo, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { historyQueryOptions, historySummaryOptions, allHistory } from "@/lib/history-data";
+import { fromAttendance } from "@/lib/db";
+import { mergeHistoryRows } from "@/lib/store";
+import { useAuth } from "@/lib/auth";
+import { HistoryPagination } from "@/components/history-pagination";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   Plus,
@@ -91,8 +97,11 @@ const ATTENDANCE_IMPORT_COLUMNS: ImportColumn[] = [
 ];
 
 export const Route = createFileRoute("/_authenticated/time-management")({
-  validateSearch: (search: Record<string, unknown>): { new?: true } => ({
-    new: search.new === "1" || search.new === true ? true : undefined,
+  validateSearch: (s: Record<string, unknown>) => ({
+    new: s.new === "1" || s.new === true ? true as const : undefined,
+    offset: Math.max(0, Number(s.offset) || 0), date: String(s.date ?? new Date().toISOString().slice(0, 10)),
+    month: String(s.month ?? new Date().toISOString().slice(0, 7)), view: s.view === "month" ? "month" as const : "day" as const,
+    company: String(s.company ?? ""), group: String(s.group ?? "all"), status: String(s.status ?? "all"), designation: String(s.designation ?? "all"), employee: String(s.employee ?? "all"), search: String(s.search ?? ""), noLocation: s.noLocation === true || s.noLocation === "1",
   }),
   head: () => ({
     meta: [
@@ -100,31 +109,36 @@ export const Route = createFileRoute("/_authenticated/time-management")({
       { name: "description", content: "Daily attendance and timesheets." },
       { property: "og:title", content: "Time Management — BSM Workforce & Operations" },
       { property: "og:description", content: "Daily attendance and timesheets." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: TimeManagementPage,
+  component: () => <Suspense fallback={<div className="p-8 text-sm text-muted-foreground">Loading attendance…</div>}><TimeManagementPage /></Suspense>,
 });
 
 export default function TimeManagementPage() {
-  const [attendance, setAttendance] = useState(getAttendance());
+  const params = Route.useSearch();
+  const navigate = Route.useNavigate();
+  const { user } = useAuth();
+  const change = (key: keyof typeof params, value: string | number | boolean) => void navigate({ search: (prev) => ({ ...prev, [key]: value, ...(key !== "offset" ? { offset: 0 } : {}) }) });
   const [employees] = useState(getEmployees());
   const [sites] = useState(getSites());
-  const [search, setSearch] = useState("");
-  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
+  const search = params.search; const setSearch = (v: string) => change("search", v);
+  const date = params.date; const setDate = (v: string) => change("date", v);
   const [isCreateOpen, setIsCreateOpen] = useState(Route.useSearch().new === true);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
-  const [summaryMonth, setSummaryMonth] = useState(() => new Date().toISOString().slice(0, 7));
-  const [noLocationOnly, setNoLocationOnly] = useState(false);
+  const summaryMonth = params.month; const setSummaryMonth = (v: string) => change("month", v);
+  const noLocationOnly = params.noLocation; const setNoLocationOnly = (_: unknown) => change("noLocation", !noLocationOnly);
   const [mapRecord, setMapRecord] = useState<Attendance | null>(null);
   const [editRecord, setEditRecord] = useState<Attendance | null>(null);
   const companyId = getCurrentCompany();
   const companies = getCompanies();
-  const [companyFilter, setCompanyFilter] = useState<string>(companyId || "all");
-  const [groupFilter, setGroupFilter] = useState<"all" | "workers" | "staff">("all");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [designationFilter, setDesignationFilter] = useState<string>("all");
-  const [employeeFilter, setEmployeeFilter] = useState<string>("all");
-  const [viewMode, setViewMode] = useState<"day" | "month">("day");
+  const companyFilter = params.company || companyId || "all"; const setCompanyFilter = (v: string) => change("company", v);
+  const groupFilter = params.group; const setGroupFilter = (v: string) => change("group", v);
+  const statusFilter = params.status; const setStatusFilter = (v: string) => change("status", v);
+  const designationFilter = params.designation; const setDesignationFilter = (v: string) => change("designation", v);
+  const employeeFilter = params.employee; const setEmployeeFilter = (v: string) => change("employee", v);
+  const viewMode = params.view; const setViewMode = (v: "day" | "month") => change("view", v);
   const companyEmployees = employees.filter(
     (e) => (!companyId || e.companyId === companyId) && e.status !== "Inactive",
   );
@@ -172,21 +186,17 @@ export default function TimeManagementPage() {
     [employees, companyFilter, groupFilter, designationFilter, employeeFilter, search],
   );
 
-  const monthRows = useMemo(
-    () =>
-      viewMode === "month"
-        ? monthlyAttendanceSummary(attendance, summaryMonth, scopedEmployeeIds).sort((a, b) =>
-            (empById.get(a.employeeId)?.employeeCode ?? "").localeCompare(
-              empById.get(b.employeeId)?.employeeCode ?? "",
-            ),
-          )
-        : [],
-    [viewMode, attendance, summaryMonth, scopedEmployeeIds, empById],
-  );
+  const peopleFilter = { companyId: companyFilter, employeeIds: scopedEmployeeIds.join(",") || "00000000-0000-0000-0000-000000000000" };
+  const filters = { ...peopleFilter, ...(viewMode === "month" ? { month: summaryMonth } : { from: date, to: date, status: statusFilter, noLocation: noLocationOnly ? "1" : "" }) };
+  const { data: page } = useSuspenseQuery(historyQueryOptions("attendance", user?.id ?? "", filters, params.offset));
+  const { data: stats } = useSuspenseQuery(historySummaryOptions("attendance", user?.id ?? "", filters));
+  const attendance = page.rows.map(fromAttendance);
+  mergeHistoryRows("attendance", attendance);
+  const monthRows = viewMode === "month" ? stats.attendanceWorkers.sort((a, b) => (empById.get(a.employeeId)?.employeeCode ?? "").localeCompare(empById.get(b.employeeId)?.employeeCode ?? "")) : [];
 
   async function exportMonthlySummary() {
     const rows = monthlyAttendanceSummary(
-      attendance,
+      await allHistory<Attendance>("attendance", { companyId, month: summaryMonth }),
       summaryMonth,
       companyEmployees.map((e) => e.id),
     ).map((r) => {
@@ -211,22 +221,12 @@ export default function TimeManagementPage() {
     toast.success("Monthly summary exported");
   }
 
-  const filtered = attendance.filter((a) => {
-    const hasLocation = a.checkInLat != null || a.checkOutLat != null;
-    if (noLocationOnly && hasLocation) return false;
-    if (a.date !== date) return false;
-    if (statusFilter !== "all" && a.status !== statusFilter) return false;
-    return matchesPerson(a.employeeId);
-  });
-
-  const present = filtered.filter((a) => a.status === "Present" || a.status === "Half Day").length;
-  const absent = filtered.filter((a) => a.status === "Absent" || a.status === "MC").length;
-  const leave = filtered.filter((a) => a.status === "On Leave" || a.status === "Off" || a.status === "Public Holiday").length;
-  const totalHours = filtered.reduce((s, a) => s + a.hoursWorked + a.overtimeHours, 0);
-
-  function refresh() {
-    setAttendance(getAttendance());
-  }
+  const filtered = attendance;
+  const present = (stats.counts.Present ?? 0) + (stats.counts["Half Day"] ?? 0);
+  const absent = (stats.counts.Absent ?? 0) + (stats.counts.MC ?? 0);
+  const leave = (stats.counts["On Leave"] ?? 0) + (stats.counts.Off ?? 0) + (stats.counts["Public Holiday"] ?? 0);
+  const totalHours = stats.hours + stats.ot;
+  function refresh() { /* Confirmed writes invalidate the page and totals. */ }
 
   /** Download one attendance record as XLSX. */
   async function exportSingle(record: Attendance) {
@@ -242,8 +242,7 @@ export default function TimeManagementPage() {
   /** Download every daily record of one employee for the selected month. */
   async function exportEmployeeMonth(employeeId: string) {
     const emp = empById.get(employeeId);
-    const rows = attendance
-      .filter((a) => a.employeeId === employeeId && a.date.startsWith(summaryMonth))
+    const rows = (await allHistory<Attendance>("attendance", { companyId: companyFilter, employeeId, month: summaryMonth }))
       .sort((a, b) => a.date.localeCompare(b.date))
       .map(attendanceRow);
     if (!rows.length) {
@@ -261,8 +260,8 @@ export default function TimeManagementPage() {
   /** Bulk download: all daily records of the filtered employees for the month. */
   async function exportMonthlyDetail() {
     const ids = new Set(scopedEmployeeIds);
-    const rows = attendance
-      .filter((a) => ids.has(a.employeeId) && a.date.startsWith(summaryMonth))
+    const rows = (await allHistory<Attendance>("attendance", { ...peopleFilter, month: summaryMonth }))
+      .filter((a) => ids.has(a.employeeId))
       .sort((a, b) => a.date.localeCompare(b.date))
       .map(attendanceRow);
     if (!rows.length) {
@@ -468,6 +467,7 @@ export default function TimeManagementPage() {
             />
             <ExportButton
               rows={filtered.map(attendanceRow)}
+              loadRows={async () => (await allHistory<Attendance>("attendance", filters)).map(attendanceRow)}
               baseName="attendance"
               sheetName="Attendance"
             />
@@ -497,7 +497,7 @@ export default function TimeManagementPage() {
           const mLeave = monthRows.reduce((s, r) => s + r.leaveDays, 0);
           const mHours = monthRows.reduce((s, r) => s + r.totalHours, 0);
           const mOt = monthRows.reduce((s, r) => s + r.otHours, 0);
-          const ot = filtered.reduce((s, a) => s + a.overtimeHours, 0);
+          const ot = stats.ot;
           return (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
               <SummaryCard title={isMonth ? "Present days" : "Present"} value={String(isMonth ? mPresent : present)} icon={<CheckCircle2 className="h-5 w-5" />} variant="success" caption={caption} />
@@ -540,7 +540,7 @@ export default function TimeManagementPage() {
                 type="button"
                 size="sm"
                 variant={noLocationOnly ? "default" : "outline"}
-                onClick={() => setNoLocationOnly((v) => !v)}
+                onClick={() => setNoLocationOnly(!noLocationOnly)}
               >
                 Without location
               </Button>
@@ -614,7 +614,7 @@ export default function TimeManagementPage() {
             ) : null}
             <span className="ml-auto text-xs text-muted-foreground">
               {viewMode === "day"
-                ? `${filtered.length} records`
+                ? `${page.total} records`
                 : `${monthRows.length} employees`}
             </span>
             <Button
@@ -662,7 +662,7 @@ export default function TimeManagementPage() {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    monthRows.map((r) => {
+                    monthRows.slice(params.offset, params.offset + 50).map((r) => {
                       const emp = empById.get(r.employeeId);
                       return (
                         <TableRow key={r.employeeId}>
@@ -789,6 +789,7 @@ export default function TimeManagementPage() {
           )}
         </div>
 
+        <HistoryPagination offset={params.offset} total={viewMode === "month" ? monthRows.length : page.total} onChange={(offset) => change("offset", offset)} />
         <div className="rounded-xl border bg-card p-4 shadow-sm">
           <div className="mb-3">
             <h2 className="text-base font-semibold">QR site attendance</h2>
@@ -796,10 +797,10 @@ export default function TimeManagementPage() {
               Print a per-site QR poster — workers scan it to clock in and out with GPS evidence.
             </p>
           </div>
-          <QrAttendancePanel />
+          <p role="status" className="text-sm text-muted-foreground">QR punches are unavailable because the required attendance event table is not present. Manual attendance remains available.</p>
         </div>
 
-        <PunchVerificationPanel />
+
 
         <Dialog open={!!mapRecord} onOpenChange={(open) => !open && setMapRecord(null)}>
           <DialogContent className="sm:max-w-lg">

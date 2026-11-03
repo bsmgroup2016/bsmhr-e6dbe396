@@ -161,7 +161,7 @@ export function buildComplianceItems(employees: Employee[], documents: EmployeeD
 export async function checkDeploymentCompliance(employeeId: string) {
   const { data: certs, error } = await supabase
     .from("employee_certifications")
-    .select("*")
+    .select("id,employee_id,course_name,expiry_date")
     .eq("employee_id", employeeId);
 
   if (error) {

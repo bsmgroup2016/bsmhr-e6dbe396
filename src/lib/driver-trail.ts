@@ -47,7 +47,7 @@ const mins = (a: string, b: string) =>
 export async function listTaskPings(taskId: string): Promise<TrailPing[]> {
   const { data, error } = await supabase
     .from("driver_task_pings")
-    .select("*")
+    .select("id,task_id,driver_employee_id,lat,lng,status,speed_kmh,recorded_at")
     .eq("task_id", taskId)
     .order("recorded_at", { ascending: true });
   if (error) throw error;
@@ -229,7 +229,7 @@ export async function listPingsForTasks(taskIds: string[]): Promise<Record<strin
   if (!taskIds.length) return {};
   const { data, error } = await supabase
     .from("driver_task_pings")
-    .select("*")
+    .select("id,task_id,driver_employee_id,lat,lng,status,speed_kmh,recorded_at")
     .in("task_id", taskIds)
     .order("recorded_at", { ascending: true });
   if (error) throw error;

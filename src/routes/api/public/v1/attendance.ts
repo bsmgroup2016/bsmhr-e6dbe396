@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { fromAttendance } from "@/lib/db";
+import { TABLE_COLUMNS } from "@/core/data-tables";
+import { periodForMonth } from "@/core/data-pagination";
 import { applyPunch, type PunchEvent } from "@/lib/attendance-punch.server";
 import {
   fail,
@@ -33,7 +35,13 @@ export const Route = createFileRoute("/api/public/v1/attendance")({
         const scoped = isStaff ? employeeId : ctx.employeeId;
         if (!isStaff && !scoped) return fail(403, "forbidden", "No worker profile linked");
 
-        const filters = [`select=*`, `order=date.desc`, `limit=${p.limit}`, `offset=${p.offset}`];
+        const filters = [`select=${TABLE_COLUMNS.attendance}${p.companyId ? ",employees!inner(company_id)" : ""}`, `order=date.desc,id.desc`, `limit=${p.limit}`, `offset=${p.offset}`];
+        if (p.companyId) filters.push(`employees.company_id=eq.${encodeURIComponent(p.companyId)}`);
+        const month = p.url.searchParams.get("month");
+        if (month) {
+          try { const period = periodForMonth(month); filters.push(`date=gte.${period.from}`, `date=lte.${period.to}`); }
+          catch { return fail(400, "invalid_period", "Month must be YYYY-MM"); }
+        }
         if (scoped) filters.push(`employee_id=eq.${encodeURIComponent(scoped)}`);
         if (p.from) filters.push(`date=gte.${encodeURIComponent(p.from)}`);
         if (p.to) filters.push(`date=lte.${encodeURIComponent(p.to)}`);

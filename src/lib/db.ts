@@ -1,5 +1,8 @@
 // Supabase data layer: maps DB rows (snake_case) <-> app types (camelCase).
-import { supabase } from "@/integrations/supabase/client";
+import { apiData } from "@/lib/api-client";
+import { assertAvailableTable, TABLE_COLUMNS } from "@/core/data-tables";
+import { collectAllPages } from "@/core/data-pagination";
+import { sessionDataCache } from "@/lib/session-data-cache";
 import type {
   Employee, Client, Project, Site, Assignment, EmployeeDocument,
   Attendance, PayrollEntry, Approval, AuditLog, Company, User,
@@ -1019,10 +1022,14 @@ export const toClaimSheet = (c: Partial<ClaimSheet>): Row => ({
   total_ot_hours: c.totalOtHours ?? 0, snapshot: c.snapshot ?? [],
 });
 
-async function all(table: string, order = "created_at") {
-  const { data, error } = await supabase.from(table).select("*").order(order, { ascending: false });
-  if (error) { console.error(`[db] ${table}:`, error.message); return []; }
-  return (data ?? []) as Row[];
+export async function loadTableRows(table: string, filters: Record<string, string> = {}): Promise<Row[]> {
+  assertAvailableTable(table);
+  if (!TABLE_COLUMNS[table]) throw new Error(`Unknown data collection: ${table}`);
+  const key = `${table}|${JSON.stringify(filters)}`;
+  return sessionDataCache.get(key, () => collectAllPages(async (offset, limit) => {
+    const page = await apiData<{ rows: Row[]; total: number }>("/data", { query: { table, ...filters, offset, limit } });
+    return page;
+  }));
 }
 
 export interface LoadedData {
@@ -1076,125 +1083,6 @@ export interface LoadedData {
   fuelLogs: FuelLog[];
   manpowerRequests: ManpowerRequest[];
   companies: Company[];
-}
-
-export async function loadAll(): Promise<LoadedData> {
-  const [
-    companies, employees, clients, projects, sites, assignments,
-    documents, attendance, payroll, approvals, auditLogs, profiles, roles, leaveRequests,
-    rateAgreements, invoices, dormitories, allocations, vehicles, trips,
-    assets, issuances, courses, trainings, incidents,
-    requisitions, candidates, leads, activities, expenses, receipts,
-    inventory, movements, purchaseOrders,
-    branchPrefixes, certifications, timeCards, claimSheets, contracts,
-    medicalClaims,
-    dormInvoices, dormInspections, dormMovements,
-  ] = await Promise.all([
-    all("companies"), all("employees"), all("clients"), all("projects"), all("sites"),
-    all("assignments"), all("employee_documents"), all("attendance"), all("payroll_entries"),
-    all("approvals"), all("audit_logs"), all("profiles"), all("user_roles"), all("leave_requests"),
-    all("rate_agreements"), all("invoices"), all("dormitories"), all("bed_allocations"),
-    all("vehicles"), all("trips"),
-    all("assets"), all("asset_issuances"),
-    all("training_courses"), all("training_records"), all("safety_incidents"),
-    all("job_requisitions"), all("candidates"), all("leads"), all("crm_activities"),
-    all("expenses"), all("payment_receipts"),
-    all("inventory_items"), all("stock_movements"), all("purchase_orders"),
-    all("branch_prefixes"), all("employee_certifications"), all("time_cards"), all("claim_sheets"),
-    all("client_contracts"),
-    all("medical_claims"),
-    all("dormitory_invoices"), all("dormitory_inspections"), all("dormitory_movements"),
-  ]);
-
-  const [loanRows, repaymentRows] = await Promise.all([
-    all("employee_loans"),
-    all("loan_repayments"),
-  ]);
-
-  const [departmentRows, designationRows] = await Promise.all([
-    all("departments"),
-    all("designations"),
-  ]);
-
-  const [driverProfileRows, driverIncidentRows, fuelLogRows] = await Promise.all([
-    all("driver_profiles"),
-    all("driver_incidents"),
-    all("driver_fuel_logs"),
-  ]);
-
-  const quotationRows = await all("quotations");
-
-  const roleByUser = new Map<string, string>();
-  for (const r of roles) if (!roleByUser.has(r.user_id)) roleByUser.set(r.user_id, r.role);
-
-  const users: User[] = profiles.map((p) => ({
-    id: p.id,
-    name: p.full_name ?? p.email ?? "User",
-    email: p.email ?? "",
-    role: (roleByUser.get(p.id) ?? "client") as User["role"],
-    status: "active",
-    createdAt: p.created_at,
-  }));
-
-  const siteById = new Map(sites.map((s) => [s.id, s.name]));
-  const activeSiteByEmp = new Map<string, string>();
-  for (const a of assignments) {
-    if (a.status === "Active" && siteById.has(a.site_id)) activeSiteByEmp.set(a.employee_id, siteById.get(a.site_id)!);
-  }
-
-  return {
-    companies: companies.map(fromCompany),
-    employees: employees.map((r) => ({ ...fromEmployee(r), site: activeSiteByEmp.get(r.id) ?? null })),
-    clients: clients.map(fromClient),
-    projects: projects.map(fromProject),
-    sites: sites.map(fromSite),
-    assignments: assignments.map(fromAssignment),
-    documents: documents.map(fromDocument),
-    attendance: attendance.map(fromAttendance),
-    payroll: payroll.map(fromPayroll),
-    approvals: approvals.map(fromApproval),
-    auditLogs: auditLogs.map(fromAuditLog),
-    users,
-    leaveRequests: leaveRequests.map(fromLeave),
-    rateAgreements: rateAgreements.map(fromRate),
-    invoices: invoices.map(fromInvoice),
-    dormitories: dormitories.map(fromDormitory),
-    allocations: allocations.map(fromAllocation),
-    vehicles: vehicles.map(fromVehicle),
-    trips: trips.map(fromTrip),
-    dormitoryInvoices: dormInvoices.map(fromDormitoryInvoice),
-    dormitoryInspections: dormInspections.map(fromDormitoryInspection),
-    dormitoryMovements: dormMovements.map(fromDormitoryMovement),
-    assets: assets.map(fromAsset),
-    issuances: issuances.map(fromIssuance),
-    courses: courses.map(fromCourse),
-    trainings: trainings.map(fromTraining),
-    incidents: incidents.map(fromIncident),
-    requisitions: requisitions.map(fromRequisition),
-    candidates: candidates.map(fromCandidate),
-    leads: leads.map(fromLead),
-    activities: activities.map(fromActivity),
-    expenses: expenses.map(fromExpense),
-    receipts: receipts.map(fromPaymentReceipt),
-    inventory: inventory.map(fromItem),
-    movements: movements.map(fromMovement),
-    purchaseOrders: purchaseOrders.map(fromPurchaseOrder),
-    branchPrefixes: branchPrefixes.map(fromBranchPrefix),
-    certifications: certifications.map(fromCertification),
-    timeCards: timeCards.map(fromTimeCard),
-    claimSheets: claimSheets.map(fromClaimSheet),
-    contracts: contracts.map(fromContract),
-    medicalClaims: medicalClaims.map(fromMedicalClaim),
-    loans: loanRows.map(fromLoan),
-    loanRepayments: repaymentRows.map(fromLoanRepayment),
-    departments: departmentRows.map(fromDepartment),
-    designations: designationRows.map(fromDesignation),
-    driverProfiles: driverProfileRows.map(fromDriverProfile),
-    driverIncidents: driverIncidentRows.map(fromDriverIncident),
-    fuelLogs: fuelLogRows.map(fromFuelLog),
-    quotations: quotationRows.map(fromQuotation),
-    manpowerRequests: [],
-  };
 }
 
 /* ---------- Phase 12: finance ---------- */
@@ -1363,3 +1251,67 @@ export const toManpowerRequestItem = (x: Partial<ManpowerRequestItem>): Row => (
   end_date: nullDate(x.endDate),
   remarks: x.remarks ?? null,
 });
+
+export const COLLECTIONS = {
+  companies: { table: "companies", map: fromCompany },
+  clients: { table: "clients", map: fromClient },
+  projects: { table: "projects", map: fromProject },
+  sites: { table: "sites", map: fromSite },
+  assignments: { table: "assignments", map: fromAssignment },
+  documents: { table: "employee_documents", map: fromDocument },
+  attendance: { table: "attendance", map: fromAttendance },
+  payroll: { table: "payroll_entries", map: fromPayroll },
+  approvals: { table: "approvals", map: fromApproval },
+  auditLogs: { table: "audit_logs", map: fromAuditLog },
+  leaveRequests: { table: "leave_requests", map: fromLeave },
+  rateAgreements: { table: "rate_agreements", map: fromRate },
+  invoices: { table: "invoices", map: fromInvoice },
+  dormitories: { table: "dormitories", map: fromDormitory },
+  allocations: { table: "bed_allocations", map: fromAllocation },
+  vehicles: { table: "vehicles", map: fromVehicle },
+  trips: { table: "trips", map: fromTrip },
+  assets: { table: "assets", map: fromAsset },
+  issuances: { table: "asset_issuances", map: fromIssuance },
+  courses: { table: "training_courses", map: fromCourse },
+  trainings: { table: "training_records", map: fromTraining },
+  incidents: { table: "safety_incidents", map: fromIncident },
+  requisitions: { table: "job_requisitions", map: fromRequisition },
+  candidates: { table: "candidates", map: fromCandidate },
+  leads: { table: "leads", map: fromLead },
+  activities: { table: "crm_activities", map: fromActivity },
+  expenses: { table: "expenses", map: fromExpense },
+  receipts: { table: "payment_receipts", map: fromPaymentReceipt },
+  inventory: { table: "inventory_items", map: fromItem },
+  movements: { table: "stock_movements", map: fromMovement },
+  purchaseOrders: { table: "purchase_orders", map: fromPurchaseOrder },
+  branchPrefixes: { table: "branch_prefixes", map: fromBranchPrefix },
+  certifications: { table: "employee_certifications", map: fromCertification },
+  timeCards: { table: "time_cards", map: fromTimeCard },
+  claimSheets: { table: "claim_sheets", map: fromClaimSheet },
+  contracts: { table: "client_contracts", map: fromContract },
+  medicalClaims: { table: "medical_claims", map: fromMedicalClaim },
+  loans: { table: "employee_loans", map: fromLoan },
+  loanRepayments: { table: "loan_repayments", map: fromLoanRepayment },
+  departments: { table: "departments", map: fromDepartment },
+  designations: { table: "designations", map: fromDesignation },
+  driverProfiles: { table: "driver_profiles", map: fromDriverProfile },
+  driverIncidents: { table: "driver_incidents", map: fromDriverIncident },
+  fuelLogs: { table: "driver_fuel_logs", map: fromFuelLog },
+  quotations: { table: "quotations", map: fromQuotation },
+  employees: { table: "employees", map: fromEmployee },
+};
+
+export type CollectionKey = keyof typeof COLLECTIONS | "users";
+
+export async function loadCollection(key: CollectionKey, filters: Record<string, string> = {}): Promise<Partial<LoadedData>> {
+  if (key === "users") {
+    const [profiles, roles] = await Promise.all([loadTableRows("profiles"), loadTableRows("user_roles")]);
+    const roleByUser = new Map<string, string>();
+    for (const role of roles) if (!roleByUser.has(role.user_id)) roleByUser.set(role.user_id, role.role);
+    return { users: profiles.map((p) => ({ id: p.id, name: p.full_name ?? p.email ?? "User", email: p.email ?? "", role: (roleByUser.get(p.id) ?? "client") as User["role"], status: "active", createdAt: p.created_at })) };
+  }
+  const collection = COLLECTIONS[key];
+  const rows = await loadTableRows(collection.table, filters);
+  return { [key]: rows.map(collection.map as (row: Row) => unknown) } as Partial<LoadedData>;
+}
+
