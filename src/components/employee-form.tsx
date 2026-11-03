@@ -215,9 +215,14 @@ export function EmployeeForm({
   submitLabel,
   initialValues,
   initialTab,
+  readOnly,
+  tab: controlledTab,
 }: {
   employee?: Employee;
   initialTab?: string;
+  /** Profile view: same fields, locked except Documents; tab list and identity block hidden. */
+  readOnly?: boolean;
+  tab?: string;
   initialValues?: Partial<Employee>;
   onSubmit: (data: FormData) => void;
   submitLabel?: string;
@@ -334,7 +339,8 @@ export function EmployeeForm({
     </Field>)}</div>;
   }
 
-  const [tab, setTab] = useState(initialTab ?? "personal");
+  const [ownTab, setTab] = useState(initialTab ?? "personal");
+  const tab = controlledTab ?? ownTab;
   const invalidToastRef = useRef(false);
 
   return (
@@ -401,8 +407,9 @@ export function EmployeeForm({
         ) : null}
       </div>
 
+      <fieldset disabled={readOnly && tab !== "documents"} className="min-w-0 space-y-4">
       <Tabs value={tab} onValueChange={setTab}>
-        <TabsList className="flex h-auto min-h-10 w-full flex-wrap">
+        <TabsList className={readOnly ? "hidden" : "flex h-auto min-h-10 w-full flex-wrap"}>
           <TabsTrigger value="personal">Personal</TabsTrigger>
           <TabsTrigger value="employment">Employment</TabsTrigger>
           <TabsTrigger value="pass">Work pass &amp; Certificate</TabsTrigger>
@@ -765,10 +772,11 @@ export function EmployeeForm({
           </section>)}
         </TabsContent>
       </Tabs>
+      </fieldset>
 
-      <div className="flex justify-end pt-2">
+      <div className={readOnly && tab !== "documents" ? "hidden" : "flex justify-end pt-2"}>
         {documentReading > 0 && <span role="status" className="mr-3 text-sm text-muted-foreground">Reading document…</span>}
-        <Button type="submit" disabled={documentReading > 0 || scanning}>{submitLabel ?? (employee ? "Save changes" : "Register employee")}</Button>
+        <Button type="submit" disabled={documentReading > 0 || scanning}>{submitLabel ?? (readOnly ? "Save documents" : employee ? "Save changes" : "Register employee")}</Button>
       </div>
     </form>
   );
