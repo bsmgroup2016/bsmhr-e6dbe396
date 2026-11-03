@@ -28,6 +28,7 @@
 - Archive cleanup uses a fixed server-side allowlist, private R2 progress and read-back verification followed by exact-row atomic RPC checks; automation stays off until first-run confirmation and controlled end-to-end checks, preventing unverified or cascading deletion.
 - Time-card OCR remains array-compatible with additive printed identity fields; upload-first matching uses only unique identifiers and post-read confirmation. Confirmed project/site IDs live in existing structured day entries and claim snapshots, avoiding schema changes and preventing guessed worker attribution.
 - Combined claim Excel exports use a sanitized copy of the supplied workbook layout with dynamic ExcelJS loading; never import sample workers or infer financial rates from example amounts, to preserve formatting without contaminating live business data.
+- Employee creation uses a registration-method wrapper around the existing EmployeeForm; editing uses EmployeeForm directly to preserve existing edit behavior.
 
 ## Permanent data placement rules
 
