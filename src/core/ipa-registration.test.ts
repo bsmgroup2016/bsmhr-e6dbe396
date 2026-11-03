@@ -104,8 +104,7 @@ test("IPA source and all extra particulars remain attached without guessing a co
   expect(values.companyId).toBeUndefined();
   expect(values.internalNotes).toContain("Agency licence (page 14): 22C1248");
 });
-describe("IPA particulars from the MD ABU SAYED sample", () => {
-  it("fills every printed field, including amounts read as text", async () => {
+test("fills every printed field, including amounts read as text", async () => {
     const { ipaEmployeeDefaults: fill } = await import("./ipa-registration");
     const v = fill({
       name: "MD ABU SAYED", dateOfBirth: "2003-12-01", gender: "MALE", nationality: "BANGLADESHI",
@@ -123,5 +122,4 @@ describe("IPA particulars from the MD ABU SAYED sample", () => {
       workingDaysPerWeek: 6, otRate: 3.15, dailyRestDayRate: 15.38, declaredSalary: 400, basicMonthlySalary: 400,
       fixedAllowance: 0, housingDeduction: 0, otherDeduction: 0,
     });
-  });
 });
