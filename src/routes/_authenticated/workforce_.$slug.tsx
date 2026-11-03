@@ -141,7 +141,7 @@ function EmployeeProfilePage() {
               <div className="min-w-0">
                 <h1 className="text-xl font-semibold tracking-tight text-foreground">{employee.name}</h1>
                 <p className="text-sm text-muted-foreground">
-                  {staff ? "Employee ID" : "P-File"} {employee.employeeCode} •{" "}
+                  {staff ? "Employee ID" : "Particular"} {employee.employeeCode} •{" "}
                   {employee.department ?? (staff ? "Office" : "Construction")} • {employee.trade}
                 </p>
                 <div className="mt-2 flex flex-wrap gap-2">
@@ -248,7 +248,7 @@ function EmployeeProfilePage() {
           <TabsContent value="overview" className="mt-4">
             <Grid>
               <Item
-                label={staff ? "Employee ID" : "P-File Number"}
+                label={staff ? "Employee ID" : "Particular Number"}
                 value={employee.employeeCode}
               />
               <Item label="Department" value={employee.department} />
@@ -512,7 +512,7 @@ function PFilePanel({
   async function handleFile(file: File) {
     setError(null);
     if (!file.name.toLowerCase().endsWith(".pdf")) {
-      setError("P-File must be a PDF file.");
+      setError("Particular must be a PDF file.");
       return;
     }
     setBusy("upload");
@@ -534,7 +534,7 @@ function PFilePanel({
     try {
       await deletePFileReference(url, deleteFromR2, () => onChange(undefined));
     } catch (error) {
-      setError(error instanceof Error ? error.message : "Delete failed. The P-File reference has been kept.");
+      setError(error instanceof Error ? error.message : "Delete failed. The Particular reference has been kept.");
     } finally {
       setBusy(null);
     }
@@ -544,11 +544,11 @@ function PFilePanel({
     <div className="mb-4 rounded-xl border bg-card p-5 shadow-sm">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
-          <h3 className="text-sm font-semibold">P-File (PDF)</h3>
+          <h3 className="text-sm font-semibold">Particular (PDF)</h3>
           <p className="text-xs text-muted-foreground">
             {url
               ? r2FileName(url)
-              : "No P-File uploaded yet — upload the scanned PDF for this employee."}
+              : "No Particular uploaded yet — upload the scanned PDF for this employee."}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -584,7 +584,7 @@ function PFilePanel({
           ) : (
             <Button size="sm" disabled={busy !== null} onClick={() => inputRef.current?.click()}>
               <Upload className="mr-1.5 h-4 w-4" />
-              {busy === "upload" ? "Uploading…" : "Upload P-File PDF"}
+              {busy === "upload" ? "Uploading…" : "Upload Particular PDF"}
             </Button>
           )}
         </div>

@@ -89,7 +89,7 @@ export const Route = createFileRoute("/_authenticated/workforce")({
   head: () => ({
     meta: [
       { title: "Workforce Management | BSM Engineering" },
-      { name: "description", content: "Manage BSM Engineering's manpower supply. Detailed P-File records, FIN/Work Permit tracking, and worker availability." },
+      { name: "description", content: "Manage BSM Engineering's manpower supply. Detailed Particular records, FIN/Work Permit tracking, and worker availability." },
       { property: "og:title", content: "Workforce — BSM Workforce & Operations" },
       { property: "og:description", content: "Manage BSM Engineering employees and worker records." },
       { property: "og:type", content: "website" },
@@ -116,7 +116,7 @@ function expiryBadge(e: { workPermitExpiryDate?: string; passExpiry?: string }) 
 }
 
 const EMPLOYEE_IMPORT_COLUMNS: ImportColumn[] = [
-  { key: "employeeCode", label: "P-File Number", example: "BS-12" },
+  { key: "employeeCode", label: "Particular Number", example: "BS-12" },
   { key: "name", label: "Name", required: true, example: "Rahman Md" },
   { key: "fin", label: "FIN", example: "G1234567X" },
   { key: "passportNumber", label: "Passport Number", example: "BX0912345" },
@@ -615,7 +615,7 @@ export default function WorkforcePage() {
             <DialogContent className="max-h-[90vh] w-[calc(100%-2rem)] overflow-y-auto sm:max-w-3xl">
               <DialogHeader>
                 <DialogTitle>Register new employee</DialogTitle>
-                <DialogDescription>A unique P-File number will be generated automatically.</DialogDescription>
+                <DialogDescription>A unique Particular number will be generated automatically.</DialogDescription>
               </DialogHeader>
               <EmployeeRegistration onSubmit={handleCreate} />
             </DialogContent>
@@ -783,7 +783,7 @@ export default function WorkforcePage() {
               {availableOnly && (
                 <PFileBulkDownloadButton
                   people={filtered}
-                  zipBaseName="Available-Workers-P-Files"
+                  zipBaseName="Available-Workers-Particulars"
                 />
               )}
             </div>
@@ -899,7 +899,7 @@ export default function WorkforcePage() {
                     <Input
                       id="wf-search"
                       type="search"
-                      placeholder="Name, P-File, FIN, project, designation…"
+                      placeholder="Name, Particular, FIN, project, designation…"
                       value={search}
                       onChange={(e) => { setSearch(e.target.value); setPage(1); }}
                       className="h-9 pl-9"
@@ -930,7 +930,7 @@ export default function WorkforcePage() {
                     <Input
                       id="wf-search"
                       type="search"
-                      placeholder="Name, P-File, FIN, project, designation…"
+                      placeholder="Name, Particular, FIN, project, designation…"
                       value={search}
                       onChange={(e) => { setSearch(e.target.value); setPage(1); }}
                       className="h-9 pl-9"
@@ -1010,7 +1010,7 @@ export default function WorkforcePage() {
                             >
                               {e.name}
                             </Link>
-                            <div>P-File No: {e.employeeCode}</div>
+                            <div>Particular No: {e.employeeCode}</div>
                             <div>FIN: {e.fin || "—"}</div>
                             <div>Basic Rate: ${e.basicSalary.toLocaleString()}/day</div>
                           </div>

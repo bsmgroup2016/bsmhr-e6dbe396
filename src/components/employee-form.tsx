@@ -211,7 +211,7 @@ export function EmployeeForm({
   const taken = code.trim() ? isEmployeeCodeTaken(code, employee?.id) : false;
   const expectedPrefix = prefixForBranch(branch);
   const staff = isOfficeStaff({ department: values?.department, trade: values?.trade });
-  const idFieldLabel = staff ? "Employee ID" : "P-File Number (primary identifier)";
+  const idFieldLabel = staff ? "Employee ID" : "Particular Number (primary identifier)";
   const prefixMismatch =
     !staff &&
     code.trim().length > 0 &&
@@ -326,14 +326,14 @@ export function EmployeeForm({
           <Alert variant="destructive" className="sm:col-span-2">
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription>
-              {staff ? "Employee ID" : "P-File Number"} {code} is already in use. Choose another.
+              {staff ? "Employee ID" : "Particular Number"} {code} is already in use. Choose another.
             </AlertDescription>
           </Alert>
         ) : prefixMismatch ? (
           <Alert className="sm:col-span-2">
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription>
-              This P-File Number does not match the {branch} prefix ({expectedPrefix}). Allowed, but please confirm
+              This Particular Number does not match the {branch} prefix ({expectedPrefix}). Allowed, but please confirm
               it is intentional. Suggested: {nextEmployeeCode(branch)}
             </AlertDescription>
           </Alert>
@@ -407,16 +407,16 @@ export function EmployeeForm({
           </div>
           <FileUpload
             name="photoUrl"
-            label="Profile photo (stored in Cloudflare R2)"
+            label="Profile photo"
             folder="photos"
             defaultValue={values?.photoUrl || ""}
           />
           <FileUpload
             name="pFileUrl"
-            label="P-File document (PDF)"
+            label="Particular document (PDF)"
             folder="p-files"
             accept=".pdf"
-            hint="Upload the employee's scanned P-File as a PDF"
+            hint="Upload the employee's scanned Particular as a PDF"
             defaultValue={values?.pFileUrl || ""}
           />
         </TabsContent>

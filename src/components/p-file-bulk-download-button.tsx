@@ -20,22 +20,22 @@ interface Props {
 }
 
 /** Downloads every P-File PDF of the currently listed people as one ZIP. */
-export function PFileBulkDownloadButton({ people, zipBaseName = "P-Files", label = "Download P-File" }: Props) {
+export function PFileBulkDownloadButton({ people, zipBaseName = "Particulars", label = "Download Particular" }: Props) {
   const [busy, setBusy] = useState(false);
   const withFile = people.filter((p) => p.pFileUrl);
 
   async function handleClick() {
     if (withFile.length === 0) {
-      toast.error("No P-Files uploaded for this list");
+      toast.error("No Particulars uploaded for this list");
       return;
     }
     setBusy(true);
-    const id = toast.loading(`Downloading ${withFile.length} P-Files…`);
+    const id = toast.loading(`Downloading ${withFile.length} Particulars…`);
     try {
       const names: Record<string, string> = {};
       for (const p of withFile) {
         const safe = `${p.employeeCode ? `${p.employeeCode}-` : ""}${p.name}`.replace(/[^\w.-]+/g, "-");
-        names[p.pFileUrl as string] = `P-File-${safe}.pdf`;
+        names[p.pFileUrl as string] = `Particular-${safe}.pdf`;
       }
       const stamp = new Date().toISOString().slice(0, 10);
       const { added, failed } = await downloadR2FilesAsZip(
@@ -44,9 +44,9 @@ export function PFileBulkDownloadButton({ people, zipBaseName = "P-Files", label
         names,
       );
       toast.dismiss(id);
-      if (added === 0) toast.error("No P-File could be downloaded");
+      if (added === 0) toast.error("No Particular could be downloaded");
       else if (failed.length) toast.warning(`${added} downloaded, ${failed.length} failed`);
-      else toast.success(`${added} P-Files downloaded as ZIP`);
+      else toast.success(`${added} Particulars downloaded as ZIP`);
     } catch {
       toast.dismiss(id);
       toast.error("Could not create ZIP");
@@ -62,7 +62,7 @@ export function PFileBulkDownloadButton({ people, zipBaseName = "P-Files", label
       className="gap-1.5"
       onClick={handleClick}
       disabled={busy}
-      title={`Download ${withFile.length} P-File PDF(s) as ZIP`}
+      title={`Download ${withFile.length} Particular PDF(s) as ZIP`}
     >
       {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileArchive className="h-4 w-4" />}
       {label}
