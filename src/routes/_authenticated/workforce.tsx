@@ -104,7 +104,9 @@ export const Route = createFileRoute("/_authenticated/workforce")({
 
 function daysUntil(iso: string): number | null {
   if (!iso || iso === "-") return null;
-  const today = new Date("2026-07-28T00:00:00+08:00");
+  const now = new Date();
+  const sg = new Date(now.getTime() + 8 * 3_600_000).toISOString().slice(0, 10);
+  const today = new Date(`${sg}T00:00:00+08:00`);
   const target = new Date(`${iso}T00:00:00+08:00`);
   return Math.round((target.getTime() - today.getTime()) / 86_400_000);
 }
@@ -113,9 +115,9 @@ function daysUntil(iso: string): number | null {
 function expiryBadge(e: { workPermitExpiryDate?: string; passExpiry?: string }) {
   const days = daysUntil(e.workPermitExpiryDate || e.passExpiry || "");
   if (days === null) return null;
-  if (days < 0) return <StatusBadge variant="destructive" label="Expired" dot />;
-  if (days <= 60) return <StatusBadge variant="warning" label={`${days} days left`} dot />;
-  return <StatusBadge variant="success" label={`${days} days left`} dot />;
+  if (days < 0) return <StatusBadge variant="destructive" label="WP expired" dot />;
+  if (days <= 60) return <StatusBadge variant="warning" label={`WP: ${days} days left`} dot />;
+  return <StatusBadge variant="success" label={`WP: ${days} days left`} dot />;
 }
 
 const EMPLOYEE_IMPORT_COLUMNS: ImportColumn[] = [
