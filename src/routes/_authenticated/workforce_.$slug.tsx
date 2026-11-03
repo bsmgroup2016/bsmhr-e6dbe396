@@ -90,7 +90,7 @@ function EmployeeProfilePage() {
   const { slug } = Route.useParams();
   const navigate = useNavigate();
   const [version, force] = useState(0);
-  const [profileTab, setProfileTab] = useState("overview");
+  const [profileTab, setProfileTab] = useState("personal");
   const [editing, setEditing] = useState(false);
   const employee = findEmployeeByParam(getEmployees(), slug);
 
@@ -246,17 +246,13 @@ function EmployeeProfilePage() {
 
         <Tabs value={profileTab} onValueChange={setProfileTab}>
           <TabsList className="flex w-full flex-wrap">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="personal">Personal</TabsTrigger>
             <TabsTrigger value="employment">Employment</TabsTrigger>
             <TabsTrigger value="pass">Work pass &amp; Certificate</TabsTrigger>
             <TabsTrigger value="pay">Compensation</TabsTrigger>
-            {!staff ? <TabsTrigger value="assignments">Assignments</TabsTrigger> : null}
+            <TabsTrigger value="documents">Documents</TabsTrigger>
             {!staff ? <TabsTrigger value="attendance">Attendance</TabsTrigger> : null}
             <TabsTrigger value="payroll">Payroll</TabsTrigger>
-            <TabsTrigger value="documents">Documents</TabsTrigger>
-            <TabsTrigger value="notes">Notes</TabsTrigger>
-            <TabsTrigger value="activity">Activity</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="mt-4">
