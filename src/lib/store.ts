@@ -185,7 +185,7 @@ export async function ensureStoreCollections(keys: CollectionKey[]): Promise<voi
     key === "attendance" || key === "issuances" ? { companyId } : { cacheCompany: companyId },
   )));
   if (epoch !== generation || companyId !== getCurrentCompany()) return;
-  const next: AppState = results.reduce((current, result) => ({ ...current, ...result }), getState());
+  const next = results.reduce<AppState>((current, result) => ({ ...current, ...result }), getState());
   // Preserve the employee/site relation formerly materialized by loadAll.
   const names = new Map(next.sites.map((site) => [site.id, site.name]));
   const byEmployee = new Map<string, string>();

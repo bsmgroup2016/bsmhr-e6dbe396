@@ -182,7 +182,7 @@ function EmployeeProfilePage() {
                   <Link to="/operations"><Briefcase className="mr-1 h-4 w-4" /> Assign to project</Link>
                 </Button>
                 <Button size="sm" variant="outline" asChild>
-                  <Link to="/time-management"><CalendarCheck className="mr-1 h-4 w-4" /> Record attendance</Link>
+                  <Link to="/time-management" search={{}}><CalendarCheck className="mr-1 h-4 w-4" /> Record attendance</Link>
                 </Button>
               </>
             ) : (
