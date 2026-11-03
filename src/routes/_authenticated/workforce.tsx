@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils";
 import { AppShell } from "@/components/app-shell";
 import { R2Image } from "@/components/r2-image";
 import { EmployeeForm, employeeFromForm, WORKER_CATEGORIES, DEPLOYMENT_STATUSES } from "@/components/employee-form";
+import { EmployeeRegistration } from "@/components/employee-registration";
 import { ExportButton, ImportDialog } from "@/components/data-io";
 import { PFileDownloadButton } from "@/components/p-file-download-button";
 import { PFileBulkDownloadButton } from "@/components/p-file-bulk-download-button";
@@ -91,6 +92,8 @@ export const Route = createFileRoute("/_authenticated/workforce")({
       { name: "description", content: "Manage BSM Engineering's manpower supply. Detailed P-File records, FIN/Work Permit tracking, and worker availability." },
       { property: "og:title", content: "Workforce — BSM Workforce & Operations" },
       { property: "og:description", content: "Manage BSM Engineering employees and worker records." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: WorkforcePage,
@@ -612,9 +615,9 @@ export default function WorkforcePage() {
             <DialogContent className="max-h-[90vh] w-[calc(100%-2rem)] overflow-y-auto sm:max-w-3xl">
               <DialogHeader>
                 <DialogTitle>Register new employee</DialogTitle>
-                <DialogDescription>Enter worker details. A unique P-File number will be generated automatically.</DialogDescription>
+                <DialogDescription>A unique P-File number will be generated automatically.</DialogDescription>
               </DialogHeader>
-              <EmployeeForm onSubmit={handleCreate} />
+              <EmployeeRegistration onSubmit={handleCreate} />
             </DialogContent>
           </Dialog>
         </div>
