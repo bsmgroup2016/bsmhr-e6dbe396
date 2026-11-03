@@ -51,7 +51,7 @@ const severities: SafetyIncident["severity"][] = ["Low", "Medium", "High", "Crit
 const incidentStatuses: SafetyIncident["status"][] = ["Open", "Under Investigation", "Closed"];
 
 const emptyCourse = {
-  code: "", name: "", category: "Safety" as TrainingCourse["category"], provider: "",
+  code: "", name: "", category: "Basic" as TrainingCourse["category"], provider: "",
   validityMonths: 24, mandatory: true, cost: 0, remarks: "",
 };
 
