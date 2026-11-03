@@ -152,7 +152,7 @@ function EmployeeProfilePage() {
               <div className="min-w-0">
                 <h1 className="text-xl font-semibold tracking-tight text-foreground">{employee.name}</h1>
                 <p className="text-sm text-muted-foreground">
-                  {staff ? "Employee ID" : "Particular"} {employee.employeeCode} •{" "}
+                  {staff ? "Employee ID" : "P-File No"} {employee.employeeCode} •{" "}
                   {employee.department ?? (staff ? "Office" : "Construction")} • {employee.trade}
                 </p>
                 <div className="mt-2 flex flex-wrap gap-2">
@@ -241,14 +241,13 @@ function EmployeeProfilePage() {
           </div>
         </div>
 
-        <Tabs defaultValue="overview">
+        <Tabs value={profileTab} onValueChange={setProfileTab}>
           <TabsList className="flex w-full flex-wrap">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="personal">Personal</TabsTrigger>
             <TabsTrigger value="employment">Employment</TabsTrigger>
             <TabsTrigger value="pass">Work pass &amp; Certificate</TabsTrigger>
             <TabsTrigger value="pay">Compensation</TabsTrigger>
-            <TabsTrigger value="employer">Employer / application</TabsTrigger>
             {!staff ? <TabsTrigger value="assignments">Assignments</TabsTrigger> : null}
             {!staff ? <TabsTrigger value="attendance">Attendance</TabsTrigger> : null}
             <TabsTrigger value="payroll">Payroll</TabsTrigger>
@@ -292,99 +291,23 @@ function EmployeeProfilePage() {
             </Grid>
           </TabsContent>
 
-          <TabsContent value="personal" className="mt-4">
-            <Grid>
-              <Item label="Full legal name" value={employee.name} />
-              <Item label="Preferred name" value={employee.preferredName} />
-              <Item label="Date of birth" value={employee.dateOfBirth} />
-              <Item label="Gender" value={employee.gender} />
-              <Item label="Nationality" value={employee.nationality} />
-              <Item label="Marital status" value={employee.maritalStatus} />
-              <Item label="Email" value={employee.email} />
-              <Item label="Mobile phone" value={employee.phone} />
-              <Item label="Alternative phone" value={employee.altPhone} />
-              <Item label="Singapore address" value={employee.address} />
-              <Item label="Home-country address" value={employee.homeCountryAddress} />
-              <Item label="Postal code" value={employee.postalCode} />
-              <Item label="Emergency contact" value={employee.emergencyContact} />
-              <Item label="Relationship" value={employee.emergencyRelation} />
-              <Item label="Emergency phone" value={employee.emergencyPhone} />
-              <Item label="Emergency email" value={employee.emergencyEmail} />
-              <Item label="Bank name" value={employee.bankName} />
-              <Item label="Bank account" value={employee.bankAccount} />
-              <Item label="Payment method" value={employee.paymentMethod} />
-              <Item label="Accommodation" value={employee.dormitory} />
-              <IpaItems employee={employee} section="personal" />
-            </Grid>
-          </TabsContent>
+          {FORM_TABS.includes(profileTab) ? (
+            <div className="mt-4 rounded-lg border bg-card p-4">
+              <EmployeeForm key={`${employee.id}-${version}`} employee={employee} readOnly tab={profileTab} onSubmit={(fd) => {
+                updateEmployee(employee.id, employeeFromForm(fd));
+                for (const document of employeeFormDocuments(fd, getDocumentsByEmployee(employee.id))) addDocument({ ...document, employeeId: employee.id });
+                force((n) => n + 1);
+              }} />
+            </div>
+          ) : null}
 
-          <TabsContent value="employment" className="mt-4">
-            <Grid>
-              <Item label="Branch" value={employee.branch} />
-              <Item label="Department" value={employee.department} />
-              <Item label="Employment type" value={employee.employmentType} />
-              <Item label="Worker category" value={employee.workerCategory} />
-              <Item label="Job title" value={employee.jobTitle} />
-              <Item label="Designation" value={employee.trade} />
-              <Item label="Secondary skills" value={employee.secondarySkills} />
-              <Item label="Application date" value={employee.applicationDate} />
-              <Item label="Joining date" value={employee.joinedOn} />
-              <Item label="Confirmation date" value={employee.confirmationDate} />
-              <Item label="Contract start" value={employee.contractStart} />
-              <Item label="Contract end" value={employee.contractEnd} />
-              <Item label="Employment status" value={employee.status} />
-              <Item label="Deployment status" value={employee.deploymentStatus} />
-              <Item label="Reporting manager" value={employee.reportingManager} />
-              <Item label="Site supervisor" value={employee.siteSupervisor} />
-              <Item label="Payroll group" value={employee.payrollGroup} />
-              <Item label="Payroll frequency" value={employee.payrollFrequency} />
-              <Item label="Last working date" value={employee.lastWorkingDate} />
-              <Item label="Exit reason" value={employee.exitReason} />
-              <IpaItems employee={employee} section="employment" />
-              <div className="col-span-full border-t pt-4 text-sm font-semibold">Employment agency</div>
-              <IpaItems employee={employee} section="agency" />
-            </Grid>
-          </TabsContent>
 
-          <TabsContent value="pass" className="mt-4">
-            <Grid>
-              <Item label="FIN / NRIC" value={employee.fin} />
-              <Item label="Pass type" value={employee.passType} />
-              <Item label="Work Permit number" value={employee.workPermitNumber} />
-              <Item label="Work Permit issue date (confirmed)" value={employee.workPermitIssueDate} />
-              <Item label="Work Permit expiry date" value={employee.workPermitExpiryDate} />
-              {employee.passType === "Work Permit" && <Item label="Estimated Work Permit expiry — Unverified" value={estimatedWorkPermitExpiry(employee.workPermitIssueDate, employee.passType)} />}
-              <Item label="Pass expiry" value={employee.passExpiry} />
-              <Item label="Passport number" value={employee.passportNumber} />
-              <Item label="Passport expiry" value={employee.passportExpiry} />
-              <IpaItems employee={employee} section="pass" />
-            </Grid>
-          </TabsContent>
 
-          <TabsContent value="pay" className="mt-4">
-            <Grid>
-              <Item
-                label={staff ? "Fixed salary / month" : "Basic rate / day"}
-                value={`$${employee.basicSalary.toLocaleString()}`}
-              />
-              <IpaItems employee={employee} section="pay" />
-              <Item label="MOM declared monthly salary" value={employee.declaredSalary != null ? `$${employee.declaredSalary.toLocaleString()}` : undefined} />
-              {!staff ? (
-                <>
-                  <Item label="OT rate / hour" value={employee.otRate ? `$${employee.otRate}` : undefined} />
-                  <Item label="Normal hours / day" value={employee.normalHours} />
-                  <Item label="Monthly levy" value={employee.levyRate ? `$${employee.levyRate}` : undefined} />
-                </>
-              ) : null}
-              <Item label="Payroll group" value={employee.payrollGroup} />
-              <Item label="Payroll frequency" value={employee.payrollFrequency} />
-              <Item label="Bank name" value={employee.bankName} />
-              <Item label="Bank account" value={employee.bankAccount} />
-              <Item label="Payment method" value={employee.paymentMethod} />
-            </Grid>
-          </TabsContent>
 
-          <TabsContent value="employer" className="mt-4"><Grid><IpaItems employee={employee} section="employer" /></Grid></TabsContent>
+
+
+
+
           <TabsContent value="assignments" className="mt-4">
             <SimpleTable
               headers={["Project", "Site", "Start", "End", "Status"]}
@@ -422,22 +345,7 @@ function EmployeeProfilePage() {
             />
           </TabsContent>
 
-          <TabsContent value="documents" className="mt-4">
-            <PFilePanel
-              employee={employee}
-              onChange={(url: string | undefined) => patch({ pFileUrl: url })}
-            />
-            <SimpleTable
-              headers={["Type", "Name", "Issued", "Expiry", "Status"]}
-              rows={documents.map((d) => [d.type, d.name, d.issueDate ?? "—", d.expiryDate ?? "—", d.status])}
-              empty="No documents uploaded yet."
-            />
-            <div className="mt-3">
-              <Button size="sm" variant="outline" asChild>
-                <Link to="/documents" search={{ employee: employee.id }}>Manage documents</Link>
-              </Button>
-            </div>
-          </TabsContent>
+
 
           <TabsContent value="notes" className="mt-4">
             <div className="space-y-4 rounded-xl border bg-card p-5 shadow-sm">

@@ -1,3 +1,4 @@
+import { prefixesForCompany } from "@/core/pfile-prefixes";
 import { IPA_DETAIL_FIELDS, ipaDetailsFromForm } from "@/core/ipa-detail-fields";
 import { estimatedWorkPermitExpiry } from "@/core/work-permit-expiry";
 import { Button } from "@/components/ui/button";
@@ -246,13 +247,14 @@ export function EmployeeForm({
   const readingKinds = useRef(new Set<EmployeeDocumentKind>());
 
   const taken = code.trim() ? isEmployeeCodeTaken(code, employee?.id) : false;
-  const expectedPrefix = prefixForBranch(branch);
+  const allowedPrefixes = prefixesForCompany(branch);
+  const expectedPrefix = allowedPrefixes.length ? allowedPrefixes.join(" / ") : prefixForBranch(branch);
   const staff = isOfficeStaff({ department: values?.department, trade: values?.trade });
   const idFieldLabel = staff ? "Employee ID" : "P-File Number (primary identifier)";
   const prefixMismatch =
     !staff &&
     code.trim().length > 0 &&
-    !new RegExp(`^${expectedPrefix}\\d+$`, "i").test(code.trim());
+    !(allowedPrefixes.length ? allowedPrefixes : [prefixForBranch(branch)]).some((p) => new RegExp(`^${p}[^a-z0-9]*\\d+$`, "i").test(code.trim()));
 
   function suggest(nextBranch: string) {
     setBranch(nextBranch);
