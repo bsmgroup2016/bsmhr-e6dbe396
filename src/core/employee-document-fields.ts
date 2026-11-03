@@ -20,7 +20,7 @@ export function documentEmployeeFields(kind: EmployeeDocumentKind, data: Record<
   for (const key of allowed) {
     const value = data[key];
     if (typeof value !== "string" || !value.trim()) continue;
-    if (/Expiry|Date/.test(key)) {
+    if (/Expiry|Date/.test(key) || key === "dateOfBirth") {
       if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) continue;
       const date = new Date(`${value}T00:00:00Z`);
       if (!Number.isFinite(date.getTime()) || date.toISOString().slice(0, 10) !== value) continue;
