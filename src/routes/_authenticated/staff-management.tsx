@@ -45,6 +45,9 @@ import {
 } from "@/lib/store";
 import { employeeSlugById } from "@/lib/employee-slug";
 import { isOfficeStaff } from "@/lib/workforce-split";
+import { StaffExcelActions } from "@/components/staff-excel-actions";
+import { exportRows, timestampedName } from "@/lib/xlsx";
+import { toast } from "sonner";
 
 function daysUntil(iso?: string | null): number | null {
   if (!iso || iso === "-") return null;
@@ -75,6 +78,8 @@ export const Route = createFileRoute("/_authenticated/staff-management")({
         name: "description",
         content: "Office and administrative staff by department, designation and company.",
       },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { property: "og:title", content: "Staff Management — BSM Workforce & Operations" },
       {
         property: "og:description",
@@ -157,6 +162,25 @@ function StaffManagementPage() {
       (company === "all" || e.companyId === company),
   );
 
+  async function handleExport() {
+    try {
+      await exportRows(rows.map((e) => ({
+        "P-File No": e.employeeCode, Name: e.name,
+        Company: companies.find((c) => c.id === e.companyId)?.name ?? "",
+        Department: e.department ?? "", Designation: e.trade,
+        Nationality: e.nationality, FIN: e.fin, "Pass Type": e.passType,
+        "Joined Date": e.joinedOn, Status: e.status,
+        "Fixed Salary (SGD)": e.basicSalary, "OT Rate (SGD/hr)": e.otRate ?? "",
+        Phone: e.phone ?? "", Email: e.email ?? "", "Date of Birth": e.dateOfBirth ?? "",
+        "Passport Number": e.passportNumber ?? "", "Passport Expiry": e.passportExpiry ?? "",
+        "Work Permit Number": e.workPermitNumber ?? "",
+        "Work Permit Expiry": e.workPermitExpiryDate ?? e.passExpiry,
+        "Bank Name": e.bankName ?? "", "Bank Account": e.bankAccount ?? "", Remarks: e.remarks ?? "",
+      })), timestampedName("staff_directory", "xlsx"), "Staff Directory");
+      toast.success("Staff directory exported");
+    } catch (error) { toast.error(error instanceof Error ? error.message : "Excel export failed"); }
+  }
+
   return (
     <AppShell>
       <div className="w-full space-y-6">
@@ -169,6 +193,7 @@ function StaffManagementPage() {
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
+            <StaffExcelActions section="directory" onExport={handleExport} />
             <Button size="sm" variant="outline" asChild>
               <Link to="/leave">
                 <CalendarOff className="mr-1 h-4 w-4" /> Leave
