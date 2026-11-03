@@ -84,7 +84,7 @@ function TimeCardsPage() {
   const companyId = getCurrentCompany();
   const scoped = employees.filter((e) => !companyId || e.companyId === companyId);
   const clients = getClients();
-  const projects = getProjects().filter((project) => !companyId || clients.some((client) => client.id === project.clientId && client.companyId === companyId));
+  const projects = getProjects().filter((project) => clients.some((client) => client.id === project.clientId));
   const [projectId, setProjectId] = useState("");
 
   const [cards, setCards] = useState(getTimeCards());
