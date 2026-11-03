@@ -1,4 +1,5 @@
 # Role-based account access
+- [ ] Show one-year Work Permit estimated expiry from confirmed issue date, separately labelled Unverified; preserve official expiry and support Excel issue/expiry dates.
 - [x] Add 24 remaining printed IPA fields with autofill, editable registration/profile display and DB mapping; live schema confirms 24 columns, 65 tests and isolated form round-trip passed. Existing employee data unchanged; signed-in upload/save remains unavailable.
 - [x] Separate monthly basic salary and worker daily basic rate in IPA instructions, import columns and profile display; isolated form/mapper check confirms monthly 400 and daily 18 remain separate; 39 tests passed. Existing employee/payroll records unchanged; signed-in save remains session-blocked.
 - [x] Add 21 dedicated IPA personal, employment, compensation and agency fields; live schema read-back confirms all columns, 48 tests and isolated desktop/mobile form checks passed.
