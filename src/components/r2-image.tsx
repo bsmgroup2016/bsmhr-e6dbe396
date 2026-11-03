@@ -33,5 +33,5 @@ export function R2Image({ src, alt, className, fallback }: R2ImageProps) {
 
   if (!src || failed) return <>{fallback ?? null}</>;
   if (!url) return <div className={cn("animate-pulse bg-muted", className)} />;
-  return <img src={url} alt={alt} className={className} onError={() => setFailed(true)} />;
+  return <img src={url} alt={alt} loading="lazy" className={className} onError={() => setFailed(true)} />;
 }

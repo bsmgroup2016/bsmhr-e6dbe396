@@ -146,6 +146,13 @@ export async function canAccessKey(userId: string, key: string) {
   return (await userRoles(userId)).some((r) => STAFF_ROLES.includes(r));
 }
 
+export class ObjectMetadataError extends Error {
+  constructor() {
+    super("File uploaded, but its metadata could not be saved. Upload was not completed; please retry or contact your administrator.");
+    this.name = "ObjectMetadataError";
+  }
+}
+
 export async function registerObject(row: {
   key: string;
   folder: string;
@@ -156,7 +163,7 @@ export async function registerObject(row: {
   uploaded_by: string;
 }) {
   const key = serviceKey();
-  await fetch(`${SUPABASE_URL}/rest/v1/storage_objects`, {
+  const response = await fetch(`${SUPABASE_URL}/rest/v1/storage_objects`, {
     method: "POST",
     headers: {
       apikey: key,
@@ -165,7 +172,8 @@ export async function registerObject(row: {
       Prefer: "resolution=merge-duplicates",
     },
     body: JSON.stringify(row),
-  });
+  }).catch(() => { throw new ObjectMetadataError(); });
+  if (!response.ok) throw new ObjectMetadataError();
 }
 
 export async function unregisterObject(objectKey: string) {
