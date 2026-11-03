@@ -6,9 +6,9 @@ CREATE OR REPLACE FUNCTION public.safe_archive_batch(
 DECLARE
   rel text; pred text; ident text; ordering text; rows_data jsonb; messages_data jsonb := '[]'::jsonb;
   expected_row jsonb; actual_row jsonb; message_row jsonb; v_chat_id uuid; deleted_count integer := 0;
-  changed_count integer := 0; n integer; eligible_count bigint; logical_bytes bigint;
+  changed_count integer := 0; n integer; eligible_count bigint; logical_bytes bigint; message_count bigint; message_bytes bigint;
 BEGIN
-  IF p_action NOT IN ('count','preview','commit') THEN RAISE EXCEPTION 'Invalid archive action'; END IF;
+  IF p_action NOT IN ('count','preview','commit','reconcile') THEN RAISE EXCEPTION 'Invalid archive action'; END IF;
   IF p_cutoff IS NULL OR p_cutoff > now() THEN RAISE EXCEPTION 'Invalid cutoff'; END IF;
   IF jsonb_typeof(p_holds) <> 'array' OR jsonb_array_length(p_holds)>2000 THEN RAISE EXCEPTION 'Invalid holds'; END IF;
   CASE p_table
@@ -24,8 +24,8 @@ BEGIN
   IF p_action='count' THEN
     EXECUTE format('SELECT count(*),coalesce(sum(pg_column_size(t)),0) FROM %s t WHERE %s',rel,pred) INTO eligible_count,logical_bytes USING p_cutoff,p_holds;
     IF p_table='live_chats' THEN
-      EXECUTE format('SELECT count(*),coalesce(sum(pg_column_size(m)),0) FROM public.live_chat_messages m WHERE m.chat_id IN (SELECT t.id FROM %s t WHERE %s)',rel,pred) INTO n,changed_count USING p_cutoff,p_holds;
-      RETURN jsonb_build_object('rows',eligible_count,'bytes',logical_bytes+changed_count,'messages',n);
+      EXECUTE format('SELECT count(*),coalesce(sum(pg_column_size(m)),0) FROM public.live_chat_messages m WHERE m.chat_id IN (SELECT t.id FROM %s t WHERE %s)',rel,pred) INTO message_count,message_bytes USING p_cutoff,p_holds;
+      RETURN jsonb_build_object('rows',eligible_count,'bytes',logical_bytes+message_bytes,'messages',message_count);
     END IF;
     RETURN jsonb_build_object('rows',eligible_count,'bytes',logical_bytes,'messages',0);
   END IF;
@@ -42,6 +42,23 @@ BEGIN
     OR octet_length(p_expected::text)>2000000 THEN RAISE EXCEPTION 'Invalid or oversized batch'; END IF;
   -- All row checks/deletions are atomic. Parent locks block FK inserts during chat cleanup.
   PERFORM pg_advisory_xact_lock(73730001);
+  IF p_action='reconcile' THEN
+    -- Pure status read under the same lock; never retries or deletes uncertain work.
+    FOR expected_row IN SELECT value FROM jsonb_array_elements(p_expected->'rows') LOOP
+      IF p_table='api_rate_limits' THEN
+        SELECT to_jsonb(t) INTO actual_row FROM public.api_rate_limits t WHERE bucket=expected_row->>'bucket' AND window_start=(expected_row->>'window_start')::timestamptz;
+      ELSIF p_table='cron.job_run_details' THEN
+        SELECT to_jsonb(t) INTO actual_row FROM cron.job_run_details t WHERE runid=(expected_row->>'runid')::bigint;
+      ELSE
+        EXECUTE format('SELECT to_jsonb(t) FROM %s t WHERE id=$1',rel) INTO actual_row USING (expected_row->>'id')::uuid;
+      END IF;
+      IF actual_row IS NULL THEN deleted_count:=deleted_count+1; ELSE changed_count:=changed_count+1; END IF;
+    END LOOP;
+    FOR message_row IN SELECT value FROM jsonb_array_elements(p_expected->'messages') LOOP
+      IF NOT EXISTS(SELECT 1 FROM public.live_chat_messages WHERE id=(message_row->>'id')::uuid) THEN deleted_count:=deleted_count+1; ELSE changed_count:=changed_count+1; END IF;
+    END LOOP;
+    RETURN jsonb_build_object('missing',deleted_count,'remaining',changed_count);
+  END IF;
   FOR expected_row IN SELECT value FROM jsonb_array_elements(p_expected->'rows') LOOP
     actual_row := NULL;
     IF p_table='api_rate_limits' THEN

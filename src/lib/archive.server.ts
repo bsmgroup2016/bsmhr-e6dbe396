@@ -96,7 +96,7 @@ export async function archiveStep() {
   // Conditional R2 writes provide durable mutual exclusion, not worker-local globals.
   c.token = crypto.randomUUID(); c.leaseUntil = Date.now() + 10 * 60000;
   let etag = await write(controlKey, c, loaded.etag); const run = c.active;
-  const save = async () => { etag = await write(controlKey, c, etag); };
+  const save = async () => { if (c.leaseUntil) c.leaseUntil = Date.now() + 10 * 60000; etag = await write(controlKey, c, etag); };
   try {
     run.status = "running"; delete run.error;
     const table = ARCHIVE_TABLES[run.tableIndex];
@@ -123,7 +123,15 @@ export async function archiveStep() {
     }
     const pending = run.pending;
     const saved = await unpack(pending.key); if (hash(saved.text) !== pending.fingerprint) throw new Error("Archive fingerprint mismatch. Nothing was deleted.");
-    if (pending.commitStarted) throw new Error("A previous deletion response was interrupted. Admin reconciliation is required before continuing; no blind retry was made.");
+    if (pending.commitStarted) {
+      const verdict = await rpc<{ missing: number; remaining: number }>("reconcile", table, run.cutoffs[table], c.holds, saved.batch);
+      // Conservatively retain every remaining row; reconcile missing IDs without repeating a delete.
+      run.deleted += verdict.missing; run.skipped += verdict.remaining;
+      if (pending.archived) { run.archived += saved.batch.rows.length + saved.batch.messages.length; run.files.push(pending.key); }
+      delete run.pending; run.tableIndex++;
+      await write(`${ROOT}runs/${run.id}/manifest.json`, run); await catalogRun(run); c.leaseUntil = 0; await save(); return { run };
+    }
+    await save();
     pending.commitStarted = true; await write(`${ROOT}runs/${run.id}/manifest.json`, run); await save();
     const verdict = await rpc<{ deleted: number; changed: number }>("commit", table, run.cutoffs[table], c.holds, saved.batch);
     run.deleted += verdict.deleted; run.skipped += verdict.changed;
