@@ -1,4 +1,6 @@
 # Role-based account access
+- [x] IPA registration: automatic full-document extraction, editable employee form and retained source/details; supplied 16-page IPA returned 33 fields plus 28 extra particulars, 7 tests passed and isolated form checks passed.
+- [ ] IPA registration: signed-in upload → OCR → employee save/read-back awaits an available external-project browser session; no employee record created during checks.
 - [x] ClaimSheet Generator: upload-first OCR identity fields, unique worker/project/site matching, post-read confirmation and sanitized sample-layout Excel export.
 - [ ] ClaimSheet Generator: signed-in real time-card OCR/approval/export checks await an available external-project session and a real sample scan; billing/cost/MRT inputs require confirmed business rules.
 - [x] Archive & Clean: approved private atomic routine installed; admin dry-run/confirmation/holds/archive controls and bounded cleanup steps implemented; retention tests and live count-only checks passed.
