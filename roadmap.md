@@ -1,4 +1,5 @@
 # Role-based account access
+- [ ] Move employer/application fields into Employment; group all uploaded employee documents in Documents and add Bank Card upload.
 - [x] Show one-year Work Permit estimated expiry from confirmed issue date, separately labelled Unverified; preserve official expiry and support Excel issue/expiry dates. 71 tests and isolated form checks passed; no live employee records changed.
 - [x] Add 24 remaining printed IPA fields with autofill, editable registration/profile display and DB mapping; live schema confirms 24 columns, 65 tests and isolated form round-trip passed. Existing employee data unchanged; signed-in upload/save remains unavailable.
 - [x] Separate monthly basic salary and worker daily basic rate in IPA instructions, import columns and profile display; isolated form/mapper check confirms monthly 400 and daily 18 remain separate; 39 tests passed. Existing employee/payroll records unchanged; signed-in save remains session-blocked.
