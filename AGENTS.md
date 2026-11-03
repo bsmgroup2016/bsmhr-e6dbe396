@@ -25,3 +25,4 @@
 - Chat history uses newest-first timestamp/id cursor reads and chronological deduplicated display; audit logs use fixed-size caller-RLS ranges, preventing repeated growing-list downloads.
 - Storage metadata registration must succeed before upload success is returned; P-file references clear only after successful storage deletion, preserving references on failure.
 - PWA uses generated static precaching plus NetworkOnly navigation fallback to offline.html, never cached HTML/data responses; one preview-guarded registrar offers consent-based updates and hourly checks to avoid interrupting work.
+- Archive cleanup uses a fixed server-side allowlist, private R2 progress and read-back verification followed by exact-row atomic RPC checks; automation stays off until first-run confirmation and controlled end-to-end checks, preventing unverified or cascading deletion.
