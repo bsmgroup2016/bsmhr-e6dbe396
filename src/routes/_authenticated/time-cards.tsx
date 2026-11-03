@@ -45,6 +45,7 @@ import {
   deleteTimeCard,
   getClaimSheets,
   getCurrentCompany,
+  getCompanies,
   getEmployees,
   getProjects,
   getClients,
