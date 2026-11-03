@@ -34,10 +34,10 @@ const controlKey = `${ROOT}control/settings.json`;
 async function control() { return read<Control>(controlKey, { settings: { ...DEFAULT_ARCHIVE_SETTINGS }, holds: [] }); }
 function service() {
   const key = process.env.SB_SERVICE_ROLE_KEY; if (!key) throw new Error("Database service is unavailable.");
-  return createClient("https://thrfyeyqafmdnpexgmlc.supabase.co", key, { auth: { persistSession: false, autoRefreshToken: false }, global: { fetch: (input, init) => {
+  return createClient("https://thrfyeyqafmdnpexgmlc.supabase.co", key, { auth: { persistSession: false, autoRefreshToken: false }, global: { fetch: Object.assign((input: RequestInfo | URL, init?: RequestInit) => {
     const headers = new Headers(init?.headers); headers.set("apikey", key); if (key.startsWith("sb_")) headers.delete("Authorization");
-    return fetch(input, { ...init, headers });
-  } } });
+    return fetch(input, { ...init, headers, signal: AbortSignal.timeout(45000) });
+  }, { preconnect: fetch.preconnect }) } });
 }
 export async function requireArchiveAdmin(request: Request) {
   const bearer = request.headers.get("authorization"); if (!bearer?.startsWith("Bearer ")) throw new Error("Unauthorized");
