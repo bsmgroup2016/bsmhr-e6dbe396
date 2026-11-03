@@ -160,20 +160,30 @@ function MomPage() {
         </div>
 
         <Tabs defaultValue="quota">
-          <TabsList>
-            <TabsTrigger value="quota">Quota (DRC)</TabsTrigger>
-            <TabsTrigger value="lifecycle">Work Permit lifecycle</TabsTrigger>
-            <TabsTrigger value="salary">Salary compliance</TabsTrigger>
-            <TabsTrigger value="deductions">Deductions</TabsTrigger>
-            <TabsTrigger value="loans">Loans & advances</TabsTrigger>
-            <TabsTrigger value="fwmi">FWMI insurance</TabsTrigger>
-            <TabsTrigger value="claims">Medical claims</TabsTrigger>
-            <TabsTrigger value="mye">MYE & skills</TabsTrigger>
-            <TabsTrigger value="ir21">IR21 clearance</TabsTrigger>
-            <TabsTrigger value="pwm">Progressive Wage</TabsTrigger>
-            <TabsTrigger value="levy">Levy bill</TabsTrigger>
-            <TabsTrigger value="insurance">Medical & insurance</TabsTrigger>
-          </TabsList>
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="w-28 text-xs font-medium uppercase tracking-wide text-muted-foreground">Levy & quota</span>
+              <TabsList className="h-auto flex-wrap">
+                <TabsTrigger value="quota">Quota (DRC)</TabsTrigger>
+                <TabsTrigger value="levy">Levy bill</TabsTrigger>
+                <TabsTrigger value="insurance">Medical & insurance</TabsTrigger>
+              </TabsList>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="w-28 text-xs font-medium uppercase tracking-wide text-muted-foreground">Worker checks</span>
+              <TabsList className="h-auto flex-wrap">
+                <TabsTrigger value="lifecycle">Work Permit lifecycle</TabsTrigger>
+                <TabsTrigger value="salary">Salary</TabsTrigger>
+                <TabsTrigger value="deductions">Deductions</TabsTrigger>
+                <TabsTrigger value="loans">Loans & advances</TabsTrigger>
+                <TabsTrigger value="fwmi">FWMI</TabsTrigger>
+                <TabsTrigger value="claims">Medical claims</TabsTrigger>
+                <TabsTrigger value="mye">MYE & skills</TabsTrigger>
+                <TabsTrigger value="ir21">IR21</TabsTrigger>
+                <TabsTrigger value="pwm">Progressive Wage</TabsTrigger>
+              </TabsList>
+            </div>
+          </div>
 
           <TabsContent value="lifecycle" className="mt-4">
             <WpLifecyclePanel employees={employees} />
@@ -385,7 +395,7 @@ function MomPage() {
                   </Button>
                 </div>
               </div>
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 {levy.byTier.map((t) => (
                   <div key={t.tier} className="rounded-lg border p-3">
                     <div className="text-xs text-muted-foreground">{t.tier}</div>
@@ -393,6 +403,18 @@ function MomPage() {
                     <div className="text-xs text-muted-foreground">{t.count} workers</div>
                   </div>
                 ))}
+                <div className="rounded-lg border p-3">
+                  <div className="text-xs text-muted-foreground">Average per worker</div>
+                  <div className="text-lg font-semibold">
+                    {money(levy.perWorker.length ? levy.total / levy.perWorker.length : 0)}
+                  </div>
+                  <div className="text-xs text-muted-foreground">per month</div>
+                </div>
+                <div className="rounded-lg border p-3">
+                  <div className="text-xs text-muted-foreground">Yearly estimate</div>
+                  <div className="text-lg font-semibold">{money(levy.total * 12)}</div>
+                  <div className="text-xs text-muted-foreground">at current headcount</div>
+                </div>
               </div>
               <div className="mt-4 overflow-hidden rounded-lg border">
                 <Table>
