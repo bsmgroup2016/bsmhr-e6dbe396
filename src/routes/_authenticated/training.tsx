@@ -25,6 +25,7 @@ import {
 } from "@/lib/store";
 import { exportRows } from "@/lib/xlsx";
 import type { TrainingCourse, TrainingRecord, SafetyIncident } from "@/lib/types";
+import { COURSE_GROUPS, missingCourses } from "@/core/training-courses";
 
 export const Route = createFileRoute("/_authenticated/training")({
   head: () => ({
@@ -42,7 +43,6 @@ export const Route = createFileRoute("/_authenticated/training")({
 
 const today = () => new Date().toISOString().slice(0, 10);
 
-const categories: TrainingCourse["category"][] = ["Safety", "Statutory", "Skill", "Induction", "Other"];
 const trainingStatuses: TrainingRecord["status"][] = ["Scheduled", "Completed", "Failed", "Expired"];
 const incidentTypes: SafetyIncident["incidentType"][] = [
   "Near Miss", "First Aid", "Injury", "Property Damage", "Dangerous Occurrence", "Fatality", "Other",
@@ -51,7 +51,7 @@ const severities: SafetyIncident["severity"][] = ["Low", "Medium", "High", "Crit
 const incidentStatuses: SafetyIncident["status"][] = ["Open", "Under Investigation", "Closed"];
 
 const emptyCourse = {
-  code: "", name: "", category: "Safety" as TrainingCourse["category"], provider: "",
+  code: "", name: "", category: "Basic" as TrainingCourse["category"], provider: "",
   validityMonths: 24, mandatory: true, cost: 0, remarks: "",
 };
 
@@ -69,20 +69,6 @@ const emptyIncident = {
   status: "Open" as SafetyIncident["status"],
 };
 
-/** MOM/WSH standard course catalogue for Singapore construction & marine work. */
-const WSH_STANDARD_COURSES: Array<Omit<TrainingCourse, "id" | "createdAt" | "updatedAt" | "companyId">> = [
-  { code: "SOC", name: "Construction Safety Orientation Course (CSOC)", category: "Statutory", provider: "MOM ATP", validityMonths: 24, mandatory: true, cost: 0, remarks: "Required for all construction workers" },
-  { code: "MSOC", name: "Marine Safety Orientation Course (MSOC)", category: "Statutory", provider: "MOM ATP", validityMonths: 24, mandatory: false, cost: 0, remarks: "Shipyard / marine sector" },
-  { code: "SSIC", name: "Shipyard Safety Instruction Course (SSIC)", category: "Statutory", provider: "MOM ATP", validityMonths: 24, mandatory: false, cost: 0, remarks: "Shipyard entry pass" },
-  { code: "WAH", name: "Work at Height Course for Workers", category: "Safety", provider: "MOM ATP", validityMonths: 24, mandatory: true, cost: 0, remarks: "WSH (WAH) Regulations" },
-  { code: "WAH-S", name: "Work at Height Course for Supervisors", category: "Safety", provider: "MOM ATP", validityMonths: 24, mandatory: false, cost: 0, remarks: "Supervisors only" },
-  { code: "CSE", name: "Confined Space Entry / Safety Assessor", category: "Safety", provider: "MOM ATP", validityMonths: 24, mandatory: false, cost: 0, remarks: "Confined space works" },
-  { code: "MSE", name: "Metal Scaffold Erector Course", category: "Skill", provider: "MOM ATP", validityMonths: 24, mandatory: false, cost: 0, remarks: "Scaffold erection" },
-  { code: "SSLO", name: "Supervise Safe Lifting Operations", category: "Safety", provider: "MOM ATP", validityMonths: 24, mandatory: false, cost: 0, remarks: "Lifting supervisor" },
-  { code: "RSS", name: "Rigger & Signalman Course", category: "Skill", provider: "MOM ATP", validityMonths: 24, mandatory: false, cost: 0, remarks: "Lifting crew" },
-  { code: "FIRSTAID", name: "Occupational First Aid Course", category: "Safety", provider: "MOM ATP", validityMonths: 36, mandatory: false, cost: 0, remarks: "1 first-aider per 100 workers" },
-  { code: "SITE-IND", name: "Site Induction & Toolbox Briefing", category: "Induction", provider: "In-house", validityMonths: 12, mandatory: true, cost: 0, remarks: "Before deployment" },
-];
 
 export default function TrainingPage() {
   const companyId = getCurrentCompany();
@@ -143,13 +129,20 @@ export default function TrainingPage() {
   }
 
   function seedWshCourses() {
-    const existing = new Set(courses.map((c) => (c.code ?? "").toUpperCase()));
-    const missing = WSH_STANDARD_COURSES.filter((c) => !existing.has((c.code ?? "").toUpperCase()));
-    if (!missing.length) return toast.info("All WSH standard courses already exist");
-    for (const c of missing) addCourse({ ...c, companyId: companyId || undefined });
+    const missing = missingCourses(courses.map((c) => c.code));
+    if (!missing.length) return toast.info("All Singapore courses already exist");
+    for (const c of missing) addCourse({ ...c });
     refresh();
-    toast.success(`${missing.length} WSH standard courses added`);
+    toast.success(`${missing.length} courses added`);
   }
+
+  function openRecord(courseId = "") {
+    setRecordForm({ ...emptyRecord, completionDate: today(), courseId });
+    setRecordOpen(true);
+  }
+
+  const certifiedCount = (courseId: string) =>
+    new Set(scopedRecords.filter((r) => r.courseId === courseId && r.status === "Completed").map((r) => r.employeeId)).size;
 
   function saveRecord() {
     if (!recordForm.courseId || !recordForm.employeeId) return toast.error("Course and worker required");
@@ -230,10 +223,56 @@ export default function TrainingPage() {
           </div>
         )}
 
-        <Tabs defaultValue="records">
+        <Dialog open={recordOpen} onOpenChange={setRecordOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add certificate</DialogTitle>
+              <DialogDescription>Record a course a worker has done. Expiry is auto-calculated from course validity when left blank.</DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="sm:col-span-2">
+                <Label>Course</Label>
+                <Select value={recordForm.courseId} onValueChange={(v) => setRecordForm({ ...recordForm, courseId: v })}>
+                  <SelectTrigger><SelectValue placeholder="Select course" /></SelectTrigger>
+                  <SelectContent>
+                    {scopedCourses.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="sm:col-span-2">
+                <Label>Worker</Label>
+                <Select value={recordForm.employeeId} onValueChange={(v) => setRecordForm({ ...recordForm, employeeId: v })}>
+                  <SelectTrigger><SelectValue placeholder="Select worker" /></SelectTrigger>
+                  <SelectContent>
+                    {companyEmployees.map((e) => <SelectItem key={e.id} value={e.id}>{e.name} — {e.employeeCode}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div><Label>Completion date</Label><Input type="date" value={recordForm.completionDate} onChange={(e) => setRecordForm({ ...recordForm, completionDate: e.target.value })} /></div>
+              <div><Label>Expiry date</Label><Input type="date" value={recordForm.expiryDate} onChange={(e) => setRecordForm({ ...recordForm, expiryDate: e.target.value })} /></div>
+              <div><Label>Certificate no</Label><Input value={recordForm.certificateNo} onChange={(e) => setRecordForm({ ...recordForm, certificateNo: e.target.value })} /></div>
+              <div>
+                <Label>Status</Label>
+                <Select value={recordForm.status} onValueChange={(v) => setRecordForm({ ...recordForm, status: v as TrainingRecord["status"] })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {trainingStatuses.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="sm:col-span-2"><Label>Remarks</Label><Textarea value={recordForm.remarks} onChange={(e) => setRecordForm({ ...recordForm, remarks: e.target.value })} /></div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setRecordOpen(false)}>Cancel</Button>
+              <Button onClick={saveRecord}>Save</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <Tabs defaultValue="courses">
           <TabsList>
-            <TabsTrigger value="records">Certifications</TabsTrigger>
             <TabsTrigger value="courses">Courses</TabsTrigger>
+            <TabsTrigger value="records">Certifications</TabsTrigger>
             <TabsTrigger value="incidents">Safety incidents</TabsTrigger>
           </TabsList>
 
@@ -244,56 +283,9 @@ export default function TrainingPage() {
                   <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input type="search" placeholder="Search worker or course..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
                 </div>
-                <Dialog open={recordOpen} onOpenChange={setRecordOpen}>
-                  <DialogTrigger asChild>
-                    <Button size="sm" disabled={scopedCourses.length === 0}>
-                      <Plus className="mr-1 h-4 w-4" /> Add record
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Training record</DialogTitle>
-                      <DialogDescription>Expiry is auto-calculated from course validity when left blank.</DialogDescription>
-                    </DialogHeader>
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <div className="sm:col-span-2">
-                        <Label>Course</Label>
-                        <Select value={recordForm.courseId} onValueChange={(v) => setRecordForm({ ...recordForm, courseId: v })}>
-                          <SelectTrigger><SelectValue placeholder="Select course" /></SelectTrigger>
-                          <SelectContent>
-                            {scopedCourses.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="sm:col-span-2">
-                        <Label>Worker</Label>
-                        <Select value={recordForm.employeeId} onValueChange={(v) => setRecordForm({ ...recordForm, employeeId: v })}>
-                          <SelectTrigger><SelectValue placeholder="Select worker" /></SelectTrigger>
-                          <SelectContent>
-                            {companyEmployees.map((e) => <SelectItem key={e.id} value={e.id}>{e.name} — {e.employeeCode}</SelectItem>)}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div><Label>Completion date</Label><Input type="date" value={recordForm.completionDate} onChange={(e) => setRecordForm({ ...recordForm, completionDate: e.target.value })} /></div>
-                      <div><Label>Expiry date</Label><Input type="date" value={recordForm.expiryDate} onChange={(e) => setRecordForm({ ...recordForm, expiryDate: e.target.value })} /></div>
-                      <div><Label>Certificate no</Label><Input value={recordForm.certificateNo} onChange={(e) => setRecordForm({ ...recordForm, certificateNo: e.target.value })} /></div>
-                      <div>
-                        <Label>Status</Label>
-                        <Select value={recordForm.status} onValueChange={(v) => setRecordForm({ ...recordForm, status: v as TrainingRecord["status"] })}>
-                          <SelectTrigger><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            {trainingStatuses.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="sm:col-span-2"><Label>Remarks</Label><Textarea value={recordForm.remarks} onChange={(e) => setRecordForm({ ...recordForm, remarks: e.target.value })} /></div>
-                    </div>
-                    <DialogFooter>
-                      <Button variant="outline" onClick={() => setRecordOpen(false)}>Cancel</Button>
-                      <Button onClick={saveRecord}>Save</Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
+                <Button size="sm" onClick={() => openRecord()}>
+                  <Plus className="mr-1 h-4 w-4" /> Add certificate
+                </Button>
               </div>
 
               <div className="mt-4 overflow-hidden rounded-lg border">
@@ -313,7 +305,7 @@ export default function TrainingPage() {
                     {filteredRecords.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={7} className="h-32 text-center">
-                          <EmptyState className="border-0 bg-transparent" icon={<GraduationCap className="h-5 w-5" />} title="No training records" description="Add a certification to get started." />
+                          <EmptyState className="border-0 bg-transparent" icon={<GraduationCap className="h-5 w-5" />} title="No certificates yet" description="Open the Courses tab and click Add certificate beside a course." />
                         </TableCell>
                       </TableRow>
                     ) : (
@@ -340,7 +332,7 @@ export default function TrainingPage() {
                               <div className="flex justify-end gap-1">
                                 {r.status === "Scheduled" && (
                                   <Button size="icon" variant="ghost" title="Mark completed" onClick={() => { updateTraining(r.id, { status: "Completed", completionDate: today() }); refresh(); }}>
-                                    <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                                    <CheckCircle2 className="h-4 w-4 text-success" />
                                   </Button>
                                 )}
                                 <Button size="icon" variant="ghost" title="Delete" onClick={() => { deleteTraining(r.id); refresh(); }}>
@@ -358,11 +350,14 @@ export default function TrainingPage() {
             </div>
           </TabsContent>
 
-          <TabsContent value="courses" className="mt-4">
-            <div className="rounded-xl border bg-card p-4 shadow-sm">
-              <div className="flex flex-wrap justify-end gap-2">
+          <TabsContent value="courses" className="mt-4 space-y-4">
+            <div className="flex flex-col gap-2 rounded-xl border bg-card p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm text-muted-foreground">
+                Pick a course and click <span className="font-medium text-foreground">Add certificate</span> when a worker finishes it.
+              </p>
+              <div className="flex flex-wrap gap-2">
                 <Button size="sm" variant="outline" onClick={seedWshCourses}>
-                  <ShieldCheck className="mr-1 h-4 w-4" /> Add WSH standard courses
+                  <ShieldCheck className="mr-1 h-4 w-4" /> Add Singapore course list
                 </Button>
                 <Dialog open={courseOpen} onOpenChange={setCourseOpen}>
                   <DialogTrigger asChild>
@@ -371,17 +366,17 @@ export default function TrainingPage() {
                   <DialogContent>
                     <DialogHeader>
                       <DialogTitle>New course</DialogTitle>
-                      <DialogDescription>Register a safety, statutory or skill course.</DialogDescription>
+                      <DialogDescription>Register a safety, trade or supervisor course.</DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-3 sm:grid-cols-2">
                       <div><Label>Course code</Label><Input value={courseForm.code} onChange={(e) => setCourseForm({ ...courseForm, code: e.target.value })} placeholder="Auto" /></div>
                       <div><Label>Name</Label><Input value={courseForm.name} onChange={(e) => setCourseForm({ ...courseForm, name: e.target.value })} placeholder="e.g. Work at Height" /></div>
                       <div>
-                        <Label>Category</Label>
+                        <Label>Group</Label>
                         <Select value={courseForm.category} onValueChange={(v) => setCourseForm({ ...courseForm, category: v as TrainingCourse["category"] })}>
                           <SelectTrigger><SelectValue /></SelectTrigger>
                           <SelectContent>
-                            {categories.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                            {COURSE_GROUPS.map((g) => <SelectItem key={g.category} value={g.category}>{g.label}</SelectItem>)}
                           </SelectContent>
                         </Select>
                       </div>
@@ -407,54 +402,55 @@ export default function TrainingPage() {
                   </DialogContent>
                 </Dialog>
               </div>
+            </div>
 
-              <div className="mt-4 overflow-hidden rounded-lg border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Course</TableHead>
-                      <TableHead>Category</TableHead>
-                      <TableHead>Provider</TableHead>
-                      <TableHead>Validity</TableHead>
-                      <TableHead>Cost</TableHead>
-                      <TableHead>Mandatory</TableHead>
-                      <TableHead className="w-16"></TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {scopedCourses.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={7} className="h-32 text-center">
-                          <EmptyState className="border-0 bg-transparent" icon={<GraduationCap className="h-5 w-5" />} title="No courses" description="Add your first course." />
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      scopedCourses.map((c) => (
-                        <TableRow key={c.id}>
-                          <TableCell>
-                            <div className="font-medium">{c.name}</div>
-                            <div className="text-xs text-muted-foreground">{c.code}</div>
-                          </TableCell>
-                          <TableCell>{c.category}</TableCell>
-                          <TableCell>{c.provider ?? "—"}</TableCell>
-                          <TableCell>{c.validityMonths ? `${c.validityMonths} mo` : "—"}</TableCell>
-                          <TableCell>${c.cost.toLocaleString()}</TableCell>
-                          <TableCell>
-                            <StatusBadge variant={c.mandatory ? "warning" : "default"} label={c.mandatory ? "Mandatory" : "Optional"} dot />
-                          </TableCell>
-                          <TableCell>
-                            <Button size="icon" variant="ghost" title="Delete" onClick={() => { deleteCourse(c.id); refresh(); }}>
+            {scopedCourses.length === 0 && (
+              <div className="rounded-xl border bg-card p-4 shadow-sm">
+                <EmptyState className="border-0 bg-transparent" icon={<GraduationCap className="h-5 w-5" />} title="No courses" description="Click Add Singapore course list to load all standard courses." />
+              </div>
+            )}
+
+            {COURSE_GROUPS.map((g) => {
+              const list = scopedCourses.filter((c) => c.category === g.category);
+              if (!list.length) return null;
+              return (
+                <div key={g.category} className="rounded-xl border bg-card p-4 shadow-sm">
+                  <div className="mb-3 flex items-baseline justify-between gap-2">
+                    <h2 className="font-semibold text-foreground">{g.label}</h2>
+                    {g.hint && <span className="text-xs text-muted-foreground">{g.hint}</span>}
+                  </div>
+                  <div className="divide-y rounded-lg border">
+                    {list.map((c) => {
+                      const done = certifiedCount(c.id);
+                      return (
+                        <div key={c.id} className="flex flex-col gap-2 p-3 sm:flex-row sm:items-center sm:justify-between">
+                          <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="font-medium">{c.name}</span>
+                              {c.mandatory && <StatusBadge variant="warning" label="Mandatory" dot />}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {c.code}{c.validityMonths ? ` · valid ${c.validityMonths} months` : ""}{c.provider ? ` · ${c.provider}` : ""}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-muted-foreground">{done} worker{done === 1 ? "" : "s"} certified</span>
+                            <Button size="sm" variant="outline" onClick={() => openRecord(c.id)}>
+                              <Plus className="mr-1 h-4 w-4" /> Add certificate
+                            </Button>
+                            <Button size="icon" variant="ghost" title="Delete course" onClick={() => { deleteCourse(c.id); refresh(); }}>
                               <Trash2 className="h-4 w-4 text-destructive" />
                             </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
           </TabsContent>
+
 
           <TabsContent value="incidents" className="mt-4">
             <div className="rounded-xl border bg-card p-4 shadow-sm">
