@@ -71,7 +71,6 @@ const navGroups: { label: string; items: NavItem[] }[] = [
     label: "Workforce",
     items: [
       { title: "Workers (Site)", url: "/workforce", icon: Users },
-      { title: "P-File Documents", url: "/documents", icon: FileText },
       { title: "MOM Compliance", url: "/compliance", icon: ShieldCheck },
       { title: "Levy & Quota (DRC)", url: "/mom", icon: Landmark },
       { title: "Attendance & OT", url: "/time-management", icon: CalendarClock },
