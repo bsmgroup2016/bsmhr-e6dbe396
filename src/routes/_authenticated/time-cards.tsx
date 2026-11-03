@@ -459,8 +459,8 @@ function TimeCardsPage() {
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList>
-            <TabsTrigger value="sheets">Claim sheets</TabsTrigger>
             <TabsTrigger value="cards">Time cards</TabsTrigger>
+            <TabsTrigger value="sheets">Claim sheets</TabsTrigger>
           </TabsList>
 
           <TabsContent value="cards" className="mt-4 space-y-4">
