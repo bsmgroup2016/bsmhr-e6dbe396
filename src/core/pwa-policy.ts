@@ -7,7 +7,7 @@ export function isPwaPreviewHost(hostname: string): boolean {
     ["lovableproject.com", "lovableproject-dev.com", "beta.lovable.dev"].some((domain) => host === domain || host.endsWith(`.${domain}`));
 }
 
-export function startPwaUpdateChecks(registration: Pick<ServiceWorkerRegistration, "update">, online: () => boolean,
+export function startPwaUpdateChecks(registration: { update: () => Promise<unknown> }, online: () => boolean,
   schedule: (callback: () => void, interval: number) => ReturnType<typeof setInterval> = setInterval) {
   return schedule(() => { if (online()) void registration.update().catch(() => undefined); }, PWA_UPDATE_INTERVAL_MS);
 }
