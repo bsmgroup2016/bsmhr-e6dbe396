@@ -85,13 +85,13 @@ export function EmployeeRegistration({ onSubmit }: { onSubmit: (data: FormData) 
             const typed = pFile.trim();
             const taken = typed ? isEmployeeCodeTaken(typed) : false;
             return <div className="space-y-4 rounded-lg border p-4">
-              <h3 className="text-sm font-semibold">Particular number</h3>
+              <h3 className="text-sm font-semibold">P-File number</h3>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2"><Label>Company</Label>
                   <Select value={company} onValueChange={setCompany}><SelectTrigger><SelectValue placeholder="Select company" /></SelectTrigger>
                     <SelectContent>{getBranchPrefixes().map((b) => <SelectItem key={b.id} value={b.name}>{b.name}</SelectItem>)}</SelectContent></Select>
                 </div>
-                <div className="space-y-2"><Label htmlFor="ipa-pfile">Particular number (optional)</Label>
+                <div className="space-y-2"><Label htmlFor="ipa-pfile">P-File number (optional)</Label>
                   <Input id="ipa-pfile" value={pFile} placeholder={auto} onChange={(e) => setPFile(e.target.value)} />
                   <p className={taken ? "text-xs text-destructive" : "text-xs text-muted-foreground"}>{taken ? "This number is already used." : `Leave blank to use the next number: ${auto}`}</p>
                 </div>
