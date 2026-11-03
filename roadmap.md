@@ -1,4 +1,5 @@
 # Role-based account access
+- [ ] Employee expiry autofill: Personal passport upload; Particular and work-permit extraction; editable CSOC expiry and existing Excel mapping.
 - [x] IPA registration: automatic full-document extraction, editable employee form and retained source/details; supplied 16-page IPA returned 33 fields plus 28 extra particulars, 7 tests passed and isolated form checks passed.
 - [ ] IPA registration: signed-in upload → OCR → employee save/read-back awaits an available external-project browser session; no employee record created during checks.
 - [x] ClaimSheet Generator: upload-first OCR identity fields, unique worker/project/site matching, post-read confirmation and sanitized sample-layout Excel export.
