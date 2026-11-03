@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, Outlet, redirect, useRouterState } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
-import { hydrateStore, subscribe } from "@/lib/store";
+import { hydrateStore, subscribe, getCurrentCompany, invalidateStoreTable } from "@/lib/store";
 import { RequireRole } from "@/components/require-role";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
@@ -30,13 +30,14 @@ function AuthenticatedLayout() {
   const [error, setError] = useState<string | null>(null);
   const [, force] = useState(0);
   const pathname = useRouterState({ select: (r) => r.location.pathname });
+  const companyId = getCurrentCompany();
 
   useEffect(() => {
     if (isLoading || !hasAssignedRole(roles) || !canAccess(pathname, roles)) return;
     let alive = true;
     setReady(false);
     setError(null);
-    hydrateStore()
+    hydrateStore(pathname)
       .then(() => alive && setReady(true))
       .catch((e: Error) => alive && setError(e.message));
     const unsub = subscribe(() => force((n) => n + 1));
@@ -44,7 +45,13 @@ function AuthenticatedLayout() {
       alive = false;
       unsub();
     };
-  }, [isLoading, roles.join(","), pathname]);
+  }, [isLoading, roles.join(","), pathname, companyId]);
+
+  useEffect(() => {
+    const written = (event: Event) => invalidateStoreTable(String((event as CustomEvent).detail));
+    window.addEventListener("bsm:data-write", written);
+    return () => window.removeEventListener("bsm:data-write", written);
+  }, []);
 
   if (!isLoading && !hasAssignedRole(roles)) return <WelcomeDashboard />;
   if (!isLoading && !canAccess(pathname, roles)) return <RequireRole path={pathname}><Outlet /></RequireRole>;

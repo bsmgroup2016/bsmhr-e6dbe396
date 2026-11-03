@@ -1,3 +1,5 @@
+import { UNAVAILABLE_TABLES } from "@/core/data-tables";
+
 /**
  * Shared API v1 server helpers.
  *
@@ -178,6 +180,8 @@ export async function sbRest(
   path: string,
   init?: RequestInit & { prefer?: string },
 ): Promise<Response> {
+  const table = path.split("?")[0];
+  if (UNAVAILABLE_TABLES.has(table)) return fail(503, "feature_unavailable", `${table.replaceAll("_", " ")} is unavailable: the required table is not present in the connected database.`);
   const headers: Record<string, string> = {
     apikey: SUPABASE_ANON,
     Authorization: `Bearer ${ctx.token}`,
@@ -192,6 +196,7 @@ export async function sbSelect<T = Record<string, unknown>>(
   path: string,
 ): Promise<T[]> {
   const res = await sbRest(ctx, path);
+  if (!res.ok && UNAVAILABLE_TABLES.has(path.split("?")[0])) throw new Error("This feature is unavailable: its required table is not present in the connected database.");
   if (!res.ok) return [];
   return (await res.json()) as T[];
 }

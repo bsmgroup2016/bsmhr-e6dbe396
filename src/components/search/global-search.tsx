@@ -26,6 +26,8 @@ import {
   getProjects,
   getSites,
   getVehicles,
+  ensureStoreCollections,
+  subscribe,
 } from "@/lib/store";
 import { employeeSlug } from "@/lib/employee-slug";
 
@@ -38,7 +40,7 @@ export type SearchHit = {
   icon: React.ReactNode;
 };
 
-function useSearchIndex(): SearchHit[] {
+function useSearchIndex(revision: number): SearchHit[] {
   return useMemo(() => {
     const hits: SearchHit[] = [];
     for (const e of getEmployees()) {
@@ -112,7 +114,7 @@ function useSearchIndex(): SearchHit[] {
       });
     }
     return hits;
-  }, []);
+  }, [revision]);
 }
 
 export function GlobalSearchDialog({
@@ -123,7 +125,17 @@ export function GlobalSearchDialog({
   onOpenChange: (v: boolean) => void;
 }) {
   const navigate = useNavigate();
-  const index = useSearchIndex();
+  const [revision, setRevision] = useState(0);
+  const [loadError, setLoadError] = useState("");
+  useEffect(() => subscribe(() => setRevision((value) => value + 1)), []);
+  useEffect(() => {
+    if (!open) return;
+    let alive = true;
+    void ensureStoreCollections(["employees", "clients", "projects", "sites", "invoices", "vehicles", "dormitories", "assignments"])
+      .catch((error: Error) => { if (alive) setLoadError(error.message); });
+    return () => { alive = false; };
+  }, [open]);
+  const index = useSearchIndex(revision);
   const [query, setQuery] = useState("");
 
   const results = useMemo(() => {
@@ -154,7 +166,7 @@ export function GlobalSearchDialog({
         onValueChange={setQuery}
       />
       <CommandList>
-        <CommandEmpty>No matches found.</CommandEmpty>
+        <CommandEmpty>{loadError || "No matches found."}</CommandEmpty>
         {results.map(([group, items]) => (
           <CommandGroup key={group} heading={group}>
             {items.map((hit) => (

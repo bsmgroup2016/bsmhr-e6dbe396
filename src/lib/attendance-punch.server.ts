@@ -52,6 +52,8 @@ export async function applyPunch(
   employeeId: string,
   source = "mobile",
 ): Promise<PunchOutcome> {
+  return { clientEventId: event.clientEventId?.trim() || null, status: "error", message: "QR/mobile attendance punches are unavailable: attendance_events is not present in the connected database. Use manual attendance instead." };
+  /* Punch processing is retained for a future explicitly approved schema reconciliation.
   const clientEventId = event.clientEventId?.trim() || null;
   const date =
     event.date ??
