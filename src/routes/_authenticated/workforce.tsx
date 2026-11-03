@@ -66,7 +66,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { isCountableWorker } from "@/lib/workforce-split";
+import { isCountableWorker, isOfficeStaff } from "@/lib/workforce-split";
 import { getEmployees, addEmployee, updateEmployee, deleteEmployee, getCurrentCompany, getCompanies, getProjects, getAssignments, getClients, getSites, addAssignment } from "@/lib/store";
 import { employeeSlugById } from "@/lib/employee-slug";
 import type { Employee, PassType, EmployeeStatus, DeploymentStatus, WorkerCategory } from "@/lib/types";
@@ -137,7 +137,8 @@ const EMPLOYEE_IMPORT_COLUMNS: ImportColumn[] = [
   { key: "workerCategory", label: "Worker Category", example: "Skilled" },
   { key: "employmentType", label: "Employment Type", example: "Full-Time" },
   { key: "status", label: "Status", example: "Active" },
-  { key: "basicSalary", label: "Basic Rate / day (or Salary)", example: "18" },
+  { key: "basicSalary", label: "Basic Rate / day", example: "18" },
+  { key: "basicMonthlySalary", label: "IPA Basic Monthly Salary", example: "400" },
   { key: "otRate", label: "OT Rate", example: "27" },
   { key: "normalHours", label: "Normal Hours", example: "8" },
   { key: "declaredSalary", label: "Declared Salary", example: "1400" },
@@ -461,8 +462,8 @@ export default function WorkforcePage() {
 
     rows.forEach((row, index) => {
       const get = (key: string) => {
-        const column = EMPLOYEE_IMPORT_COLUMNS.find((c) => c.key === key)!;
-        return pick(row, column);
+        const column = EMPLOYEE_IMPORT_COLUMNS.find((c) => c.key === key);
+        return column ? pick(row, column) : "";
       };
       const fin = get("fin").toUpperCase();
       const passType = (passTypes.find((p) => p.toLowerCase() === get("passType").toLowerCase()) ??
@@ -472,7 +473,7 @@ export default function WorkforcePage() {
       const salary = Number(get("basicSalary").replace(/[^0-9.-]/g, ""));
 
       if (Number.isNaN(salary)) {
-        errors.push(`Row ${index + 2}: invalid basic salary`);
+        errors.push(`Row ${index + 2}: invalid daily basic rate`);
         return;
       }
 
@@ -489,6 +490,7 @@ export default function WorkforcePage() {
         site: get("site") || null,
         status,
         basicSalary: salary || 0,
+        ...(get("basicMonthlySalary").trim() ? { basicMonthlySalary: Number(get("basicMonthlySalary").replace(/[^0-9.-]/g, "")) } : {}),
         joinedOn: joined,
         phone: get("phone"),
         levyRate: Number(get("levyRate").replace(/[^0-9.-]/g, "")) || 0,
@@ -1210,7 +1212,8 @@ function EmployeeDetail({ employee, onEdit }: { employee: Employee; onEdit: () =
         <DetailItem label="FIN / NRIC" value={employee.fin} />
         <DetailItem label="Pass type" value={employee.passType} />
         <DetailItem label="Pass expiry" value={employee.passExpiry} />
-        <DetailItem label="Basic salary" value={`$${employee.basicSalary.toLocaleString()}`} />
+        <DetailItem label={isOfficeStaff(employee) ? "Monthly salary" : "Basic rate / day"} value={`$${employee.basicSalary.toLocaleString()}`} />
+        <DetailItem label="IPA basic monthly salary" value={employee.basicMonthlySalary != null ? `$${employee.basicMonthlySalary.toLocaleString()}` : "—"} />
         <DetailItem
           label="Levy rate"
           value={employee.levyRate ? `$${Number(employee.levyRate).toFixed(2)}` : "—"}

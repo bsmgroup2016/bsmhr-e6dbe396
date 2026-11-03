@@ -162,7 +162,7 @@ function EmployeeProfilePage() {
               </div>
             </div>
             <div className="text-right text-sm">
-              <p className="text-muted-foreground">{staff ? "Fixed Salary" : "Basic"}</p>
+              <p className="text-muted-foreground">{staff ? "Fixed Salary" : "Basic rate"}</p>
               <p className="text-lg font-semibold">
                 ${employee.basicSalary.toLocaleString()}
                 <span className="text-xs font-normal text-muted-foreground">
@@ -349,6 +349,8 @@ function EmployeeProfilePage() {
                 label={staff ? "Fixed salary / month" : "Basic rate / day"}
                 value={`$${employee.basicSalary.toLocaleString()}`}
               />
+              <Item label="IPA basic monthly salary" value={employee.basicMonthlySalary != null ? `$${employee.basicMonthlySalary.toLocaleString()}` : undefined} />
+              <Item label="MOM declared monthly salary" value={employee.declaredSalary != null ? `$${employee.declaredSalary.toLocaleString()}` : undefined} />
               {!staff ? (
                 <>
                   <Item label="OT rate / hour" value={employee.otRate ? `$${employee.otRate}` : undefined} />

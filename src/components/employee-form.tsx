@@ -668,7 +668,7 @@ export function EmployeeForm({
         <TabsContent forceMount data-tab-panel="pay" value="pay" className="mt-4 space-y-4 data-[state=inactive]:hidden">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label={staff ? "Monthly salary ($)" : "Basic rate / day ($)"}>
-              <Input name="basicSalary" type="number" step="0.01" defaultValue={values?.basicSalary ?? 0} required />
+              <Input name="basicSalary" type="number" step="0.01" defaultValue={values?.basicSalary ?? ""} required />
             </Field>
             {staff ? null : (
               <Field label="OT rate per hour ($)">

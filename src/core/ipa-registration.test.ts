@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
 import { ipaEmployeeDefaults } from "./ipa-registration";
 import { IPA_DETAIL_FIELDS, ipaDetailsFromForm } from "./ipa-detail-fields";
+import { fromEmployee, toEmployee } from "@/lib/db";
 
 test("IPA dates never become work-permit expiry or joining dates", () => {
   const values = ipaEmployeeDefaults({ applicationDate: "2024-10-10", ipaIssueDate: "2024-10-14", ipaExpiryDate: "2025-01-10" }, "r2://ipa/sample.pdf");
@@ -35,6 +36,24 @@ test("empty IPA amount remains unknown rather than becoming zero", () => {
   fd.set("agencyFee", "");
   expect(ipaDetailsFromForm(fd).agencyFee).toBeUndefined();
   expect(ipaDetailsFromForm(fd).basicMonthlySalary).toBeUndefined();
+});
+test("IPA monthly basic salary never becomes a worker daily rate, even with an unexpected AI key", () => {
+  const extracted = { basicMonthlySalary: 400, declaredSalary: 400, basicSalary: 400, dailyRestDayRate: 15.38 };
+  const values = ipaEmployeeDefaults(extracted, "r2://ipa/sample.pdf");
+  expect(values.basicMonthlySalary).toBe(400);
+  expect(values.basicSalary).toBeUndefined();
+  expect(values.dailyRestDayRate).toBe(15.38);
+});
+test("monthly basic salary and manually entered daily basic rate persist independently", () => {
+  const fd = new FormData();
+  fd.set("basicMonthlySalary", "400");
+  const values = { ...ipaDetailsFromForm(fd), basicSalary: 18 };
+  const row = toEmployee(values);
+  expect(row.ipa_basic_monthly_salary).toBe(400);
+  expect(row.basic_salary).toBe(18);
+  const restored = fromEmployee(row);
+  expect(restored.basicMonthlySalary).toBe(400);
+  expect(restored.basicSalary).toBe(18);
 });
 test("IPA sample salary and weekly hours retain distinct meanings and printed zero", () => {
   const values = ipaEmployeeDefaults({ declaredSalary: 400, fixedAllowance: 0, otRate: 3.15, levyRate: 650, normalHoursPerWeek: 44, workingDaysPerWeek: 6, dailyRestDayRate: 15.38, housingDeduction: 0 }, "r2://ipa/sample.pdf");
