@@ -313,6 +313,7 @@ function EmployeeProfilePage() {
               <Item label="Bank name" value={employee.bankName} />
               <Item label="Bank account" value={employee.bankAccount} />
               <Item label="Payment method" value={employee.paymentMethod} />
+              <Item label="Accommodation" value={employee.dormitory} />
               <IpaItems employee={employee} section="personal" />
             </Grid>
           </TabsContent>
@@ -356,7 +357,6 @@ function EmployeeProfilePage() {
               <Item label="Pass expiry" value={employee.passExpiry} />
               <Item label="Passport number" value={employee.passportNumber} />
               <Item label="Passport expiry" value={employee.passportExpiry} />
-              <Item label="Accommodation" value={employee.dormitory} />
               <IpaItems employee={employee} section="pass" />
             </Grid>
           </TabsContent>
