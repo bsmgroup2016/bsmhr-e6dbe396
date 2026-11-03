@@ -32,7 +32,7 @@ export async function checkAiStatus(): Promise<AiStatus> {
 }
 
 type OcrPayload =
-  | { kind: "ipa" | "timecard" | "passport" | "medical" | "particular"; ref: string }
+  | { kind: "ipa" | "timecard" | "passport" | "medical" | "particular" | "csoc"; ref: string }
   | { kind: "columns"; headers: string[]; fields: string[] };
 
 async function callOcr(payload: OcrPayload): Promise<unknown> {
@@ -97,6 +97,16 @@ export type PassportExtract = {
 export async function extractParticularData(fileUrl: string): Promise<OcrResult<Record<string, unknown>>> {
   try {
     const data = await callOcr({ kind: "particular", ref: fileUrl });
+    if (!data || typeof data !== "object" || Array.isArray(data)) return { ok: false, reason: OCR_NOT_CONFIGURED };
+    return { ok: true, data: data as Record<string, unknown> };
+  } catch (e) {
+    return { ok: false, reason: e instanceof Error ? e.message : OCR_NOT_CONFIGURED };
+  }
+}
+
+export async function extractCsocData(fileUrl: string): Promise<OcrResult<Record<string, unknown>>> {
+  try {
+    const data = await callOcr({ kind: "csoc", ref: fileUrl });
     if (!data || typeof data !== "object" || Array.isArray(data)) return { ok: false, reason: OCR_NOT_CONFIGURED };
     return { ok: true, data: data as Record<string, unknown> };
   } catch (e) {
