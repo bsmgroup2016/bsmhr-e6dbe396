@@ -82,7 +82,7 @@ export async function exportCombinedClaims(sheets: ClaimSheet[], employees: Empl
       const head = page.getCell(4, col);
       if (d > daysInMonth) { head.value = null; page.getColumn(col).hidden = true; continue; }
       const sunday = new Date(Date.UTC(y, m - 1, d)).getUTCDay() === 0;
-      head.fill = { type: "pattern", pattern: "solid", fgColor: { argb: sunday ? "FFFF0000" : "FFFFFFFF" } };
+      head.style = { ...head.style, fill: { type: "pattern", pattern: "solid", fgColor: { argb: sunday ? "FFFF0000" : "FFFFFFFF" } } };
     }
 
     const workers = [...group.workers.values()].sort((a, b) => a.code.localeCompare(b.code, undefined, { numeric: true }));
