@@ -406,21 +406,52 @@ function TimeCardsPage() {
           <SummaryCard title="Claim sheets" value={sheets.length.toString()} icon={<FileSpreadsheet className="h-5 w-5" />} variant="warning" />
         </div>
 
-        <section className="space-y-4 border-y border-border py-6">
+        <section className="space-y-5 rounded-xl border bg-card p-5 shadow-sm">
           <div className="flex items-center gap-2">
-            <FileSpreadsheet className="h-5 w-5 text-primary" />
+            <FileSpreadsheet className="h-5 w-5 shrink-0 text-primary" />
             <h2 className="text-lg font-semibold text-foreground">Generate Claim Sheet</h2>
           </div>
-          <ol className="flex flex-wrap gap-x-6 gap-y-2 text-sm font-medium text-muted-foreground">
-            <li className="text-primary">1. Upload time cards</li><li>2. OCR & review</li><li>3. Generate claim sheet</li>
-          </ol>
-          <div className="flex flex-wrap items-center gap-3 border border-dashed border-border bg-muted/30 p-5">
-            <ScanLine className="h-8 w-8 shrink-0 text-primary" />
-            <div className="min-w-0 flex-1"><h3 className="font-medium">Upload time cards</h3><p className="text-sm text-muted-foreground">PDF or images</p></div>
-            <Button asChild className="gap-2"><Label htmlFor="claim-upload" className={uploading ? "pointer-events-none opacity-50" : "cursor-pointer"}><Upload className="h-4 w-4" />{uploading ? "Reading cards…" : "Upload & extract"}</Label></Button>
-            <input id="claim-upload" className="hidden" type="file" multiple accept="image/*,application/pdf" disabled={uploading || reviewScan !== null} onChange={(event) => { void handleUpload(event.target.files); event.target.value = ""; }} />
+          {(() => {
+            const current = !selected ? 1 : selected.status === "Verified" ? 3 : 2;
+            const steps = ["Upload time cards", "Check OCR results", "Generate claim sheet"];
+            return (
+              <ol className="grid gap-2 sm:grid-cols-3">
+                {steps.map((label, i) => {
+                  const n = i + 1;
+                  const done = n < current;
+                  const active = n === current;
+                  return (
+                    <li key={label} className={`flex min-w-0 items-center gap-3 rounded-lg border p-3 ${active ? "border-primary bg-primary/10" : "border-border"}`}>
+                      <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-full text-sm font-semibold ${done ? "bg-success text-success-foreground" : active ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
+                        {done ? <CheckCircle2 className="h-4 w-4" /> : n}
+                      </span>
+                      <span className={`truncate text-sm font-medium ${active ? "text-foreground" : "text-muted-foreground"}`}>{label}</span>
+                    </li>
+                  );
+                })}
+              </ol>
+            );
+          })()}
+
+          <label htmlFor="claim-upload" className={`flex flex-col items-center gap-3 rounded-xl border-2 border-dashed border-primary/40 bg-primary/5 p-8 text-center transition-colors hover:bg-primary/10 ${uploading ? "pointer-events-none opacity-60" : "cursor-pointer"}`}>
+            <span className="grid h-14 w-14 place-items-center rounded-full bg-primary text-primary-foreground"><Upload className="h-6 w-6" /></span>
+            <span className="text-base font-semibold text-foreground">{uploading ? (progress ? `Reading cards ${progress.done}/${progress.total}…` : "Reading cards…") : "Click to upload time cards"}</span>
+            <span className="text-sm text-muted-foreground">
+              {isOcrConfigured() ? "PDF or photos · you can select many at once · details are read automatically" : `${OCR_NOT_CONFIGURED}. Type the card times in manually after upload.`}
+            </span>
+          </label>
+          <input id="claim-upload" className="hidden" type="file" multiple accept="image/*,application/pdf" disabled={uploading || reviewScan !== null} onChange={(event) => { void handleUpload(event.target.files); event.target.value = ""; }} />
+          <div className="flex flex-wrap items-center justify-center gap-2 text-sm text-muted-foreground">
+            <span>Have an Excel file instead?</span>
+            <div className="relative">
+              <Button type="button" variant="link" className="h-auto p-0">Import time-card rows</Button>
+              <input type="file" className="absolute inset-0 cursor-pointer opacity-0" accept=".xlsx,.xls,.csv" onChange={(e) => { const file = e.target.files?.[0]; if (file) { setImportFile(file); setIsImportOpen(true); } e.target.value = ""; }} />
+            </div>
           </div>
-          {selected && <div className="grid items-end gap-4 md:grid-cols-2">
+
+          {selected && <div className="space-y-4 rounded-lg border bg-muted/30 p-4">
+            <p className="text-sm font-medium text-foreground">Selected card: {empName(selected.employeeId)} · {selected.periodStart} → {selected.periodEnd}</p>
+            <div className="grid items-end gap-4 md:grid-cols-2">
             <div className="min-w-0 space-y-2">
               <Label htmlFor="claim-project">Project</Label>
               <Select value={selected.entries.find((entry) => entry.projectId)?.projectId ?? ""} onValueChange={(value) => { updateTimeCard(selected.id, { entries: selected.entries.map((entry) => ({ ...entry, projectId: value, siteId: undefined })) }); setProjectId(value); refresh(); }}>
@@ -435,12 +466,13 @@ function TimeCardsPage() {
               <Label htmlFor="claim-month">Claim period</Label>
               <Input id="claim-month" type="month" value={selected.periodStart.slice(0, 7)} readOnly />
             </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button variant="outline" onClick={() => setActiveTab("cards")} className="gap-2"><ScanLine className="h-4 w-4" />Check OCR results</Button>
+              <Button disabled={uploading} onClick={() => { finalize(selected); setActiveTab("cards"); }} className="gap-2"><FileSpreadsheet className="h-4 w-4" />Approve & generate claim sheet</Button>
+            </div>
           </div>}
-          {uploading && <p role="status" className="text-sm text-primary">{progress ? `Extracting time cards ${progress.done}/${progress.total}…` : "Processing time cards…"}</p>}
-          <div className="flex flex-wrap gap-2">
-            <Button variant="outline" disabled={!selected} onClick={() => setActiveTab("cards")} className="gap-2"><ScanLine className="h-4 w-4" />Review extracted data</Button>
-            <Button disabled={!selected || uploading} onClick={() => { if (selected) { finalize(selected); setActiveTab("cards"); } }} className="gap-2"><FileSpreadsheet className="h-4 w-4" />Approve & generate claim sheet</Button>
-          </div>
+          {!selected && cards.length > 0 && <p className="text-center text-sm text-muted-foreground">Or pick a card below and press <span className="font-medium text-foreground">Open</span> to check and approve it.</p>}
         </section>
 
         <Dialog open={reviewScan !== null} onOpenChange={(open) => { if (!open) { setReviewScan(null); setPendingScans([]); } }}>
@@ -464,31 +496,6 @@ function TimeCardsPage() {
           </TabsList>
 
           <TabsContent value="cards" className="mt-4 space-y-4">
-        <div className="space-y-3 border-b border-border py-4">
-          <div className="flex items-end gap-2 sm:col-span-2 lg:col-span-3">
-            <div>
-              <div className="relative">
-                <Button type="button" variant="secondary" className="w-full">
-                  <Upload className="mr-1 h-4 w-4" />
-                  Import time-card rows
-                </Button>
-                <input
-                  type="file"
-                  className="absolute inset-0 cursor-pointer opacity-0"
-                  accept=".xlsx,.xls,.csv"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                      setImportFile(file);
-                      setIsImportOpen(true);
-                    }
-                    e.target.value = "";
-                  }}
-                />
-              </div>
-            </div>
-          </div>
-
           <ImportValidationDialog
             file={importFile}
             isOpen={isImportOpen}
@@ -499,21 +506,6 @@ function TimeCardsPage() {
             onConfirm={handleImportConfirm}
           />
 
-          <p className="text-xs text-muted-foreground sm:col-span-2 lg:col-span-3">
-            {uploading ? (
-              <span className="inline-flex items-center gap-1">
-                <Upload className="h-3 w-3 animate-pulse" />
-                {progress
-                  ? `Scanning ${progress.done}/${progress.total} card(s)…`
-                  : "Uploading…"}
-              </span>
-            ) : isOcrConfigured() ? (
-              "Select one or more scanned cards — each is uploaded and auto-filled by OCR. Check every row before verifying."
-            ) : (
-              `${OCR_NOT_CONFIGURED}. Type the card times into the grid below — verification works the same way.`
-            )}
-          </p>
-        </div>
 
             <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
               <Table>
