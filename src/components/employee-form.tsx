@@ -217,12 +217,15 @@ export function EmployeeForm({
   initialValues,
   initialTab,
   readOnly,
+  hideTabList,
   tab: controlledTab,
 }: {
   employee?: Employee;
   initialTab?: string;
   /** Profile view: same fields, locked except Documents; tab list and identity block hidden. */
   readOnly?: boolean;
+  /** Profile page supplies its own tab menu. */
+  hideTabList?: boolean;
   tab?: string;
   initialValues?: Partial<Employee>;
   onSubmit: (data: FormData) => void;
@@ -368,7 +371,7 @@ export function EmployeeForm({
       }}
       className="space-y-4"
     >
-      <div className={readOnly ? "hidden" : "grid grid-cols-1 gap-4 rounded-lg border bg-muted/30 p-3 sm:grid-cols-2"}>
+      <div className={readOnly || hideTabList ? "hidden" : "grid grid-cols-1 gap-4 rounded-lg border bg-muted/30 p-3 sm:grid-cols-2"}>
         <Field label={idFieldLabel}>
           <Input
             name="employeeCode"
@@ -411,7 +414,7 @@ export function EmployeeForm({
 
       <fieldset disabled={readOnly && tab !== "documents"} className="min-w-0 space-y-4">
       <Tabs value={tab} onValueChange={setTab}>
-        <TabsList className={readOnly ? "hidden" : "flex h-auto min-h-10 w-full flex-wrap"}>
+        <TabsList className={readOnly || hideTabList ? "hidden" : "flex h-auto min-h-10 w-full flex-wrap"}>
           <TabsTrigger value="personal">Personal</TabsTrigger>
           <TabsTrigger value="employment">Employment</TabsTrigger>
           <TabsTrigger value="pass">Work pass &amp; Certificate</TabsTrigger>

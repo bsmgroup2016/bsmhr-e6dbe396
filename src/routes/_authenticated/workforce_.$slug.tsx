@@ -1,3 +1,4 @@
+import { useAuth } from "@/lib/auth";
 import { useRef, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
@@ -91,6 +92,7 @@ function EmployeeProfilePage() {
   const navigate = useNavigate();
   const [version, force] = useState(0);
   const [profileTab, setProfileTab] = useState("personal");
+  const { isAdmin } = useAuth();
   const [editing, setEditing] = useState(false);
   const employee = findEmployeeByParam(getEmployees(), slug);
 
@@ -292,7 +294,7 @@ function EmployeeProfilePage() {
 
           {FORM_TABS.includes(profileTab) ? (
             <div className="mt-4 rounded-lg border bg-card p-4">
-              <EmployeeForm key={`${employee.id}-${version}`} employee={employee} readOnly tab={profileTab} onSubmit={(fd) => {
+              <EmployeeForm key={`${employee.id}-${version}`} employee={employee} readOnly={!isAdmin} tab={profileTab} hideTabList onSubmit={(fd) => {
                 updateEmployee(employee.id, employeeFromForm(fd));
                 for (const document of employeeFormDocuments(fd, getDocumentsByEmployee(employee.id))) addDocument({ ...document, employeeId: employee.id });
                 force((n) => n + 1);
