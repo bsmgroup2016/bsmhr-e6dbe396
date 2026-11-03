@@ -5,7 +5,7 @@ CREATE OR REPLACE FUNCTION public.safe_archive_batch(
 ) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, public AS $$
 DECLARE
   rel text; pred text; ident text; ordering text; rows_data jsonb; messages_data jsonb := '[]'::jsonb;
-  expected_row jsonb; actual_row jsonb; message_row jsonb; chat_id uuid; deleted_count integer := 0;
+  expected_row jsonb; actual_row jsonb; message_row jsonb; v_chat_id uuid; deleted_count integer := 0;
   changed_count integer := 0; n integer; eligible_count bigint; logical_bytes bigint;
 BEGIN
   IF p_action NOT IN ('count','preview','commit') THEN RAISE EXCEPTION 'Invalid archive action'; END IF;
@@ -24,17 +24,16 @@ BEGIN
   IF p_action='count' THEN
     EXECUTE format('SELECT count(*),coalesce(sum(pg_column_size(t)),0) FROM %s t WHERE %s',rel,pred) INTO eligible_count,logical_bytes USING p_cutoff,p_holds;
     IF p_table='live_chats' THEN
-      EXECUTE format('SELECT coalesce(jsonb_agg(to_jsonb(m)),''[]''::jsonb) FROM public.live_chat_messages m WHERE m.chat_id IN (SELECT t.id FROM %s t WHERE %s)',rel,pred) INTO messages_data USING p_cutoff,p_holds;
-      -- Counts only are returned. No chat content leaves the database in dry-run mode.
-      RETURN jsonb_build_object('rows',eligible_count,'bytes',logical_bytes,'messages',jsonb_array_length(messages_data));
+      EXECUTE format('SELECT count(*),coalesce(sum(pg_column_size(m)),0) FROM public.live_chat_messages m WHERE m.chat_id IN (SELECT t.id FROM %s t WHERE %s)',rel,pred) INTO n,changed_count USING p_cutoff,p_holds;
+      RETURN jsonb_build_object('rows',eligible_count,'bytes',logical_bytes+changed_count,'messages',n);
     END IF;
     RETURN jsonb_build_object('rows',eligible_count,'bytes',logical_bytes,'messages',0);
   END IF;
   IF p_action='preview' THEN
     EXECUTE format('SELECT coalesce(jsonb_agg(to_jsonb(q)),''[]''::jsonb) FROM (SELECT t.* FROM %s t WHERE %s ORDER BY %s LIMIT %s) q',rel,pred,ordering,CASE WHEN p_table='live_chats' THEN 1 ELSE 250 END) INTO rows_data USING p_cutoff,p_holds;
     IF p_table='live_chats' AND jsonb_array_length(rows_data)>0 THEN
-      chat_id := (rows_data->0->>'id')::uuid;
-      SELECT coalesce(jsonb_agg(to_jsonb(q)),'[]'::jsonb) INTO messages_data FROM (SELECT m.* FROM public.live_chat_messages m WHERE m.chat_id=chat_id ORDER BY created_at,id LIMIT 249) q;
+      v_chat_id := (rows_data->0->>'id')::uuid;
+      SELECT coalesce(jsonb_agg(to_jsonb(q)),'[]'::jsonb) INTO messages_data FROM (SELECT m.* FROM public.live_chat_messages m WHERE m.chat_id=v_chat_id ORDER BY created_at,id LIMIT 249) q;
     END IF;
     RETURN jsonb_build_object('rows',rows_data,'messages',messages_data);
   END IF;
@@ -54,17 +53,17 @@ BEGIN
     END IF;
     IF actual_row IS NULL OR actual_row<>expected_row THEN changed_count:=changed_count+1; CONTINUE; END IF;
     IF p_table='live_chats' THEN
-      chat_id:=(expected_row->>'id')::uuid;
+      v_chat_id:=(expected_row->>'id')::uuid;
       FOR message_row IN SELECT value FROM jsonb_array_elements(p_expected->'messages') LOOP
-        IF (message_row->>'chat_id')::uuid<>chat_id THEN RAISE EXCEPTION 'Invalid message parent'; END IF;
-        SELECT to_jsonb(m) INTO actual_row FROM public.live_chat_messages m WHERE id=(message_row->>'id')::uuid AND chat_id=safe_archive_batch.chat_id AND created_at<p_cutoff FOR UPDATE;
+        IF (message_row->>'chat_id')::uuid<>v_chat_id THEN RAISE EXCEPTION 'Invalid message parent'; END IF;
+        SELECT to_jsonb(m) INTO actual_row FROM public.live_chat_messages m WHERE id=(message_row->>'id')::uuid AND m.chat_id=v_chat_id AND created_at<p_cutoff FOR UPDATE;
         IF actual_row=message_row THEN
           DELETE FROM public.live_chat_messages WHERE id=(message_row->>'id')::uuid;
           GET DIAGNOSTICS n=ROW_COUNT; deleted_count:=deleted_count+n;
         ELSE changed_count:=changed_count+1; END IF;
       END LOOP;
-      IF NOT EXISTS(SELECT 1 FROM public.live_chat_messages m WHERE m.chat_id=safe_archive_batch.chat_id) THEN
-        DELETE FROM public.live_chats WHERE id=chat_id;
+      IF NOT EXISTS(SELECT 1 FROM public.live_chat_messages m WHERE m.chat_id=v_chat_id) THEN
+        DELETE FROM public.live_chats WHERE id=v_chat_id;
         GET DIAGNOSTICS n=ROW_COUNT; deleted_count:=deleted_count+n;
       END IF;
     ELSIF p_table='api_rate_limits' THEN

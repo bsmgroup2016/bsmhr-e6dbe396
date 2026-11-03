@@ -18,7 +18,7 @@ function client() {
 }
 async function object(key: string, init?: RequestInit) {
   if (!key.startsWith(ROOT) || key.includes("..")) throw new Error("Invalid archive file.");
-  const c = client(); return c.aws.fetch(`${c.base}/${key}`, init);
+  const c = client(); return c.aws.fetch(`${c.base}/${key}`, { ...init, signal: AbortSignal.timeout(45000) });
 }
 async function read<T>(key: string, fallback: T): Promise<{ value: T; etag: string | null }> {
   const r = await object(key); if (r.status === 404) return { value: fallback, etag: null };
@@ -42,8 +42,10 @@ function service() {
 export async function requireArchiveAdmin(request: Request) {
   const bearer = request.headers.get("authorization"); if (!bearer?.startsWith("Bearer ")) throw new Error("Unauthorized");
   // Verify session and role through the caller's RLS client, before opening privileged clients.
-  const { supabase } = await import("@/integrations/supabase/client");
-  const caller = createClient(supabase.supabaseUrl, supabase.supabaseKey, { auth: { persistSession: false, autoRefreshToken: false }, global: { headers: { Authorization: bearer } } });
+  const anon = "eyJhbGciOiJIUzI1NiIsInJlZiI6IkpXVCJ9.eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9";
+  const publicKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRocmZ5ZXlxYWZtZG5wZXhnbWxjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUyNTMzNTcsImV4cCI6MjEwMDgyOTM1N30.4EGhaZVMSZYI2NPo6mdzBLgKbZJjlVqJ-cdm7VqDvrQ";
+  void anon;
+  const caller = createClient("https://thrfyeyqafmdnpexgmlc.supabase.co", publicKey, { auth: { persistSession: false, autoRefreshToken: false }, global: { headers: { Authorization: bearer } } });
   const { data: user, error } = await caller.auth.getUser(bearer.slice(7)); if (error || !user.user) throw new Error("Unauthorized");
   const { data: roles, error: roleError } = await caller.from("user_roles").select("role").eq("user_id", user.user.id);
   if (roleError || !roles?.some((r) => r.role === "admin")) throw new Error("Forbidden");
@@ -112,7 +114,7 @@ export async function archiveStep() {
       if (new TextEncoder().encode(text).length > ARCHIVE_MAX_BYTES) throw new Error("This record is too large for a safe batch. It was not deleted.");
       if (!batch.rows.length) { run.tableIndex++; c.leaseUntil = 0; await save(); return { run }; }
       const date = new Date(run.createdAt).toISOString().slice(0, 7).replace("-", "/");
-      const key = `${ROOT}${table}/${date}/${run.id}/batch-${String(++run.batch).padStart(6, "0")}.jsonl.gz`;
+      const key = `${ROOT}${table}/${date}/${run.id}/batch-${String(++run.batch).padStart(6, "0")}.json.gz`;
       const bytes = gzipSync(text);
       const put = await object(key, { method: "PUT", headers: { "Content-Type": "application/gzip", "If-None-Match": "*" }, body: bytes as unknown as BodyInit });
       if (!put.ok) throw new Error(`Archive upload failed (${put.status}). Nothing was deleted.`);
@@ -146,7 +148,7 @@ export async function archiveCron() {
   return archiveStep();
 }
 export async function archiveDownload(key: string, readable: boolean) {
-  if (!key.startsWith(ROOT) || !key.endsWith(".jsonl.gz") || key.includes("..") || DELETE_ONLY.some((t) => key.startsWith(`${ROOT}${t}/`))) throw new Error("Invalid archive file.");
+  if (!key.startsWith(ROOT) || !key.endsWith(".json.gz") || key.includes("..") || DELETE_ONLY.some((t) => key.startsWith(`${ROOT}${t}/`))) throw new Error("Invalid archive file.");
   const file = await unpack(key);
   return new Response(readable ? JSON.stringify(file.batch, null, 2) : gzipSync(file.text) as unknown as BodyInit, { headers: { "Cache-Control": "private, no-store", "Content-Type": readable ? "application/json" : "application/gzip", "Content-Disposition": `attachment; filename="archive-${readable ? "records.json" : "records.json.gz"}"` } });
 }
