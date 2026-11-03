@@ -899,7 +899,9 @@ export interface AssetIssuance {
 }
 
 /* ---------- Phase 9: training & safety ---------- */
-export type CourseCategory = "Safety" | "Statutory" | "Skill" | "Induction" | "Other";
+export type CourseCategory =
+  | "Basic" | "Process Sites" | "Lifting" | "Scaffolding" | "Trade Skills" | "Supervisor"
+  | "Safety" | "Statutory" | "Skill" | "Induction" | "Other";
 export type TrainingStatus = "Scheduled" | "Completed" | "Failed" | "Expired";
 export type IncidentType =
   | "Near Miss" | "First Aid" | "Injury" | "Property Damage" | "Dangerous Occurrence" | "Fatality" | "Other";
