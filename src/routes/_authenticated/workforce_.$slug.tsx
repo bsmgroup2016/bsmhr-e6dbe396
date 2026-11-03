@@ -313,6 +313,7 @@ function EmployeeProfilePage() {
               <Item label="Bank name" value={employee.bankName} />
               <Item label="Bank account" value={employee.bankAccount} />
               <Item label="Payment method" value={employee.paymentMethod} />
+              <Item label="Accommodation" value={employee.dormitory} />
               <IpaItems employee={employee} section="personal" />
             </Grid>
           </TabsContent>
