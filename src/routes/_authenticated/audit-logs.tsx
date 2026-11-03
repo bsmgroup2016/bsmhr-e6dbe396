@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { useMemo } from "react";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { ClipboardList, Search, History, Download, Loader2 } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
@@ -22,22 +23,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { supabase } from "@/integrations/supabase/client";
+import { AUDIT_PAGE_SIZE, auditLogsQueryOptions, type LogRow } from "@/lib/audit-log-data";
 import { exportCsv, timestampedName } from "@/lib/xlsx";
 
 const actions = ["CREATE", "UPDATE", "DELETE", "LOGIN", "EXPORT", "APPROVE", "REJECT"];
 const entities = ["Employee", "Client", "Project", "Site", "Assignment", "Document", "Attendance", "Payroll", "Approval", "User"];
-const PAGE_SIZE = 100;
-
-type LogRow = {
-  id: string;
-  action: string;
-  entity_type: string;
-  entity_id: string | null;
-  user_name: string | null;
-  details: unknown;
-  created_at: string;
-};
 
 function detailText(details: unknown): string {
   if (!details) return "";
@@ -58,49 +48,42 @@ const actionTone: Record<string, string> = {
 };
 
 export const Route = createFileRoute("/_authenticated/audit-logs")({
+  validateSearch: (s: { page?: number; action?: string; entity?: string; from?: string; to?: string; search?: string }) => ({
+    page: Math.max(0, Math.floor(Number(s.page) || 0)), action: s.action ?? "all", entity: s.entity ?? "all",
+    from: s.from ?? "", to: s.to ?? "", search: s.search ?? "",
+  }),
+  loaderDeps: ({ search: { page, action, entity, from, to } }) => ({ page, action, entity, from, to }),
+  loader: async ({ context, deps }) => { await context.queryClient.ensureQueryData(auditLogsQueryOptions(deps)); },
+  errorComponent: ({ error }) => { const router = useRouter(); return <div role="alert" className="p-6"><p>{error.message}</p><Button onClick={() => void router.invalidate()}>Retry</Button></div>; },
+  notFoundComponent: () => <div className="p-6">Audit logs not found.</div>,
   head: () => ({
     meta: [
       { title: "Audit Logs — BSM Workforce & Operations" },
       { name: "description", content: "System activity and audit trail." },
       { property: "og:title", content: "Audit Logs — BSM Workforce & Operations" },
       { property: "og:description", content: "System activity and audit trail." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: AuditLogsPage,
 });
 
 export default function AuditLogsPage() {
-  const [logs, setLogs] = useState<LogRow[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [search, setSearch] = useState("");
-  const [actionFilter, setActionFilter] = useState<string>("all");
-  const [entityFilter, setEntityFilter] = useState<string>("all");
-  const [from, setFrom] = useState("");
-  const [to, setTo] = useState("");
-  const [limit, setLimit] = useState(PAGE_SIZE);
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    let query = supabase
-      .from("audit_logs")
-      .select("id,action,entity_type,entity_id,user_name,details,created_at")
-      .order("created_at", { ascending: false })
-      .limit(limit);
-    if (actionFilter !== "all") query = query.eq("action", actionFilter);
-    if (entityFilter !== "all") query = query.eq("entity_type", entityFilter);
-    if (from) query = query.gte("created_at", new Date(`${from}T00:00:00`).toISOString());
-    if (to) query = query.lte("created_at", new Date(`${to}T23:59:59`).toISOString());
-    const { data, error: err } = await query;
-    if (err) setError("Could not load audit logs.");
-    setLogs((data as LogRow[] | null) ?? []);
-    setLoading(false);
-  }, [actionFilter, entityFilter, from, to, limit]);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
+  const params = Route.useSearch();
+  const navigate = Route.useNavigate();
+  const queryClient = useQueryClient();
+  const options = auditLogsQueryOptions(params);
+  const { data, isFetching: loading } = useSuspenseQuery(options);
+  const logs = data.rows;
+  const { search, action: actionFilter, entity: entityFilter, from, to } = params;
+  const change = (key: "search" | "action" | "entity" | "from" | "to", value: string) => void navigate({ search: (previous) => ({ ...previous, [key]: value, page: 0 }) });
+  const setSearch = (value: string) => change("search", value);
+  const setActionFilter = (value: string) => change("action", value);
+  const setEntityFilter = (value: string) => change("entity", value);
+  const setFrom = (value: string) => change("from", value);
+  const setTo = (value: string) => change("to", value);
+  const load = () => queryClient.invalidateQueries({ queryKey: options.queryKey });
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -182,8 +165,6 @@ export default function AuditLogsPage() {
             </div>
           </div>
 
-          {error ? <p className="mt-3 text-sm text-destructive">{error}</p> : null}
-
           <div className="mt-4 overflow-hidden rounded-lg border">
             <Table>
               <TableHeader>
@@ -226,12 +207,11 @@ export default function AuditLogsPage() {
           </div>
 
           <div className="mt-3 flex items-center justify-between text-sm text-muted-foreground">
-            <span>{filtered.length} entries shown</span>
-            {logs.length >= limit ? (
-              <Button variant="ghost" size="sm" onClick={() => setLimit((n) => n + PAGE_SIZE)}>
-                Load more
-              </Button>
-            ) : null}
+            <span>{filtered.length} entries shown · {data.total} total · Page {params.page + 1}</span>
+            <div className="flex gap-2">
+              <Button variant="ghost" size="sm" disabled={loading || params.page === 0} onClick={() => void navigate({ search: (previous) => ({ ...previous, page: previous.page - 1 }) })}>Previous</Button>
+              <Button variant="ghost" size="sm" disabled={loading || (params.page + 1) * AUDIT_PAGE_SIZE >= data.total} onClick={() => void navigate({ search: (previous) => ({ ...previous, page: previous.page + 1 }) })}>Next</Button>
+            </div>
           </div>
         </div>
       </div>
