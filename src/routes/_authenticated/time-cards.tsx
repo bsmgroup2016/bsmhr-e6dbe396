@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { matchCardWorker, uniqueCardMatch, type TimeCardIdentity } from "@/core/time-card-matching";
-import { exportCombinedClaims } from "@/lib/combined-claim-export";
+import { exportCombinedClaims, claimSheetTitle } from "@/lib/combined-claim-export";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
@@ -45,6 +45,7 @@ import {
   deleteTimeCard,
   getClaimSheets,
   getCurrentCompany,
+  getCompanies,
   getEmployees,
   getProjects,
   getClients,
@@ -839,7 +840,7 @@ function TimeCardsPage() {
           </TabsContent>
 
           <TabsContent value="sheets" className="mt-4">
-            <Button variant="outline" className="mb-4 gap-2" disabled={!sheets.length} onClick={() => void exportCombinedClaims(sheets.filter((sheet) => (!companyId || sheet.companyId === companyId) && sheet.periodStart.startsWith(month)), employees, `COMBINED CLAIM SHEET — ${month}`).catch((error) => toast.error(error instanceof Error ? error.message : "Export failed"))}><FileSpreadsheet className="h-4 w-4" />Export combined Excel</Button>
+            <Button variant="outline" className="mb-4 gap-2" disabled={!sheets.length} onClick={() => void exportCombinedClaims(sheets.filter((sheet) => (!companyId || sheet.companyId === companyId) && sheet.periodStart.startsWith(month)), employees, claimSheetTitle(getCompanies().find((c) => c.id === companyId)?.name ?? "ALL COMPANIES", month), getCompanies()).catch((error) => toast.error(error instanceof Error ? error.message : "Export failed"))}><FileSpreadsheet className="h-4 w-4" />Export combined Excel</Button>
             <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
               <Table>
                 <TableHeader>
