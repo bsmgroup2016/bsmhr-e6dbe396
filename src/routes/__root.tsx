@@ -15,6 +15,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/lib/auth";
 import { setupServiceWorker } from "@/lib/pwa";
+import { PwaUpdateBanner } from "@/components/pwa-update-banner";
 
 function NotFoundComponent() {
   return (
@@ -139,6 +140,7 @@ function RootComponent() {
       <AuthProvider>
         <Outlet />
         <Toaster position="top-right" />
+        <PwaUpdateBanner />
       </AuthProvider>
     </QueryClientProvider>
   );

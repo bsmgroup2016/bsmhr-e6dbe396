@@ -1,4 +1,5 @@
 # Role-based account access
+- [ ] Phase 3: static-only service-worker cache, precached navigation-only offline fallback, consent-based updates, hourly checks; tests and changed-file report.
 - [x] Phase 2: correct P-file deletion and upload metadata errors; signed, lazy profile images.
 - [x] Phase 2: latest chat messages with older-history paging; fixed-size audit pages; 27 regression tests and read-only live paging checks.
 - [ ] Phase 2: signed-in end-to-end photo/chat/audit checks blocked by unavailable external-project browser session; actual deletion/upload tests not performed to preserve user data.
