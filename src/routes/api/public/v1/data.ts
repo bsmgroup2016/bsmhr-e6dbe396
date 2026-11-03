@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { TABLE_COLUMNS, UNAVAILABLE_TABLES } from "@/core/data-tables";
 import { periodForMonth } from "@/core/data-pagination";
+import { summarizeHistory } from "@/core/history-summary";
 import { fail, listParams, ok, preflight, requireAuth, sbRest } from "@/lib/api-v1.server";
 
 /** Ordinary reads retain the caller's existing RLS; no privileged client. */
@@ -59,6 +60,25 @@ export const Route = createFileRoute("/api/public/v1/data")({
           q.set("select", `${columns},assets!inner(company_id,category)`);
           q.set("assets.category", `eq.${category}`);
         }
+      }
+      if (p.url.searchParams.get("summary") === "1" && ["attendance", "asset_issuances"].includes(table)) {
+        if (table === "asset_issuances") q.set("select", `${columns},assets!inner(company_id,category,unit_cost)`);
+        q.set("limit", "200"); q.set("offset", "0");
+        const countQuery = new URLSearchParams(q);
+        countQuery.set("limit", "1");
+        const counted = await sbRest(auth.ctx, `${table}?${countQuery}`, { method: "HEAD", prefer: "count=exact" });
+        const total = Number(counted.headers.get("content-range")?.split("/")[1]);
+        if (!counted.ok || !Number.isFinite(total)) return fail(502, "count_unavailable", "Could not verify totals");
+        const rows: Record<string, unknown>[] = [];
+        while (rows.length < total) {
+          q.set("offset", String(rows.length));
+          const page = await sbRest(auth.ctx, `${table}?${q}`);
+          if (!page.ok) return fail(502, "summary_failed", "Could not load complete totals");
+          const data = await page.json() as Record<string, unknown>[];
+          if (!data.length) return fail(502, "incomplete_summary", "Record count changed; please retry");
+          rows.push(...data);
+        }
+        return ok(summarizeHistory(table, rows, total, new Date().toISOString().slice(0, 10)));
       }
       const countOnly = p.url.searchParams.get("countOnly") === "1";
       if (countOnly) { q.set("select", q.get("select")?.includes("!inner") ? q.get("select") ?? "id" : "id"); q.set("limit", "1"); q.set("offset", "0"); }
