@@ -322,7 +322,7 @@ export function EmployeeForm({
 
   function readAgain(kind: EmployeeDocumentKind) {
     const url = documentRefs[kind];
-    return <Button type="button" size="sm" variant="outline" disabled={!url || documentReading > 0} onClick={() => url && void autoFillDocument(kind, url)}><Sparkles className="mr-1 h-4 w-4" />Read {kind === "workpermit" ? "Work Permit" : kind === "particular" ? "Particular" : kind === "csoc" ? "CSOC" : "Passport"}</Button>;
+    return <Button type="button" size="sm" variant="outline" title="Fills empty fields only — existing values are never overwritten" disabled={!url || documentReading > 0} onClick={() => url && void autoFillDocument(kind, url)}><Sparkles className="mr-1 h-4 w-4" />{documentReading > 0 && readingKinds.current.has(kind) ? "Reading…" : "Auto-fill from "}{kind === "workpermit" ? "Work Permit" : kind === "particular" ? "Particular" : kind === "csoc" ? "CSOC" : "Passport"}</Button>;
   }
 
 
@@ -715,7 +715,7 @@ export function EmployeeForm({
             <EmployeeSavedDocuments documents={savedDocuments.filter((file) => employeeDocumentSection(file) === "IPA")} exclude={[ipaUrl]} />
           </section>
           <section className="space-y-3 border-b pb-5" aria-label="Passport documents">
-            <h3 className="text-sm font-semibold">2. Passport</h3>
+            <div className="flex items-center justify-between gap-2"><h3 className="text-sm font-semibold">2. Passport</h3>{readAgain("passport")}</div>
           <FileUpload
             name="passportUpload"
             label="Passport upload"
@@ -726,23 +726,20 @@ export function EmployeeForm({
             accept=".pdf,.jpg,.jpeg,.png,.webp"
             onUploaded={(url) => void autoFillDocument("passport", url)}
           />
-          {readAgain("passport")}
             <EmployeeSavedDocuments documents={savedDocuments.filter((file) => employeeDocumentSection(file) === "Passport")} exclude={[storedDocs.passportUpload || ""]} />
           </section>
           <section className="space-y-3 border-b pb-5" aria-label="Work Permit documents">
-            <h3 className="text-sm font-semibold">3. Work Permit</h3>
+            <div className="flex items-center justify-between gap-2"><h3 className="text-sm font-semibold">3. Work Permit</h3>{readAgain("workpermit")}</div>
           <FileUpload name="workPermitUpload" label="Work Permit upload" folder="documents" display="document" documentLabel="Work Permit" defaultValue={storedDocs.workPermitUpload || ""} accept=".pdf,.jpg,.jpeg,.png,.webp" onUploaded={(url) => void autoFillDocument("workpermit", url)} />
-          {readAgain("workpermit")}
             <EmployeeSavedDocuments documents={savedDocuments.filter((file) => employeeDocumentSection(file) === "Work Permit")} exclude={[storedDocs.workPermitUpload || ""]} />
           </section>
           <section className="space-y-3 border-b pb-5" aria-label="CSOC documents">
-            <h3 className="text-sm font-semibold">4. CSOC</h3>
+            <div className="flex items-center justify-between gap-2"><h3 className="text-sm font-semibold">4. CSOC</h3>{readAgain("csoc")}</div>
           <FileUpload name="csocUpload" label="CSOC upload" folder="documents" display="document" documentLabel="CSOC" defaultValue={storedDocs.csocUpload || ""} accept=".pdf,.jpg,.jpeg,.png,.webp" onUploaded={(url) => void autoFillDocument("csoc", url)} />
-          {readAgain("csoc")}
             <EmployeeSavedDocuments documents={savedDocuments.filter((file) => employeeDocumentSection(file) === "CSOC")} exclude={[storedDocs.csocUpload || ""]} />
           </section>
           <section className="space-y-3 border-b pb-5" aria-label="Particular documents">
-            <h3 className="text-sm font-semibold">5. Particular</h3>
+            <div className="flex items-center justify-between gap-2"><h3 className="text-sm font-semibold">5. Particular</h3>{readAgain("particular")}</div>
           <FileUpload
             name="pFileUrl"
             label="Particular document (PDF)"
@@ -753,7 +750,6 @@ export function EmployeeForm({
             defaultValue={values?.pFileUrl || ""}
             onUploaded={(url) => void autoFillDocument("particular", url)}
           />
-          {readAgain("particular")}
             <EmployeeSavedDocuments documents={savedDocuments.filter((file) => employeeDocumentSection(file) === "Particular")} exclude={[values?.pFileUrl || ""]} />
           </section>
           <section className="space-y-3 border-b pb-5" aria-label="Bank Documents documents">
