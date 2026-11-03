@@ -1,106 +1,109 @@
-import template from "@/assets/combined-claim-layout.asset.json";
-import type { ClaimSheet, Company, Employee } from "@/lib/types";
+import template from "@/assets/project-claim-template.xlsx.asset.json";
+import type { ClaimSheet, Client, Company, Employee, Project, Site } from "@/lib/types";
 
-/** Sample layout: project slots E..AB (4 cols each). Slots 1-4 = PLUTO, 5-6 = BSM. */
-const SLOT_COLS = [5, 9, 13, 17, 21, 25];
-type Group = "PLUTO" | "BSM" | "VRL";
-
-function companyGroup(company?: Company): Group {
-  const text = `${company?.code ?? ""} ${company?.name ?? ""}`.toUpperCase();
-  if (text.includes("BSM")) return "BSM";
-  if (text.includes("VRL")) return "VRL";
-  return "PLUTO";
-}
+/** Layout of the supplied blank template (sheet "CLAIM SHEET"). */
+const FIRST_ROW = 5; // each worker uses two rows: G-HRS then OT HOURS
+const SLOTS = 60;
+const DAY_COL = 5; // column E = day 1
+const MAX_COLS = 59; // BG
 
 export function claimSheetTitle(companyName: string, month: string) {
-  const [y, m] = month.split("-").map(Number);
-  const label = y && m ? new Date(Date.UTC(y, m - 1, 1)).toLocaleString("en-SG", { month: "long", year: "numeric", timeZone: "UTC" }).toUpperCase() : month;
-  return `${companyName.toUpperCase()} COMBINED SHEET -${label}`;
+  return `${companyName.toUpperCase()} CLAIM - ${monthLabel(month)}`;
 }
 
-export async function exportCombinedClaims(sheets: ClaimSheet[], employees: Employee[], title: string, companies: Company[] = []) {
-  if (!sheets.length) throw new Error("No claim sheets in this period");
-  const ExcelJS = await import("exceljs");
-  const workbook = new ExcelJS.Workbook();
-  const response = await fetch(template.url);
-  if (!response.ok) throw new Error("Could not load the claim sheet layout");
-  await workbook.xlsx.load(await response.arrayBuffer());
-  const page = workbook.worksheets[0];
-  if (!page) throw new Error("Claim layout is missing");
-  page.name = "COMBINED SHEET";
-  page.getCell("B1").value = title;
-  // Header labels exactly as the sample
-  const heads = ["PROJECT 1 (PLUTO)", "PROJECT 2 (PLUTO)", "PROJECT 3 (PLUTO)", "PROJECT 4 (PLUTO)", "PROJECT 1 (BSM)", "PROJECT 2 (BSM)"];
-  SLOT_COLS.forEach((col, i) => {
-    page.getCell(2, col).value = heads[i];
-    page.getCell(3, col + 1).value = "B DAY ";
-    page.getCell(3, col + 2).value = "CLAIM SHEET OT ";
-    page.getCell(3, col + 3).value = "BILL AMT S$";
-  });
+function monthLabel(month: string) {
+  const [y, m] = month.split("-").map(Number);
+  return y && m ? new Date(Date.UTC(y, m - 1, 1)).toLocaleString("en-SG", { month: "short", year: "numeric", timeZone: "UTC" }).toUpperCase() : month;
+}
 
-  const groups = new Map<string, ClaimSheet[]>();
-  for (const sheet of sheets) { const key = sheet.employeeId ?? ""; groups.set(key, [...(groups.get(key) ?? []), sheet]); }
-  const usedSlots = new Set<number>([0]);
-  let row = 4;
-  for (const [employeeId, claims] of groups) {
-    const employee = employees.find((item) => item.id === employeeId);
-    page.getCell(`B${row}`).value = row - 3;
-    page.getCell(`C${row}`).value = employee?.employeeCode ?? "";
-    page.getCell(`D${row}`).value = (employee?.name ?? "").toUpperCase();
-    const projects = new Map<string, { group: Group; days: Set<string>; ot: number }>();
-    let vrlDays = 0;
-    for (const claim of claims) {
-      const group = companyGroup(companies.find((c) => c.id === claim.companyId));
-      for (const entry of claim.snapshot) {
-        if (!entry.normalHours && !entry.otHours) continue;
-        const name = (entry.projectName ?? entry.site ?? "PROJECT NOT CONFIRMED").toUpperCase();
-        const key = `${group}|${name}`;
-        const value = projects.get(key) ?? { group, days: new Set<string>(), ot: 0 };
-        value.days.add(entry.date); value.ot += entry.otHours; projects.set(key, value);
+export interface ClaimLookups { companies?: Company[]; projects?: Project[]; sites?: Site[]; clients?: Client[] }
+
+interface ProjectGroup { key: string; projectName: string; clientName: string; companyName: string; workers: Map<string, { code: string; name: string; days: Map<number, { g: number; ot: number }> }> }
+
+/** Groups approved claim rows by project/site and worker. Unknown values stay blank. */
+export function groupClaimsByProject(sheets: ClaimSheet[], employees: Employee[], month: string, lookups: ClaimLookups = {}) {
+  const groups = new Map<string, ProjectGroup>();
+  for (const sheet of sheets) {
+    const employee = employees.find((e) => e.id === sheet.employeeId);
+    const company = lookups.companies?.find((c) => c.id === sheet.companyId);
+    for (const entry of sheet.snapshot) {
+      if (!entry.date.startsWith(month) || (!entry.normalHours && !entry.otHours)) continue;
+      const project = lookups.projects?.find((p) => p.id === entry.projectId);
+      const site = lookups.sites?.find((s) => s.id === entry.siteId);
+      const projectName = (entry.projectName || project?.name || site?.name || entry.site || "").trim();
+      const key = (entry.projectId || projectName.toUpperCase() || "UNASSIGNED") + "|" + (sheet.companyId ?? "");
+      const clientName = lookups.clients?.find((c) => c.id === project?.clientId)?.name ?? "";
+      const group = groups.get(key) ?? { key, projectName, clientName, companyName: company?.name ?? "", workers: new Map() };
+      const workerKey = sheet.employeeId ?? sheet.id;
+      const worker = group.workers.get(workerKey) ?? { code: employee?.employeeCode ?? "", name: (employee?.name ?? "").toUpperCase(), days: new Map() };
+      const day = Number(entry.date.slice(8, 10));
+      const cell = worker.days.get(day) ?? { g: 0, ot: 0 };
+      cell.g += entry.normalHours || 0; cell.ot += entry.otHours || 0;
+      worker.days.set(day, cell); group.workers.set(workerKey, worker); groups.set(key, group);
+    }
+  }
+  return [...groups.values()];
+}
+
+export async function exportCombinedClaims(sheets: ClaimSheet[], employees: Employee[], _title: string, companies: Company[] = [], month = sheets[0]?.periodStart.slice(0, 7) ?? "", lookups: ClaimLookups = {}) {
+  const groups = groupClaimsByProject(sheets, employees, month, { ...lookups, companies });
+  if (!groups.length) throw new Error("No approved time-card hours in this period");
+  const big = groups.find((g) => g.workers.size > SLOTS);
+  if (big) throw new Error(`${big.projectName || "A project"} has more than ${SLOTS} workers; the template holds ${SLOTS}.`);
+
+  const ExcelJS = await import("exceljs");
+  const response = await fetch(template.url);
+  if (!response.ok) throw new Error("Could not load the claim sheet template");
+  const buffer = await response.arrayBuffer();
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.load(buffer);
+  const base = workbook.worksheets[0];
+  if (!base) throw new Error("Claim template is missing");
+  const baseModel = base.model;
+
+  const [y, m] = month.split("-").map(Number);
+  const daysInMonth = new Date(Date.UTC(y, m, 0)).getUTCDate();
+  const used = new Set<string>();
+
+  groups.forEach((group, index) => {
+    let name = (group.projectName || `PROJECT ${index + 1}`).replace(/[\\/*?:[\]]/g, " ").slice(0, 28).trim() || `PROJECT ${index + 1}`;
+    while (used.has(name.toUpperCase())) name = `${name.slice(0, 25)} ${index + 1}`;
+    used.add(name.toUpperCase());
+    let page = base;
+    if (index === 0) page.name = name;
+    else { page = workbook.addWorksheet(name); page.model = { ...baseModel, name, id: page.id } as typeof baseModel; }
+
+    page.getCell("A1").value = group.clientName ? group.clientName.toUpperCase() : null;
+    page.getCell("A2").value = group.projectName ? group.projectName.toUpperCase() : null;
+    page.getCell("A3").value = `CLAIM FOR ${monthLabel(month)}`;
+    page.getCell("AN1").value = group.companyName ? group.companyName.toUpperCase() : null;
+
+    for (let d = 1; d <= 31; d++) {
+      const col = DAY_COL + d - 1;
+      const head = page.getCell(4, col);
+      if (d > daysInMonth) { head.value = null; page.getColumn(col).hidden = true; continue; }
+      const sunday = new Date(Date.UTC(y, m - 1, d)).getUTCDay() === 0;
+      head.fill = { type: "pattern", pattern: "solid", fgColor: { argb: sunday ? "FFFF0000" : "FFFFFFFF" } };
+    }
+
+    const workers = [...group.workers.values()].sort((a, b) => a.code.localeCompare(b.code, undefined, { numeric: true }));
+    for (let i = 0; i < SLOTS; i++) {
+      const r = FIRST_ROW + i * 2;
+      const worker = workers[i];
+      if (!worker) { page.getRow(r).hidden = true; page.getRow(r + 1).hidden = true; continue; }
+      page.getCell(r, 2).value = worker.code || null;
+      page.getCell(r, 3).value = worker.name || null;
+      for (const [day, v] of worker.days) {
+        if (day < 1 || day > daysInMonth) continue;
+        if (v.g) page.getCell(r, DAY_COL + day - 1).value = v.g;
+        if (v.ot) page.getCell(r + 1, DAY_COL + day - 1).value = v.ot;
       }
     }
-    let pluto = 0, bsm = 0;
-    for (const [key, value] of projects) {
-      const name = key.split("|")[1];
-      let slot: number;
-      if (value.group === "BSM") { if (bsm >= 2) throw new Error(`${employee?.name ?? "A worker"} has more than 2 BSM projects in this period.`); slot = 4 + bsm++; }
-      else if (value.group === "VRL") { vrlDays += value.days.size; continue; }
-      else { if (pluto >= 4) throw new Error(`${employee?.name ?? "A worker"} has more than 4 Pluto projects in this period.`); slot = pluto++; }
-      usedSlots.add(slot);
-      const col = SLOT_COLS[slot];
-      page.getCell(row, col).value = name;
-      page.getCell(row, col + 1).value = value.days.size;
-      page.getCell(row, col + 2).value = value.ot;
-      // Bill amount needs the client rate — left blank for the user to fill.
-    }
-    const f = (formula: string) => ({ formula });
-    page.getCell(`AC${row}`).value = f(`AI${row}*8`);
-    page.getCell(`AD${row}`).value = f(`G${row}+K${row}+O${row}+S${row}+W${row}+AA${row}`);
-    page.getCell(`AE${row}`).value = f(`AC${row}+AD${row}`);
-    page.getCell(`AF${row}`).value = f(`F${row}+J${row}+N${row}+R${row}`);
-    page.getCell(`AG${row}`).value = vrlDays;
-    page.getCell(`AH${row}`).value = f(`V${row}+Z${row}`);
-    page.getCell(`AI${row}`).value = f(`AF${row}+AG${row}+AH${row}`);
-    page.getCell(`AJ${row}`).value = f(`H${row}+L${row}+P${row}+T${row}+X${row}+AB${row}`);
-    page.getCell(`AL${row}`).value = f(`AJ${row}-AK${row}`);
-    page.getCell(`AQ${row}`).value = f(`AN${row}+AO${row}+AP${row}`);
-    for (let col = 2; col <= 43; col++) { const cell = page.getCell(row, col); cell.font = { name: "Arial", size: 10 }; cell.alignment = { vertical: "middle", wrapText: true }; }
-    page.getRow(row).height = 42;
-    page.getRow(row).hidden = false;
-    row++;
-  }
-  // Show used project columns only, like the sample
-  SLOT_COLS.forEach((col, i) => { for (let c = col; c < col + 4; c++) page.getColumn(c).hidden = !usedSlots.has(i); });
-  const last = row - 1;
-  page.getCell(`B${row}`).value = "TOTAL";
-  page.getRow(row).hidden = false;
-  const sumCols = ["F", "G", "H", "J", "K", "L", "N", "O", "P", "R", "S", "T", "V", "W", "X", "Z", "AA", "AB", "AC", "AD", "AF", "AG", "AH", "AI", "AJ", "AK", "AL", "AN", "AO", "AP", "AQ"];
-  for (const col of sumCols) page.getCell(`${col}${row}`).value = { formula: `SUM(${col}4:${col}${last})` };
-  page.getCell(`AE${row}`).value = { formula: `AC${row}+AD${row}` };
-  for (let col = 2; col <= 43; col++) page.getCell(row, col).font = { name: "Arial", size: 10, bold: true };
+    for (let c = 1; c <= MAX_COLS; c++) void c;
+  });
+
   workbook.calcProperties.fullCalcOnLoad = true;
-  page.pageSetup.printArea = `B1:AQ${row}`;
-  const buffer = await workbook.xlsx.writeBuffer();
-  const blob = new Blob([new Uint8Array(buffer)], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-  const url = URL.createObjectURL(blob); const link = document.createElement("a"); link.href = url; link.download = "combined_claim_sheet.xlsx"; link.click(); setTimeout(() => URL.revokeObjectURL(url), 30000);
+  const out = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([new Uint8Array(out)], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+  const url = URL.createObjectURL(blob); const link = document.createElement("a"); link.href = url; link.download = `claim_sheet_${month}.xlsx`; link.click(); setTimeout(() => URL.revokeObjectURL(url), 30000);
 }

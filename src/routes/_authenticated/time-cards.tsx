@@ -869,7 +869,7 @@ function TimeCardsPage() {
           </TabsContent>
 
           <TabsContent value="sheets" className="mt-4">
-            <Button variant="outline" className="mb-4 gap-2" disabled={!sheets.length} onClick={() => void exportCombinedClaims(sheets.filter((sheet) => (!companyId || sheet.companyId === companyId) && sheet.periodStart.startsWith(month)), employees, claimSheetTitle(getCompanies().find((c) => c.id === companyId)?.name ?? "ALL COMPANIES", month), getCompanies()).catch((error) => toast.error(error instanceof Error ? error.message : "Export failed"))}><FileSpreadsheet className="h-4 w-4" />Export combined Excel</Button>
+            <Button variant="outline" className="mb-4 gap-2" disabled={!sheets.length} onClick={() => void exportCombinedClaims(sheets.filter((sheet) => (!companyId || sheet.companyId === companyId) && (sheet.periodStart.startsWith(month) || sheet.periodEnd.startsWith(month))), employees, claimSheetTitle(getCompanies().find((c) => c.id === companyId)?.name ?? "ALL COMPANIES", month), getCompanies(), month, { projects: getProjects(), sites: getSites(), clients: getClients() }).catch((error) => toast.error(error instanceof Error ? error.message : "Export failed"))}><FileSpreadsheet className="h-4 w-4" />Download claim sheet (Excel)</Button>
             <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
               <Table>
                 <TableHeader>
