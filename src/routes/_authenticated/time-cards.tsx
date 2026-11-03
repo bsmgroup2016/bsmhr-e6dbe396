@@ -423,7 +423,7 @@ function TimeCardsPage() {
           {selected && <div className="grid items-end gap-4 md:grid-cols-2">
             <div className="min-w-0 space-y-2">
               <Label htmlFor="claim-project">Project</Label>
-              <Select value={projectId} onValueChange={setProjectId}>
+              <Select value={selected.entries.find((entry) => entry.projectId)?.projectId ?? ""} onValueChange={(value) => { updateTimeCard(selected.id, { entries: selected.entries.map((entry) => ({ ...entry, projectId: value, siteId: undefined })) }); setProjectId(value); refresh(); }}>
                 <SelectTrigger id="claim-project" className="w-full"><SelectValue placeholder="Select project" /></SelectTrigger>
                 <SelectContent>
                   {projects.map((project) => <SelectItem key={project.id} value={project.id}>{project.code} — {project.name}</SelectItem>)}
@@ -433,7 +433,7 @@ function TimeCardsPage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="claim-month">Claim period</Label>
-              <Input id="claim-month" type="month" value={month} onChange={(event) => setMonth(event.target.value)} />
+              <Input id="claim-month" type="month" value={selected.periodStart.slice(0, 7)} readOnly />
             </div>
           </div>}
           {uploading && <p role="status" className="text-sm text-primary">{progress ? `Extracting time cards ${progress.done}/${progress.total}…` : "Processing time cards…"}</p>}

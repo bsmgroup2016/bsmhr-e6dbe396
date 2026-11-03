@@ -1,6 +1,7 @@
 import template from "@/assets/combined-claim-layout.asset.json";
 import type { ClaimSheet, Employee } from "@/lib/types";
 export async function exportCombinedClaims(sheets: ClaimSheet[], employees: Employee[], title: string) {
+  if (!sheets.length) throw new Error("No claim sheets in this period");
   const ExcelJS = await import("exceljs");
   const workbook = new ExcelJS.Workbook();
   const response = await fetch(template.url);
@@ -33,8 +34,10 @@ export async function exportCombinedClaims(sheets: ClaimSheet[], employees: Empl
       index++;
     }
     page.getCell(`AC${row}`).value = [...projects.values()].reduce((sum, item) => sum + item.normal, 0);
-    page.getCell(`AD${row}`).value = { formula: `SUM(G${row},K${row},O${row},S${row},W${row},AA${row})` };
-    page.getCell(`AE${row}`).value = { formula: `AC${row}+AD${row}` };
+    const overtime = [...projects.values()].reduce((sum, item) => sum + item.ot, 0);
+    const basic = [...projects.values()].reduce((sum, item) => sum + item.normal, 0);
+    page.getCell(`AD${row}`).value = { formula: `SUM(G${row},K${row},O${row},S${row},W${row},AA${row})`, result: overtime };
+    page.getCell(`AE${row}`).value = { formula: `AC${row}+AD${row}`, result: basic + overtime };
     page.getCell(`AI${row}`).value = new Set(claims.flatMap((claim) => claim.snapshot.map((entry) => entry.date))).size;
     page.getCell(`AM${row}`).value = "Billing rates, costs and MRT require confirmation";
     for (let col = 2; col <= 43; col++) { page.getCell(row, col).font = { name: "Arial", size: 10 }; page.getCell(row, col).alignment = { vertical: "middle", wrapText: true }; }
@@ -42,7 +45,11 @@ export async function exportCombinedClaims(sheets: ClaimSheet[], employees: Empl
     row++;
   }
   page.getCell(`B${row}`).value = "TOTAL";
-  for (const col of ["AC", "AD", "AE", "AI"]) page.getCell(`${col}${row}`).value = { formula: `SUM(${col}4:${col}${row - 1})` };
+  for (const col of ["AC", "AD", "AE", "AI"]) {
+    let total = 0;
+    for (let r = 4; r < row; r++) { const cell = page.getCell(`${col}${r}`); total += Number(cell.result ?? cell.value ?? 0); }
+    page.getCell(`${col}${row}`).value = { formula: `SUM(${col}4:${col}${row - 1})`, result: total };
+  }
   page.pageSetup.printArea = `B1:AQ${row}`;
   const buffer = await workbook.xlsx.writeBuffer();
   const blob = new Blob([new Uint8Array(buffer)], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
