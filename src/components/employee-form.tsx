@@ -22,7 +22,8 @@ import {
   nextEmployeeCode,
   prefixForBranch,
 } from "@/lib/store";
-import { OCR_NOT_CONFIGURED, extractIpaData, isOcrConfigured } from "@/lib/ocr";
+import { OCR_NOT_CONFIGURED, extractIpaData, extractPassportData, extractParticularData, isOcrConfigured } from "@/lib/ocr";
+import { documentEmployeeFields, type EmployeeDocumentKind } from "@/core/employee-document-fields";
 import { isOfficeStaff } from "@/lib/workforce-split";
 import type {
   DeploymentStatus,
@@ -140,6 +141,9 @@ export function employeeFromForm(fd: FormData): Partial<Employee> {
     ipaIssueDate: date("ipaIssueDate"),
     ipaExpiryDate: date("ipaExpiryDate"),
     pFileUrl: s("pFileUrl") || undefined,
+    safetyCourseType: s("safetyCourseType") || undefined,
+    safetyCourseNo: s("safetyCourseNo") || undefined,
+    safetyCourseExpiry: date("safetyCourseExpiry"),
   };
   // Drop keys whose input was not rendered in this form, so a partial form
   // never overwrites existing data with blanks.
@@ -207,6 +211,9 @@ export function EmployeeForm({
   const [ipaUrl, setIpaUrl] = useState(values?.ipaDocumentUrl ?? "");
   const [scanning, setScanning] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
+  const [documentReading, setDocumentReading] = useState(0);
+  const [documentRefs, setDocumentRefs] = useState<Partial<Record<EmployeeDocumentKind, string>>>({ particular: values?.pFileUrl });
+  const readingKinds = useRef(new Set<EmployeeDocumentKind>());
 
   const taken = code.trim() ? isEmployeeCodeTaken(code, employee?.id) : false;
   const expectedPrefix = prefixForBranch(branch);
@@ -274,6 +281,28 @@ export function EmployeeForm({
     else toast.success(`${filled} field(s) filled from the IPA — verify before saving`);
   }
 
+  async function autoFillDocument(kind: EmployeeDocumentKind, url: string) {
+    if (!url || readingKinds.current.has(kind)) return;
+    readingKinds.current.add(kind);
+    setDocumentRefs((refs) => ({ ...refs, [kind]: url }));
+    setDocumentReading((count) => count + 1);
+    try {
+      const result = kind === "particular" ? await extractParticularData(url) : await extractPassportData(url);
+      if (!result.ok) { toast.error(result.reason); return; }
+      const fields = documentEmployeeFields(kind, result.data);
+      const filled = Object.entries(fields).reduce((count, [field, value]) => count + fill(field, value), 0);
+      toast.info(filled ? `${filled} field(s) filled — verify before saving` : "No empty fields could be filled — check the document and enter missing details manually");
+    } finally {
+      readingKinds.current.delete(kind);
+      setDocumentReading((count) => count - 1);
+    }
+  }
+
+  function readAgain(kind: EmployeeDocumentKind) {
+    const url = documentRefs[kind];
+    return <Button type="button" size="sm" variant="outline" disabled={!url || documentReading > 0} onClick={() => url && void autoFillDocument(kind, url)}><Sparkles className="mr-1 h-4 w-4" />Read {kind === "workpermit" ? "Work Permit" : kind === "particular" ? "Particular" : "Passport"}</Button>;
+  }
+
   const [tab, setTab] = useState("personal");
   const invalidToastRef = useRef(false);
 
@@ -295,6 +324,7 @@ export function EmployeeForm({
       }}
       onSubmit={(e) => {
         e.preventDefault();
+        if (documentReading > 0 || scanning) return;
         onSubmit(new FormData(e.currentTarget));
       }}
       className="space-y-4"
@@ -412,13 +442,27 @@ export function EmployeeForm({
             defaultValue={values?.photoUrl || ""}
           />
           <FileUpload
+            name="passportUpload"
+            label="Passport upload"
+            folder="documents"
+            accept=".pdf,.jpg,.jpeg,.png,.webp"
+            onUploaded={(url) => void autoFillDocument("passport", url)}
+          />
+          {readAgain("passport")}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Field label="Passport number"><Input name="passportNumber" defaultValue={values?.passportNumber ?? ""} /></Field>
+            <Field label="Passport expiry"><Input name="passportExpiry" type="date" defaultValue={dateValue(values?.passportExpiry)} /></Field>
+          </div>
+          <FileUpload
             name="pFileUrl"
             label="Particular document (PDF)"
             folder="p-files"
             accept=".pdf"
             hint="Upload the employee's scanned Particular as a PDF"
             defaultValue={values?.pFileUrl || ""}
+            onUploaded={(url) => void autoFillDocument("particular", url)}
           />
+          {readAgain("particular")}
         </TabsContent>
 
         <TabsContent forceMount data-tab-panel="employment" value="employment" className="mt-4 space-y-4 data-[state=inactive]:hidden">
@@ -528,6 +572,8 @@ export function EmployeeForm({
               </div>
             ) : null}
           </div>
+          <FileUpload name="workPermitUpload" label="Work Permit upload" folder="documents" accept=".pdf,.jpg,.jpeg,.png,.webp" onUploaded={(url) => void autoFillDocument("workpermit", url)} />
+          {readAgain("workpermit")}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label="IPA approval date">
               <Input name="ipaIssueDate" type="date" defaultValue={dateValue(values?.ipaIssueDate)} />
@@ -574,12 +620,9 @@ export function EmployeeForm({
             <Field label="Pass expiry">
               <Input name="passExpiry" type="date" defaultValue={dateValue(values?.passExpiry)} />
             </Field>
-            <Field label="Passport number">
-              <Input name="passportNumber" defaultValue={values?.passportNumber ?? ""} />
-            </Field>
-            <Field label="Passport expiry">
-              <Input name="passportExpiry" type="date" defaultValue={dateValue(values?.passportExpiry)} />
-            </Field>
+            <Field label="CSOC / SCOS course type"><Input name="safetyCourseType" defaultValue={values?.safetyCourseType ?? ""} /></Field>
+            <Field label="CSOC / SCOS certificate number"><Input name="safetyCourseNo" defaultValue={values?.safetyCourseNo ?? ""} /></Field>
+            <Field label="CSOC / SCOS expiry"><Input name="safetyCourseExpiry" type="date" defaultValue={dateValue(values?.safetyCourseExpiry)} /></Field>
             <Field label="Dormitory / accommodation">
               <Input name="dormitory" defaultValue={values?.dormitory ?? ""} />
             </Field>
@@ -650,7 +693,8 @@ export function EmployeeForm({
       </Tabs>
 
       <div className="flex justify-end pt-2">
-        <Button type="submit">{submitLabel ?? (employee ? "Save changes" : "Register employee")}</Button>
+        {documentReading > 0 && <span role="status" className="mr-3 text-sm text-muted-foreground">Reading document…</span>}
+        <Button type="submit" disabled={documentReading > 0 || scanning}>{submitLabel ?? (employee ? "Save changes" : "Register employee")}</Button>
       </div>
     </form>
   );

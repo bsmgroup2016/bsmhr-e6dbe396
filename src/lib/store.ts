@@ -248,7 +248,7 @@ export function mergeHistoryRows(key: "attendance" | "issuances", rows: Attendan
 export function getEmployees(): Employee[] { return getState().employees; }
 export function getEmployee(id: string): Employee | undefined { return getState().employees.find((e) => e.id === id); }
 
-export function addEmployee(employee: Omit<Employee, "id" | "employeeCode" | "createdAt" | "updatedAt">): Employee {
+export function addEmployee(employee: Omit<Employee, "id" | "employeeCode" | "createdAt" | "updatedAt">, onSaved?: (employee: Employee) => void): Employee {
   const s = getState();
   const now = new Date().toISOString();
   const nextCode =
@@ -257,7 +257,7 @@ export function addEmployee(employee: Omit<Employee, "id" | "employeeCode" | "cr
   const row: Employee = { ...employee, id: newId(), employeeCode: nextCode, createdAt: now, updatedAt: now };
   setState({ ...s, employees: [row, ...s.employees] });
   void supabase.from("employees").insert({ id: row.id, ...toEmployee(row) }).then(({ error }) => {
-    if (!error) return;
+    if (!error) { onSaved?.(row); return; }
     fail("employees", error);
     // Roll back the optimistic row so the list matches what was actually saved.
     const cur = getState();
