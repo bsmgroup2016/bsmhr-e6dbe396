@@ -439,6 +439,8 @@ export function EmployeeForm({
             name="photoUrl"
             label="Profile photo"
             folder="photos"
+            display="photo"
+            accept=".jpg,.jpeg,.png,.webp,.heic"
             defaultValue={values?.photoUrl || ""}
           />
           <FileUpload
@@ -457,6 +459,7 @@ export function EmployeeForm({
             name="pFileUrl"
             label="Particular document (PDF)"
             folder="p-files"
+            display="particular"
             accept=".pdf"
             hint="Upload the employee's scanned Particular as a PDF"
             defaultValue={values?.pFileUrl || ""}
