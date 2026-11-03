@@ -10,6 +10,7 @@ import { R2Image } from "@/components/r2-image";
 import { deletePFileReference } from "@/core/p-file-deletion";
 import { EmployeeForm, employeeFromForm } from "@/components/employee-form";
 import { IPA_DETAIL_FIELDS } from "@/core/ipa-detail-fields";
+import { estimatedWorkPermitExpiry } from "@/core/work-permit-expiry";
 import { employeeFormDocuments } from "@/core/employee-form-documents";
 import { addDocument } from "@/lib/store";
 import { Button } from "@/components/ui/button";
@@ -118,10 +119,11 @@ function EmployeeProfilePage() {
   const activeProject = projects.find((p) => p.id === active?.projectId);
   const activeClient = clients.find((c) => c.id === activeProject?.clientId);
   /** Staff carry an Employee ID and a fixed monthly salary — no hourly/site data. */
-  const staff = isOfficeStaff(employee!);
+  const staff = isOfficeStaff(employee);
 
   function patch(updates: Partial<Employee>) {
-    updateEmployee(employee!.id, updates);
+    if (!employee) return;
+    updateEmployee(employee.id, updates);
     force((n) => n + 1);
   }
 
@@ -347,6 +349,9 @@ function EmployeeProfilePage() {
               <Item label="FIN / NRIC" value={employee.fin} />
               <Item label="Pass type" value={employee.passType} />
               <Item label="Work Permit number" value={employee.workPermitNumber} />
+              <Item label="Work Permit issue date (confirmed)" value={employee.workPermitIssueDate} />
+              <Item label="Work Permit expiry date" value={employee.workPermitExpiryDate} />
+              {employee.passType === "Work Permit" && <Item label="Estimated Work Permit expiry — Unverified" value={estimatedWorkPermitExpiry(employee.workPermitIssueDate, employee.passType)} />}
               <Item label="Pass expiry" value={employee.passExpiry} />
               <Item label="Passport number" value={employee.passportNumber} />
               <Item label="Passport expiry" value={employee.passportExpiry} />
