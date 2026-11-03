@@ -356,7 +356,6 @@ function EmployeeProfilePage() {
               <Item label="Pass expiry" value={employee.passExpiry} />
               <Item label="Passport number" value={employee.passportNumber} />
               <Item label="Passport expiry" value={employee.passportExpiry} />
-              <Item label="Accommodation" value={employee.dormitory} />
               <IpaItems employee={employee} section="pass" />
             </Grid>
           </TabsContent>
