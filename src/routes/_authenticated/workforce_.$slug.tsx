@@ -32,6 +32,8 @@ export const Route = createFileRoute("/_authenticated/workforce_/$slug")({
       { name: "description", content: "Full employee profile: personal, employment, pass, payroll and documents." },
       { property: "og:title", content: "Employee profile — BSM Workforce & Operations" },
       { property: "og:description", content: "Full employee profile: personal, employment, pass, payroll and documents." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: EmployeeProfilePage,
