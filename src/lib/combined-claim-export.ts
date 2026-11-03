@@ -5,7 +5,6 @@ import type { ClaimSheet, Client, Company, Employee, Project, Site } from "@/lib
 const FIRST_ROW = 5; // each worker uses two rows: G-HRS then OT HOURS
 const SLOTS = 60;
 const DAY_COL = 5; // column E = day 1
-const MAX_COLS = 59; // BG
 
 export function claimSheetTitle(companyName: string, month: string) {
   return `${companyName.toUpperCase()} CLAIM - ${monthLabel(month)}`;
@@ -99,7 +98,6 @@ export async function exportCombinedClaims(sheets: ClaimSheet[], employees: Empl
         if (v.ot) page.getCell(r + 1, DAY_COL + day - 1).value = v.ot;
       }
     }
-    for (let c = 1; c <= MAX_COLS; c++) void c;
   });
 
   workbook.calcProperties.fullCalcOnLoad = true;
