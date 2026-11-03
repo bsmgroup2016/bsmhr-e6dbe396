@@ -7,18 +7,18 @@
  * It must NEVER register in dev or inside Lovable preview, otherwise stale
  * HTML/chunks get served after a deploy.
  */
+import { isPwaPreviewHost, startPwaUpdateChecks } from "@/core/pwa-policy";
+import { offerPwaUpdate } from "@/lib/pwa-updates";
+
 const SW_URL = "/sw.js";
+let started = false;
 
 function isBlockedContext(): boolean {
   if (!import.meta.env.PROD) return true;
   if (typeof window === "undefined") return true;
   if (window.top !== window.self) return true;
 
-  const host = window.location.hostname;
-  if (host.startsWith("id-preview--") || host.startsWith("preview--")) return true;
-  if (host === "lovableproject.com" || host.endsWith(".lovableproject.com")) return true;
-  if (host === "lovableproject-dev.com" || host.endsWith(".lovableproject-dev.com")) return true;
-  if (host === "beta.lovable.dev" || host.endsWith(".beta.lovable.dev")) return true;
+  if (isPwaPreviewHost(window.location.hostname)) return true;
 
   if (new URLSearchParams(window.location.search).has("sw")) {
     if (new URLSearchParams(window.location.search).get("sw") === "off") return true;
@@ -50,10 +50,26 @@ export function setupServiceWorker(): void {
     void unregisterAppServiceWorker();
     return;
   }
+  if (started) return;
+  started = true;
 
   void import("virtual:pwa-register")
     .then(({ registerSW }) => {
-      registerSW({ immediate: true });
+      let requestedRefresh = false;
+      const update = registerSW({
+        immediate: true,
+        onNeedRefresh: () => offerPwaUpdate(async () => { requestedRefresh = true; await update(true); }),
+        // An update activated from another tab must not reload this tab without consent.
+        onNeedReload: () => {
+          if (requestedRefresh) window.location.reload();
+          else offerPwaUpdate(async () => { window.location.reload(); });
+        },
+        onRegisteredSW: (_url, registration) => {
+          if (registration) startPwaUpdateChecks(registration, () => navigator.onLine);
+          // Retire only the previous app's HTML cache; never touch local attendance storage.
+          if ("caches" in window) void caches.delete("woms-pages");
+        },
+      });
     })
     .catch(() => {
       /* offline support is optional; ignore failures */

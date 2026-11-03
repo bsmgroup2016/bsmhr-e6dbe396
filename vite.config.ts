@@ -31,7 +31,7 @@ export default defineConfig({
         // Shell-only offline support. Registration happens in src/lib/pwa.ts,
         // which refuses to register in dev/preview contexts.
         strategies: "generateSW",
-        registerType: "autoUpdate",
+        registerType: "prompt",
         injectRegister: null,
         filename: "sw.js",
         devOptions: { enabled: false },
@@ -40,38 +40,19 @@ export default defineConfig({
           // Client assets land in dist/client; the SW must be served from its root.
           globDirectory: "dist/client",
           swDest: "dist/client/sw.js",
-          globPatterns: ["**/*.{js,css,woff,woff2,png,svg,ico}"],
-          navigateFallback: "/offline.html",
-          navigateFallbackDenylist: [/^\/~oauth/, /^\/api\//, /^\/_serverFn\//],
+          globPatterns: ["**/*.{js,css,woff,woff2,png,svg,ico}", "offline.html"],
+          navigateFallback: null,
           cleanupOutdatedCaches: true,
           clientsClaim: true,
-          skipWaiting: true,
+          skipWaiting: false,
           runtimeCaching: [
             {
-              // HTML navigations must never be cache-first.
-              urlPattern: ({ request }) => request.mode === "navigate",
-              handler: "NetworkFirst",
+              // Never cache navigation responses. Only the static offline page is a fallback.
+              urlPattern: ({ request, url, sameOrigin }) => sameOrigin && request.mode === "navigate" &&
+                !/^\/(?:api(?:\/|$)|_serverFn(?:\/|$)|~oauth(?:\/|$))/.test(url.pathname),
+              handler: "NetworkOnly",
               options: {
-                cacheName: "woms-pages",
-                networkTimeoutSeconds: 5,
-                expiration: { maxEntries: 30, maxAgeSeconds: 60 * 60 * 24 },
-              },
-            },
-            {
-              urlPattern: ({ url, sameOrigin }) =>
-                sameOrigin && /\/assets\/.*\.(?:js|css|woff2?)$/.test(url.pathname),
-              handler: "CacheFirst",
-              options: {
-                cacheName: "woms-assets",
-                expiration: { maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 30 },
-              },
-            },
-            {
-              urlPattern: ({ url }) => url.origin === "https://fonts.gstatic.com",
-              handler: "CacheFirst",
-              options: {
-                cacheName: "woms-fonts",
-                expiration: { maxEntries: 30, maxAgeSeconds: 60 * 60 * 24 * 365 },
+                precacheFallback: { fallbackURL: "/offline.html" },
               },
             },
           ],
