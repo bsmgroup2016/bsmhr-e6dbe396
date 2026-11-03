@@ -16,4 +16,17 @@ test("CSOC source is retained as a safety certificate with reviewed expiry", () 
   fd.set("safetyCourseExpiry", "2026-12-14");
   fd.set("safetyCourseNo", "CS-22");
   expect(employeeFormDocuments(fd)).toEqual([{ type: "Safety Certificate", name: "Safety Certificate", fileUrl: "r2://documents/csoc.pdf", expiryDate: "2026-12-14", docNumber: "CS-22", status: "Pending", verified: false }]);
+});import { storedFormDocumentUrls } from "./employee-form-documents";
+
+test("re-saving with an already stored Work Permit does not create a duplicate", () => {
+  const fd = new FormData();
+  fd.set("workPermitUpload", "r2://documents/wp.pdf");
+  expect(employeeFormDocuments(fd, [{ fileUrl: "r2://documents/wp.pdf" }])).toEqual([]);
+});
+test("saved Work Permit shows again in the form, newest first", () => {
+  expect(storedFormDocumentUrls([
+    { type: "Work Permit", fileUrl: "old.pdf", uploadedAt: "2026-11-03T05:00:00Z" },
+    { type: "Work Permit", fileUrl: "new.pdf", uploadedAt: "2026-11-03T08:00:00Z" },
+    { type: "Passport", fileUrl: "pp.pdf", uploadedAt: "2026-11-03T05:00:00Z" },
+  ])).toEqual({ workPermitUpload: "new.pdf", passportUpload: "pp.pdf" });
 });
