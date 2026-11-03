@@ -74,6 +74,30 @@ export function buildComplianceItems(employees: Employee[], documents: EmployeeD
   const items: ComplianceItem[] = [];
 
   for (const e of employees) {
+    const base = { employeeId: e.id, employeeName: e.name, employeeCode: e.employeeCode, companyId: e.companyId };
+    // Pass expiry fallback when no Work Permit expiry is saved
+    if (!e.workPermitExpiryDate && isForeignPass(e) && e.passExpiry && e.passExpiry !== "-") {
+      items.push({
+        ...base, id: `pass-${e.id}`, category: "Work Pass", label: `${e.passType} Expiry`,
+        reference: e.workPermitNumber, expiryDate: e.passExpiry,
+        daysLeft: daysUntil(e.passExpiry), severity: computeDocumentStatus(e.passExpiry),
+      });
+    }
+    // Medical insurance and six-monthly examination
+    if (e.medicalInsuranceExpiry) {
+      items.push({
+        ...base, id: `mi-${e.id}`, category: "Medical", label: "Medical insurance expiry",
+        expiryDate: e.medicalInsuranceExpiry,
+        daysLeft: daysUntil(e.medicalInsuranceExpiry), severity: computeDocumentStatus(e.medicalInsuranceExpiry),
+      });
+    }
+    if (e.medicalCheckupDue) {
+      items.push({
+        ...base, id: `mx-${e.id}`, category: "Medical", label: "Medical examination due",
+        expiryDate: e.medicalCheckupDue,
+        daysLeft: daysUntil(e.medicalCheckupDue), severity: computeDocumentStatus(e.medicalCheckupDue),
+      });
+    }
     // Work Permit
     if (e.workPermitExpiryDate) {
       const days = daysUntil(e.workPermitExpiryDate);
@@ -152,6 +176,43 @@ export function buildComplianceItems(employees: Employee[], documents: EmployeeD
   }
 
   return items.sort((a, b) => a.daysLeft - b.daysLeft);
+}
+
+export function isForeignPass(e: Pick<Employee, "passType">): boolean {
+  return e.passType === "Work Permit" || e.passType === "S Pass" || e.passType === "Employment Pass";
+}
+
+export interface MissingRecord {
+  employeeId: string;
+  employeeName: string;
+  employeeCode: string;
+  companyId?: string;
+  passType: string;
+  missing: string[];
+}
+
+/** Active foreign workers whose MOM-relevant dates are not recorded yet. */
+export function missingComplianceRecords(employees: Employee[]): MissingRecord[] {
+  const out: MissingRecord[] = [];
+  for (const e of employees) {
+    if (!isForeignPass(e)) continue;
+    if (e.status && /resign|terminat|inactive|cancel/i.test(String(e.status))) continue;
+    const missing: string[] = [];
+    const has = (v?: string) => !!v && v !== "-";
+    if (!has(e.workPermitExpiryDate) && !has(e.passExpiry)) missing.push("Work pass expiry");
+    if (!has(e.passportExpiry)) missing.push("Passport expiry");
+    if (e.passType !== "Employment Pass") {
+      if (!has(e.medicalInsuranceExpiry)) missing.push("Medical insurance");
+      if (!has(e.safetyCourseExpiry)) missing.push("CSOC / safety course");
+    }
+    if (missing.length) {
+      out.push({
+        employeeId: e.id, employeeName: e.name, employeeCode: e.employeeCode,
+        companyId: e.companyId, passType: e.passType, missing,
+      });
+    }
+  }
+  return out.sort((a, b) => b.missing.length - a.missing.length);
 }
 
 /**

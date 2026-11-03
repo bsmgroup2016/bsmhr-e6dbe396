@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ShieldCheck, AlertTriangle, CalendarClock, Search, Download, FileText, Eye } from "lucide-react";
+import { ShieldCheck, AlertTriangle, CalendarClock, Search, Download, FileText, Eye, FileQuestion } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 
 import { AppShell } from "@/components/app-shell";
 import { SummaryCard } from "@/components/ui/summary-card";
@@ -15,7 +17,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { getEmployees, getDocuments, getCurrentCompany } from "@/lib/store";
-import { buildComplianceItems, severityLabel, severityVariant, type ComplianceSeverity } from "@/lib/compliance";
+import { buildComplianceItems, missingComplianceRecords, severityLabel, severityVariant, type ComplianceSeverity } from "@/lib/compliance";
 import { openR2File } from "@/lib/r2";
 import { exportRows } from "@/lib/xlsx";
 import { employeeSlugById } from "@/lib/employee-slug";
@@ -46,10 +48,16 @@ export default function CompliancePage() {
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [severityFilter, setSeverityFilter] = useState<ComplianceSeverity | "all">("all");
   const [windowFilter, setWindowFilter] = useState<string>("90");
+  const [tab, setTab] = useState<"expiry" | "missing">("expiry");
 
   const items = useMemo(() => {
     const all = buildComplianceItems(getEmployees(), getDocuments());
     return companyId ? all.filter((i) => !i.companyId || i.companyId === companyId) : all;
+  }, [companyId]);
+
+  const missing = useMemo(() => {
+    const all = missingComplianceRecords(getEmployees());
+    return companyId ? all.filter((m) => !m.companyId || m.companyId === companyId) : all;
   }, [companyId]);
 
   const expiredCount = items.filter((i) => i.severity === "expired").length;
@@ -89,29 +97,112 @@ export default function CompliancePage() {
     );
   }
 
+  function pickCard(sev: ComplianceSeverity | "all", win: string) {
+    setTab("expiry");
+    setSeverityFilter(sev);
+    setWindowFilter(win);
+  }
+
+  function exportMissing() {
+    void exportRows(
+      missing.map((m) => ({
+        "P-File No": m.employeeCode, Employee: m.employeeName, "Pass type": m.passType,
+        "Missing records": m.missing.join(", "),
+      })),
+      "compliance-missing", "Missing",
+    );
+  }
+
   return (
     <AppShell>
       <div className="w-full space-y-6">
         <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Compliance & Expiry</h1>
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">MOM Compliance</h1>
             <p className="text-sm text-muted-foreground">
-              Work passes, passports and documents in one MOM-compliance watchlist.
+              Work passes, passports, medical cover, safety courses and documents in one watchlist.
             </p>
           </div>
-          <Button size="sm" variant="outline" className="mt-2 sm:mt-0" onClick={handleExport} disabled={filtered.length === 0}>
+          <Button size="sm" variant="outline" className="mt-2 sm:mt-0" onClick={tab === "expiry" ? handleExport : exportMissing} disabled={tab === "expiry" ? filtered.length === 0 : missing.length === 0}>
             <Download className="mr-1 h-4 w-4" />
             Export
           </Button>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <SummaryCard title="Tracked items" value={items.length.toString()} icon={<ShieldCheck className="h-5 w-5" />} variant="primary" caption="Passes, passports, documents" />
-          <SummaryCard title="Expired" value={expiredCount.toString()} icon={<AlertTriangle className="h-5 w-5" />} variant="destructive" caption="Immediate action" />
-          <SummaryCard title="Within 30 days" value={criticalCount.toString()} icon={<CalendarClock className="h-5 w-5" />} variant="warning" caption="Start renewal now" />
-          <SummaryCard title="Within 90 days" value={warningCount.toString()} icon={<CalendarClock className="h-5 w-5" />} variant="default" caption="Plan ahead" />
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          <button type="button" className="text-left" onClick={() => pickCard("all", "all")}>
+            <SummaryCard title="Tracked items" value={items.length.toString()} icon={<ShieldCheck className="h-5 w-5" />} variant="primary" caption="Click to show all" />
+          </button>
+          <button type="button" className="text-left" onClick={() => pickCard("expired", "all")}>
+            <SummaryCard title="Expired" value={expiredCount.toString()} icon={<AlertTriangle className="h-5 w-5" />} variant="destructive" caption="Immediate action" />
+          </button>
+          <button type="button" className="text-left" onClick={() => pickCard("critical", "all")}>
+            <SummaryCard title="Within 30 days" value={criticalCount.toString()} icon={<CalendarClock className="h-5 w-5" />} variant="warning" caption="Start renewal now" />
+          </button>
+          <button type="button" className="text-left" onClick={() => pickCard("warning", "all")}>
+            <SummaryCard title="Within 90 days" value={warningCount.toString()} icon={<CalendarClock className="h-5 w-5" />} variant="default" caption="Plan ahead" />
+          </button>
+          <button type="button" className="text-left" onClick={() => setTab("missing")}>
+            <SummaryCard title="Missing records" value={missing.length.toString()} icon={<FileQuestion className="h-5 w-5" />} variant={missing.length ? "warning" : "success"} caption="Workers with blank dates" />
+          </button>
         </div>
 
+        <Tabs value={tab} onValueChange={(v) => setTab(v as "expiry" | "missing")}>
+          <TabsList>
+            <TabsTrigger value="expiry">Expiry watchlist</TabsTrigger>
+            <TabsTrigger value="missing">Missing records ({missing.length})</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="missing" className="mt-4">
+            <div className="rounded-xl border bg-card p-4 shadow-sm">
+              <p className="text-xs text-muted-foreground">
+                Foreign workers whose expiry dates are not saved, so they cannot be tracked. Open the profile to fill them in.
+              </p>
+              <div className="mt-4 overflow-hidden rounded-lg border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Employee</TableHead>
+                      <TableHead>Pass type</TableHead>
+                      <TableHead>Missing</TableHead>
+                      <TableHead className="w-12"></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {missing.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={4} className="h-32 text-center">
+                          <EmptyState className="border-0 bg-transparent" icon={<ShieldCheck className="h-5 w-5" />} title="All records complete" description="Every foreign worker has their dates saved." />
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      missing.map((m) => (
+                        <TableRow key={m.employeeId}>
+                          <TableCell>
+                            <div className="font-medium">{m.employeeName}</div>
+                            <div className="text-xs text-muted-foreground">{m.employeeCode}</div>
+                          </TableCell>
+                          <TableCell>{m.passType}</TableCell>
+                          <TableCell>
+                            <div className="flex flex-wrap gap-1">
+                              {m.missing.map((x) => (<Badge key={x} variant="outline" className="text-[11px]">{x}</Badge>))}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Button size="icon" variant="ghost" asChild title="Open profile">
+                              <Link to="/workforce/$slug" params={{ slug: employeeSlugById(m.employeeId) }}><Eye className="h-4 w-4" /></Link>
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="expiry" className="mt-4">
         <div className="rounded-xl border bg-card p-4 shadow-sm">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div className="relative w-full max-w-sm">
@@ -133,6 +224,7 @@ export default function CompliancePage() {
                   <SelectItem value="Passport">Passport</SelectItem>
                   <SelectItem value="Document">Document</SelectItem>
                   <SelectItem value="Medical">Medical</SelectItem>
+                  <SelectItem value="Safety">Safety course</SelectItem>
                 </SelectContent>
               </Select>
               <Select value={severityFilter} onValueChange={(v) => setSeverityFilter(v as ComplianceSeverity | "all")}>
@@ -207,6 +299,8 @@ export default function CompliancePage() {
             </Table>
           </div>
         </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </AppShell>
   );
