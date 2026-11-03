@@ -248,7 +248,6 @@ function EmployeeProfilePage() {
             <TabsTrigger value="employment">Employment</TabsTrigger>
             <TabsTrigger value="pass">Work pass</TabsTrigger>
             <TabsTrigger value="pay">Compensation</TabsTrigger>
-            <TabsTrigger value="agency">Agency</TabsTrigger>
             <TabsTrigger value="employer">Employer / application</TabsTrigger>
             {!staff ? <TabsTrigger value="assignments">Assignments</TabsTrigger> : null}
             {!staff ? <TabsTrigger value="attendance">Attendance</TabsTrigger> : null}
@@ -341,6 +340,8 @@ function EmployeeProfilePage() {
               <Item label="Last working date" value={employee.lastWorkingDate} />
               <Item label="Exit reason" value={employee.exitReason} />
               <IpaItems employee={employee} section="employment" />
+              <div className="col-span-full border-t pt-4 text-sm font-semibold">Employment agency</div>
+              <IpaItems employee={employee} section="agency" />
             </Grid>
           </TabsContent>
 
@@ -383,7 +384,6 @@ function EmployeeProfilePage() {
             </Grid>
           </TabsContent>
 
-          <TabsContent value="agency" className="mt-4"><Grid><IpaItems employee={employee} section="agency" /></Grid></TabsContent>
           <TabsContent value="employer" className="mt-4"><Grid><IpaItems employee={employee} section="employer" /></Grid></TabsContent>
           <TabsContent value="assignments" className="mt-4">
             <SimpleTable
