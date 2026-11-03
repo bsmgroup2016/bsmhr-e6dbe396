@@ -55,7 +55,7 @@ export const Route = createFileRoute("/_authenticated/audit-logs")({
   }),
   loaderDeps: ({ search: { page, action, entity, from, to } }) => ({ page, action, entity, from, to }),
   loader: async ({ context, deps }) => { await context.queryClient.ensureQueryData(auditLogsQueryOptions(deps, context.user.id)); },
-  errorComponent: ({ error }) => { const router = useRouter(); return <div role="alert" className="p-6"><p>{error.message}</p><Button onClick={() => void router.invalidate()}>Retry</Button></div>; },
+  errorComponent: ({ error }) => { const router = useRouter(); return <div role="alert" className="p-6"><p>{error instanceof Error ? error.message : "Could not load audit logs."}</p><Button onClick={() => void router.invalidate()}>Retry</Button></div>; },
   notFoundComponent: () => <div className="p-6">Audit logs not found.</div>,
   head: () => ({
     meta: [
