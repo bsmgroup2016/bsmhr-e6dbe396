@@ -31,6 +31,7 @@
 - Employee creation uses a registration-method wrapper around the existing EmployeeForm; editing uses EmployeeForm directly to preserve existing edit behavior.
 - IPA extraction maps only semantically equivalent fields into editable registration defaults; additional particulars remain labeled in internal notes and the complete source stays in R2, avoiding schema changes and salary/date conflation.
 - Employee document autofill uses source-specific allowlists and fills only empty editable fields; passport/permit uploads use existing employee_documents records while CSOC uses existing safety-course fields, avoiding new schema and mixed-up expiries.
+- Employee OCR understands document abbreviations server-side before source-specific mapping; CSOC uploads retain their source in existing employee_documents and map only safety fields, keeping permit/passport dates isolated.
 - Employee photo and document controls opt into FileUpload display modes using signed image reads and authenticated blob downloads; document labels are configurable and replacement retains the previous reference until upload succeeds, without deleting stored files.
 
 ## Permanent data placement rules

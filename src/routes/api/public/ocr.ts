@@ -3,7 +3,7 @@ import { z } from "zod";
 import { canAccessKey, keyFromRef, verifyUser } from "@/lib/r2.server";
 
 const fileSchema = z.object({
-  kind: z.enum(["ipa", "timecard", "passport", "medical", "particular"]),
+  kind: z.enum(["ipa", "timecard", "passport", "medical", "particular", "csoc"]),
   ref: z.string().min(1).max(2048),
 });
 
@@ -54,7 +54,9 @@ export const Route = createFileRoute("/api/public/ocr")({
                   ? await ocr.readPassport(key)
                   : parsed.kind === "particular"
                     ? await ocr.readParticular(key)
-                    : await ocr.readMedicalBill(key);
+                    : parsed.kind === "csoc"
+                      ? await ocr.readCsoc(key)
+                      : await ocr.readMedicalBill(key);
           return Response.json({ data });
         } catch (e) {
           console.error("ocr failed", e);

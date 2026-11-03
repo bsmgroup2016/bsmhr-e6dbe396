@@ -22,7 +22,8 @@ import {
   nextEmployeeCode,
   prefixForBranch,
 } from "@/lib/store";
-import { OCR_NOT_CONFIGURED, extractIpaData, extractPassportData, extractParticularData, isOcrConfigured } from "@/lib/ocr";
+import { OCR_NOT_CONFIGURED, extractIpaData, extractPassportData, extractParticularData, extractCsocData, isOcrConfigured } from "@/lib/ocr";
+import { ipaEmployeeDefaults } from "@/core/ipa-registration";
 import { documentEmployeeFields, type EmployeeDocumentKind } from "@/core/employee-document-fields";
 import { isOfficeStaff } from "@/lib/workforce-split";
 import type {
@@ -232,7 +233,8 @@ export function EmployeeForm({
   /** Write a value into an uncontrolled input without clobbering user edits. */
   function fill(field: string, value?: string) {
     if (!value) return 0;
-    const el = formRef.current?.elements.namedItem(field) as HTMLInputElement | null;
+    const el = formRef.current?.elements.namedItem(field);
+    if (!(el instanceof HTMLInputElement) && !(el instanceof HTMLTextAreaElement)) return 0;
     if (!el || el.value) return 0;
     if (el.type === "date") {
       const v = value.trim();
@@ -248,35 +250,27 @@ export function EmployeeForm({
       if (!iso) return 0;
       value = iso;
     }
-    const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+    const setter = Object.getOwnPropertyDescriptor(el instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype, "value")?.set;
     setter?.call(el, value);
     el.dispatchEvent(new Event("input", { bubbles: true }));
     return el.value === value ? 1 : 0;
   }
 
-  async function autoFillFromIpa() {
-    if (!ipaUrl) {
+  async function autoFillFromIpa(url = ipaUrl) {
+    if (!url || scanning) {
       toast.error("Upload the IPA copy first");
       return;
     }
     setScanning(true);
-    const result = await extractIpaData(ipaUrl);
+    const result = await extractIpaData(url);
     setScanning(false);
     if (!result.ok) {
       toast.error(result.reason || OCR_NOT_CONFIGURED);
       return;
     }
-    const d = result.data;
-    let filled = 0;
-    filled += fill("name", d.name);
-    filled += fill("fin", d.fin);
-    filled += fill("passportNumber", d.passportNumber);
-    filled += fill("workPermitNumber", d.workPermitNumber);
-    filled += fill("nationality", d.nationality);
-    filled += fill("dateOfBirth", d.dateOfBirth);
-    filled += fill("workPermitIssueDate", d.issueDate);
-    filled += fill("workPermitExpiryDate", d.expiryDate);
-    filled += fill("passExpiry", d.expiryDate);
+    const mapped = ipaEmployeeDefaults(result.data, url);
+    const filled = Object.entries(mapped).reduce((count, [field, value]) =>
+      count + (typeof value === "string" || typeof value === "number" ? fill(field, String(value)) : 0), 0);
     if (filled === 0) toast.info("Nothing new to fill — check the values against the document");
     else toast.success(`${filled} field(s) filled from the IPA — verify before saving`);
   }
@@ -287,7 +281,7 @@ export function EmployeeForm({
     setDocumentRefs((refs) => ({ ...refs, [kind]: url }));
     setDocumentReading((count) => count + 1);
     try {
-      const result = kind === "particular" ? await extractParticularData(url) : await extractPassportData(url);
+      const result = kind === "particular" ? await extractParticularData(url) : kind === "csoc" ? await extractCsocData(url) : await extractPassportData(url);
       if (!result.ok) { toast.error(result.reason); return; }
       const fields = documentEmployeeFields(kind, result.data);
       const filled = Object.entries(fields).reduce((count, [field, value]) => count + fill(field, value), 0);
@@ -300,7 +294,7 @@ export function EmployeeForm({
 
   function readAgain(kind: EmployeeDocumentKind) {
     const url = documentRefs[kind];
-    return <Button type="button" size="sm" variant="outline" disabled={!url || documentReading > 0} onClick={() => url && void autoFillDocument(kind, url)}><Sparkles className="mr-1 h-4 w-4" />Read {kind === "workpermit" ? "Work Permit" : kind === "particular" ? "Particular" : "Passport"}</Button>;
+    return <Button type="button" size="sm" variant="outline" disabled={!url || documentReading > 0} onClick={() => url && void autoFillDocument(kind, url)}><Sparkles className="mr-1 h-4 w-4" />Read {kind === "workpermit" ? "Work Permit" : kind === "particular" ? "Particular" : kind === "csoc" ? "CSOC" : "Passport"}</Button>;
   }
 
   const [tab, setTab] = useState("personal");
@@ -567,11 +561,13 @@ export function EmployeeForm({
               documentLabel="IPA"
               accept=".pdf"
               defaultValue={ipaUrl}
-              onUploaded={(url) => setIpaUrl(url)}
+              onUploaded={(url) => { setIpaUrl(url); void autoFillFromIpa(url); }}
             />
           </div>
           <FileUpload name="workPermitUpload" label="Work Permit upload" folder="documents" display="document" documentLabel="Work Permit" accept=".pdf,.jpg,.jpeg,.png,.webp" onUploaded={(url) => void autoFillDocument("workpermit", url)} />
           {readAgain("workpermit")}
+          <FileUpload name="csocUpload" label="CSOC upload" folder="documents" display="document" documentLabel="CSOC" accept=".pdf,.jpg,.jpeg,.png,.webp" onUploaded={(url) => void autoFillDocument("csoc", url)} />
+          {readAgain("csoc")}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label="IPA approval date">
               <Input name="ipaIssueDate" type="date" defaultValue={dateValue(values?.ipaIssueDate)} />
