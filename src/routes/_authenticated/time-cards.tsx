@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { matchCardWorker, uniqueCardMatch, type TimeCardIdentity } from "@/core/time-card-matching";
+import { completeTimeCardReview } from "@/core/time-card-review";
 import { exportCombinedClaims, claimSheetTitle } from "@/lib/combined-claim-export";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -106,6 +107,7 @@ function TimeCardsPage() {
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const [rescanId, setRescanId] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [verificationOpen, setVerificationOpen] = useState(false);
   const [verificationSearch, setVerificationSearch] = useState("");
   const [verificationFilter, setVerificationFilter] = useState<
     "All" | "Mismatch" | "Unresolved" | "LowConfidence"
@@ -183,7 +185,7 @@ function TimeCardsPage() {
     const card = addTimeCard({ employeeId, periodStart: start, periodEnd: end, fileUrl: reviewScan.fileUrl, fileName: reviewScan.fileName, status: "Draft", entries: reviewScan.entries.map((entry) => ({ ...entry, projectId, siteId: siteId || undefined })) });
     refresh(); setSelectedId(card.id); setActiveTab("cards");
     const [next, ...rest] = pendingScans; setPendingScans(rest);
-    if (next) openScan(next); else setReviewScan(null);
+    if (next) openScan(next); else { setReviewScan(null); setVerificationOpen(true); }
   }
 
   async function handleUpload(fileList: FileList | null) {
@@ -246,6 +248,7 @@ function TimeCardsPage() {
       updateTimeCard(card.id, { entries });
       refresh();
       setSelectedId(card.id);
+      setVerificationOpen(true);
       toast.success(`Auto-filled ${ocr.data.length} row(s)`);
     } finally {
       setRescanId(null);
@@ -282,19 +285,35 @@ function TimeCardsPage() {
     toast.success(`Bulk updated ${filteredComparison.length} rows to ${resolution}`);
   }
 
-  function finalize(card: TimeCard) {
+  function verifyCard(card: TimeCard): boolean {
     const rows = compareTimeCard(card);
     const unresolved = rows.filter((r) => r.state !== "Verified" && !r.resolution).length;
     if (!card.entries.some((e) => e.checkIn || e.checkOut)) {
       toast.error("This time card has no times yet — scan or enter them first");
-      return;
+      return false;
     }
     updateTimeCard(card.id, { status: unresolved ? "Has Mismatches" : "Verified" });
     if (unresolved) {
       refresh();
       toast.warning(`${unresolved} row(s) still need a decision`);
-      return;
+      return false;
     }
+    refresh();
+    return true;
+  }
+
+  function finalize(card: TimeCard) {
+    if (completeTimeCardReview("finalize", () => verifyCard(card), () => {})) {
+      setVerificationOpen(false);
+      toast.success("Review finalized — ready for approval");
+    }
+  }
+
+  function approveCard(card: TimeCard) {
+    completeTimeCardReview("approve", () => verifyCard(card), () => generateClaim(card));
+  }
+
+  function generateClaim(card: TimeCard) {
     // Approved: generate the claim sheet from the human-checked card values.
     const exists = getClaimSheets().some(
       (s) => s.employeeId === card.employeeId && s.periodStart === card.periodStart && s.periodEnd === card.periodEnd,
@@ -469,8 +488,8 @@ function TimeCardsPage() {
             </div>
             </div>
             <div className="flex flex-wrap gap-2">
-              <Button variant="outline" onClick={() => setActiveTab("cards")} className="gap-2"><ScanLine className="h-4 w-4" />Check OCR results</Button>
-              <Button disabled={uploading} onClick={() => { finalize(selected); setActiveTab("cards"); }} className="gap-2"><FileSpreadsheet className="h-4 w-4" />Approve & generate claim sheet</Button>
+              <Button variant="outline" onClick={() => setVerificationOpen(true)} className="gap-2"><ScanLine className="h-4 w-4" />Check OCR results</Button>
+              <Button disabled={uploading || selected.status !== "Verified"} onClick={() => approveCard(selected)} className="gap-2"><FileSpreadsheet className="h-4 w-4" />Approve & generate claim sheet</Button>
             </div>
           </div>}
           {!selected && cards.length > 0 && <p className="text-center text-sm text-muted-foreground">Or pick a card below and press <span className="font-medium text-foreground">Open</span> to check and approve it.</p>}
@@ -564,7 +583,7 @@ function TimeCardsPage() {
                           />
                         </TableCell>
                         <TableCell className="space-x-1 text-right">
-                          <Button size="sm" variant="ghost" onClick={() => setSelectedId(c.id)}>
+                          <Button size="sm" variant="ghost" onClick={() => { setSelectedId(c.id); setVerificationOpen(true); }}>
                             Verify
                           </Button>
                           <Button
@@ -595,13 +614,14 @@ function TimeCardsPage() {
               </Table>
             </div>
 
+            <Dialog open={verificationOpen && selected !== null} onOpenChange={setVerificationOpen}>
             {selected ? (
-              <div className="rounded-xl border bg-card p-4 shadow-sm">
+              <DialogContent className="max-h-[90dvh] w-[calc(100%-2rem)] overflow-y-auto sm:max-w-6xl">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
-                    <h2 className="font-medium">
+                    <DialogHeader><DialogTitle>
                       Verification — {empName(selected.employeeId)}
-                    </h2>
+                    </DialogTitle></DialogHeader>
                     <p className="text-xs text-muted-foreground">
                       {mismatches} of {comparison.length} rows need attention.
                     </p>
@@ -835,8 +855,9 @@ function TimeCardsPage() {
                     </TableBody>
                   </Table>
                 </div>
-              </div>
+              </DialogContent>
             ) : null}
+            </Dialog>
           </TabsContent>
 
           <TabsContent value="sheets" className="mt-4">
