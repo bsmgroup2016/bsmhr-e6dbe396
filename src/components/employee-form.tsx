@@ -366,7 +366,7 @@ export function EmployeeForm({
       }}
       className="space-y-4"
     >
-      <div className="grid grid-cols-1 gap-4 rounded-lg border bg-muted/30 p-3 sm:grid-cols-2">
+      <div className={readOnly ? "hidden" : "grid grid-cols-1 gap-4 rounded-lg border bg-muted/30 p-3 sm:grid-cols-2"}>
         <Field label={idFieldLabel}>
           <Input
             name="employeeCode"
