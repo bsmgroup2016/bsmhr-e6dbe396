@@ -104,3 +104,22 @@ test("IPA source and all extra particulars remain attached without guessing a co
   expect(values.companyId).toBeUndefined();
   expect(values.internalNotes).toContain("Agency licence (page 14): 22C1248");
 });
+test("fills every printed field, including amounts read as text", async () => {
+    const { ipaEmployeeDefaults: fill } = await import("./ipa-registration");
+    const v = fill({
+      name: "MD ABU SAYED", dateOfBirth: "2003-12-01", gender: "MALE", nationality: "BANGLADESHI",
+      passportNumber: "A08396381", workPermitNumber: "0 65757656", fin: "M3536410W", applicationDate: "2024-10-10",
+      employerName: "PLUTO SYSTEM ENGINEERING PTE. LTD.", industry: "PROCESS", occupation: "PROCESS MAINTENANCE & CONSTRUCTION WORKER",
+      agencyName: "DIRECTION OVERSEAS PTE. LTD.", agencyFee: "S$ 200" as never, housingProvided: "YES",
+      normalHoursPerWeek: "44.0" as never, workingDaysPerWeek: "6.000" as never, otRate: "S$ 3.15" as never,
+      dailyRestDayRate: 15.38, declaredSalary: "S$ 400" as never, basicMonthlySalary: 400, fixedAllowance: 0,
+      housingDeduction: 0, otherDeduction: "S$ 0" as never,
+    }, "r2://ipa.pdf");
+    expect(v).toMatchObject({
+      name: "MD ABU SAYED", gender: "Male", fin: "M3536410W", applicationDate: "2024-10-10",
+      employerName: "PLUTO SYSTEM ENGINEERING PTE. LTD.", industry: "PROCESS", trade: "PROCESS MAINTENANCE & CONSTRUCTION WORKER",
+      agencyName: "DIRECTION OVERSEAS PTE. LTD.", agencyFee: 200, housingProvided: "Yes", normalHoursPerWeek: 44,
+      workingDaysPerWeek: 6, otRate: 3.15, dailyRestDayRate: 15.38, declaredSalary: 400, basicMonthlySalary: 400,
+      fixedAllowance: 0, housingDeduction: 0, otherDeduction: 0,
+    });
+});
