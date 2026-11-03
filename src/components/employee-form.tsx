@@ -394,6 +394,7 @@ export function EmployeeForm({
           <TabsTrigger value="pass">Work pass</TabsTrigger>
           <TabsTrigger value="pay">Compensation</TabsTrigger>
           <TabsTrigger value="agency">Agency</TabsTrigger>
+          <TabsTrigger value="employer">Employer / application</TabsTrigger>
         </TabsList>
 
         <TabsContent forceMount data-tab-panel="personal" value="personal" className="mt-4 space-y-4 data-[state=inactive]:hidden">
@@ -663,6 +664,7 @@ export function EmployeeForm({
               />
             </Field>
           </div>
+          {ipaFields("pass")}
         </TabsContent>
 
         <TabsContent forceMount data-tab-panel="pay" value="pay" className="mt-4 space-y-4 data-[state=inactive]:hidden">
