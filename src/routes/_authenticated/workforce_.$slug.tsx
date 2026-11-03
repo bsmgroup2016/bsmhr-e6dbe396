@@ -471,7 +471,7 @@ function EmployeeProfilePage() {
               employee={employee}
               onSubmit={(fd) => {
                 updateEmployee(employee.id, employeeFromForm(fd));
-                for (const document of employeeFormDocuments(fd)) addDocument({ ...document, employeeId: employee.id });
+                for (const document of employeeFormDocuments(fd, getDocumentsByEmployee(employee.id))) addDocument({ ...document, employeeId: employee.id });
                 setEditing(false);
                 force((n) => n + 1);
               }}
