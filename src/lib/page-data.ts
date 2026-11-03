@@ -19,7 +19,7 @@ const pages: Record<string, CollectionKey[]> = {
   "staff-payroll": ["employees", "attendance"],
   "staff-management": ["employees", "leaveRequests", "departments", "designations", "branchPrefixes", "payroll", "documents", "certifications"],
   payroll: ["employees", "payroll", "attendance", "loans", "loanRepayments", "medicalClaims", "issuances", "assets"],
-  "time-cards": ["employees", "timeCards", "claimSheets", "attendance", "sites"],
+  "time-cards": ["employees", "timeCards", "claimSheets", "attendance", "sites", "projects", "clients"],
   leave: ["employees", "leaveRequests", "attendance"],
   billing: ["clients", "projects", "invoices", "rateAgreements", "contracts", "receipts", "expenses", "attendance", "employees", "sites", "assignments"],
   contracts: ["clients", "rateAgreements", "contracts", "projects", "attendance", "employees", "sites", "assignments", "invoices"],

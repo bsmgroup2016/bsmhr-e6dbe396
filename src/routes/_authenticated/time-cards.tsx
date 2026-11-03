@@ -36,7 +36,6 @@ import { extractTimeCardData, OCR_NOT_CONFIGURED, isOcrConfigured } from "@/lib/
 import {
   addClaimSheet,
   addTimeCard,
-  buildClaimSheetRows,
   buildClaimSheetFromCard,
   compareTimeCard,
   deleteClaimSheet,
@@ -44,6 +43,8 @@ import {
   getClaimSheets,
   getCurrentCompany,
   getEmployees,
+  getProjects,
+  getClients,
   getTimeCards,
   updateTimeCard,
 } from "@/lib/store";
@@ -52,13 +53,13 @@ import type { TimeCard, TimeCardEntry } from "@/lib/types";
 export const Route = createFileRoute("/_authenticated/time-cards")({
   head: () => ({
     meta: [
-      { title: "Time Cards & Claim Sheets — BSM Workforce" },
+      { title: "Project Claim Sheets — BSM Workforce" },
       {
         name: "description",
         content:
           "Upload physical time cards, verify them against system attendance and generate claim sheets.",
       },
-      { property: "og:title", content: "Time Cards & Claim Sheets — BSM Workforce" },
+      { property: "og:title", content: "Project Claim Sheets — BSM Workforce" },
       {
         property: "og:description",
         content: "Time card verification and claim sheet generation for site workers.",
@@ -82,6 +83,9 @@ function TimeCardsPage() {
   const employees = getEmployees();
   const companyId = getCurrentCompany();
   const scoped = employees.filter((e) => !companyId || e.companyId === companyId);
+  const clients = getClients();
+  const projects = getProjects().filter((project) => !companyId || clients.some((client) => client.id === project.clientId && client.companyId === companyId));
+  const [projectId, setProjectId] = useState("");
 
   const [cards, setCards] = useState(getTimeCards());
   const [sheets, setSheets] = useState(getClaimSheets());
@@ -306,31 +310,6 @@ function TimeCardsPage() {
     toast.success(`Time card approved — claim sheet ${sheet.reference} created`);
   }
 
-  function generateClaimSheet() {
-    if (!employeeId) {
-      toast.error("Select an employee first");
-      return;
-    }
-    const { start, end } = monthRange(month);
-    const snapshot = buildClaimSheetRows(employeeId, start, end);
-    if (!snapshot.length) {
-      toast.error("No attendance in this period");
-      return;
-    }
-    const sheet = addClaimSheet({
-      employeeId,
-      companyId: employees.find((e) => e.id === employeeId)?.companyId,
-      periodStart: start,
-      periodEnd: end,
-      totalDays: snapshot.length,
-      totalNormalHours: snapshot.reduce((s, r) => s + r.normalHours, 0),
-      totalOtHours: snapshot.reduce((s, r) => s + r.otHours, 0),
-      snapshot,
-    });
-    refresh();
-    toast.success(`Claim sheet ${sheet.reference} generated`);
-  }
-
   async function exportSheet(id: string) {
     const sheet = sheets.find((s) => s.id === id);
     if (!sheet) return;
@@ -403,12 +382,8 @@ function TimeCardsPage() {
       <div className="w-full space-y-6">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-            Claim Sheets & Mismatch Verification
+            Claim Sheet
           </h1>
-          <p className="text-sm text-muted-foreground">
-            Upload the physical 30-day card or claim sheets, verify them against system attendance, then issue the
-            final billing claim sheet.
-          </p>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -418,7 +393,39 @@ function TimeCardsPage() {
           <SummaryCard title="Claim sheets" value={sheets.length.toString()} icon={<FileSpreadsheet className="h-5 w-5" />} variant="warning" />
         </div>
 
-        <div className="grid gap-4 rounded-xl border bg-card p-4 shadow-sm sm:grid-cols-2 lg:grid-cols-4">
+        <section className="space-y-4 border-y border-border py-6">
+          <div className="flex items-center gap-2">
+            <FileSpreadsheet className="h-5 w-5 text-primary" />
+            <h2 className="text-lg font-semibold text-foreground">Generate Claim Sheet</h2>
+          </div>
+          <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_auto]">
+            <div className="min-w-0 space-y-2">
+              <Label htmlFor="claim-project">Project</Label>
+              <Select value={projectId} onValueChange={setProjectId}>
+                <SelectTrigger id="claim-project" className="w-full"><SelectValue placeholder="Select project" /></SelectTrigger>
+                <SelectContent>
+                  {projects.map((project) => <SelectItem key={project.id} value={project.id}>{project.code} — {project.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              {!projects.length && <p className="text-sm text-muted-foreground">No projects available for this company.</p>}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="claim-month">Claim period</Label>
+              <Input id="claim-month" type="month" value={month} onChange={(event) => setMonth(event.target.value)} />
+            </div>
+            <Button type="button" disabled className="gap-2"><FileSpreadsheet className="h-4 w-4" />Generate claim sheet</Button>
+          </div>
+          <p className="text-sm text-muted-foreground">Excel template pending — project claim generation will be available after the sample is confirmed.</p>
+        </section>
+
+        <Tabs defaultValue="sheets">
+          <TabsList>
+            <TabsTrigger value="sheets">Claim sheets</TabsTrigger>
+            <TabsTrigger value="cards">Time cards</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="cards" className="mt-4 space-y-4">
+        <div className="grid gap-4 border-b border-border py-4 sm:grid-cols-2 lg:grid-cols-3">
           <div className="space-y-2">
             <Label>Employee</Label>
             <Select value={employeeId} onValueChange={setEmployeeId}>
@@ -452,16 +459,12 @@ function TimeCardsPage() {
               }}
             />
           </div>
-          <div className="flex items-end gap-2">
-            <div className="grid w-full gap-2 sm:grid-cols-2">
-              <Button type="button" variant="outline" onClick={generateClaimSheet}>
-                <FileSpreadsheet className="mr-1 h-4 w-4" />
-                Generate claim sheet
-              </Button>
+          <div className="flex items-end gap-2 sm:col-span-2 lg:col-span-3">
+            <div>
               <div className="relative">
                 <Button type="button" variant="secondary" className="w-full">
                   <Upload className="mr-1 h-4 w-4" />
-                  Import Claim Sheet
+                  Import time-card rows
                 </Button>
                 <input
                   type="file"
@@ -490,7 +493,7 @@ function TimeCardsPage() {
             onConfirm={handleImportConfirm}
           />
 
-          <p className="text-xs text-muted-foreground sm:col-span-2 lg:col-span-4">
+          <p className="text-xs text-muted-foreground sm:col-span-2 lg:col-span-3">
             {uploading ? (
               <span className="inline-flex items-center gap-1">
                 <Upload className="h-3 w-3 animate-pulse" />
@@ -506,13 +509,6 @@ function TimeCardsPage() {
           </p>
         </div>
 
-        <Tabs defaultValue="cards">
-          <TabsList>
-            <TabsTrigger value="cards">Time cards</TabsTrigger>
-            <TabsTrigger value="sheets">Claim sheets</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="cards" className="mt-4 space-y-4">
             <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
               <Table>
                 <TableHeader>
