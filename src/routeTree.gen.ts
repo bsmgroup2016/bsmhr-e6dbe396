@@ -57,6 +57,7 @@ import { Route as AuthenticatedTrainingRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedTransportRouteImport } from './routes/_authenticated/transport'
 import { Route as AuthenticatedUsersRouteImport } from './routes/_authenticated/users'
 import { Route as AuthenticatedWorkforceRouteImport } from './routes/_authenticated/workforce'
+import { Route as ApiArchiveDownloadRouteImport } from './routes/api/archive-download'
 import { Route as AuthenticatedClientsIdRouteImport } from './routes/_authenticated/clients_.$id'
 import { Route as AuthenticatedCompaniesIdRouteImport } from './routes/_authenticated/companies_.$id'
 import { Route as AuthenticatedWorkforceSlugRouteImport } from './routes/_authenticated/workforce_.$slug'
@@ -64,6 +65,7 @@ import { Route as ApiPublicAiAlertsRouteImport } from './routes/api/public/ai-al
 import { Route as ApiPublicAiStatusRouteImport } from './routes/api/public/ai-status'
 import { Route as ApiPublicAiTrainingRouteImport } from './routes/api/public/ai-training'
 import { Route as ApiPublicApiIntegrationsRouteImport } from './routes/api/public/api-integrations'
+import { Route as ApiPublicArchiveTickRouteImport } from './routes/api/public/archive-tick'
 import { Route as ApiPublicAssistantRouteImport } from './routes/api/public/assistant'
 import { Route as ApiPublicAutomationRunRouteImport } from './routes/api/public/automation-run'
 import { Route as ApiPublicLiveChatRouteImport } from './routes/api/public/live-chat'
@@ -350,6 +352,11 @@ const AuthenticatedWorkforceRoute = AuthenticatedWorkforceRouteImport.update({
   path: '/workforce',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const ApiArchiveDownloadRoute = ApiArchiveDownloadRouteImport.update({
+  id: '/api/archive-download',
+  path: '/api/archive-download',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedClientsIdRoute = AuthenticatedClientsIdRouteImport.update({
   id: '/clients_/$id',
   path: '/clients/$id',
@@ -388,6 +395,11 @@ const ApiPublicApiIntegrationsRoute =
     path: '/api/public/api-integrations',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicArchiveTickRoute = ApiPublicArchiveTickRouteImport.update({
+  id: '/api/public/archive-tick',
+  path: '/api/public/archive-tick',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicAssistantRoute = ApiPublicAssistantRouteImport.update({
   id: '/api/public/assistant',
   path: '/api/public/assistant',
@@ -617,6 +629,7 @@ export interface FileRoutesByFullPath {
   '/transport': typeof AuthenticatedTransportRoute
   '/users': typeof AuthenticatedUsersRoute
   '/workforce': typeof AuthenticatedWorkforceRoute
+  '/api/archive-download': typeof ApiArchiveDownloadRoute
   '/clients/$id': typeof AuthenticatedClientsIdRoute
   '/companies/$id': typeof AuthenticatedCompaniesIdRoute
   '/workforce/$slug': typeof AuthenticatedWorkforceSlugRoute
@@ -624,6 +637,7 @@ export interface FileRoutesByFullPath {
   '/api/public/ai-status': typeof ApiPublicAiStatusRoute
   '/api/public/ai-training': typeof ApiPublicAiTrainingRoute
   '/api/public/api-integrations': typeof ApiPublicApiIntegrationsRoute
+  '/api/public/archive-tick': typeof ApiPublicArchiveTickRoute
   '/api/public/assistant': typeof ApiPublicAssistantRoute
   '/api/public/automation-run': typeof ApiPublicAutomationRunRoute
   '/api/public/live-chat': typeof ApiPublicLiveChatRoute
@@ -707,6 +721,7 @@ export interface FileRoutesByTo {
   '/transport': typeof AuthenticatedTransportRoute
   '/users': typeof AuthenticatedUsersRoute
   '/workforce': typeof AuthenticatedWorkforceRoute
+  '/api/archive-download': typeof ApiArchiveDownloadRoute
   '/': typeof AuthenticatedIndexRoute
   '/clients/$id': typeof AuthenticatedClientsIdRoute
   '/companies/$id': typeof AuthenticatedCompaniesIdRoute
@@ -715,6 +730,7 @@ export interface FileRoutesByTo {
   '/api/public/ai-status': typeof ApiPublicAiStatusRoute
   '/api/public/ai-training': typeof ApiPublicAiTrainingRoute
   '/api/public/api-integrations': typeof ApiPublicApiIntegrationsRoute
+  '/api/public/archive-tick': typeof ApiPublicArchiveTickRoute
   '/api/public/assistant': typeof ApiPublicAssistantRoute
   '/api/public/automation-run': typeof ApiPublicAutomationRunRoute
   '/api/public/live-chat': typeof ApiPublicLiveChatRoute
@@ -800,6 +816,7 @@ export interface FileRoutesById {
   '/_authenticated/transport': typeof AuthenticatedTransportRoute
   '/_authenticated/users': typeof AuthenticatedUsersRoute
   '/_authenticated/workforce': typeof AuthenticatedWorkforceRoute
+  '/api/archive-download': typeof ApiArchiveDownloadRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/clients_/$id': typeof AuthenticatedClientsIdRoute
   '/_authenticated/companies_/$id': typeof AuthenticatedCompaniesIdRoute
@@ -808,6 +825,7 @@ export interface FileRoutesById {
   '/api/public/ai-status': typeof ApiPublicAiStatusRoute
   '/api/public/ai-training': typeof ApiPublicAiTrainingRoute
   '/api/public/api-integrations': typeof ApiPublicApiIntegrationsRoute
+  '/api/public/archive-tick': typeof ApiPublicArchiveTickRoute
   '/api/public/assistant': typeof ApiPublicAssistantRoute
   '/api/public/automation-run': typeof ApiPublicAutomationRunRoute
   '/api/public/live-chat': typeof ApiPublicLiveChatRoute
@@ -894,6 +912,7 @@ export interface FileRouteTypes {
     | '/transport'
     | '/users'
     | '/workforce'
+    | '/api/archive-download'
     | '/clients/$id'
     | '/companies/$id'
     | '/workforce/$slug'
@@ -901,6 +920,7 @@ export interface FileRouteTypes {
     | '/api/public/ai-status'
     | '/api/public/ai-training'
     | '/api/public/api-integrations'
+    | '/api/public/archive-tick'
     | '/api/public/assistant'
     | '/api/public/automation-run'
     | '/api/public/live-chat'
@@ -984,6 +1004,7 @@ export interface FileRouteTypes {
     | '/transport'
     | '/users'
     | '/workforce'
+    | '/api/archive-download'
     | '/'
     | '/clients/$id'
     | '/companies/$id'
@@ -992,6 +1013,7 @@ export interface FileRouteTypes {
     | '/api/public/ai-status'
     | '/api/public/ai-training'
     | '/api/public/api-integrations'
+    | '/api/public/archive-tick'
     | '/api/public/assistant'
     | '/api/public/automation-run'
     | '/api/public/live-chat'
@@ -1076,6 +1098,7 @@ export interface FileRouteTypes {
     | '/_authenticated/transport'
     | '/_authenticated/users'
     | '/_authenticated/workforce'
+    | '/api/archive-download'
     | '/_authenticated/'
     | '/_authenticated/clients_/$id'
     | '/_authenticated/companies_/$id'
@@ -1084,6 +1107,7 @@ export interface FileRouteTypes {
     | '/api/public/ai-status'
     | '/api/public/ai-training'
     | '/api/public/api-integrations'
+    | '/api/public/archive-tick'
     | '/api/public/assistant'
     | '/api/public/automation-run'
     | '/api/public/live-chat'
@@ -1126,10 +1150,12 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRoute
   AuthRoute: typeof AuthRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  ApiArchiveDownloadRoute: typeof ApiArchiveDownloadRoute
   ApiPublicAiAlertsRoute: typeof ApiPublicAiAlertsRoute
   ApiPublicAiStatusRoute: typeof ApiPublicAiStatusRoute
   ApiPublicAiTrainingRoute: typeof ApiPublicAiTrainingRoute
   ApiPublicApiIntegrationsRoute: typeof ApiPublicApiIntegrationsRoute
+  ApiPublicArchiveTickRoute: typeof ApiPublicArchiveTickRoute
   ApiPublicAssistantRoute: typeof ApiPublicAssistantRoute
   ApiPublicAutomationRunRoute: typeof ApiPublicAutomationRunRoute
   ApiPublicLiveChatRoute: typeof ApiPublicLiveChatRoute
@@ -1499,6 +1525,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedWorkforceRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/archive-download': {
+      id: '/api/archive-download'
+      path: '/api/archive-download'
+      fullPath: '/api/archive-download'
+      preLoaderRoute: typeof ApiArchiveDownloadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/clients_/$id': {
       id: '/_authenticated/clients_/$id'
       path: '/clients/$id'
@@ -1546,6 +1579,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/api-integrations'
       fullPath: '/api/public/api-integrations'
       preLoaderRoute: typeof ApiPublicApiIntegrationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/archive-tick': {
+      id: '/api/public/archive-tick'
+      path: '/api/public/archive-tick'
+      fullPath: '/api/public/archive-tick'
+      preLoaderRoute: typeof ApiPublicArchiveTickRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/assistant': {
@@ -1976,10 +2016,12 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRoute,
   AuthRoute: AuthRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  ApiArchiveDownloadRoute: ApiArchiveDownloadRoute,
   ApiPublicAiAlertsRoute: ApiPublicAiAlertsRoute,
   ApiPublicAiStatusRoute: ApiPublicAiStatusRoute,
   ApiPublicAiTrainingRoute: ApiPublicAiTrainingRoute,
   ApiPublicApiIntegrationsRoute: ApiPublicApiIntegrationsRoute,
+  ApiPublicArchiveTickRoute: ApiPublicArchiveTickRoute,
   ApiPublicAssistantRoute: ApiPublicAssistantRoute,
   ApiPublicAutomationRunRoute: ApiPublicAutomationRunRoute,
   ApiPublicLiveChatRoute: ApiPublicLiveChatRoute,
