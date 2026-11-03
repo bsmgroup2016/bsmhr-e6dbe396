@@ -1,3 +1,4 @@
+import { TABLE_COLUMNS } from "@/core/data-tables";
 import { supabase } from "@/integrations/supabase/client";
 import { mapDriverTaskRow, type DriverTask, type TaskStatus, type TaskType } from "@/lib/driver-tasks-core";
 
@@ -9,7 +10,7 @@ const map = mapDriverTaskRow;
 export async function listDriverTasks(): Promise<DriverTask[]> {
   const { data, error } = await supabase
     .from("driver_tasks")
-    .select("*")
+    .select(TABLE_COLUMNS.driver_tasks)
     .order("scheduled_at", { ascending: true });
   if (error) throw error;
   return (data ?? []).map(map);
