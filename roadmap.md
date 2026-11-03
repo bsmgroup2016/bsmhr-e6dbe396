@@ -1,5 +1,5 @@
 # Role-based account access
-- [ ] Fix monthly basic salary being mapped into worker daily basic rate; verify separate values and preserve existing payroll semantics.
+- [x] Separate monthly basic salary and worker daily basic rate in IPA instructions, import columns and profile display; isolated form/mapper check confirms monthly 400 and daily 18 remain separate; 39 tests passed. Existing employee/payroll records unchanged; signed-in save remains session-blocked.
 - [x] Add 21 dedicated IPA personal, employment, compensation and agency fields; live schema read-back confirms all columns, 48 tests and isolated desktop/mobile form checks passed.
 - [ ] New IPA particulars: real signed-in upload/save/read-back remains blocked by unavailable external-project browser session; existing employee data was not backfilled.
 - [x] Document understanding: automatic IPA/passport/WP/CSOC reading, abbreviation-aware mapping and source-specific safe filling; 15 tests and isolated form checks passed.
