@@ -1,5 +1,6 @@
 # Role-based account access
-- [ ] Fix Site/header OCR confusing staff codes with labelled Site; independently read headers and preserve card month through read/audit.
+- [x] Independent labelled header OCR anchors Site/month for each physical card before read/audit matching; 20 tests passed including JB-1183, October 2026 and four-worker separation.
+- [ ] Recheck the real PDF through configured OCR and signed-in upload: only screenshots are supplied and no authenticated session is available; existing uploaded cards were not changed.
 - [x] Site-only mismatch checks; confirmation shows Site, optional Project/Client Name selector and editable Claim Month. Selection applies to batch; without selection Excel project/client is blank and site retained. 31 tests passed; build OK. Real signed-in upload remains session-blocked.
 - [x] Preserve AuthContext in Vite hot data instead of reloading after identity changes; browser provider/consumer contract passed without runtime errors, signed-out redirect works, build OK. Signed-in flow remains session-blocked.
 - [x] Remove Worker selection from first popup; ignore explicit worker identities misread as projects, allow location corrections, and preserve separate printed workers through review and Excel. 34 regression tests passed; build OK.
