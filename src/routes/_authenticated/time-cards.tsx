@@ -883,8 +883,8 @@ function TimeCardsPage() {
 
           <TabsContent value="sheets" className="mt-4">
             <div className="mb-4 flex flex-wrap gap-2">
-            <Button variant="outline" className="gap-2" disabled={!sheets.length} onClick={() => void exportCombinedClaims(sheets.filter((sheet) => (!companyId || sheet.companyId === companyId) && (sheet.periodStart.startsWith(month) || sheet.periodEnd.startsWith(month))), employees, claimSheetTitle(getCompanies().find((c) => c.id === companyId)?.name ?? "ALL COMPANIES", month), getCompanies(), month, { projects: getProjects(), sites: getSites(), clients: getClients() }).catch((error) => toast.error(error instanceof Error ? error.message : "Download failed"))}><Download className="h-4 w-4" />Download claim sheet (Excel)</Button>
             <Button variant="outline" className="gap-2" disabled={!sheets.length || editingExcel} onClick={() => void editExcel()}><Pencil className="h-4 w-4" />Edit Excel</Button>
+            <Button variant="outline" className="gap-2" disabled={!sheets.length} onClick={() => void exportCombinedClaims(sheets.filter((sheet) => (!companyId || sheet.companyId === companyId) && (sheet.periodStart.startsWith(month) || sheet.periodEnd.startsWith(month))), employees, claimSheetTitle(getCompanies().find((c) => c.id === companyId)?.name ?? "ALL COMPANIES", month), getCompanies(), month, { projects: getProjects(), sites: getSites(), clients: getClients() }).catch((error) => toast.error(error instanceof Error ? error.message : "Download failed"))}><Download className="h-4 w-4" />Download claim sheet (Excel)</Button>
             </div>
             <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
               <Table>
@@ -923,10 +923,10 @@ function TimeCardsPage() {
                         <TableCell>{s.totalNormalHours.toFixed(1)}</TableCell>
                         <TableCell>{s.totalOtHours.toFixed(1)}</TableCell>
                         <TableCell className="space-x-1 text-right">
+                          <Button size="sm" variant="outline" className="gap-1" disabled={editingExcel} onClick={() => void editExcel(s.id)}><Pencil className="h-4 w-4" />Edit</Button>
                           <Button size="sm" variant="outline" className="gap-1" onClick={() => void exportSheet(s.id)}>
                             <Download className="h-4 w-4" />Download
                           </Button>
-                          <Button size="sm" variant="outline" className="gap-1" disabled={editingExcel} onClick={() => void editExcel(s.id)}><Pencil className="h-4 w-4" />Edit</Button>
                           <Button
                             size="sm"
                             variant="ghost"
