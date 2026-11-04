@@ -44,7 +44,7 @@ export function parseCardHeaders(value: unknown): CardHeader[] {
 }
 
 /** Apply only a unique matching physical header, never another worker's site. */
-export function applyCardHeaders<T extends BatchCardRow>(rows: T[], headers: CardHeader[]): T[] {
+export function applyCardHeaders<T extends BatchCardRow>(rows: T[], headers: CardHeader[]): (T & BatchCardRow)[] {
   return rows.map(row => {
     const matches = headers.filter(header => header.cardIndex === (row.cardIndex ?? 1));
     const header = matches.length === 1 ? matches[0] : undefined;
