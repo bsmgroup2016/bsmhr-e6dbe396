@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { CheckCircle2, FileSpreadsheet, ScanLine, Trash2, Upload } from "lucide-react";
+import { CheckCircle2, Download, Pencil, FileSpreadsheet, ScanLine, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { ImportValidationDialog } from "@/components/verification/import-validation-dialog";
 
@@ -15,7 +15,8 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { canConfirmCardDetails, matchCardWorker, uniqueCardMatch, type TimeCardIdentity } from "@/core/time-card-matching";
 import { completeTimeCardReview } from "@/core/time-card-review";
-import { exportCombinedClaims, claimSheetTitle } from "@/lib/combined-claim-export";
+import { createClaimWorkbook, exportCombinedClaims, claimSheetTitle } from "@/lib/combined-claim-export";
+import { ClaimWorkbookEditor, type ClaimEditorDocument } from "@/components/claim-workbook-editor";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
@@ -94,6 +95,8 @@ function TimeCardsPage() {
 
   const [cards, setCards] = useState(getTimeCards());
   const [sheets, setSheets] = useState(getClaimSheets());
+  const [excelDocument, setExcelDocument] = useState<ClaimEditorDocument | null>(null);
+  const [editingExcel, setEditingExcel] = useState(false);
   const [employeeId, setEmployeeId] = useState("");
   const sites = getSites();
   const [siteId, setSiteId] = useState("");
@@ -360,8 +363,21 @@ function TimeCardsPage() {
         fileName: timestampedName(`claim_sheet_${sheet.reference}`, "xlsx"),
       });
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Export failed");
+      toast.error(error instanceof Error ? error.message : "Download failed");
     }
+  }
+
+  async function editExcel(id?: string) {
+    if (editingExcel) return;
+    const selectedSheets = id ? sheets.filter(s => s.id === id) : sheets.filter(s => (!companyId || s.companyId === companyId) && (s.periodStart.startsWith(month) || s.periodEnd.startsWith(month)));
+    const sheetMonth = id ? selectedSheets[0]?.periodStart.slice(0, 7) ?? month : month;
+    setEditingExcel(true);
+    try {
+      const workbook = await createClaimWorkbook(selectedSheets, employees, getCompanies(), sheetMonth, { projects: getProjects(), sites: getSites(), clients: getClients() });
+      setExcelDocument({ workbook, fileName: timestampedName(`claim_sheet_${id ? selectedSheets[0]?.reference ?? sheetMonth : sheetMonth}`, "xlsx") });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not open Excel editor");
+    } finally { setEditingExcel(false); }
   }
 
   async function handleImportConfirm(data: any[]) {
@@ -866,7 +882,10 @@ function TimeCardsPage() {
           </TabsContent>
 
           <TabsContent value="sheets" className="mt-4">
-            <Button variant="outline" className="mb-4 gap-2" disabled={!sheets.length} onClick={() => void exportCombinedClaims(sheets.filter((sheet) => (!companyId || sheet.companyId === companyId) && (sheet.periodStart.startsWith(month) || sheet.periodEnd.startsWith(month))), employees, claimSheetTitle(getCompanies().find((c) => c.id === companyId)?.name ?? "ALL COMPANIES", month), getCompanies(), month, { projects: getProjects(), sites: getSites(), clients: getClients() }).catch((error) => toast.error(error instanceof Error ? error.message : "Export failed"))}><FileSpreadsheet className="h-4 w-4" />Download claim sheet (Excel)</Button>
+            <div className="mb-4 flex flex-wrap gap-2">
+            <Button variant="outline" className="gap-2" disabled={!sheets.length} onClick={() => void exportCombinedClaims(sheets.filter((sheet) => (!companyId || sheet.companyId === companyId) && (sheet.periodStart.startsWith(month) || sheet.periodEnd.startsWith(month))), employees, claimSheetTitle(getCompanies().find((c) => c.id === companyId)?.name ?? "ALL COMPANIES", month), getCompanies(), month, { projects: getProjects(), sites: getSites(), clients: getClients() }).catch((error) => toast.error(error instanceof Error ? error.message : "Download failed"))}><Download className="h-4 w-4" />Download claim sheet (Excel)</Button>
+            <Button variant="outline" className="gap-2" disabled={!sheets.length || editingExcel} onClick={() => void editExcel()}><Pencil className="h-4 w-4" />Edit Excel</Button>
+            </div>
             <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
               <Table>
                 <TableHeader>
@@ -904,9 +923,10 @@ function TimeCardsPage() {
                         <TableCell>{s.totalNormalHours.toFixed(1)}</TableCell>
                         <TableCell>{s.totalOtHours.toFixed(1)}</TableCell>
                         <TableCell className="space-x-1 text-right">
-                          <Button size="sm" variant="ghost" onClick={() => void exportSheet(s.id)}>
-                            Export
+                          <Button size="sm" variant="outline" className="gap-1" onClick={() => void exportSheet(s.id)}>
+                            <Download className="h-4 w-4" />Download
                           </Button>
+                          <Button size="sm" variant="outline" className="gap-1" disabled={editingExcel} onClick={() => void editExcel(s.id)}><Pencil className="h-4 w-4" />Edit</Button>
                           <Button
                             size="sm"
                             variant="ghost"
@@ -926,6 +946,7 @@ function TimeCardsPage() {
             </div>
           </TabsContent>
         </Tabs>
+        <ClaimWorkbookEditor document={excelDocument} onClose={() => setExcelDocument(null)} />
       </div>
     </AppShell>
   );

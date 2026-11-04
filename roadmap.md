@@ -1,4 +1,6 @@
 # Role-based account access
+- [x] Claim sheets: Download and adjacent Edit actions; template-preserving Excel draft editing with undo/redo and edited download. 13 tests and isolated browser download passed; all merges retained and 1,088 formulas recalculated with zero errors.
+- [ ] Claim Excel editor: real signed-in claim-row Edit/Download check blocked by unavailable external-project browser session; edits are download-only, not persisted operational changes.
 - [x] Make project optional and retain required OCR site names through card saving and claim generation, without creating demo matches. Ten unit tests passed; signed-in upload/save verification remains unavailable.
 - [x] Time-card verification opens in a popup; Finalize closes review without creating a claim, and separate approval generates it. Workflow unit tests passed; signed-in live check unavailable.
 - [x] Move employer/application fields into Employment; group uploaded employee documents/history in Documents and add Bank Card upload. 70 tests and isolated form submission passed; existing files and data unchanged.
