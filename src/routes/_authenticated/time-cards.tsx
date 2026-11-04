@@ -195,6 +195,10 @@ function TimeCardsPage() {
     [reconcile, cards],
   );
   const focusIssueIndex = focusIssue ? navigableIssues.indexOf(focusIssue) : -1;
+  const issueLabel = (i: ClaimReconcileIssue) => {
+    const card = cards.find((c) => c.id === i.cardId);
+    return [card ? cardName(card) : i.worker, i.date, i.kind].filter(Boolean).join(" · ");
+  };
   const goToIssue = (dir: -1 | 1) => {
     const current = focusIssue ? navigableIssues.indexOf(focusIssue) : -1;
     const next = current >= 0 ? navigableIssues[current + dir] : undefined;
@@ -786,7 +790,28 @@ function TimeCardsPage() {
                         <div><span className="text-muted-foreground">Generated sheet</span><p className="font-medium tabular-nums">{focusIssue.actual}</p></div>
                       </div>
                       <div className="mt-2 flex flex-wrap items-center justify-between gap-2 border-t border-destructive/30 pt-2">
-                        <span className="text-xs text-muted-foreground">Mismatch {focusIssueIndex + 1} of {navigableIssues.length}</span>
+                        <Select
+                          value={focusIssue && focusIssueIndex >= 0 ? String(focusIssueIndex) : undefined}
+                          onValueChange={(v: any) => {
+                            const issue = navigableIssues[Number(v)];
+                            if (!issue?.cardId) return;
+                            setFocusIssue(issue);
+                            setVerificationSearch(issue.date || "");
+                            setVerificationFilter("All");
+                            setSelectedId(issue.cardId);
+                          }}
+                        >
+                          <SelectTrigger className="h-7 w-[15rem] max-w-[45vw] text-xs">
+                            <SelectValue placeholder="Jump to mismatch" />
+                          </SelectTrigger>
+                          <SelectContent className="max-h-64">
+                            {navigableIssues.map((i, n) => (
+                              <SelectItem key={n} value={String(n)} className="text-xs">
+                                {n + 1}. {issueLabel(i)}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                         <div className="flex gap-1">
                           <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => goToIssue(-1)} disabled={focusIssueIndex <= 0}>
                             <ChevronLeft className="mr-0.5 h-3.5 w-3.5" />Prev
