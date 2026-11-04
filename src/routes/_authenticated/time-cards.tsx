@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { CheckCircle2, Download, Eye, Pencil, FileSpreadsheet, ScanLine, Trash2, Upload } from "lucide-react";
+import { CheckCircle2, ChevronLeft, ChevronRight, Download, Eye, Pencil, FileSpreadsheet, ScanLine, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { ImportValidationDialog } from "@/components/verification/import-validation-dialog";
 
