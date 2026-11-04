@@ -116,3 +116,50 @@ export async function exportCombinedClaims(sheets: ClaimSheet[], employees: Empl
   const workbook = await createClaimWorkbook(sheets, employees, companies, month, lookups);
   downloadClaimBlob(await claimWorkbookBlob(workbook), lookups.fileName || `claim_sheet_${month}.xlsx`);
 }
+
+export interface ClaimReconcileIssue { worker: string; date: string; kind: "Missing in sheet" | "Hours differ" | "Extra in sheet" | "Worker not in sheet"; expected: string; actual: string }
+
+/** Reads the generated workbook back and compares every worker/date cell with the approved snapshot hours. */
+export function reconcileClaimWorkbook(workbook: import("exceljs").Workbook, sheets: ClaimSheet[], employees: Employee[], month: string): ClaimReconcileIssue[] {
+  const num = (v: unknown) => { const raw = v && typeof v === "object" && "result" in v ? (v as { result: unknown }).result : v; const n = Number(raw); return Number.isFinite(n) ? n : 0; };
+  const key = (code: string, name: string) => (code.trim() || name.trim()).toUpperCase();
+  const expected = new Map<string, Map<number, { g: number; ot: number }>>();
+  for (const sheet of sheets) {
+    const employee = employees.find(e => e.id === sheet.employeeId);
+    for (const entry of sheet.snapshot) {
+      if (!entry.date.startsWith(month) || (!entry.normalHours && !entry.otHours)) continue;
+      const k = key(entry.employeeCode || employee?.employeeCode || "", entry.workerName || employee?.name || "");
+      const days = expected.get(k) ?? new Map(); const day = Number(entry.date.slice(8, 10));
+      const cell = days.get(day) ?? { g: 0, ot: 0 }; cell.g += entry.normalHours || 0; cell.ot += entry.otHours || 0;
+      days.set(day, cell); expected.set(k, days);
+    }
+  }
+  const actual = new Map<string, Map<number, { g: number; ot: number }>>();
+  for (const page of workbook.worksheets) {
+    let layout; try { layout = claimTemplateLayout(page); } catch { continue; }
+    for (const { g: r, ot } of layout.slots) {
+      const code = String(page.getCell(r, layout.codeCol).value ?? ""), name = String(page.getCell(r, layout.nameCol).value ?? "");
+      if (!code.trim() && !name.trim()) continue;
+      const days = actual.get(key(code, name)) ?? new Map();
+      for (const [day, col] of layout.days) {
+        const g = num(page.getCell(r, col).value), o = num(page.getCell(ot, col).value);
+        if (g || o) { const c = days.get(day) ?? { g: 0, ot: 0 }; c.g += g; c.ot += o; days.set(day, c); }
+      }
+      actual.set(key(code, name), days);
+    }
+  }
+  const date = (d: number) => `${month}-${String(d).padStart(2, "0")}`;
+  const fmt = (c?: { g: number; ot: number }) => c ? `GW ${c.g} / OT ${c.ot}` : "blank";
+  const issues: ClaimReconcileIssue[] = [];
+  for (const [worker, days] of expected) {
+    const got = actual.get(worker);
+    if (!got) { issues.push({ worker, date: "", kind: "Worker not in sheet", expected: `${days.size} dates`, actual: "missing" }); continue; }
+    for (const [d, c] of days) {
+      const a = got.get(d);
+      if (!a) issues.push({ worker, date: date(d), kind: "Missing in sheet", expected: fmt(c), actual: "blank" });
+      else if (Math.abs(a.g - c.g) > 0.001 || Math.abs(a.ot - c.ot) > 0.001) issues.push({ worker, date: date(d), kind: "Hours differ", expected: fmt(c), actual: fmt(a) });
+    }
+    for (const [d, a] of got) if (!days.has(d)) issues.push({ worker, date: date(d), kind: "Extra in sheet", expected: "blank", actual: fmt(a) });
+  }
+  return issues.sort((a, b) => a.worker.localeCompare(b.worker, undefined, { numeric: true }) || a.date.localeCompare(b.date));
+}
