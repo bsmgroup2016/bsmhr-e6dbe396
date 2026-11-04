@@ -189,6 +189,22 @@ function TimeCardsPage() {
   const empName = (id?: string) => employees.find((e) => e.id === id)?.name ?? "—";
   const cardName = (card: TimeCard) => card.entries[0]?.workerName || empName(card.employeeId);
 
+  // Mismatch navigation: only issues whose card is still available can be opened.
+  const navigableIssues = useMemo(
+    () => (reconcile ? reconcile.issues.filter((i) => i.cardId && cards.some((c) => c.id === i.cardId)) : []),
+    [reconcile, cards],
+  );
+  const focusIssueIndex = focusIssue ? navigableIssues.indexOf(focusIssue) : -1;
+  const goToIssue = (dir: -1 | 1) => {
+    const current = focusIssue ? navigableIssues.indexOf(focusIssue) : -1;
+    const next = current >= 0 ? navigableIssues[current + dir] : undefined;
+    if (!next?.cardId) return;
+    setFocusIssue(next);
+    setVerificationSearch(next.date || "");
+    setVerificationFilter("All");
+    setSelectedId(next.cardId);
+  };
+
   // Unlinked generator cards stay local: time_cards requires a real employee FK.
   function saveCard(id: string, patch: Partial<TimeCard>) {
     const card = cards.find(item => item.id === id);
