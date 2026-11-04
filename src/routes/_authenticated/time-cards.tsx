@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { canConfirmCardDetails, matchCardWorker, uniqueCardMatch, type TimeCardIdentity } from "@/core/time-card-matching";
 import { completeTimeCardReview } from "@/core/time-card-review";
+import { groupTimeCardRows, splitTimeCardFile } from "@/core/time-card-batch";
 import { createClaimWorkbook, exportCombinedClaims, claimSheetTitle } from "@/lib/combined-claim-export";
 import { ClaimWorkbookEditor, type ClaimEditorDocument } from "@/components/claim-workbook-editor";
 import { ClaimTemplateManager } from "@/components/claim-template-manager";
@@ -163,18 +164,16 @@ function TimeCardsPage() {
     const uploaded = await uploadToR2(file, "time-cards");
     const ocr = await extractTimeCardData(uploaded.url);
     if (!ocr.ok) throw new Error(ocr.reason);
-    const entries = ocr.data.map((r) => ({
+    return groupTimeCardRows(ocr.data).map((group) => ({
+      fileName: file.name, fileUrl: uploaded.url, identity: group.identity,
+      entries: group.entries.map((r) => ({
         date: r.date,
         checkIn: r.checkIn,
         checkOut: r.checkOut,
         confidence: r.confidence,
         suggestion: r.suggestion,
-      }));
-    const identity: TimeCardIdentity = {};
-    for (const key of ["workerName", "employeeCode", "fin", "projectName", "siteName"] as const) {
-      identity[key] = ocr.data.find((row) => row[key]?.trim())?.[key];
-    }
-    return { fileName: file.name, fileUrl: uploaded.url, entries, identity };
+      })),
+    }));
   }
 
   function openScan(scan: PendingScan) {
@@ -205,22 +204,28 @@ function TimeCardsPage() {
       const scans: PendingScan[] = [];
       let totalRows = 0;
       const failed: string[] = [];
-      for (const [i, file] of files.entries()) {
+      const pages: File[] = [];
+      for (const file of files) {
+        try { pages.push(...await splitTimeCardFile(file)); }
+        catch (e) { failed.push(`${file.name}: ${e instanceof Error ? e.message : "PDF could not be opened"}`); }
+      }
+      setProgress({ done: 0, total: pages.length });
+      for (const [i, file] of pages.entries()) {
         try {
           const res = await scanOne(file);
-          scans.push(res);
-          totalRows += res.entries.length;
+          scans.push(...res);
+          totalRows += res.reduce((count, scan) => count + scan.entries.length, 0);
         } catch (e) {
           failed.push(`${file.name}: ${e instanceof Error ? e.message : "upload failed"}`);
         }
-        setProgress({ done: i + 1, total: files.length });
+        setProgress({ done: i + 1, total: pages.length });
       }
       refresh();
       const [first, ...rest] = scans;
       setPendingScans(rest);
       if (first) openScan(first);
       if (totalRows > 0) {
-        toast.success(`Scanned ${totalRows} row(s) from ${files.length} card(s)`);
+        toast.success(`Read ${scans.length} worker card(s), ${totalRows} daily row(s) from ${files.length} file(s)`);
       }
       if (failed.length) toast.message(failed.join(" · "));
     } catch (e) {
@@ -243,9 +248,13 @@ function TimeCardsPage() {
         toast.message(ocr.reason || OCR_NOT_CONFIGURED);
         return;
       }
+      const groups = groupTimeCardRows(ocr.data);
+      const matching = groups.filter(group => matchCardWorker(scoped, group.identity) === card.employeeId && group.entries[0]?.date.slice(0, 7) === card.periodStart.slice(0, 7) && (!card.entries[0]?.siteName || group.identity.siteName?.trim().toUpperCase() === card.entries[0]?.siteName?.trim().toUpperCase()));
+      const scan = matching.length === 1 ? matching[0] : groups.length === 1 && !groups[0]?.identity.employeeCode && !groups[0]?.identity.fin && !groups[0]?.identity.workerName ? groups[0] : undefined;
+      if (!scan) throw new Error("Could not uniquely match this worker in the source. Upload and review the cards separately.");
       const entries = mergeEntries(
         card.entries,
-        ocr.data.map((r) => ({
+        scan.entries.map((r) => ({
           date: r.date,
           checkIn: r.checkIn,
           checkOut: r.checkOut,
@@ -257,7 +266,9 @@ function TimeCardsPage() {
       refresh();
       setSelectedId(card.id);
       setVerificationOpen(true);
-      toast.success(`Auto-filled ${ocr.data.length} row(s)`);
+      toast.success(`Auto-filled ${scan.entries.length} row(s)`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Rescan failed");
     } finally {
       setRescanId(null);
     }

@@ -47,3 +47,29 @@ test("claim output fills the replacement workbook and retains its formatting and
   expect(result?.getCell("G5").numFmt).toBe("0.00"); expect(result?.getColumn(7).width).toBe(17);
   expect(result?.getCell("D6").master.address).toBe("D5"); expect(result?.getCell("H5").formula).toBe("SUM(G5:G6)");
 });
+
+test("twenty workers at one site fill twenty distinct name code G-HRS and OT slots", async () => {
+  const { book, page } = blank();
+  const employees = Array.from({ length: 20 }, (_, i) => ({ id: `worker-${i}`, employeeCode: `P-${i + 1}`, name: `WORKER ${i + 1}` } as import("@/lib/types").Employee));
+  for (let i = 0; i < 20; i++) { page.getCell(5 + i * 2, 4).value = "G-HRS"; page.getCell(6 + i * 2, 4).value = "OT HOURS"; }
+  const claims = employees.map((employee, i) => ({ id: `claim-${i}`, reference: `C${i}`, employeeId: employee.id, periodStart: "2026-11-01", periodEnd: "2026-11-30", totalDays: 1, totalNormalHours: 8, totalOtHours: i + 1, snapshot: [{ date: "2026-11-01", site: "REAL SITE", normalHours: 8, otHours: i + 1, status: "Present" }] }));
+  const bytes = new Uint8Array(await book.xlsx.writeBuffer());
+  const output = await createClaimWorkbook(claims, employees, [], "2026-11", { templateBuffer: bytes.buffer });
+  const saved = new ExcelJS.Workbook(); await saved.xlsx.load(await output.xlsx.writeBuffer());
+  expect(saved.worksheets).toHaveLength(1);
+  const result = saved.worksheets[0];
+  for (let i = 0; i < 20; i++) {
+    expect(result?.getCell(5 + i * 2, 2).value).toBe(`P-${i + 1}`);
+    expect(result?.getCell(5 + i * 2, 3).value).toBe(`WORKER ${i + 1}`);
+    expect(result?.getCell(5 + i * 2, 5).value).toBe(8);
+    expect(result?.getCell(6 + i * 2, 5).value).toBe(i + 1);
+  }
+});
+
+test("twenty workers cannot be silently truncated into a nineteen-slot template", async () => {
+  const { book, page } = blank();
+  for (let i = 0; i < 19; i++) { page.getCell(5 + i * 2, 4).value = "G-HRS"; page.getCell(6 + i * 2, 4).value = "OT HOURS"; }
+  const claims = Array.from({ length: 20 }, (_, i) => ({ id: `c-${i}`, reference: `C${i}`, employeeId: `w-${i}`, periodStart: "2026-11-01", periodEnd: "2026-11-30", totalDays: 1, totalNormalHours: 8, totalOtHours: 0, snapshot: [{ date: "2026-11-01", site: "REAL SITE", normalHours: 8, otHours: 0, status: "Present" }] }));
+  const bytes = new Uint8Array(await book.xlsx.writeBuffer());
+  await expect(createClaimWorkbook(claims, [], [], "2026-11", { templateBuffer: bytes.buffer })).rejects.toThrow("20 workers but the template has only 19 slots");
+});
