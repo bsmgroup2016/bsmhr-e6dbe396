@@ -6,7 +6,6 @@ import { ImportValidationDialog } from "@/components/verification/import-validat
 
 
 import { AppShell } from "@/components/app-shell";
-import { SummaryCard } from "@/components/ui/summary-card";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Button } from "@/components/ui/button";
