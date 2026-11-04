@@ -1,4 +1,5 @@
 # Role-based account access
+- [ ] Claim sheets: replace Export with Download and add a template-preserving Excel editor beside individual and combined downloads; verify edited XLSX values and layout.
 - [x] Make project optional and retain required OCR site names through card saving and claim generation, without creating demo matches. Ten unit tests passed; signed-in upload/save verification remains unavailable.
 - [x] Time-card verification opens in a popup; Finalize closes review without creating a claim, and separate approval generates it. Workflow unit tests passed; signed-in live check unavailable.
 - [x] Move employer/application fields into Employment; group uploaded employee documents/history in Documents and add Bank Card upload. 70 tests and isolated form submission passed; existing files and data unchanged.
