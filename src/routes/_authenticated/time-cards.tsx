@@ -817,6 +817,20 @@ function TimeCardsPage() {
                                         </div>
                                       )}
                                     </div>
+                                    <div className="flex gap-2 text-[10px] text-muted-foreground">
+                                      <span>
+                                        GW hrs:{" "}
+                                        <span className="font-semibold text-foreground">
+                                          {r.systemNormalHours ?? "--"}
+                                        </span>
+                                      </span>
+                                      <span>
+                                        OT hrs:{" "}
+                                        <span className="font-semibold text-foreground">
+                                          {r.systemOtHours ?? "--"}
+                                        </span>
+                                      </span>
+                                    </div>
                                   </div>
                                 </div>
                               </div>
