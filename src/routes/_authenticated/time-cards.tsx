@@ -779,10 +779,23 @@ function TimeCardsPage() {
                     <DialogHeader><DialogTitle>
                       Verification — {cardName(selected)}
                     </DialogTitle></DialogHeader>
-                    {focusIssue && focusIssue.cardId === selected.id && <div className="my-2 grid gap-2 rounded-md border border-destructive/50 bg-destructive/10 p-2 text-sm sm:grid-cols-3">
-                      <div><span className="text-muted-foreground">Mismatch · {focusIssue.date || "all dates"}</span><p className="font-medium">{focusIssue.kind}</p></div>
-                      <div><span className="text-muted-foreground">Preview (approved)</span><p className="font-medium tabular-nums">{focusIssue.expected}</p></div>
-                      <div><span className="text-muted-foreground">Generated sheet</span><p className="font-medium tabular-nums">{focusIssue.actual}</p></div>
+                    {focusIssue && focusIssue.cardId === selected.id && <div className="my-2 rounded-md border border-destructive/50 bg-destructive/10 p-2 text-sm">
+                      <div className="grid gap-2 sm:grid-cols-3">
+                        <div><span className="text-muted-foreground">Mismatch · {focusIssue.date || "all dates"}</span><p className="font-medium">{focusIssue.kind}</p></div>
+                        <div><span className="text-muted-foreground">Preview (approved)</span><p className="font-medium tabular-nums">{focusIssue.expected}</p></div>
+                        <div><span className="text-muted-foreground">Generated sheet</span><p className="font-medium tabular-nums">{focusIssue.actual}</p></div>
+                      </div>
+                      <div className="mt-2 flex flex-wrap items-center justify-between gap-2 border-t border-destructive/30 pt-2">
+                        <span className="text-xs text-muted-foreground">Mismatch {focusIssueIndex + 1} of {navigableIssues.length}{focusIssue.cardId !== selectedId ? "" : ""}</span>
+                        <div className="flex gap-1">
+                          <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => goToIssue(-1)} disabled={focusIssueIndex <= 0}>
+                            <ChevronLeft className="mr-0.5 h-3.5 w-3.5" />Prev
+                          </Button>
+                          <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => goToIssue(1)} disabled={focusIssueIndex < 0 || focusIssueIndex >= navigableIssues.length - 1}>
+                            Next<ChevronRight className="ml-0.5 h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      </div>
                     </div>}
                     <p className="text-xs text-muted-foreground">
                       {mismatches} of {comparison.length} rows need attention. GW hrs: {comparison.reduce((sum, row) => sum + row.normalHours, 0).toFixed(2)} · OT hrs: {comparison.reduce((sum, row) => sum + row.otHours, 0).toFixed(2)}
