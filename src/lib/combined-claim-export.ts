@@ -15,7 +15,7 @@ function monthLabel(month: string) {
   return y && m ? new Date(Date.UTC(y, m - 1, 1)).toLocaleString("en-SG", { month: "short", year: "numeric", timeZone: "UTC" }).toUpperCase() : month;
 }
 
-export interface ClaimLookups { companies?: Company[]; projects?: Project[]; sites?: Site[]; clients?: Client[] }
+export interface ClaimLookups { companies?: Company[]; projects?: Project[]; sites?: Site[]; clients?: Client[]; fileName?: string }
 
 interface ProjectGroup { key: string; projectName: string; clientName: string; companyName: string; workers: Map<string, { code: string; name: string; days: Map<number, { g: number; ot: number }> }> }
 
@@ -103,5 +103,5 @@ export async function exportCombinedClaims(sheets: ClaimSheet[], employees: Empl
   workbook.calcProperties.fullCalcOnLoad = true;
   const out = await workbook.xlsx.writeBuffer();
   const blob = new Blob([new Uint8Array(out)], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-  const url = URL.createObjectURL(blob); const link = document.createElement("a"); link.href = url; link.download = `claim_sheet_${month}.xlsx`; link.click(); setTimeout(() => URL.revokeObjectURL(url), 30000);
+  const url = URL.createObjectURL(blob); const link = document.createElement("a"); link.href = url; link.download = lookups.fileName || `claim_sheet_${month}.xlsx`; document.body.appendChild(link); link.click(); link.remove(); setTimeout(() => URL.revokeObjectURL(url), 30000);
 }
