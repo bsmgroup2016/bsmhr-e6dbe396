@@ -440,6 +440,9 @@ export interface EmployeeCertification {
 
 export interface TimeCardEntry {
   date: string;
+  normalHours?: number;
+  otHours?: number;
+  reviewApproved?: boolean;
   projectId?: string;
   siteId?: string;
   projectName?: string;
@@ -467,6 +470,7 @@ export interface TimeCard {
 
 export interface ClaimSheetRow {
   date: string;
+  sourceCardId?: string;
   projectId?: string;
   projectName?: string;
   siteId?: string;
