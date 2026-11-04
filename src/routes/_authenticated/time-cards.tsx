@@ -271,7 +271,7 @@ function TimeCardsPage() {
           suggestion: r.suggestion,
         })),
       );
-      updateTimeCard(card.id, { entries });
+      updateTimeCard(card.id, { status: "Draft", entries: entries.map(entry => ({ ...entry, normalHours: undefined, otHours: undefined, reviewApproved: false })) });
       refresh();
       setSelectedId(card.id);
       setVerificationOpen(true);
@@ -362,6 +362,7 @@ function TimeCardsPage() {
     if (!readyToGenerate || generating) return;
     setGenerating(true);
     try {
+      if (settlementCards.some(card => !card.periodStart.startsWith(month))) throw new Error("These cards cover different months. Generate each claim month separately from Time cards.");
       const prepared = settlementCards.map(card => ({ card, snapshot: buildClaimSheetFromCard(card) }));
       const drafts = prepared.filter(item => item.snapshot.length).map(({ card, snapshot }) => ({
         id: card.id, reference: card.id, employeeId: card.employeeId,
@@ -434,7 +435,7 @@ function TimeCardsPage() {
         }
       });
 
-      let lastId: string | null = null;
+      const importedIds: string[] = [];
       for (const [empId, rows] of byEmployee.entries()) {
         const entries: TimeCardEntry[] = rows.map((r) => ({
           date: r.date,
@@ -450,11 +451,12 @@ function TimeCardsPage() {
           status: "Draft",
           entries,
         });
-        lastId = card.id;
+        importedIds.push(card.id);
       }
 
       refresh();
-      if (lastId) setSelectedId(lastId);
+      setBatchCardIds(importedIds);
+      if (importedIds[0]) { setSelectedId(importedIds[0]); setActiveTab("cards"); setVerificationOpen(true); }
       toast.success(`Imported ${data.length} rows for ${byEmployee.size} employee(s)`);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Import failed");

@@ -1,5 +1,6 @@
 # Role-based account access
-- [ ] Editable counted GW/OT hours in verification; sequential per-worker approval followed by separate batch template generation. Add rule tests and verify available flows without altering existing live records.
+- [x] Editable counted GW/OT hours and persisted approval; sequential review followed by separate all-approved template generation. 26 tests passed including edited-hour storage mapping/Excel read-back and 25-card approval gate; isolated desktop/mobile hour controls passed; build OK.
+- [ ] New settlement flow: real signed-in batch upload/edit/approval/generation remains blocked by unavailable external-project session and real batch sample; no live records changed during tests.
 - [x] Prepare multi-file and merged-PDF ingestion: page splitting, separate worker/location/month groups, identity-aware audit and guarded rescan. 24 tests passed, including 20-page splitting and 20-worker XLSX read-back; browser splitting/grouping passed.
 - [ ] Twenty-worker real upload/OCR/review/approval/download remains unverified: no signed-in external-project session or real twenty-card sample is available. OCR accuracy requires human review; active template must contain enough worker slots.
 - [x] Add Blank Template beside heading with Edit, Download and Replace; outputs use newest registered R2 template, dynamic worker/day columns preserve layout. 17 tests passed; original template maps 60 slots/31 days, desktop/mobile dialog checked, unauthenticated API returns 401.
