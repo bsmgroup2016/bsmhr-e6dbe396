@@ -1,4 +1,4 @@
-import { splitDutyHours } from "@/core/work-hours";
+import { countedCardHours } from "@/core/time-card-settlement";
 // App state store backed by Supabase.
 // Data is hydrated once (see hydrateStore) into an in-memory cache so the
 // existing synchronous getters keep working; every mutation writes to Supabase.
@@ -2727,6 +2727,8 @@ export type TimeCardComparison = {
   systemOut?: string;
   systemNormalHours?: number;
   systemOtHours?: number;
+  normalHours: number;
+  otHours: number;
   state: "Verified" | "Mismatch" | "Missing in system" | "Missing on card";
   resolution?: TimeCard["entries"][number]["resolution"];
   remarks?: string;
@@ -2765,6 +2767,7 @@ export function compareTimeCard(card: TimeCard): TimeCardComparison[] {
         systemOut,
         systemNormalHours: att?.hoursWorked,
         systemOtHours: att?.overtimeHours,
+        ...countedCardHours(entry ?? { date }, att),
         state,
         resolution: entry?.resolution,
         remarks: entry?.remarks,
@@ -2796,31 +2799,19 @@ export function buildClaimSheetRows(employeeId: string, from: string, to: string
 /** Build claim rows from a reviewed time card (human-checked values win over system attendance). */
 export function buildClaimSheetFromCard(card: TimeCard) {
   const st = getState();
-  const emp = st.employees.find((e) => e.id === card.employeeId);
-  const std = emp?.normalHours && emp.normalHours > 0 ? emp.normalHours : 8;
-  const toMin = (t?: string) => {
-    const m = /^(\d{1,2}):(\d{2})/.exec(t ?? "");
-    return m ? Number(m[1]) * 60 + Number(m[2]) : null;
-  };
   const att = getAttendanceByEmployee(card.employeeId);
   return card.entries
     .filter((e) => e.resolution !== "Ignored" && e.date >= card.periodStart && e.date <= card.periodEnd)
     .sort((a, b) => a.date.localeCompare(b.date))
     .map((e) => {
       const sys = att.find((a) => a.date === e.date);
-      const i = toMin(e.checkIn);
-      const o = toMin(e.checkOut);
-      let normal = 0, ot = 0;
-      if (i != null && o != null) {
-        // 9h duty incl. 1h lunch = 8 normal hours; time after the 9h duty is OT.
-        const split = splitDutyHours(((o - i + 1440) % 1440) / 60, std);
-        normal = split.normalHours; ot = split.otHours;
-      } else if (sys) { normal = sys.hoursWorked ?? 0; ot = sys.overtimeHours ?? 0; }
+      const { normalHours: normal, otHours: ot } = countedCardHours(e, sys);
       const total = normal + ot;
       return {
         date: e.date,
-        checkIn: e.checkIn ?? sys?.checkIn,
-        checkOut: e.checkOut ?? sys?.checkOut,
+        sourceCardId: card.id,
+        checkIn: e.resolution === "Corrected" ? sys?.checkIn : e.checkIn ?? sys?.checkIn,
+        checkOut: e.resolution === "Corrected" ? sys?.checkOut : e.checkOut ?? sys?.checkOut,
         normalHours: normal,
         otHours: ot,
         status: total > 0 ? "Present" : (sys?.status ?? "Absent"),
