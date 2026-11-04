@@ -70,20 +70,12 @@ export async function createClaimWorkbook(sheets: ClaimSheet[], employees: Emplo
     if (index === 0) page.name = name;
     else { page = workbook.addWorksheet(name); page.model = { ...structuredClone(baseModel), name, id: page.id } as typeof baseModel; for (const range of (baseModel as { merges?: string[] }).merges ?? []) { try { page.mergeCells(range); } catch { /* already merged */ } } }
 
-    // Existing header positions belong to the supplied layout; never add rows/columns.
+    // Fill only the three title cells; the template's styling, formulas and columns stay untouched.
     if (layout.headerRow >= 4) {
       page.getCell("A1").value = (group.clientName || group.projectName).toUpperCase() || null;
       page.getCell("A2").value = group.siteName.toUpperCase() || null;
-      page.getCell("A3").value = `CLAIM FOR ${monthLabel(month)}`;
-      if (page.columnCount >= 40) page.getCell("AN1").value = group.companyName ? group.companyName.toUpperCase() : null;
-    }
-
-    for (const [d, col] of layout.days) {
-      const head = page.getCell(layout.headerRow, col);
-      if (d > daysInMonth) { head.value = null; page.getColumn(col).hidden = true; continue; }
-      page.getColumn(col).hidden = false;
-      const sunday = new Date(Date.UTC(y, m - 1, d)).getUTCDay() === 0;
-      head.style = { ...head.style, fill: { type: "pattern", pattern: "solid", fgColor: { argb: sunday ? "FFFF0000" : "FFFFFFFF" } } };
+      const label = String(page.getCell("A3").value ?? "").trim() || "CLAIM SHEET FOR";
+      page.getCell("A3").value = `${label.replace(/\s+[A-Z]{3}\s+\d{4}$/, "")} ${monthLabel(month)}`;
     }
 
     const workers = [...group.workers.values()].sort((a, b) => a.code.localeCompare(b.code, undefined, { numeric: true }));
@@ -93,15 +85,9 @@ export async function createClaimWorkbook(sheets: ClaimSheet[], employees: Emplo
     for (let i = 0; i < layout.slots.length; i++) {
       const { g: r, ot } = layout.slots[i];
       const worker = workers[i];
-      page.getRow(r).hidden = !worker; page.getRow(ot).hidden = !worker;
-      page.getCell(r, layout.codeCol).value = worker?.code || null;
-      page.getCell(r, layout.nameCol).value = worker?.name || null;
-      if (layout.serialCol) page.getCell(r, layout.serialCol).value = worker ? i + 1 : null;
-      for (const col of layout.days.values()) {
-        if (!page.getCell(r, col).formula) page.getCell(r, col).value = null;
-        if (!page.getCell(ot, col).formula) page.getCell(ot, col).value = null;
-      }
       if (!worker) continue;
+      page.getCell(r, layout.codeCol).value = worker.code || null;
+      page.getCell(r, layout.nameCol).value = worker.name || null;
       for (const [day, v] of worker.days) {
         if (day < 1 || day > daysInMonth) continue;
         const col = layout.days.get(day);
