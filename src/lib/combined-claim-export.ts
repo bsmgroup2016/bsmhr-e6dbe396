@@ -14,7 +14,7 @@ function monthLabel(month: string) {
 
 export interface ClaimLookups { companies?: Company[]; projects?: Project[]; sites?: Site[]; clients?: Client[]; fileName?: string; templateBuffer?: ArrayBuffer }
 
-interface ProjectGroup { key: string; projectName: string; clientName: string; companyName: string; workers: Map<string, { code: string; name: string; days: Map<number, { g: number; ot: number }> }> }
+interface ProjectGroup { key: string; projectName: string; siteName: string; clientName: string; companyName: string; workers: Map<string, { code: string; name: string; days: Map<number, { g: number; ot: number }> }> }
 
 /** Groups approved claim rows by project/site and worker. Unknown values stay blank. */
 export function groupClaimsByProject(sheets: ClaimSheet[], employees: Employee[], month: string, lookups: ClaimLookups = {}) {
@@ -26,10 +26,11 @@ export function groupClaimsByProject(sheets: ClaimSheet[], employees: Employee[]
       if (!entry.date.startsWith(month) || (!entry.normalHours && !entry.otHours)) continue;
       const project = lookups.projects?.find((p) => p.id === entry.projectId);
       const site = lookups.sites?.find((s) => s.id === entry.siteId);
-      const projectName = (entry.projectName || project?.name || site?.name || entry.site || "").trim();
-      const key = (entry.projectId || projectName.toUpperCase() || "UNASSIGNED") + "|" + (sheet.companyId ?? "");
+      const projectName = entry.projectId ? (project?.name || entry.projectName || "").trim() : "";
+      const siteName = (entry.site || site?.name || "").trim();
+      const key = (entry.projectId || siteName.toUpperCase() || "UNASSIGNED") + "|" + (sheet.companyId ?? "");
       const clientName = lookups.clients?.find((c) => c.id === project?.clientId)?.name ?? "";
-      const group = groups.get(key) ?? { key, projectName, clientName, companyName: company?.name ?? "", workers: new Map() };
+      const group = groups.get(key) ?? { key, projectName, siteName, clientName, companyName: company?.name ?? "", workers: new Map() };
       const workerKey = sheet.employeeId || entry.employeeId || entry.employeeCode?.trim().toUpperCase() || entry.sourceCardId || sheet.id;
       const worker = group.workers.get(workerKey) ?? { code: entry.employeeCode || employee?.employeeCode || "", name: (entry.workerName || employee?.name || "").toUpperCase(), days: new Map() };
       const day = Number(entry.date.slice(8, 10));
@@ -71,8 +72,8 @@ export async function createClaimWorkbook(sheets: ClaimSheet[], employees: Emplo
 
     // Existing header positions belong to the supplied layout; never add rows/columns.
     if (layout.headerRow >= 4) {
-      page.getCell("A1").value = group.clientName ? group.clientName.toUpperCase() : null;
-      page.getCell("A2").value = group.projectName ? group.projectName.toUpperCase() : null;
+      page.getCell("A1").value = (group.clientName || group.projectName).toUpperCase() || null;
+      page.getCell("A2").value = group.siteName.toUpperCase() || null;
       page.getCell("A3").value = `CLAIM FOR ${monthLabel(month)}`;
       if (page.columnCount >= 40) page.getCell("AN1").value = group.companyName ? group.companyName.toUpperCase() : null;
     }

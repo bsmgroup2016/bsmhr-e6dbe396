@@ -13,9 +13,9 @@ test("Four workers are not rejected when OCR repeats their identities as project
   ], {}, true)).toBeNull();
 });
 
-test("One different project among twenty cards blocks generation", () => {
+test("Different project readings never block twenty cards from the same site", () => {
   const locations = Array.from({ length: 20 }, (_, i) => ({ projectName: i === 19 ? "Project B" : "Project A", siteName: "Site A" }));
-  expect(projectBatchIssue(locations)).toContain("Mixed projects detected");
+  expect(projectBatchIssue(locations)).toBeNull();
 });
 
 test("One different site blocks even when project is the same or optional", () => {
