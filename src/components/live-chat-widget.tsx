@@ -155,7 +155,7 @@ export function LiveChatWidget() {
   return (
     <>
       {open && (
-        <div className="fixed bottom-24 right-4 z-50 flex h-[min(560px,75vh)] w-[min(380px,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border bg-card shadow-2xl md:bottom-20">
+        <div className="fixed bottom-40 right-4 z-50 flex h-[min(560px,75vh)] w-[min(380px,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border bg-card shadow-2xl">
           <div className="flex items-center gap-2 border-b bg-primary px-4 py-3 text-primary-foreground">
             <Headset className="h-5 w-5" />
             <div className="flex-1">
@@ -200,7 +200,7 @@ export function LiveChatWidget() {
       <Button
         size="icon"
         onClick={() => setOpen((o) => !o)}
-        className="fixed bottom-20 right-4 z-50 h-14 w-14 rounded-full shadow-lg md:bottom-6"
+        className="fixed bottom-24 right-4 z-50 h-14 w-14 rounded-full shadow-lg"
         aria-label="Live chat"
       >
         {open ? <X className="h-6 w-6" /> : <MessageCircle className="h-6 w-6" />}
