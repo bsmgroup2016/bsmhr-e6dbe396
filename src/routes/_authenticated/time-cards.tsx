@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { canConfirmCardDetails, matchCardWorker, uniqueCardMatch, type TimeCardIdentity } from "@/core/time-card-matching";
 import { completeTimeCardReview } from "@/core/time-card-review";
+import { canGenerateSettledCards, isCardApproved, validCardHours } from "@/core/time-card-settlement";
 import { groupTimeCardRows, splitTimeCardFile } from "@/core/time-card-batch";
 import { createClaimWorkbook, exportCombinedClaims, claimSheetTitle } from "@/lib/combined-claim-export";
 import { ClaimWorkbookEditor, type ClaimEditorDocument } from "@/components/claim-workbook-editor";
@@ -103,6 +104,8 @@ function TimeCardsPage() {
   const [siteId, setSiteId] = useState("");
   const [siteName, setSiteName] = useState("");
   type PendingScan = { fileName: string; fileUrl: string; entries: TimeCardEntry[]; identity: TimeCardIdentity };
+  const [batchCardIds, setBatchCardIds] = useState<string[]>([]);
+  const [generating, setGenerating] = useState(false);
   const [pendingScans, setPendingScans] = useState<PendingScan[]>([]);
   const [reviewScan, setReviewScan] = useState<PendingScan | null>(null);
   const [activeTab, setActiveTab] = useState("cards");
@@ -124,6 +127,9 @@ function TimeCardsPage() {
 
   const selected = cards.find((c) => c.id === selectedId) ?? null;
   const comparison = useMemo(() => (selected ? compareTimeCard(selected) : []), [selected]);
+  const settlementCards = cards.filter(card => batchCardIds.length ? batchCardIds.includes(card.id) : scoped.some(employee => employee.id === card.employeeId) && card.periodStart.startsWith(month));
+  const approvedCount = settlementCards.filter(isCardApproved).length;
+  const readyToGenerate = canGenerateSettledCards(settlementCards, pendingScans.length + (reviewScan ? 1 : 0));
   const mismatches = comparison.filter((r) => r.state !== "Verified").length;
   const lowConfidenceCount = comparison.filter(
     (r) => r.confidence !== undefined && r.confidence < LOW_CONFIDENCE,
@@ -191,8 +197,8 @@ function TimeCardsPage() {
     const { start, end } = monthRange(month);
     const card = addTimeCard({ employeeId, periodStart: start, periodEnd: end, fileUrl: reviewScan.fileUrl, fileName: reviewScan.fileName, status: "Draft", entries: reviewScan.entries.map((entry) => ({ ...entry, projectId: projectId || undefined, projectName: projects.find((project) => project.id === projectId)?.name ?? reviewScan.identity.projectName, siteId: siteId || undefined, siteName: siteName.trim() })) });
     refresh(); setSelectedId(card.id); setActiveTab("cards");
-    const [next, ...rest] = pendingScans; setPendingScans(rest);
-    if (next) openScan(next); else { setReviewScan(null); setVerificationOpen(true); }
+    setBatchCardIds(ids => [...ids, card.id]);
+    setReviewScan(null); setVerificationSearch(""); setVerificationFilter("All"); setVerificationOpen(true);
   }
 
   async function handleUpload(fileList: FileList | null) {
@@ -222,6 +228,7 @@ function TimeCardsPage() {
       }
       refresh();
       const [first, ...rest] = scans;
+      setBatchCardIds([]);
       setPendingScans(rest);
       if (first) openScan(first);
       if (totalRows > 0) {
@@ -280,7 +287,9 @@ function TimeCardsPage() {
     const entries = exists
       ? selected.entries.map((e) => (e.date === date ? { ...e, ...patch } : e))
       : [...selected.entries, { date, ...patch }];
-    updateTimeCard(selected.id, { entries, ...(selected.status !== "Draft" && ("checkIn" in patch || "checkOut" in patch) ? { status: "Draft" as const } : {}) });
+    const affectsHours = ["checkIn", "checkOut", "resolution", "normalHours", "otHours"].some(key => key in patch);
+    const resetsHours = "checkIn" in patch || "checkOut" in patch || "resolution" in patch;
+    updateTimeCard(selected.id, { entries: entries.map(entry => ({ ...entry, ...(affectsHours ? { reviewApproved: false } : {}), ...(resetsHours && entry.date === date ? { normalHours: undefined, otHours: undefined } : {}) })), ...(affectsHours ? { status: "Draft" as const } : {}) });
     refresh();
   }
 
@@ -293,21 +302,22 @@ function TimeCardsPage() {
       if (isMismatch) {
         const idx = entries.findIndex((e) => e.date === r.date);
         if (idx > -1) {
-          entries[idx] = { ...entries[idx], resolution };
+          entries[idx] = { ...entries[idx], resolution, normalHours: undefined, otHours: undefined };
         } else {
           entries.push({ date: r.date, resolution });
         }
       }
     });
-    updateTimeCard(selected.id, { entries });
+    updateTimeCard(selected.id, { status: "Draft", entries: entries.map(entry => ({ ...entry, reviewApproved: false })) });
     refresh();
     toast.success(`Bulk updated ${filteredComparison.length} rows to ${resolution}`);
   }
 
   function verifyCard(card: TimeCard): boolean {
+    if (!validCardHours(card.entries)) { toast.error("GW and OT hours must be non-negative numbers"); return false; }
     const rows = compareTimeCard(card);
     const unresolved = rows.filter((r) => r.state !== "Verified" && !r.resolution).length;
-    if (!card.entries.some((e) => e.checkIn || e.checkOut)) {
+    if (!card.entries.some((e) => e.checkIn || e.checkOut || (e.normalHours ?? 0) > 0 || (e.otHours ?? 0) > 0)) {
       toast.error("This time card has no times yet — scan or enter them first");
       return false;
     }
@@ -329,37 +339,47 @@ function TimeCardsPage() {
   }
 
   function approveCard(card: TimeCard) {
-    completeTimeCardReview("approve", () => verifyCard(card), () => generateClaim(card));
+    if (!completeTimeCardReview("finalize", () => verifyCard(card), () => {})) return;
+    const rows = compareTimeCard(card);
+    updateTimeCard(card.id, { status: "Verified", entries: card.entries.map(entry => {
+      const hours = rows.find(row => row.date === entry.date);
+      return { ...entry, normalHours: hours?.normalHours ?? 0, otHours: hours?.otHours ?? 0, reviewApproved: true };
+    }) });
+    refresh(); setVerificationOpen(false);
+    setVerificationSearch(""); setVerificationFilter("All");
+    const [next, ...rest] = pendingScans;
+    if (next) { setPendingScans(rest); openScan(next); }
+    else {
+      const nextCard = settlementCards.find(item => item.id !== card.id && !isCardApproved(item));
+      if (nextCard) { setSelectedId(nextCard.id); setVerificationOpen(true); }
+    }
+    toast.success("Card approved — hours saved");
   }
 
-  function generateClaim(card: TimeCard) {
-    // Approved: generate the claim sheet from the human-checked card values.
-    const exists = getClaimSheets().some(
-      (s) => s.employeeId === card.employeeId && s.periodStart === card.periodStart && s.periodEnd === card.periodEnd,
-    );
-    if (exists) {
-      refresh();
-      toast.success("Time card verified — a claim sheet for this period already exists");
-      return;
-    }
-    const snapshot = buildClaimSheetFromCard({ ...card, status: "Verified" });
-    if (!snapshot.length) {
-      refresh();
-      toast.success("Time card verified — no worked hours to claim");
-      return;
-    }
-    const sheet = addClaimSheet({
-      employeeId: card.employeeId,
-      companyId: employees.find((e) => e.id === card.employeeId)?.companyId,
-      periodStart: card.periodStart,
-      periodEnd: card.periodEnd,
-      totalDays: snapshot.length,
-      totalNormalHours: snapshot.reduce((s, r) => s + r.normalHours, 0),
-      totalOtHours: snapshot.reduce((s, r) => s + r.otHours, 0),
-      snapshot,
-    });
-    refresh();
-    toast.success(`Time card approved — claim sheet ${sheet.reference} created`);
+  async function generateSettledClaims() {
+    if (!readyToGenerate || generating) return;
+    setGenerating(true);
+    try {
+      const prepared = settlementCards.map(card => ({ card, snapshot: buildClaimSheetFromCard(card) }));
+      const drafts = prepared.filter(item => item.snapshot.length).map(({ card, snapshot }) => ({
+        id: card.id, reference: card.id, employeeId: card.employeeId,
+        companyId: employees.find(employee => employee.id === card.employeeId)?.companyId,
+        periodStart: card.periodStart, periodEnd: card.periodEnd, totalDays: snapshot.length,
+        totalNormalHours: snapshot.reduce((sum, row) => sum + row.normalHours, 0),
+        totalOtHours: snapshot.reduce((sum, row) => sum + row.otHours, 0), snapshot,
+      }));
+      if (!drafts.length) throw new Error("No approved worked hours to claim");
+      // Validate the active template before saving any claim records.
+      const workbook = await createClaimWorkbook(drafts, employees, getCompanies(), month, { projects: getProjects(), sites: getSites(), clients: getClients() });
+      for (const draft of drafts) {
+        const exists = getClaimSheets().some(sheet => sheet.snapshot.some(row => row.sourceCardId === draft.id));
+        if (!exists) { const { id, reference, ...claim } = draft; addClaimSheet(claim); }
+      }
+      refresh(); setActiveTab("sheets");
+      setExcelDocument({ workbook, fileName: timestampedName(`claim_sheet_${month}`, "xlsx") });
+      toast.success(`Claim Excel ready — ${drafts.length} approved cards`);
+    } catch (error) { toast.error(error instanceof Error ? error.message : "Claim generation failed"); }
+    finally { setGenerating(false); }
   }
 
   async function exportSheet(id: string) {
@@ -456,7 +476,7 @@ function TimeCardsPage() {
             <h2 className="text-lg font-semibold text-foreground">Generate Claim Sheet</h2>
           </div>
           {(() => {
-            const current = !selected ? 1 : selected.status === "Verified" ? 3 : 2;
+            const current = !selected ? 1 : readyToGenerate ? 3 : 2;
             const steps = ["Upload time cards", "Check OCR results", "Generate claim sheet"];
             return (
               <ol className="grid gap-2 sm:grid-cols-3">
@@ -484,7 +504,7 @@ function TimeCardsPage() {
               {isOcrConfigured() ? "PDF or photos · you can select many at once · details are read automatically" : `${OCR_NOT_CONFIGURED}. Type the card times in manually after upload.`}
             </span>
           </label>
-          <input id="claim-upload" className="hidden" type="file" multiple accept="image/*,application/pdf" disabled={uploading || reviewScan !== null} onChange={(event) => { void handleUpload(event.target.files); event.target.value = ""; }} />
+          <input id="claim-upload" className="hidden" type="file" multiple accept="image/*,application/pdf" disabled={uploading || reviewScan !== null || pendingScans.length > 0} onChange={(event) => { void handleUpload(event.target.files); event.target.value = ""; }} />
           <div className="flex flex-wrap items-center justify-center gap-2 text-sm text-muted-foreground">
             <span>Have an Excel file instead?</span>
             <div className="relative">
@@ -515,13 +535,17 @@ function TimeCardsPage() {
             </div>
             <div className="flex flex-wrap gap-2">
               <Button variant="outline" onClick={() => setVerificationOpen(true)} className="gap-2"><ScanLine className="h-4 w-4" />Check OCR results</Button>
-              <Button disabled={uploading || selected.status !== "Verified"} onClick={() => approveCard(selected)} className="gap-2"><FileSpreadsheet className="h-4 w-4" />Approve & generate claim sheet</Button>
+              <Button disabled={uploading || isCardApproved(selected)} onClick={() => approveCard(selected)} className="gap-2"><CheckCircle2 className="h-4 w-4" />Approve card</Button>
             </div>
           </div>}
           {!selected && cards.length > 0 && <p className="text-center text-sm text-muted-foreground">Or pick a card below and press <span className="font-medium text-foreground">Open</span> to check and approve it.</p>}
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-4">
+            <span className="text-sm text-muted-foreground">{approvedCount}/{settlementCards.length + pendingScans.length + (reviewScan ? 1 : 0)} cards approved</span>
+            <Button disabled={!readyToGenerate || uploading || generating} onClick={() => void generateSettledClaims()} className="gap-2"><FileSpreadsheet className="h-4 w-4" />{generating ? "Generating…" : "Generate claim sheet"}</Button>
+          </div>
         </section>
 
-        <Dialog open={reviewScan !== null} onOpenChange={(open) => { if (!open) { setReviewScan(null); setPendingScans([]); } }}>
+        <Dialog open={reviewScan !== null} onOpenChange={() => {}}>
           <DialogContent>
             <DialogHeader><DialogTitle>Review extracted card details</DialogTitle></DialogHeader>
             <p className="text-sm text-muted-foreground">{reviewScan?.fileName} · {reviewScan?.entries.length ?? 0} days read</p>
@@ -598,7 +622,7 @@ function TimeCardsPage() {
                         <TableCell>
                           <StatusBadge
                             dot
-                            label={c.status}
+                            label={isCardApproved(c) ? "Approved" : c.status}
                             variant={
                               c.status === "Verified"
                                 ? "success"
@@ -625,7 +649,7 @@ function TimeCardsPage() {
                             size="sm"
                             variant="ghost"
                             onClick={() => {
-                              deleteTimeCard(c.id);
+                              deleteTimeCard(c.id); setBatchCardIds(ids => ids.filter(id => id !== c.id));
                               if (selectedId === c.id) setSelectedId(null);
                               refresh();
                             }}
@@ -649,7 +673,7 @@ function TimeCardsPage() {
                       Verification — {empName(selected.employeeId)}
                     </DialogTitle></DialogHeader>
                     <p className="text-xs text-muted-foreground">
-                      {mismatches} of {comparison.length} rows need attention.
+                      {mismatches} of {comparison.length} rows need attention. GW hrs: {comparison.reduce((sum, row) => sum + row.normalHours, 0).toFixed(2)} · OT hrs: {comparison.reduce((sum, row) => sum + row.otHours, 0).toFixed(2)}
                     </p>
                     {lowConfidenceCount > 0 && (
                       <Button
@@ -729,7 +753,10 @@ function TimeCardsPage() {
                           Bulk Correct
                         </Button>
                       </div>
-                      <Button size="sm" onClick={() => finalize(selected)}>
+                      <Button size="sm" disabled={isCardApproved(selected)} onClick={() => approveCard(selected)}>
+                        <CheckCircle2 className="mr-1 h-4 w-4" />Approve card & next
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => finalize(selected)}>
                         <CheckCircle2 className="mr-1 h-4 w-4" />
                         Finalize
                       </Button>
@@ -754,7 +781,7 @@ function TimeCardsPage() {
                             <TableCell className="whitespace-nowrap text-sm font-medium">{r.date}</TableCell>
                             <TableCell>
                               <div className="flex flex-col gap-2 py-1">
-                                <div className="grid grid-cols-2 gap-4 rounded border bg-muted/30 p-2 text-xs">
+                                <div className="grid gap-4 rounded border bg-muted/30 p-2 text-xs lg:grid-cols-2">
                                   <div className="space-y-1">
                                     <div className="flex items-center justify-between">
                                       <span className="text-[10px] font-bold uppercase text-muted-foreground">
@@ -793,6 +820,10 @@ function TimeCardsPage() {
                                           onChange={(e) => setEntry(r.date, { checkOut: e.target.value })}
                                         />
                                       </div>
+                                    </div>
+                                    <div className="flex flex-wrap gap-2 pt-2">
+                                      <label className="space-y-1">GW hrs<Input aria-label={`GW hrs ${r.date}`} type="number" min="0" step="0.25" className="h-8 w-20" value={r.normalHours} disabled={r.resolution === "Ignored"} onChange={event => { const value = Number(event.target.value); if (Number.isFinite(value) && value >= 0) setEntry(r.date, { normalHours: value }); }} /></label>
+                                      <label className="space-y-1">OT hrs<Input aria-label={`OT hrs ${r.date}`} type="number" min="0" step="0.25" className="h-8 w-20" value={r.otHours} disabled={r.resolution === "Ignored"} onChange={event => { const value = Number(event.target.value); if (Number.isFinite(value) && value >= 0) setEntry(r.date, { otHours: value }); }} /></label>
                                     </div>
                                     {r.suggestion && (
                                       <div className="mt-1 flex flex-wrap gap-1 border-t border-dashed pt-1">
