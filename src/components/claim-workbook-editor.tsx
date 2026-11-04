@@ -73,7 +73,7 @@ export function ClaimWorkbookEditor({ document, onClose }: { document: ClaimEdit
   }
 
   return <Dialog open={!!document} onOpenChange={open => { if (!open) close(); }}>
-    <DialogContent className="flex h-[90dvh] w-[96vw] max-w-[96vw] flex-col gap-3 p-4" aria-describedby="claim-editor-description" onInteractOutside={e => e.preventDefault()}>
+    <DialogContent className="flex h-[90dvh] w-[96vw] min-w-0 max-w-[96vw] flex-col gap-3 overflow-hidden p-4" aria-describedby="claim-editor-description" onInteractOutside={e => e.preventDefault()}>
       <DialogHeader className="pr-8">
         <DialogTitle>Edit claim sheet (Excel)</DialogTitle>
         <DialogDescription id="claim-editor-description" className="sr-only">Claim workbook editor</DialogDescription>
@@ -87,7 +87,7 @@ export function ClaimWorkbookEditor({ document, onClose }: { document: ClaimEdit
         }}>{ready ? <Download className="h-4 w-4" /> : <Loader2 className="h-4 w-4 animate-spin" />}Download Excel</Button>
       </div>
       {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
-      <div className="min-h-0 flex-1 overflow-auto border border-border">
+      <div className="min-h-0 min-w-0 w-full flex-1 overflow-auto border border-border">
         <table className="border-collapse text-sm">
           <thead className="sticky top-0 z-10 bg-muted"><tr><th className="min-w-10 border border-border" />{columns.map(c => <th key={c} className="h-8 min-w-20 border border-border font-medium">{sheet?.getColumn(c).letter}</th>)}</tr></thead>
           <tbody>{rows.map(r => <tr key={r}>
@@ -107,7 +107,7 @@ export function ClaimWorkbookEditor({ document, onClose }: { document: ClaimEdit
                 {formula ? <div className="min-w-20 px-2 py-2 text-muted-foreground" title={`=${cell.formula}`} aria-label={`${cell.address} formula`}>ƒx</div> : <Input
                   key={`${sheet.id}-${cell.address}-${revision}`}
                   aria-label={cell.address} title={cell.address} defaultValue={cell.text}
-                  className={`h-9 rounded-none border-0 shadow-none ${c === 3 ? "min-w-56" : "min-w-20"}`}
+                  className={`h-9 rounded-none border-0 shadow-none ${c === 3 ? "min-w-56" : c === 2 || c === 4 ? "min-w-32" : "min-w-20"}`}
                   onBlur={event => edit(cell.address, [[event.target.value]])}
                   onKeyDown={event => { if (event.key === "Enter") event.currentTarget.blur(); }}
                   onPaste={event => {
@@ -120,7 +120,7 @@ export function ClaimWorkbookEditor({ document, onClose }: { document: ClaimEdit
           </tr>)}</tbody>
         </table>
       </div>
-      <div className="flex shrink-0 gap-2 overflow-x-auto" role="tablist" aria-label="Project sheets">{document?.workbook.worksheets.map((page, index) => <Button key={page.id} role="tab" aria-selected={index === sheetIndex} size="sm" variant={index === sheetIndex ? "default" : "outline"} onClick={() => setSheetIndex(index)}>{page.name}</Button>)}</div>
+      <div className="flex min-w-0 shrink-0 gap-2 overflow-x-auto" role="tablist" aria-label="Project sheets">{document?.workbook.worksheets.map((page, index) => <Button key={page.id} role="tab" aria-selected={index === sheetIndex} size="sm" variant={index === sheetIndex ? "default" : "outline"} onClick={() => setSheetIndex(index)}>{page.name}</Button>)}</div>
     </DialogContent>
   </Dialog>;
 }
