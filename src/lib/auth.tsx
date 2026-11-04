@@ -12,16 +12,6 @@ import type { User, Session } from "@supabase/supabase-js";
 
 import type { AppAuthRole } from "@/lib/permissions";
 
-// The auth context must keep a single module identity across the app. When
-// this file is hot-reloaded, importers can end up with two different
-// AuthContext instances ("useAuth must be used within AuthProvider").
-// Forcing a full page reload keeps the module graph consistent.
-if (import.meta.hot) {
-  import.meta.hot.accept(() => {
-    window.location.reload();
-  });
-}
-
 type AppRole = AppAuthRole;
 
 interface AuthContextValue {
@@ -44,7 +34,11 @@ interface AuthContextValue {
   refreshRoles: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextValue | undefined>(undefined);
+// Keep the context itself stable across hot updates. A reload callback runs
+// too late: updated consumers can render against the old mounted provider first.
+const AuthContext: React.Context<AuthContextValue | undefined> =
+  import.meta.hot?.data.authContext ?? createContext<AuthContextValue | undefined>(undefined);
+if (import.meta.hot) import.meta.hot.data.authContext = AuthContext;
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
