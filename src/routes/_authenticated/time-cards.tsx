@@ -33,7 +33,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ExportButton } from "@/components/data-io";
-import { exportRows, timestampedName } from "@/lib/xlsx";
+import { timestampedName } from "@/lib/xlsx";
 import { downloadClaimSheetPdf } from "@/lib/pdf";
 import { uploadToR2 } from "@/lib/r2";
 import { extractTimeCardData, OCR_NOT_CONFIGURED, isOcrConfigured } from "@/lib/ocr";
@@ -352,19 +352,17 @@ function TimeCardsPage() {
   async function exportSheet(id: string) {
     const sheet = sheets.find((s) => s.id === id);
     if (!sheet) return;
-    await exportRows(
-      sheet.snapshot.map((r) => ({
-        Date: r.date,
-        Site: r.site ?? "",
-        Status: r.status,
-        "Check In": r.checkIn ?? "",
-        "Check Out": r.checkOut ?? "",
-        "Normal Hours": r.normalHours,
-        "OT Hours": r.otHours,
-      })),
-      timestampedName(`claim_sheet_${sheet.reference}`, "xlsx"),
-      "Claim Sheet",
-    );
+    const sheetMonth = sheet.periodStart.slice(0, 7);
+    try {
+      await exportCombinedClaims([sheet], employees, "", getCompanies(), sheetMonth, {
+        projects: getProjects(),
+        sites: getSites(),
+        clients: getClients(),
+        fileName: timestampedName(`claim_sheet_${sheet.reference}`, "xlsx"),
+      });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Export failed");
+    }
   }
 
   async function handleImportConfirm(data: any[]) {
