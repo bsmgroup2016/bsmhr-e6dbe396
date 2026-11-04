@@ -5,6 +5,7 @@ import {
   useState,
   useCallback,
   type ReactNode,
+  type Context,
 } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { clearSessionStore } from "@/lib/store";
@@ -36,7 +37,7 @@ interface AuthContextValue {
 
 // Keep the context itself stable across hot updates. A reload callback runs
 // too late: updated consumers can render against the old mounted provider first.
-const AuthContext: React.Context<AuthContextValue | undefined> =
+const AuthContext: Context<AuthContextValue | undefined> =
   import.meta.hot?.data.authContext ?? createContext<AuthContextValue | undefined>(undefined);
 if (import.meta.hot) import.meta.hot.data.authContext = AuthContext;
 
