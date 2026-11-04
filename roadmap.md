@@ -1,5 +1,5 @@
 # Role-based account access
-- [ ] Apply site-only mismatch checks and three-field batch confirmation; project/client Excel headers require explicit selection.
+- [x] Site-only mismatch checks; confirmation shows Site, optional Project/Client Name selector and editable Claim Month. Selection applies to batch; without selection Excel project/client is blank and site retained. 31 tests passed; build OK. Real signed-in upload remains session-blocked.
 - [x] Preserve AuthContext in Vite hot data instead of reloading after identity changes; browser provider/consumer contract passed without runtime errors, signed-out redirect works, build OK. Signed-in flow remains session-blocked.
 - [x] Remove Worker selection from first popup; ignore explicit worker identities misread as projects, allow location corrections, and preserve separate printed workers through review and Excel. 34 regression tests passed; build OK.
 - [ ] Real multi-worker upload/approval/download remains unverified: preview redirects to sign-in and no authenticated session or source time-card file is available. Unlinked cards are session-local until final claim generation.
