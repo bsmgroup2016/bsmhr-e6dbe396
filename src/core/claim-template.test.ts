@@ -78,7 +78,7 @@ test("twenty workers cannot be silently truncated into a nineteen-slot template"
 test("Four unregistered workers retain separate printed names codes and hours on the template", async () => {
   const { book, page } = blank();
   for (let i = 0; i < 4; i++) { page.getCell(5 + i * 2, 4).value = "G-HRS"; page.getCell(6 + i * 2, 4).value = "OT HOURS"; }
-  const claims = Array.from({ length: 4 }, (_, i) => ({ id: `c-${i}`, reference: `C${i}`, periodStart: "2026-11-01", periodEnd: "2026-11-30", totalDays: 1, totalNormalHours: 8, totalOtHours: i, snapshot: [{ sourceCardId: `card-${i}`, workerName: `PERSON ${i + 1}`, employeeCode: `PC-${i + 1}`, date: "2026-11-01", site: "SITE A", normalHours: 8, otHours: i, status: "Present" }] }));
+  const claims = Array.from({ length: 4 }, (_, i) => ({ id: `c-${i}`, reference: `C${i}`, periodStart: "2026-11-01", periodEnd: "2026-11-30", totalDays: 1, totalNormalHours: 8, totalOtHours: i + 1, snapshot: [{ sourceCardId: `card-${i}`, workerName: `PERSON ${i + 1}`, employeeCode: `PC-${i + 1}`, date: "2026-11-01", site: "SITE A", normalHours: 8, otHours: i + 1, status: "Present" }] }));
   const bytes = new Uint8Array(await book.xlsx.writeBuffer());
   const output = await createClaimWorkbook(claims, [], [], "2026-11", { templateBuffer: bytes.buffer });
   const saved = new ExcelJS.Workbook(); await saved.xlsx.load(await output.xlsx.writeBuffer());
@@ -86,7 +86,7 @@ test("Four unregistered workers retain separate printed names codes and hours on
   for (let i = 0; i < 4; i++) {
     expect(saved.worksheets[0]?.getCell(5 + i * 2, 2).value).toBe(`PC-${i + 1}`);
     expect(saved.worksheets[0]?.getCell(5 + i * 2, 3).value).toBe(`PERSON ${i + 1}`);
-    expect(saved.worksheets[0]?.getCell(6 + i * 2, 5).value).toBe(i);
+    expect(saved.worksheets[0]?.getCell(6 + i * 2, 5).value).toBe(i + 1);
   }
 });
 
