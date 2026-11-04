@@ -786,7 +786,7 @@ function TimeCardsPage() {
                         <div><span className="text-muted-foreground">Generated sheet</span><p className="font-medium tabular-nums">{focusIssue.actual}</p></div>
                       </div>
                       <div className="mt-2 flex flex-wrap items-center justify-between gap-2 border-t border-destructive/30 pt-2">
-                        <span className="text-xs text-muted-foreground">Mismatch {focusIssueIndex + 1} of {navigableIssues.length}{focusIssue.cardId !== selectedId ? "" : ""}</span>
+                        <span className="text-xs text-muted-foreground">Mismatch {focusIssueIndex + 1} of {navigableIssues.length}</span>
                         <div className="flex gap-1">
                           <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => goToIssue(-1)} disabled={focusIssueIndex <= 0}>
                             <ChevronLeft className="mr-0.5 h-3.5 w-3.5" />Prev
