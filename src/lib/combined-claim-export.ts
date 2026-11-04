@@ -1,10 +1,7 @@
-import template from "@/assets/project-claim-template.xlsx.asset.json";
+import { loadClaimTemplate } from "@/lib/claim-template";
+import { claimTemplateLayout, selectClaimTemplate } from "@/core/claim-template";
 import type { ClaimSheet, Client, Company, Employee, Project, Site } from "@/lib/types";
 
-/** Layout of the supplied blank template (sheet "CLAIM SHEET"). */
-const FIRST_ROW = 5; // each worker uses two rows: G-HRS then OT HOURS
-const SLOTS = 60;
-const DAY_COL = 5; // column E = day 1
 
 export function claimSheetTitle(companyName: string, month: string) {
   return `${companyName.toUpperCase()} CLAIM - ${monthLabel(month)}`;
@@ -15,7 +12,7 @@ function monthLabel(month: string) {
   return y && m ? new Date(Date.UTC(y, m - 1, 1)).toLocaleString("en-SG", { month: "short", year: "numeric", timeZone: "UTC" }).toUpperCase() : month;
 }
 
-export interface ClaimLookups { companies?: Company[]; projects?: Project[]; sites?: Site[]; clients?: Client[]; fileName?: string }
+export interface ClaimLookups { companies?: Company[]; projects?: Project[]; sites?: Site[]; clients?: Client[]; fileName?: string; templateBuffer?: ArrayBuffer }
 
 interface ProjectGroup { key: string; projectName: string; clientName: string; companyName: string; workers: Map<string, { code: string; name: string; days: Map<number, { g: number; ot: number }> }> }
 
@@ -47,18 +44,16 @@ export function groupClaimsByProject(sheets: ClaimSheet[], employees: Employee[]
 export async function createClaimWorkbook(sheets: ClaimSheet[], employees: Employee[], companies: Company[] = [], month = sheets[0]?.periodStart.slice(0, 7) ?? "", lookups: ClaimLookups = {}) {
   const groups = groupClaimsByProject(sheets, employees, month, { ...lookups, companies });
   if (!groups.length) throw new Error("No approved time-card hours in this period");
-  const big = groups.find((g) => g.workers.size > SLOTS);
-  if (big) throw new Error(`${big.projectName || "A project"} has more than ${SLOTS} workers; the template holds ${SLOTS}.`);
-
   const ExcelJS = await import("exceljs");
-  const response = await fetch(template.url);
-  if (!response.ok) throw new Error("Could not load the claim sheet template");
-  const buffer = await response.arrayBuffer();
+  const buffer = lookups.templateBuffer ?? await loadClaimTemplate();
   const workbook = new ExcelJS.Workbook();
   await workbook.xlsx.load(buffer);
-  const base = workbook.worksheets[0];
-  if (!base) throw new Error("Claim template is missing");
-  const baseModel = base.model;
+  const base = selectClaimTemplate(workbook);
+  const layout = claimTemplateLayout(base);
+  const big = groups.find(g => g.workers.size > layout.slots.length);
+  if (big) throw new Error(`${big.projectName || "A project"} has more workers than the template's ${layout.slots.length} slots.`);
+  for (const sheet of workbook.worksheets) if (sheet.id !== base.id) workbook.removeWorksheet(sheet.id);
+  const baseModel = structuredClone(base.model);
 
   const [y, m] = month.split("-").map(Number);
   const daysInMonth = new Date(Date.UTC(y, m, 0)).getUTCDate();
@@ -70,32 +65,46 @@ export async function createClaimWorkbook(sheets: ClaimSheet[], employees: Emplo
     used.add(name.toUpperCase());
     let page = base;
     if (index === 0) page.name = name;
-    else { page = workbook.addWorksheet(name); page.model = { ...baseModel, name, id: page.id } as typeof baseModel; for (const range of (baseModel as { merges?: string[] }).merges ?? []) { try { page.mergeCells(range); } catch { /* already merged */ } } }
+    else { page = workbook.addWorksheet(name); page.model = { ...structuredClone(baseModel), name, id: page.id } as typeof baseModel; for (const range of (baseModel as { merges?: string[] }).merges ?? []) { try { page.mergeCells(range); } catch { /* already merged */ } } }
 
-    page.getCell("A1").value = group.clientName ? group.clientName.toUpperCase() : null;
-    page.getCell("A2").value = group.projectName ? group.projectName.toUpperCase() : null;
-    page.getCell("A3").value = `CLAIM FOR ${monthLabel(month)}`;
-    page.getCell("AN1").value = group.companyName ? group.companyName.toUpperCase() : null;
+    // Existing header positions belong to the supplied layout; never add rows/columns.
+    if (layout.headerRow >= 4) {
+      page.getCell("A1").value = group.clientName ? group.clientName.toUpperCase() : null;
+      page.getCell("A2").value = group.projectName ? group.projectName.toUpperCase() : null;
+      page.getCell("A3").value = `CLAIM FOR ${monthLabel(month)}`;
+      if (page.columnCount >= 40) page.getCell("AN1").value = group.companyName ? group.companyName.toUpperCase() : null;
+    }
 
-    for (let d = 1; d <= 31; d++) {
-      const col = DAY_COL + d - 1;
-      const head = page.getCell(4, col);
+    for (const [d, col] of layout.days) {
+      const head = page.getCell(layout.headerRow, col);
       if (d > daysInMonth) { head.value = null; page.getColumn(col).hidden = true; continue; }
+      page.getColumn(col).hidden = false;
       const sunday = new Date(Date.UTC(y, m - 1, d)).getUTCDay() === 0;
       head.style = { ...head.style, fill: { type: "pattern", pattern: "solid", fgColor: { argb: sunday ? "FFFF0000" : "FFFFFFFF" } } };
     }
 
     const workers = [...group.workers.values()].sort((a, b) => a.code.localeCompare(b.code, undefined, { numeric: true }));
-    for (let i = 0; i < SLOTS; i++) {
-      const r = FIRST_ROW + i * 2;
+    for (const worker of workers) for (const day of worker.days.keys()) {
+      if (!layout.days.has(day)) throw new Error(`The blank template has no column for day ${day}. Replace it with a template containing that day.`);
+    }
+    for (let i = 0; i < layout.slots.length; i++) {
+      const { g: r, ot } = layout.slots[i];
       const worker = workers[i];
-      if (!worker) { page.getRow(r).hidden = true; page.getRow(r + 1).hidden = true; continue; }
-      page.getCell(r, 2).value = worker.code || null;
-      page.getCell(r, 3).value = worker.name || null;
+      page.getRow(r).hidden = !worker; page.getRow(ot).hidden = !worker;
+      page.getCell(r, layout.codeCol).value = worker?.code || null;
+      page.getCell(r, layout.nameCol).value = worker?.name || null;
+      if (layout.serialCol) page.getCell(r, layout.serialCol).value = worker ? i + 1 : null;
+      for (const col of layout.days.values()) {
+        if (!page.getCell(r, col).formula) page.getCell(r, col).value = null;
+        if (!page.getCell(ot, col).formula) page.getCell(ot, col).value = null;
+      }
+      if (!worker) continue;
       for (const [day, v] of worker.days) {
         if (day < 1 || day > daysInMonth) continue;
-        if (v.g) page.getCell(r, DAY_COL + day - 1).value = v.g;
-        if (v.ot) page.getCell(r + 1, DAY_COL + day - 1).value = v.ot;
+        const col = layout.days.get(day);
+        if (!col) continue;
+        if (v.g) page.getCell(r, col).value = v.g;
+        if (v.ot) page.getCell(ot, col).value = v.ot;
       }
     }
   });

@@ -11,7 +11,8 @@ import { clearClaimFormulaResults, editableClaimCell, setClaimCell } from "@/cor
 export interface ClaimEditorDocument { workbook: Workbook; fileName: string }
 type Change = { sheetId: number; address: string; before: CellValue; after: CellValue };
 
-export function ClaimWorkbookEditor({ document, onClose }: { document: ClaimEditorDocument | null; onClose: () => void }) {
+export function ClaimWorkbookEditor({ document, onClose, onSave, title = "Edit claim sheet (Excel)" }: { document: ClaimEditorDocument | null; onClose: () => void; onSave?: (blob: Blob) => Promise<void>; title?: string }) {
+  const [saving, setSaving] = useState(false);
   const [sheetIndex, setSheetIndex] = useState(0);
   const [revision, setRevision] = useState(0);
   const [undo, setUndo] = useState<Change[][]>([]);
@@ -75,13 +76,18 @@ export function ClaimWorkbookEditor({ document, onClose }: { document: ClaimEdit
   return <Dialog open={!!document} onOpenChange={open => { if (!open) close(); }}>
     <DialogContent className="flex h-[90dvh] w-[96vw] min-w-0 max-w-[96vw] flex-col gap-3 overflow-hidden p-4" aria-describedby="claim-editor-description" onInteractOutside={e => e.preventDefault()}>
       <DialogHeader className="pr-8">
-        <DialogTitle>Edit claim sheet (Excel)</DialogTitle>
+        <DialogTitle>{title}</DialogTitle>
         <DialogDescription id="claim-editor-description" className="sr-only">Claim workbook editor</DialogDescription>
       </DialogHeader>
       <div className="flex flex-wrap items-center gap-2">
         <Button size="icon" variant="outline" disabled={!undo.length} title="Undo" aria-label="Undo" onClick={() => travel("undo")}><Undo2 className="h-4 w-4" /></Button>
         <Button size="icon" variant="outline" disabled={!redo.length} title="Redo" aria-label="Redo" onClick={() => travel("redo")}><Redo2 className="h-4 w-4" /></Button>
         <span className="text-sm text-muted-foreground">{undo.length ? "Unsaved Excel changes" : "Excel draft"}</span>
+        {onSave && <Button disabled={!ready || saving} onClick={async () => {
+          if (!prepared) return;
+          setSaving(true);
+          try { await onSave(prepared.blob); onClose(); } catch (e) { toast.error(e instanceof Error ? e.message : "Could not save template"); } finally { setSaving(false); }
+        }}>{saving ? "Saving…" : "Save template"}</Button>}
         <Button className="ml-auto gap-2" disabled={!ready} onClick={() => {
           if (prepared && document) { downloadClaimBlob(prepared.blob, document.fileName); toast.success("Edited claim sheet downloaded"); }
         }}>{ready ? <Download className="h-4 w-4" /> : <Loader2 className="h-4 w-4 animate-spin" />}Download Excel</Button>

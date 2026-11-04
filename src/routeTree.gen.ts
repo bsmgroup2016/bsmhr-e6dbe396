@@ -82,6 +82,7 @@ import { Route as ApiPublicSendAlertsRouteImport } from './routes/api/public/sen
 import { Route as ApiPublicSmtpServersRouteImport } from './routes/api/public/smtp-servers'
 import { Route as ApiPublicUserAdminRouteImport } from './routes/api/public/user-admin'
 import { Route as ApiPublicV1AttendanceRouteImport } from './routes/api/public/v1/attendance'
+import { Route as ApiPublicV1ClaimTemplateRouteImport } from './routes/api/public/v1/claim-template'
 import { Route as ApiPublicV1ClientsRouteImport } from './routes/api/public/v1/clients'
 import { Route as ApiPublicV1DataRouteImport } from './routes/api/public/v1/data'
 import { Route as ApiPublicV1DevicesRouteImport } from './routes/api/public/v1/devices'
@@ -481,6 +482,12 @@ const ApiPublicV1AttendanceRoute = ApiPublicV1AttendanceRouteImport.update({
   path: '/api/public/v1/attendance',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicV1ClaimTemplateRoute =
+  ApiPublicV1ClaimTemplateRouteImport.update({
+    id: '/api/public/v1/claim-template',
+    path: '/api/public/v1/claim-template',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicV1ClientsRoute = ApiPublicV1ClientsRouteImport.update({
   id: '/api/public/v1/clients',
   path: '/api/public/v1/clients',
@@ -654,6 +661,7 @@ export interface FileRoutesByFullPath {
   '/api/public/smtp-servers': typeof ApiPublicSmtpServersRoute
   '/api/public/user-admin': typeof ApiPublicUserAdminRoute
   '/api/public/v1/attendance': typeof ApiPublicV1AttendanceRouteWithChildren
+  '/api/public/v1/claim-template': typeof ApiPublicV1ClaimTemplateRoute
   '/api/public/v1/clients': typeof ApiPublicV1ClientsRoute
   '/api/public/v1/data': typeof ApiPublicV1DataRoute
   '/api/public/v1/devices': typeof ApiPublicV1DevicesRoute
@@ -747,6 +755,7 @@ export interface FileRoutesByTo {
   '/api/public/smtp-servers': typeof ApiPublicSmtpServersRoute
   '/api/public/user-admin': typeof ApiPublicUserAdminRoute
   '/api/public/v1/attendance': typeof ApiPublicV1AttendanceRouteWithChildren
+  '/api/public/v1/claim-template': typeof ApiPublicV1ClaimTemplateRoute
   '/api/public/v1/clients': typeof ApiPublicV1ClientsRoute
   '/api/public/v1/data': typeof ApiPublicV1DataRoute
   '/api/public/v1/devices': typeof ApiPublicV1DevicesRoute
@@ -842,6 +851,7 @@ export interface FileRoutesById {
   '/api/public/smtp-servers': typeof ApiPublicSmtpServersRoute
   '/api/public/user-admin': typeof ApiPublicUserAdminRoute
   '/api/public/v1/attendance': typeof ApiPublicV1AttendanceRouteWithChildren
+  '/api/public/v1/claim-template': typeof ApiPublicV1ClaimTemplateRoute
   '/api/public/v1/clients': typeof ApiPublicV1ClientsRoute
   '/api/public/v1/data': typeof ApiPublicV1DataRoute
   '/api/public/v1/devices': typeof ApiPublicV1DevicesRoute
@@ -937,6 +947,7 @@ export interface FileRouteTypes {
     | '/api/public/smtp-servers'
     | '/api/public/user-admin'
     | '/api/public/v1/attendance'
+    | '/api/public/v1/claim-template'
     | '/api/public/v1/clients'
     | '/api/public/v1/data'
     | '/api/public/v1/devices'
@@ -1030,6 +1041,7 @@ export interface FileRouteTypes {
     | '/api/public/smtp-servers'
     | '/api/public/user-admin'
     | '/api/public/v1/attendance'
+    | '/api/public/v1/claim-template'
     | '/api/public/v1/clients'
     | '/api/public/v1/data'
     | '/api/public/v1/devices'
@@ -1124,6 +1136,7 @@ export interface FileRouteTypes {
     | '/api/public/smtp-servers'
     | '/api/public/user-admin'
     | '/api/public/v1/attendance'
+    | '/api/public/v1/claim-template'
     | '/api/public/v1/clients'
     | '/api/public/v1/data'
     | '/api/public/v1/devices'
@@ -1172,6 +1185,7 @@ export interface RootRouteChildren {
   ApiPublicSmtpServersRoute: typeof ApiPublicSmtpServersRoute
   ApiPublicUserAdminRoute: typeof ApiPublicUserAdminRoute
   ApiPublicV1AttendanceRoute: typeof ApiPublicV1AttendanceRouteWithChildren
+  ApiPublicV1ClaimTemplateRoute: typeof ApiPublicV1ClaimTemplateRoute
   ApiPublicV1ClientsRoute: typeof ApiPublicV1ClientsRoute
   ApiPublicV1DataRoute: typeof ApiPublicV1DataRoute
   ApiPublicV1DevicesRoute: typeof ApiPublicV1DevicesRoute
@@ -1700,6 +1714,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicV1AttendanceRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/v1/claim-template': {
+      id: '/api/public/v1/claim-template'
+      path: '/api/public/v1/claim-template'
+      fullPath: '/api/public/v1/claim-template'
+      preLoaderRoute: typeof ApiPublicV1ClaimTemplateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/v1/clients': {
       id: '/api/public/v1/clients'
       path: '/api/public/v1/clients'
@@ -2038,6 +2059,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicSmtpServersRoute: ApiPublicSmtpServersRoute,
   ApiPublicUserAdminRoute: ApiPublicUserAdminRoute,
   ApiPublicV1AttendanceRoute: ApiPublicV1AttendanceRouteWithChildren,
+  ApiPublicV1ClaimTemplateRoute: ApiPublicV1ClaimTemplateRoute,
   ApiPublicV1ClientsRoute: ApiPublicV1ClientsRoute,
   ApiPublicV1DataRoute: ApiPublicV1DataRoute,
   ApiPublicV1DevicesRoute: ApiPublicV1DevicesRoute,

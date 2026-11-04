@@ -25,6 +25,13 @@ export const Route = createFileRoute("/api/public/r2-upload")({
         const file = form.get("file");
         const folder = String(form.get("folder") || "documents").replace(/[^a-z0-9_-]/gi, "");
         const employeeId = String(form.get("employeeId") || "").trim() || null;
+        if (folder === "claim-templates") {
+          const { authenticate } = await import("@/lib/api-v1.server");
+          const { canAccess } = await import("@/core/access");
+          const caller = await authenticate(request);
+          if (!caller || !canAccess("/time-cards", caller.roles)) return new Response("Claim sheet access required", { status: 403 });
+          if (!(file instanceof File) || !file.name.toLowerCase().endsWith(".xlsx")) return new Response("An .xlsx template is required", { status: 400 });
+        }
         if (!(file instanceof File) || file.size === 0) {
           return new Response("No file provided", { status: 400 });
         }
