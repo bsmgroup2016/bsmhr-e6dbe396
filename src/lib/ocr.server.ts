@@ -4,6 +4,7 @@
  */
 import { askAiJson } from "@/lib/ai.server";
 import { cardRowKey, type BatchCardRow } from "@/core/time-card-batch";
+import { applyCardHeaders, parseCardHeaders, TIME_CARD_HEADER_INSTRUCTION } from "@/core/time-card-headers";
 import { keyFromRef, presignGet } from "@/lib/r2.server";
 import { IPA_INSTRUCTION, type IpaExtract } from "@/core/ipa-registration";
 import { PARTICULAR_INSTRUCTION, DOCUMENT_UNDERSTANDING, IDENTITY_DOCUMENT_INSTRUCTION, CSOC_INSTRUCTION } from "@/core/employee-document-fields";
@@ -49,6 +50,7 @@ const TC_READ =
   "This is a scanned monthly physical time card. Return a JSON array of rows, one per printed day, " +
   'each like {"cardIndex":1,"date":"YYYY-MM-DD","checkIn":"HH:MM","checkOut":"HH:MM","workerName":"printed worker name","employeeCode":"printed P-file number","fin":"printed FIN","projectName":"printed project","siteName":"printed site"}. ' +
   "Read EVERY card on the page. Assign each physical card a distinct cardIndex in reading order starting at 1 and repeat it on ALL its rows, even when its name is unreadable. Never merge different workers' rows or omit a card. " +
+  TIME_CARD_HEADER_INSTRUCTION + " " +
   "Repeat the printed card identity and project/site header on each row. Omit any field not legible on the card; never infer an identity or project. Read month and year from the card to produce full dates; never assume the current month. Use 24-hour times. Skip days with no punches. Return [] if the card is unreadable.";
 
 const asRows = (d: unknown): TcRow[] =>
@@ -63,17 +65,24 @@ const asRows = (d: unknown): TcRow[] =>
  */
 export async function readTimeCard(ref: string) {
   const dataUrl = await fetchAsDataUrl(ref);
+  // A focused header pass avoids daily grids and staff codes distracting the read.
+  let headers: ReturnType<typeof parseCardHeaders> = [];
+  try {
+    headers = parseCardHeaders(await askAiJson({ dataUrl,
+      instruction: TIME_CARD_HEADER_INSTRUCTION + ' Return JSON {"cards":[{"cardIndex":1,"siteName":"labelled Site value","workerName":"labelled Name value","employeeCode":"staff code","fin":"FIN only if labelled","year":2026,"month":10}]}. Read only headers, not daily rows. The schema year/month are examples, not defaults.' }));
+  } catch (error) { console.error("timecard header read failed", error); }
+  const headerContext = headers.length ? `Independently read card headers: ${JSON.stringify(headers)}. Recheck against the image and use the same physical cardIndex.` : undefined;
 
   let primary: TcRow[] | null = null;
   let primaryBy = "gemini";
   try {
-    primary = asRows(await askAiJson({ instruction: TC_READ, dataUrl, only: "gemini" }));
+    primary = asRows(await askAiJson({ instruction: TC_READ, context: headerContext, dataUrl, only: "gemini" }));
   } catch (e) {
     console.error("timecard gemini read failed", e);
   }
   if (!primary || primary.length === 0) {
     primaryBy = "fallback";
-    primary = asRows(await askAiJson({ instruction: TC_READ, dataUrl }));
+    primary = asRows(await askAiJson({ instruction: TC_READ, context: headerContext, dataUrl }));
   }
 
   let audit: TcRow[] | null = null;
@@ -85,10 +94,11 @@ export async function readTimeCard(ref: string) {
           dataUrl,
           instruction:
             "You are auditing another AI's reading of this scanned time card. Look at the image carefully and " +
+            TIME_CARD_HEADER_INSTRUCTION + " " +
             "return YOUR OWN reading for every date listed below (plus any punched day it missed), as a JSON " +
             'object {"rows":[{"cardIndex":1,"date":"YYYY-MM-DD","checkIn":"HH:MM","checkOut":"HH:MM","workerName":"printed name","employeeCode":"printed P-file number","fin":"printed FIN","projectName":"printed project","siteName":"printed site"}]}. Repeat each card identity and cardIndex in reading order on ALL its rows; read EVERY worker separately. 24-hour times. ' +
             "Correct digits that were misread; omit a time only if it is truly unreadable.",
-          context: `Other AI's reading: ${JSON.stringify(primary)}`,
+          context: `${headerContext ?? ""}\nOther AI's reading: ${JSON.stringify(primary)}`,
         }),
       );
     } catch (e) {
@@ -96,7 +106,9 @@ export async function readTimeCard(ref: string) {
     }
   }
 
-  if (!audit) return primary.map((r) => ({ ...r, confidence: 0.75, verifiedBy: primaryBy }));
+  primary = applyCardHeaders(primary, headers);
+  if (audit) audit = applyCardHeaders(audit, headers);
+  if (!audit) return primary.map((r) => ({ ...r, confidence: r.confidence ?? 0.75, verifiedBy: primaryBy }));
 
   const auditMap = new Map(audit.map((r) => [cardRowKey(r), r]));
   const same = (a?: string, b?: string) => (a ?? "").trim() === (b ?? "").trim();

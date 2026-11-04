@@ -1,4 +1,5 @@
 # Role-based account access
+- [ ] Fix Site/header OCR confusing staff codes with labelled Site; independently read headers and preserve card month through read/audit.
 - [x] Site-only mismatch checks; confirmation shows Site, optional Project/Client Name selector and editable Claim Month. Selection applies to batch; without selection Excel project/client is blank and site retained. 31 tests passed; build OK. Real signed-in upload remains session-blocked.
 - [x] Preserve AuthContext in Vite hot data instead of reloading after identity changes; browser provider/consumer contract passed without runtime errors, signed-out redirect works, build OK. Signed-in flow remains session-blocked.
 - [x] Remove Worker selection from first popup; ignore explicit worker identities misread as projects, allow location corrections, and preserve separate printed workers through review and Excel. 34 regression tests passed; build OK.
