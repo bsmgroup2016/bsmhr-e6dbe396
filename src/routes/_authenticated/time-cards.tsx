@@ -19,6 +19,7 @@ import { groupTimeCardRows, splitTimeCardFile } from "@/core/time-card-batch";
 import { createClaimWorkbook, exportCombinedClaims, claimSheetTitle } from "@/lib/combined-claim-export";
 import { ClaimWorkbookEditor, type ClaimEditorDocument } from "@/components/claim-workbook-editor";
 import { ClaimTemplateManager } from "@/components/claim-template-manager";
+import { TimeCardHoursInputs } from "@/components/time-card-hours-inputs";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
@@ -55,6 +56,7 @@ import {
   getSites,
   getTimeCards,
   updateTimeCard,
+  updateClaimSheet,
 } from "@/lib/store";
 import type { TimeCard, TimeCardEntry } from "@/lib/types";
 
@@ -372,8 +374,10 @@ function TimeCardsPage() {
       // Validate the active template before saving any claim records.
       const workbook = await createClaimWorkbook(drafts, employees, getCompanies(), month, { projects: getProjects(), sites: getSites(), clients: getClients() });
       for (const draft of drafts) {
-        const exists = getClaimSheets().some(sheet => sheet.snapshot.some(row => row.sourceCardId === draft.id));
-        if (!exists) { const { id, reference, ...claim } = draft; addClaimSheet(claim); }
+        const existing = getClaimSheets().find(sheet => sheet.snapshot.some(row => row.sourceCardId === draft.id));
+        const { id, reference, ...claim } = draft;
+        if (existing) updateClaimSheet(existing.id, claim);
+        else addClaimSheet(claim);
       }
       refresh(); setActiveTab("sheets");
       setExcelDocument({ workbook, fileName: timestampedName(`claim_sheet_${month}`, "xlsx") });
@@ -821,10 +825,7 @@ function TimeCardsPage() {
                                         />
                                       </div>
                                     </div>
-                                    <div className="flex flex-wrap gap-2 pt-2">
-                                      <label className="space-y-1">GW hrs<Input aria-label={`GW hrs ${r.date}`} type="number" min="0" step="0.25" className="h-8 w-20" value={r.normalHours} disabled={r.resolution === "Ignored"} onChange={event => { const value = Number(event.target.value); if (Number.isFinite(value) && value >= 0) setEntry(r.date, { normalHours: value }); }} /></label>
-                                      <label className="space-y-1">OT hrs<Input aria-label={`OT hrs ${r.date}`} type="number" min="0" step="0.25" className="h-8 w-20" value={r.otHours} disabled={r.resolution === "Ignored"} onChange={event => { const value = Number(event.target.value); if (Number.isFinite(value) && value >= 0) setEntry(r.date, { otHours: value }); }} /></label>
-                                    </div>
+                                    <TimeCardHoursInputs date={r.date} normalHours={r.normalHours} otHours={r.otHours} disabled={r.resolution === "Ignored"} onChange={patch => setEntry(r.date, patch)} />
                                     {r.suggestion && (
                                       <div className="mt-1 flex flex-wrap gap-1 border-t border-dashed pt-1">
                                         <span className="text-[9px] text-muted-foreground">Suggest:</span>

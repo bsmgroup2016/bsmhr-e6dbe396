@@ -2840,6 +2840,15 @@ export function deleteClaimSheet(id: string): boolean {
   return true;
 }
 
+export function updateClaimSheet(id: string, updates: Partial<ClaimSheet>) {
+  const s = getState();
+  const existing = s.claimSheets.find(sheet => sheet.id === id);
+  if (!existing) return;
+  const updated = { ...existing, ...updates, id: existing.id, reference: existing.reference };
+  setState({ ...s, claimSheets: s.claimSheets.map(sheet => sheet.id === id ? updated : sheet) });
+  void supabase.from("claim_sheets").update(toClaimSheet(updated)).eq("id", id).then(({ error }) => fail("claim_sheets", error));
+}
+
 
 
 /* ---------------- loan / salary advance ledger ---------------- */
