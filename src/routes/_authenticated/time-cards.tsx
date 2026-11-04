@@ -16,6 +16,7 @@ import { canConfirmCardDetails, matchCardWorker, uniqueCardMatch, type TimeCardI
 import { completeTimeCardReview } from "@/core/time-card-review";
 import { canGenerateSettledCards, isCardApproved, validCardHours } from "@/core/time-card-settlement";
 import { groupTimeCardRows, splitTimeCardFile } from "@/core/time-card-batch";
+import { projectBatchIssue } from "@/core/time-card-project-batch";
 import { createClaimWorkbook, exportCombinedClaims, claimSheetTitle } from "@/lib/combined-claim-export";
 import { ClaimWorkbookEditor, type ClaimEditorDocument } from "@/components/claim-workbook-editor";
 import { ClaimTemplateManager } from "@/components/claim-template-manager";
@@ -107,6 +108,7 @@ function TimeCardsPage() {
   const [siteName, setSiteName] = useState("");
   type PendingScan = { fileName: string; fileUrl: string; entries: TimeCardEntry[]; identity: TimeCardIdentity };
   const [batchCardIds, setBatchCardIds] = useState<string[]>([]);
+  const [uploadBatchIssue, setUploadBatchIssue] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
   const [pendingScans, setPendingScans] = useState<PendingScan[]>([]);
   const [reviewScan, setReviewScan] = useState<PendingScan | null>(null);
@@ -131,7 +133,12 @@ function TimeCardsPage() {
   const comparison = useMemo(() => (selected ? compareTimeCard(selected) : []), [selected]);
   const settlementCards = cards.filter(card => batchCardIds.length ? batchCardIds.includes(card.id) : scoped.some(employee => employee.id === card.employeeId) && card.periodStart.startsWith(month));
   const approvedCount = settlementCards.filter(isCardApproved).length;
-  const readyToGenerate = canGenerateSettledCards(settlementCards, pendingScans.length + (reviewScan ? 1 : 0));
+  const batchIssue = uploadBatchIssue ?? projectBatchIssue([
+    ...settlementCards.flatMap(card => card.entries),
+    ...pendingScans.map(scan => scan.identity),
+    ...(reviewScan ? [reviewScan.identity] : []),
+  ], { projects, sites }, true);
+  const readyToGenerate = !batchIssue && canGenerateSettledCards(settlementCards, pendingScans.length + (reviewScan ? 1 : 0));
   const mismatches = comparison.filter((r) => r.state !== "Verified").length;
   const lowConfidenceCount = comparison.filter(
     (r) => r.confidence !== undefined && r.confidence < LOW_CONFIDENCE,
@@ -196,6 +203,12 @@ function TimeCardsPage() {
 
   function confirmScan() {
     if (!reviewScan || !canConfirmCardDetails(employeeId, month, siteName)) return;
+    const issue = projectBatchIssue([
+      ...cards.filter(card => batchCardIds.includes(card.id)).flatMap(card => card.entries),
+      ...pendingScans.map(scan => scan.identity),
+      { projectId: projectId || undefined, projectName: projects.find(project => project.id === projectId)?.name ?? reviewScan.identity.projectName, siteId: siteId || undefined, siteName },
+    ], { projects, sites });
+    if (issue) { setUploadBatchIssue(issue); setReviewScan(null); setPendingScans([]); setVerificationOpen(false); toast.error(issue); return; }
     const { start, end } = monthRange(month);
     const card = addTimeCard({ employeeId, periodStart: start, periodEnd: end, fileUrl: reviewScan.fileUrl, fileName: reviewScan.fileName, status: "Draft", entries: reviewScan.entries.map((entry) => ({ ...entry, projectId: projectId || undefined, projectName: projects.find((project) => project.id === projectId)?.name ?? reviewScan.identity.projectName, siteId: siteId || undefined, siteName: siteName.trim() })) });
     refresh(); setSelectedId(card.id); setActiveTab("cards");
@@ -207,6 +220,7 @@ function TimeCardsPage() {
     const files = fileList ? Array.from(fileList) : [];
     if (files.length === 0) return;
     setUploading(true);
+    setUploadBatchIssue(null);
     setProgress({ done: 0, total: files.length });
     try {
       const scans: PendingScan[] = [];
@@ -229,6 +243,12 @@ function TimeCardsPage() {
         setProgress({ done: i + 1, total: pages.length });
       }
       refresh();
+      const issue = projectBatchIssue(scans.map(scan => scan.identity), { projects, sites });
+      if (issue) {
+        setUploadBatchIssue(issue); setBatchCardIds([]); setPendingScans([]); setReviewScan(null); setSelectedId(null); setVerificationOpen(false);
+        toast.error(issue);
+        return;
+      }
       const [first, ...rest] = scans;
       setBatchCardIds([]);
       setPendingScans(rest);
@@ -359,6 +379,8 @@ function TimeCardsPage() {
   }
 
   async function generateSettledClaims() {
+    const issue = uploadBatchIssue ?? projectBatchIssue(settlementCards.flatMap(card => card.entries), { projects, sites }, true);
+    if (issue) { toast.error(issue); return; }
     if (!readyToGenerate || generating) return;
     setGenerating(true);
     try {
@@ -456,6 +478,7 @@ function TimeCardsPage() {
 
       refresh();
       setBatchCardIds(importedIds);
+      setUploadBatchIssue(null); setPendingScans([]); setReviewScan(null);
       if (importedIds[0]) { setSelectedId(importedIds[0]); setActiveTab("cards"); setVerificationOpen(true); }
       toast.success(`Imported ${data.length} rows for ${byEmployee.size} employee(s)`);
     } catch (e) {
@@ -519,6 +542,7 @@ function TimeCardsPage() {
             </div>
           </div>
 
+          {batchIssue && <div role="alert" className="border-l-4 border-destructive bg-destructive/10 p-3 text-sm text-foreground">{batchIssue}</div>}
           {selected && <div className="space-y-4 rounded-lg border bg-muted/30 p-4">
             <p className="text-sm font-medium text-foreground">Selected card: {empName(selected.employeeId)} · {selected.periodStart} → {selected.periodEnd}</p>
             <div className="grid items-end gap-4 md:grid-cols-2">
