@@ -195,6 +195,10 @@ function TimeCardsPage() {
     [reconcile, cards],
   );
   const focusIssueIndex = focusIssue ? navigableIssues.indexOf(focusIssue) : -1;
+  const issueLabel = (i: ClaimReconcileIssue) => {
+    const card = cards.find((c) => c.id === i.cardId);
+    return [card ? cardName(card) : i.worker, i.date, i.kind].filter(Boolean).join(" · ");
+  };
   const goToIssue = (dir: -1 | 1) => {
     const current = focusIssue ? navigableIssues.indexOf(focusIssue) : -1;
     const next = current >= 0 ? navigableIssues[current + dir] : undefined;
