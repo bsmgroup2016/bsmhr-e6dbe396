@@ -2,7 +2,14 @@ export interface TimeCardIdentity {
   workerName?: string; employeeCode?: string; fin?: string; projectName?: string; siteName?: string;
 }
 export function canConfirmCardDetails(workerId: string, month: string, siteName: string): boolean {
-  return Boolean(workerId && /^\d{4}-\d{2}$/.test(month) && siteName.trim());
+  return Boolean(/^\d{4}-(0[1-9]|1[0-2])$/.test(month) && siteName.trim());
+}
+
+/** Discard a location only when it repeats an explicitly extracted worker identity. */
+export function cardProjectName(identity: TimeCardIdentity): string | undefined {
+  const project = normalize(identity.projectName);
+  if (project && [identity.workerName, identity.employeeCode, identity.fin].some(value => value && normalize(value) === project)) return undefined;
+  return identity.projectName;
 }
 
 /** Printed names take precedence; do not infer a demo site from attendance. */

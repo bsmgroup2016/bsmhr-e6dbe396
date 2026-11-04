@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { canConfirmCardDetails, matchCardWorker, uniqueCardMatch, type TimeCardIdentity } from "@/core/time-card-matching";
+import { canConfirmCardDetails, cardProjectName, matchCardWorker, uniqueCardMatch, type TimeCardIdentity } from "@/core/time-card-matching";
 import { completeTimeCardReview } from "@/core/time-card-review";
 import { canGenerateSettledCards, isCardApproved, validCardHours } from "@/core/time-card-settlement";
 import { groupTimeCardRows, splitTimeCardFile } from "@/core/time-card-batch";
@@ -163,9 +163,17 @@ function TimeCardsPage() {
   }, [comparison, verificationSearch, verificationFilter]);
 
   const empName = (id?: string) => employees.find((e) => e.id === id)?.name ?? "—";
+  const cardName = (card: TimeCard) => card.entries[0]?.workerName || empName(card.employeeId);
+
+  // Unlinked generator cards stay local: time_cards requires a real employee FK.
+  function saveCard(id: string, patch: Partial<TimeCard>) {
+    const card = cards.find(item => item.id === id);
+    if (card && !card.employeeId) setCards(items => items.map(item => item.id === id ? { ...item, ...patch } : item));
+    else updateTimeCard(id, patch);
+  }
 
   function refresh() {
-    setCards(getTimeCards());
+    setCards(previous => [...getTimeCards(), ...previous.filter(card => !card.employeeId)]);
     setSheets(getClaimSheets());
   }
 
@@ -180,9 +188,12 @@ function TimeCardsPage() {
     const ocr = await extractTimeCardData(uploaded.url);
     if (!ocr.ok) throw new Error(ocr.reason);
     return groupTimeCardRows(ocr.data).map((group) => ({
-      fileName: file.name, fileUrl: uploaded.url, identity: group.identity,
+      fileName: file.name, fileUrl: uploaded.url, identity: { ...group.identity, projectName: cardProjectName(group.identity) },
       entries: group.entries.map((r) => ({
         date: r.date,
+        workerName: group.identity.workerName,
+        employeeCode: group.identity.employeeCode,
+        fin: group.identity.fin,
         checkIn: r.checkIn,
         checkOut: r.checkOut,
         confidence: r.confidence,
@@ -210,7 +221,9 @@ function TimeCardsPage() {
     ], { projects, sites });
     if (issue) { setUploadBatchIssue(issue); setReviewScan(null); setPendingScans([]); setVerificationOpen(false); toast.error(issue); return; }
     const { start, end } = monthRange(month);
-    const card = addTimeCard({ employeeId, periodStart: start, periodEnd: end, fileUrl: reviewScan.fileUrl, fileName: reviewScan.fileName, status: "Draft", entries: reviewScan.entries.map((entry) => ({ ...entry, projectId: projectId || undefined, projectName: projects.find((project) => project.id === projectId)?.name ?? reviewScan.identity.projectName, siteId: siteId || undefined, siteName: siteName.trim() })) });
+    const draft: Omit<TimeCard, "id"> = { employeeId, periodStart: start, periodEnd: end, fileUrl: reviewScan.fileUrl, fileName: reviewScan.fileName, status: "Draft", entries: reviewScan.entries.map((entry) => ({ ...entry, projectId: projectId || undefined, projectName: projects.find((project) => project.id === projectId)?.name ?? reviewScan.identity.projectName, siteId: siteId || undefined, siteName: siteName.trim() })) };
+    const card = employeeId ? addTimeCard(draft) : { ...draft, id: crypto.randomUUID() };
+    if (!employeeId) setCards(items => [...items, card]);
     refresh(); setSelectedId(card.id); setActiveTab("cards");
     setBatchCardIds(ids => [...ids, card.id]);
     setReviewScan(null); setVerificationSearch(""); setVerificationFilter("All"); setVerificationOpen(true);
@@ -387,8 +400,8 @@ function TimeCardsPage() {
       if (settlementCards.some(card => !card.periodStart.startsWith(month))) throw new Error("These cards cover different months. Generate each claim month separately from Time cards.");
       const prepared = settlementCards.map(card => ({ card, snapshot: buildClaimSheetFromCard(card) }));
       const drafts = prepared.filter(item => item.snapshot.length).map(({ card, snapshot }) => ({
-        id: card.id, reference: card.id, employeeId: card.employeeId,
-        companyId: employees.find(employee => employee.id === card.employeeId)?.companyId,
+        id: card.id, reference: card.id, employeeId: card.employeeId || undefined,
+        companyId: employees.find(employee => employee.id === card.employeeId)?.companyId ?? (companyId || undefined),
         periodStart: card.periodStart, periodEnd: card.periodEnd, totalDays: snapshot.length,
         totalNormalHours: snapshot.reduce((sum, row) => sum + row.normalHours, 0),
         totalOtHours: snapshot.reduce((sum, row) => sum + row.otHours, 0), snapshot,
@@ -579,12 +592,9 @@ function TimeCardsPage() {
           <DialogContent>
             <DialogHeader><DialogTitle>Review extracted card details</DialogTitle></DialogHeader>
             <p className="text-sm text-muted-foreground">{reviewScan?.fileName} · {reviewScan?.entries.length ?? 0} days read</p>
-            <p className="text-sm">{[reviewScan?.identity.workerName, reviewScan?.identity.employeeCode, reviewScan?.identity.projectName, reviewScan?.identity.siteName].filter(Boolean).join(" · ") || "Card identity was unreadable. Confirm the details below."}</p>
-            <Label>Worker</Label>
-            <Select value={employeeId} onValueChange={setEmployeeId}><SelectTrigger><SelectValue placeholder="Match the worker on the time card" /></SelectTrigger><SelectContent>{scoped.map((employee) => <SelectItem key={employee.id} value={employee.id}>{employee.name} ({employee.employeeCode})</SelectItem>)}</SelectContent></Select>
             <Label>Project (optional)</Label><Select value={projectId || "none"} onValueChange={(value) => setProjectId(value === "none" ? "" : value)}><SelectTrigger><SelectValue placeholder="Select project (optional)" /></SelectTrigger><SelectContent><SelectItem value="none">No project selected</SelectItem>{projects.map((project) => <SelectItem key={project.id} value={project.id}>{project.name}</SelectItem>)}</SelectContent></Select>
             <Label htmlFor="review-site">Site</Label><Input id="review-site" value={siteName} required placeholder="Site name printed on time card" onChange={(event) => { setSiteName(event.target.value); setSiteId(uniqueCardMatch(sites, event.target.value, (site) => [site.name, site.code])); }} />
-            <Label htmlFor="review-month">Period read from card</Label><Input id="review-month" type="month" value={month} onChange={(event) => setMonth(event.target.value)} />
+            <p className="text-sm text-muted-foreground">Period: {month || "Unreadable"}</p>
             <Button disabled={!canConfirmCardDetails(employeeId, month, siteName)} onClick={confirmScan}><CheckCircle2 className="mr-2 h-4 w-4" />Confirm & review times</Button>
           </DialogContent>
         </Dialog>

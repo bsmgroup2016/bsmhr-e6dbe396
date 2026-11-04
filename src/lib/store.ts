@@ -2810,6 +2810,8 @@ export function buildClaimSheetFromCard(card: TimeCard) {
       return {
         date: e.date,
         sourceCardId: card.id,
+        workerName: e.workerName,
+        employeeCode: e.employeeCode,
         checkIn: e.resolution === "Corrected" ? sys?.checkIn : e.checkIn ?? sys?.checkIn,
         checkOut: e.resolution === "Corrected" ? sys?.checkOut : e.checkOut ?? sys?.checkOut,
         normalHours: normal,
