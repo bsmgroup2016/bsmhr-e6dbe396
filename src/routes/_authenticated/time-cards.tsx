@@ -16,6 +16,7 @@ import { canConfirmCardDetails, matchCardWorker, uniqueCardMatch, type TimeCardI
 import { completeTimeCardReview } from "@/core/time-card-review";
 import { createClaimWorkbook, exportCombinedClaims, claimSheetTitle } from "@/lib/combined-claim-export";
 import { ClaimWorkbookEditor, type ClaimEditorDocument } from "@/components/claim-workbook-editor";
+import { ClaimTemplateManager } from "@/components/claim-template-manager";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
@@ -431,10 +432,11 @@ function TimeCardsPage() {
 
     <AppShell>
       <div className="w-full space-y-6">
-        <div>
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">
             Claim Sheet
           </h1>
+          <ClaimTemplateManager />
         </div>
 
         <section className="space-y-5 rounded-xl border bg-card p-5 shadow-sm">

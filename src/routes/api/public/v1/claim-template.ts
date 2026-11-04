@@ -11,6 +11,12 @@ export const Route = createFileRoute("/api/public/v1/claim-template")({
       const response = await sbRest(auth.ctx, "storage_objects?select=key,original_name,created_at&folder=eq.claim-templates&order=created_at.desc,key.desc&limit=1");
       if (!response.ok) return fail(502, "template_unavailable", "Could not read the saved blank template.");
       const rows = await response.json();
+      if (new URL(request.url).searchParams.get("download") === "1" && rows[0]) {
+        const { r2FetchObject } = await import("@/lib/r2.server");
+        const file = await r2FetchObject(rows[0].key);
+        if (!file.ok) return fail(502, "template_unavailable", "Could not read the saved template file.");
+        return new Response(file.body, { headers: { "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Cache-Control": "no-store" } });
+      }
       return ok(rows[0] ?? null);
     },
   } },
