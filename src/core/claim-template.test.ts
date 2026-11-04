@@ -104,3 +104,20 @@ test("Approved edited GW and OT survive storage mapping and fill the active temp
   expect(downloaded.worksheets[0]?.getCell("G5").value).toBe(7.5);
   expect(downloaded.worksheets[0]?.getCell("G6").value).toBe(3.25);
 });
+
+test("Unselected project/client stays blank in Excel while the printed site is retained", async () => {
+  const { book } = blank();
+  const bytes = new Uint8Array(await book.xlsx.writeBuffer());
+  const output = await createClaimWorkbook([{ id: "c", reference: "C", periodStart: "2026-10-01", periodEnd: "2026-10-31", totalDays: 1, totalNormalHours: 8, totalOtHours: 4, snapshot: [{ date: "2026-10-01", projectName: "MISREAD WORKER NAME", site: "JB-1183", normalHours: 8, otHours: 4, status: "Present" }] }], [], [], "2026-10", { templateBuffer: bytes.buffer });
+  expect(output.worksheets[0]?.getCell("A1").value).toBeNull();
+  expect(output.worksheets[0]?.getCell("A2").value).toBe("JB-1183");
+  expect(output.worksheets[0]?.getCell("A3").value).toBe("CLAIM FOR OCT 2026");
+});
+
+test("Explicit project selection fills its client while retaining the card site", async () => {
+  const { book } = blank();
+  const bytes = new Uint8Array(await book.xlsx.writeBuffer());
+  const output = await createClaimWorkbook([{ id: "c", reference: "C", periodStart: "2026-10-01", periodEnd: "2026-10-31", totalDays: 1, totalNormalHours: 8, totalOtHours: 4, snapshot: [{ date: "2026-10-01", projectId: "p", site: "JB-1183", normalHours: 8, otHours: 4, status: "Present" }] }], [], [], "2026-10", { templateBuffer: bytes.buffer, projects: [{ id: "p", name: "SELECTED PROJECT", clientId: "client" } as import("@/lib/types").Project], clients: [{ id: "client", name: "SELECTED CLIENT" } as import("@/lib/types").Client] });
+  expect(output.worksheets[0]?.getCell("A1").value).toBe("SELECTED CLIENT");
+  expect(output.worksheets[0]?.getCell("A2").value).toBe("JB-1183");
+});

@@ -208,7 +208,6 @@ function TimeCardsPage() {
     const matchedSite = uniqueCardMatch(sites, scan.identity.siteName, (site) => [site.name, site.code]);
     setSiteId(matchedSite);
     setSiteName(scan.identity.siteName?.trim() ?? "");
-    setMonth(scan.entries[0]?.date.slice(0, 7) ?? "");
   }
 
   function confirmScan() {
@@ -264,7 +263,7 @@ function TimeCardsPage() {
       setBatchCardIds([]);
       setProjectId("");
       setPendingScans(rest);
-      if (first) openScan(first);
+      if (first) { setMonth(first.entries[0]?.date.slice(0, 7) ?? ""); openScan(first); }
       if (totalRows > 0) {
         toast.success(`Read ${scans.length} worker card(s), ${totalRows} daily row(s) from ${files.length} file(s)`);
       }
