@@ -30,8 +30,8 @@ export function groupClaimsByProject(sheets: ClaimSheet[], employees: Employee[]
       const key = (entry.projectId || projectName.toUpperCase() || "UNASSIGNED") + "|" + (sheet.companyId ?? "");
       const clientName = lookups.clients?.find((c) => c.id === project?.clientId)?.name ?? "";
       const group = groups.get(key) ?? { key, projectName, clientName, companyName: company?.name ?? "", workers: new Map() };
-      const workerKey = sheet.employeeId ?? sheet.id;
-      const worker = group.workers.get(workerKey) ?? { code: employee?.employeeCode ?? "", name: (employee?.name ?? "").toUpperCase(), days: new Map() };
+      const workerKey = sheet.employeeId || entry.employeeId || entry.employeeCode?.trim().toUpperCase() || entry.sourceCardId || sheet.id;
+      const worker = group.workers.get(workerKey) ?? { code: entry.employeeCode || employee?.employeeCode || "", name: (entry.workerName || employee?.name || "").toUpperCase(), days: new Map() };
       const day = Number(entry.date.slice(8, 10));
       const cell = worker.days.get(day) ?? { g: 0, ot: 0 };
       cell.g += entry.normalHours || 0; cell.ot += entry.otHours || 0;

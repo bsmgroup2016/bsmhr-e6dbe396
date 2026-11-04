@@ -1,4 +1,9 @@
+import { cardProjectName } from "./time-card-matching";
+
 export interface CardLocation {
+  workerName?: string;
+  employeeCode?: string;
+  fin?: string;
   projectId?: string;
   projectName?: string;
   siteId?: string;
@@ -19,7 +24,7 @@ export function projectBatchIssue(locations: CardLocation[], lookups: LocationLo
     const found = new Map<string, string>();
     for (const location of locations) {
       const id = kind === "project" ? location.projectId : location.siteId;
-      const name = kind === "project" ? location.projectName : location.siteName;
+      const name = kind === "project" ? cardProjectName(location) : location.siteName;
       const matches = items.filter(item => id ? item.id === id : Boolean(name && [item.name, item.code].some(value => normalize(value) === normalize(name))));
       const item = matches.length === 1 ? matches[0] : undefined;
       const key = item ? `id:${item.id}` : id ? `id:${id}` : normalize(name);

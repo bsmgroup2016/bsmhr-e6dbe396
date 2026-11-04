@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { canConfirmCardDetails, matchCardWorker, uniqueCardMatch, type TimeCardIdentity } from "@/core/time-card-matching";
+import { canConfirmCardDetails, cardProjectName, matchCardWorker, uniqueCardMatch, type TimeCardIdentity } from "@/core/time-card-matching";
 import { completeTimeCardReview } from "@/core/time-card-review";
 import { canGenerateSettledCards, isCardApproved, validCardHours } from "@/core/time-card-settlement";
 import { groupTimeCardRows, splitTimeCardFile } from "@/core/time-card-batch";
@@ -97,6 +97,7 @@ function TimeCardsPage() {
   const clients = getClients();
   const projects = getProjects().filter((project) => clients.some((client) => client.id === project.clientId));
   const [projectId, setProjectId] = useState("");
+  const [printedProject, setPrintedProject] = useState("");
 
   const [cards, setCards] = useState(getTimeCards());
   const [sheets, setSheets] = useState(getClaimSheets());
@@ -163,9 +164,17 @@ function TimeCardsPage() {
   }, [comparison, verificationSearch, verificationFilter]);
 
   const empName = (id?: string) => employees.find((e) => e.id === id)?.name ?? "—";
+  const cardName = (card: TimeCard) => card.entries[0]?.workerName || empName(card.employeeId);
+
+  // Unlinked generator cards stay local: time_cards requires a real employee FK.
+  function saveCard(id: string, patch: Partial<TimeCard>) {
+    const card = cards.find(item => item.id === id);
+    if (card && !card.employeeId) setCards(items => items.map(item => item.id === id ? { ...item, ...patch } : item));
+    else updateTimeCard(id, patch);
+  }
 
   function refresh() {
-    setCards(getTimeCards());
+    setCards(previous => [...getTimeCards(), ...previous.filter(card => !card.employeeId)]);
     setSheets(getClaimSheets());
   }
 
@@ -180,9 +189,12 @@ function TimeCardsPage() {
     const ocr = await extractTimeCardData(uploaded.url);
     if (!ocr.ok) throw new Error(ocr.reason);
     return groupTimeCardRows(ocr.data).map((group) => ({
-      fileName: file.name, fileUrl: uploaded.url, identity: group.identity,
+      fileName: file.name, fileUrl: uploaded.url, identity: { ...group.identity, projectName: cardProjectName(group.identity) },
       entries: group.entries.map((r) => ({
         date: r.date,
+        workerName: group.identity.workerName,
+        employeeCode: group.identity.employeeCode,
+        fin: group.identity.fin,
         checkIn: r.checkIn,
         checkOut: r.checkOut,
         confidence: r.confidence,
@@ -193,6 +205,7 @@ function TimeCardsPage() {
 
   function openScan(scan: PendingScan) {
     setReviewScan(scan);
+    setPrintedProject(scan.identity.projectName ?? "");
     setEmployeeId(matchCardWorker(scoped, scan.identity));
     const matchedSite = uniqueCardMatch(sites, scan.identity.siteName, (site) => [site.name, site.code]);
     setSiteId(matchedSite);
@@ -205,12 +218,14 @@ function TimeCardsPage() {
     if (!reviewScan || !canConfirmCardDetails(employeeId, month, siteName)) return;
     const issue = projectBatchIssue([
       ...cards.filter(card => batchCardIds.includes(card.id)).flatMap(card => card.entries),
-      ...pendingScans.map(scan => scan.identity),
-      { projectId: projectId || undefined, projectName: projects.find(project => project.id === projectId)?.name ?? reviewScan.identity.projectName, siteId: siteId || undefined, siteName },
+      { projectId: projectId || undefined, projectName: projects.find(project => project.id === projectId)?.name ?? (printedProject.trim() || undefined), siteId: siteId || undefined, siteName },
     ], { projects, sites });
-    if (issue) { setUploadBatchIssue(issue); setReviewScan(null); setPendingScans([]); setVerificationOpen(false); toast.error(issue); return; }
+    if (issue) { toast.error(issue); return; }
+    setUploadBatchIssue(null);
     const { start, end } = monthRange(month);
-    const card = addTimeCard({ employeeId, periodStart: start, periodEnd: end, fileUrl: reviewScan.fileUrl, fileName: reviewScan.fileName, status: "Draft", entries: reviewScan.entries.map((entry) => ({ ...entry, projectId: projectId || undefined, projectName: projects.find((project) => project.id === projectId)?.name ?? reviewScan.identity.projectName, siteId: siteId || undefined, siteName: siteName.trim() })) });
+    const draft: Omit<TimeCard, "id"> = { employeeId, periodStart: start, periodEnd: end, fileUrl: reviewScan.fileUrl, fileName: reviewScan.fileName, status: "Draft", entries: reviewScan.entries.map((entry) => ({ ...entry, projectId: projectId || undefined, projectName: projects.find((project) => project.id === projectId)?.name ?? (printedProject.trim() || undefined), siteId: siteId || undefined, siteName: siteName.trim() })) };
+    const card = employeeId ? addTimeCard(draft) : { ...draft, id: crypto.randomUUID() };
+    if (!employeeId) setCards(items => [...items, card]);
     refresh(); setSelectedId(card.id); setActiveTab("cards");
     setBatchCardIds(ids => [...ids, card.id]);
     setReviewScan(null); setVerificationSearch(""); setVerificationFilter("All"); setVerificationOpen(true);
@@ -245,9 +260,8 @@ function TimeCardsPage() {
       refresh();
       const issue = projectBatchIssue(scans.map(scan => scan.identity), { projects, sites });
       if (issue) {
-        setUploadBatchIssue(issue); setBatchCardIds([]); setPendingScans([]); setReviewScan(null); setSelectedId(null); setVerificationOpen(false);
+        setUploadBatchIssue(issue);
         toast.error(issue);
-        return;
       }
       const [first, ...rest] = scans;
       setBatchCardIds([]);
@@ -291,7 +305,7 @@ function TimeCardsPage() {
           suggestion: r.suggestion,
         })),
       );
-      updateTimeCard(card.id, { status: "Draft", entries: entries.map(entry => ({ ...entry, normalHours: undefined, otHours: undefined, reviewApproved: false })) });
+      saveCard(card.id, { status: "Draft", entries: entries.map(entry => ({ ...entry, normalHours: undefined, otHours: undefined, reviewApproved: false })) });
       refresh();
       setSelectedId(card.id);
       setVerificationOpen(true);
@@ -311,7 +325,7 @@ function TimeCardsPage() {
       : [...selected.entries, { date, ...patch }];
     const affectsHours = ["checkIn", "checkOut", "resolution", "normalHours", "otHours"].some(key => key in patch);
     const resetsHours = "checkIn" in patch || "checkOut" in patch || "resolution" in patch;
-    updateTimeCard(selected.id, { entries: entries.map(entry => ({ ...entry, ...(affectsHours ? { reviewApproved: false } : {}), ...(resetsHours && entry.date === date ? { normalHours: undefined, otHours: undefined } : {}) })), ...(affectsHours ? { status: "Draft" as const } : {}) });
+    saveCard(selected.id, { entries: entries.map(entry => ({ ...entry, ...(affectsHours ? { reviewApproved: false } : {}), ...(resetsHours && entry.date === date ? { normalHours: undefined, otHours: undefined } : {}) })), ...(affectsHours ? { status: "Draft" as const } : {}) });
     refresh();
   }
 
@@ -330,7 +344,7 @@ function TimeCardsPage() {
         }
       }
     });
-    updateTimeCard(selected.id, { status: "Draft", entries: entries.map(entry => ({ ...entry, reviewApproved: false })) });
+    saveCard(selected.id, { status: "Draft", entries: entries.map(entry => ({ ...entry, reviewApproved: false })) });
     refresh();
     toast.success(`Bulk updated ${filteredComparison.length} rows to ${resolution}`);
   }
@@ -343,7 +357,7 @@ function TimeCardsPage() {
       toast.error("This time card has no times yet — scan or enter them first");
       return false;
     }
-    updateTimeCard(card.id, { status: unresolved ? "Has Mismatches" : "Verified" });
+    saveCard(card.id, { status: unresolved ? "Has Mismatches" : "Verified" });
     if (unresolved) {
       refresh();
       toast.warning(`${unresolved} row(s) still need a decision`);
@@ -363,7 +377,7 @@ function TimeCardsPage() {
   function approveCard(card: TimeCard) {
     if (!completeTimeCardReview("finalize", () => verifyCard(card), () => {})) return;
     const rows = compareTimeCard(card);
-    updateTimeCard(card.id, { status: "Verified", entries: card.entries.map(entry => {
+    saveCard(card.id, { status: "Verified", entries: card.entries.map(entry => {
       const hours = rows.find(row => row.date === entry.date);
       return { ...entry, normalHours: hours?.normalHours ?? 0, otHours: hours?.otHours ?? 0, reviewApproved: true };
     }) });
@@ -387,8 +401,8 @@ function TimeCardsPage() {
       if (settlementCards.some(card => !card.periodStart.startsWith(month))) throw new Error("These cards cover different months. Generate each claim month separately from Time cards.");
       const prepared = settlementCards.map(card => ({ card, snapshot: buildClaimSheetFromCard(card) }));
       const drafts = prepared.filter(item => item.snapshot.length).map(({ card, snapshot }) => ({
-        id: card.id, reference: card.id, employeeId: card.employeeId,
-        companyId: employees.find(employee => employee.id === card.employeeId)?.companyId,
+        id: card.id, reference: card.id, employeeId: card.employeeId || undefined,
+        companyId: employees.find(employee => employee.id === card.employeeId)?.companyId ?? (companyId || undefined),
         periodStart: card.periodStart, periodEnd: card.periodEnd, totalDays: snapshot.length,
         totalNormalHours: snapshot.reduce((sum, row) => sum + row.normalHours, 0),
         totalOtHours: snapshot.reduce((sum, row) => sum + row.otHours, 0), snapshot,
@@ -544,11 +558,11 @@ function TimeCardsPage() {
 
           {batchIssue && <div role="alert" className="border-l-4 border-destructive bg-destructive/10 p-3 text-sm text-foreground">{batchIssue}</div>}
           {selected && <div className="space-y-4 rounded-lg border bg-muted/30 p-4">
-            <p className="text-sm font-medium text-foreground">Selected card: {empName(selected.employeeId)} · {selected.periodStart} → {selected.periodEnd}</p>
+            <p className="text-sm font-medium text-foreground">Selected card: {cardName(selected)} · {selected.periodStart} → {selected.periodEnd}</p>
             <div className="grid items-end gap-4 md:grid-cols-2">
             <div className="min-w-0 space-y-2">
               <Label htmlFor="claim-project">Project (optional)</Label>
-              <Select value={selected.entries.find((entry) => entry.projectId)?.projectId ?? "none"} onValueChange={(value) => { const id = value === "none" ? undefined : value; updateTimeCard(selected.id, { entries: selected.entries.map((entry) => ({ ...entry, projectId: id, projectName: id ? projects.find((project) => project.id === id)?.name : undefined })) }); setProjectId(id ?? ""); refresh(); }}>
+              <Select value={selected.entries.find((entry) => entry.projectId)?.projectId ?? "none"} onValueChange={(value) => { const id = value === "none" ? undefined : value; saveCard(selected.id, { entries: selected.entries.map((entry) => ({ ...entry, projectId: id, projectName: id ? projects.find((project) => project.id === id)?.name : undefined })) }); setProjectId(id ?? ""); refresh(); }}>
                 <SelectTrigger id="claim-project" className="w-full"><SelectValue placeholder="Select project" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">No project selected</SelectItem>
@@ -557,7 +571,7 @@ function TimeCardsPage() {
               </Select>
               {!projects.length && <p className="text-sm text-muted-foreground">No projects available for this company.</p>}
             </div>
-            <div className="space-y-2"><Label htmlFor="claim-site">Site</Label><Input id="claim-site" value={selected.entries.find((entry) => entry.siteName)?.siteName ?? sites.find((site) => site.id === selected.entries.find((entry) => entry.siteId)?.siteId)?.name ?? ""} onChange={(event) => { const name = event.target.value; updateTimeCard(selected.id, { status: "Draft", entries: selected.entries.map((entry) => ({ ...entry, siteName: name, siteId: uniqueCardMatch(sites, name, (site) => [site.name, site.code]) || undefined })) }); refresh(); }} /></div>
+            <div className="space-y-2"><Label htmlFor="claim-site">Site</Label><Input id="claim-site" value={selected.entries.find((entry) => entry.siteName)?.siteName ?? sites.find((site) => site.id === selected.entries.find((entry) => entry.siteId)?.siteId)?.name ?? ""} onChange={(event) => { const name = event.target.value; saveCard(selected.id, { status: "Draft", entries: selected.entries.map((entry) => ({ ...entry, siteName: name, siteId: uniqueCardMatch(sites, name, (site) => [site.name, site.code]) || undefined })) }); refresh(); }} /></div>
             <div className="space-y-2">
               <Label htmlFor="claim-month">Claim period</Label>
               <Input id="claim-month" type="month" value={selected.periodStart.slice(0, 7)} readOnly />
@@ -579,12 +593,10 @@ function TimeCardsPage() {
           <DialogContent>
             <DialogHeader><DialogTitle>Review extracted card details</DialogTitle></DialogHeader>
             <p className="text-sm text-muted-foreground">{reviewScan?.fileName} · {reviewScan?.entries.length ?? 0} days read</p>
-            <p className="text-sm">{[reviewScan?.identity.workerName, reviewScan?.identity.employeeCode, reviewScan?.identity.projectName, reviewScan?.identity.siteName].filter(Boolean).join(" · ") || "Card identity was unreadable. Confirm the details below."}</p>
-            <Label>Worker</Label>
-            <Select value={employeeId} onValueChange={setEmployeeId}><SelectTrigger><SelectValue placeholder="Match the worker on the time card" /></SelectTrigger><SelectContent>{scoped.map((employee) => <SelectItem key={employee.id} value={employee.id}>{employee.name} ({employee.employeeCode})</SelectItem>)}</SelectContent></Select>
             <Label>Project (optional)</Label><Select value={projectId || "none"} onValueChange={(value) => setProjectId(value === "none" ? "" : value)}><SelectTrigger><SelectValue placeholder="Select project (optional)" /></SelectTrigger><SelectContent><SelectItem value="none">No project selected</SelectItem>{projects.map((project) => <SelectItem key={project.id} value={project.id}>{project.name}</SelectItem>)}</SelectContent></Select>
+            <Input aria-label="Printed project name" value={printedProject} placeholder="Project name printed on time card (optional)" onChange={event => { setPrintedProject(event.target.value); setProjectId(""); }} />
             <Label htmlFor="review-site">Site</Label><Input id="review-site" value={siteName} required placeholder="Site name printed on time card" onChange={(event) => { setSiteName(event.target.value); setSiteId(uniqueCardMatch(sites, event.target.value, (site) => [site.name, site.code])); }} />
-            <Label htmlFor="review-month">Period read from card</Label><Input id="review-month" type="month" value={month} onChange={(event) => setMonth(event.target.value)} />
+            <p className="text-sm text-muted-foreground">Period: {month || "Unreadable"}</p>
             <Button disabled={!canConfirmCardDetails(employeeId, month, siteName)} onClick={confirmScan}><CheckCircle2 className="mr-2 h-4 w-4" />Confirm & review times</Button>
           </DialogContent>
         </Dialog>
@@ -636,7 +648,7 @@ function TimeCardsPage() {
                         key={c.id}
                         className={selectedId === c.id ? "bg-muted/50" : undefined}
                       >
-                        <TableCell className="font-medium">{empName(c.employeeId)}</TableCell>
+                        <TableCell className="font-medium">{cardName(c)}</TableCell>
                         <TableCell className="text-sm text-muted-foreground">
                           {c.periodStart} → {c.periodEnd}
                         </TableCell>
@@ -679,7 +691,7 @@ function TimeCardsPage() {
                             size="sm"
                             variant="ghost"
                             onClick={() => {
-                              deleteTimeCard(c.id); setBatchCardIds(ids => ids.filter(id => id !== c.id));
+                              c.employeeId ? deleteTimeCard(c.id) : setCards(items => items.filter(item => item.id !== c.id)); setBatchCardIds(ids => ids.filter(id => id !== c.id));
                               if (selectedId === c.id) setSelectedId(null);
                               refresh();
                             }}
@@ -700,7 +712,7 @@ function TimeCardsPage() {
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
                     <DialogHeader><DialogTitle>
-                      Verification — {empName(selected.employeeId)}
+                      Verification — {cardName(selected)}
                     </DialogTitle></DialogHeader>
                     <p className="text-xs text-muted-foreground">
                       {mismatches} of {comparison.length} rows need attention. GW hrs: {comparison.reduce((sum, row) => sum + row.normalHours, 0).toFixed(2)} · OT hrs: {comparison.reduce((sum, row) => sum + row.otHours, 0).toFixed(2)}
