@@ -115,6 +115,7 @@ function TimeCardsPage() {
   const [activeTab, setActiveTab] = useState("cards");
   const [month, setMonth] = useState(() => new Date().toISOString().slice(0, 7));
   const [uploading, setUploading] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const [rescanId, setRescanId] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -254,7 +255,7 @@ function TimeCardsPage() {
     setReviewScan(null); setVerificationSearch(""); setVerificationFilter("All"); setVerificationOpen(true);
   }
 
-  async function handleUpload(fileList: FileList | null) {
+  async function handleUpload(fileList: FileList | File[] | null) {
     const files = fileList ? Array.from(fileList) : [];
     if (files.length === 0) return;
     setUploading(true);
@@ -572,11 +573,11 @@ function TimeCardsPage() {
             );
           })()}
 
-          <label htmlFor="claim-upload" className={`flex flex-col items-center gap-3 rounded-xl border-2 border-dashed border-primary/40 bg-primary/5 p-8 text-center transition-colors hover:bg-primary/10 ${uploading ? "pointer-events-none opacity-60" : "cursor-pointer"}`}>
+          <label htmlFor="claim-upload" onDragOver={(event) => { event.preventDefault(); if (!uploading) setIsDragOver(true); }} onDragLeave={() => setIsDragOver(false)} onDrop={(event) => { event.preventDefault(); setIsDragOver(false); if (!uploading && event.dataTransfer?.files?.length) { void handleUpload(event.dataTransfer.files); } }} className={`flex flex-col items-center gap-3 rounded-xl border-2 border-dashed p-8 text-center transition-colors ${uploading ? "pointer-events-none border-primary/40 bg-primary/5 opacity-60" : "cursor-pointer"} ${isDragOver ? "border-primary bg-primary/20 scale-[1.01]" : "border-primary/40 bg-primary/5 hover:bg-primary/10"}`}>
             <span className="grid h-14 w-14 place-items-center rounded-full bg-primary text-primary-foreground"><Upload className="h-6 w-6" /></span>
-            <span className="text-base font-semibold text-foreground">{uploading ? (progress ? `Reading cards ${progress.done}/${progress.total}…` : "Reading cards…") : "Click to upload time cards"}</span>
+            <span className="text-base font-semibold text-foreground">{uploading ? (progress ? `Reading cards ${progress.done}/${progress.total}…` : "Reading cards…") : isDragOver ? "Drop the cards here" : "Click or drag time cards here"}</span>
             <span className="text-sm text-muted-foreground">
-              {isOcrConfigured() ? "PDF or photos · you can select many at once · details are read automatically" : `${OCR_NOT_CONFIGURED}. Type the card times in manually after upload.`}
+              {isOcrConfigured() ? "PDF or photos · drag & drop or click · select many at once · details are read automatically" : `${OCR_NOT_CONFIGURED}. Type the card times in manually after upload.`}
             </span>
           </label>
           <input id="claim-upload" className="hidden" type="file" multiple accept="image/*,application/pdf" disabled={uploading || reviewScan !== null || pendingScans.length > 0} onChange={(event) => { void handleUpload(event.target.files); event.target.value = ""; }} />
