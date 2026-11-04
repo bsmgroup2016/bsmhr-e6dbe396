@@ -1,4 +1,6 @@
 # Role-based account access
+- [x] Add Blank Template beside heading with Edit, Download and Replace; outputs use newest registered R2 template, dynamic worker/day columns preserve layout. 17 tests passed; original template maps 60 slots/31 days, desktop/mobile dialog checked, unauthenticated API returns 401.
+- [ ] Blank Template: signed-in replacement/save/output read-back blocked by unavailable external-project browser session; real existing template/data not replaced during checks.
 - [x] Claim sheets: Download and adjacent Edit actions; template-preserving Excel draft editing with undo/redo and edited download. 13 tests and isolated browser download passed; all merges retained and 1,088 formulas recalculated with zero errors.
 - [ ] Claim Excel editor: real signed-in claim-row Edit/Download check blocked by unavailable external-project browser session; edits are download-only, not persisted operational changes.
 - [x] Make project optional and retain required OCR site names through card saving and claim generation, without creating demo matches. Ten unit tests passed; signed-in upload/save verification remains unavailable.
