@@ -56,6 +56,8 @@ export interface AiRequest {
   context?: string;
   /** Use only this provider (no fallback). */
   only?: AiProviderName;
+  /** With `only`: fail instead of falling back when that provider is off. */
+  strict?: boolean;
 }
 
 function buildBody(provider: ProviderConfig, req: AiRequest) {
@@ -63,7 +65,8 @@ function buildBody(provider: ProviderConfig, req: AiRequest) {
   const userContent = req.dataUrl
     ? [
         { type: "text", text: prompt },
-        req.dataUrl.startsWith("data:application/pdf")
+        // Gemini's OpenAI-compatible API rejects "file" parts but reads PDFs sent as image_url.
+        req.dataUrl.startsWith("data:application/pdf") && provider.name !== "gemini"
           ? { type: "file", file: { filename: "document.pdf", file_data: req.dataUrl } }
           : { type: "image_url", image_url: { url: req.dataUrl } },
       ]
@@ -93,7 +96,10 @@ function extractJson(text: string): unknown {
 export async function askAiJson(req: AiRequest): Promise<unknown> {
   let list = await configured();
   // If the pinned provider is off/missing, fall back to the normal order.
-  if (req.only && !list.some((p) => p.name === req.only)) req = { ...req, only: undefined };
+  if (req.only && !list.some((p) => p.name === req.only)) {
+    if (req.strict) throw new Error(`${req.only} OCR provider is not enabled`);
+    req = { ...req, only: undefined };
+  }
   if (req.only) list = list.filter((p) => p.name === req.only);
   if (list.length === 0) {
     throw new Error("No OCR provider is configured — add the Gemini or OpenAI key in Settings → API Integration");

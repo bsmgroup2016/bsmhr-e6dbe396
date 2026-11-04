@@ -81,6 +81,10 @@ export type TimeCardExtractRow = {
   siteName?: string;
   checkIn?: string;
   checkOut?: string;
+  /** Hours written on the card (normal + OT). */
+  normalHours?: number;
+  otHours?: number;
+  remarks?: string;
   confidence?: number;
   /** Second AI's (OpenAI) differing reading, for manual review. */
   suggestion?: { checkIn?: string; checkOut?: string };
