@@ -1,5 +1,6 @@
 # Role-based account access
-- [ ] Fix multi-worker upload rejection from misread project identities; remove Worker selection from first popup and preserve separate extracted workers through review and Excel.
+- [x] Remove Worker selection from first popup; ignore explicit worker identities misread as projects, allow location corrections, and preserve separate printed workers through review and Excel. 34 regression tests passed; build OK.
+- [ ] Real multi-worker upload/approval/download remains unverified: preview redirects to sign-in and no authenticated session or source time-card file is available. Unlinked cards are session-local until final claim generation.
 - [x] Single-project/site batch checks reject mixed uploads before card creation, show a persistent mismatch alert, and block final generation; corrected full re-upload replaces the active batch without deleting existing records. 23 regression tests passed; build OK.
 - [ ] Single-project batch: real signed-in OCR/mismatch/re-upload/generation remains unverified without an external-project session and real card samples.
 - [x] Editable counted GW/OT hours and persisted approval; sequential review followed by separate all-approved template generation. 26 tests passed including edited-hour storage mapping/Excel read-back and 25-card approval gate; isolated desktop/mobile hour controls passed; build OK.
