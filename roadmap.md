@@ -1,52 +1,5 @@
-# Role-based account access
-- [x] Time-card reading rebuilt: Gemini (PDF transport fixed) + OpenAI gpt-5.5 read whole cards in parallel and merge per day; real SING TEC Oct 2026 pages read 30/15/30/15 worked days, site JB-1183, Oct 2026. Approve auto-accepts and opens next card; batch survives reloads; month-end day no longer dropped. 52 tests passed. Signed-in click-through in the preview not run (no session).
-- [x] Remove mixed-site checking from upload, confirmation and generation while retaining required Site entry and approval rules; 21 regression tests passed. Real signed-in upload remains unavailable.
-- [x] Independent labelled header OCR anchors Site/month for each physical card before read/audit matching; 20 tests passed including JB-1183, October 2026 and four-worker separation.
-- [ ] Recheck the real PDF through configured OCR and signed-in upload: only screenshots are supplied and no authenticated session is available; existing uploaded cards were not changed.
-- [x] Site-only mismatch checks; confirmation shows Site, optional Project/Client Name selector and editable Claim Month. Selection applies to batch; without selection Excel project/client is blank and site retained. 31 tests passed; build OK. Real signed-in upload remains session-blocked.
-- [x] Preserve AuthContext in Vite hot data instead of reloading after identity changes; browser provider/consumer contract passed without runtime errors, signed-out redirect works, build OK. Signed-in flow remains session-blocked.
-- [x] Remove Worker selection from first popup; ignore explicit worker identities misread as projects, allow location corrections, and preserve separate printed workers through review and Excel. 34 regression tests passed; build OK.
-- [ ] Real multi-worker upload/approval/download remains unverified: preview redirects to sign-in and no authenticated session or source time-card file is available. Unlinked cards are session-local until final claim generation.
-- [x] Single-project/site batch checks reject mixed uploads before card creation, show a persistent mismatch alert, and block final generation; corrected full re-upload replaces the active batch without deleting existing records. 23 regression tests passed; build OK.
-- [ ] Single-project batch: real signed-in OCR/mismatch/re-upload/generation remains unverified without an external-project session and real card samples.
-- [x] Editable counted GW/OT hours and persisted approval; sequential review followed by separate all-approved template generation. 26 tests passed including edited-hour storage mapping/Excel read-back and 25-card approval gate; isolated desktop/mobile hour controls passed; build OK.
-- [ ] New settlement flow: real signed-in batch upload/edit/approval/generation remains blocked by unavailable external-project session and real batch sample; no live records changed during tests.
-- [x] Prepare multi-file and merged-PDF ingestion: page splitting, separate worker/location/month groups, identity-aware audit and guarded rescan. 24 tests passed, including 20-page splitting and 20-worker XLSX read-back; browser splitting/grouping passed.
-- [ ] Twenty-worker real upload/OCR/review/approval/download remains unverified: no signed-in external-project session or real twenty-card sample is available. OCR accuracy requires human review; active template must contain enough worker slots.
-- [x] Add Blank Template beside heading with Edit, Download and Replace; outputs use newest registered R2 template, dynamic worker/day columns preserve layout. 17 tests passed; original template maps 60 slots/31 days, desktop/mobile dialog checked, unauthenticated API returns 401.
-- [ ] Blank Template: signed-in replacement/save/output read-back blocked by unavailable external-project browser session; real existing template/data not replaced during checks.
-- [x] Claim sheets: Download and adjacent Edit actions; template-preserving Excel draft editing with undo/redo and edited download. 13 tests and isolated browser download passed; all merges retained and 1,088 formulas recalculated with zero errors.
-- [ ] Claim Excel editor: real signed-in claim-row Edit/Download check blocked by unavailable external-project browser session; edits are download-only, not persisted operational changes.
-- [x] Make project optional and retain required OCR site names through card saving and claim generation, without creating demo matches. Ten unit tests passed; signed-in upload/save verification remains unavailable.
-- [x] Time-card verification opens in a popup; Finalize closes review without creating a claim, and separate approval generates it. Workflow unit tests passed; signed-in live check unavailable.
-- [x] Move employer/application fields into Employment; group uploaded employee documents/history in Documents and add Bank Card upload. 70 tests and isolated form submission passed; existing files and data unchanged.
-- [ ] Documents tab: real signed-in Bank Card upload/save/download read-back blocked by unavailable external-project browser session.
-- [x] Show one-year Work Permit estimated expiry from confirmed issue date, separately labelled Unverified; preserve official expiry and support Excel issue/expiry dates. 71 tests and isolated form checks passed; no live employee records changed.
-- [x] Add 24 remaining printed IPA fields with autofill, editable registration/profile display and DB mapping; live schema confirms 24 columns, 65 tests and isolated form round-trip passed. Existing employee data unchanged; signed-in upload/save remains unavailable.
-- [x] Separate monthly basic salary and worker daily basic rate in IPA instructions, import columns and profile display; isolated form/mapper check confirms monthly 400 and daily 18 remain separate; 39 tests passed. Existing employee/payroll records unchanged; signed-in save remains session-blocked.
-- [x] Add 21 dedicated IPA personal, employment, compensation and agency fields; live schema read-back confirms all columns, 48 tests and isolated desktop/mobile form checks passed.
-- [ ] New IPA particulars: real signed-in upload/save/read-back remains blocked by unavailable external-project browser session; existing employee data was not backfilled.
-- [x] Document understanding: automatic IPA/passport/WP/CSOC reading, abbreviation-aware mapping and source-specific safe filling; 15 tests and isolated form checks passed.
-- [ ] Document understanding: real signed-in upload/OCR/save/read-back unavailable for the external project's current browser session.
-- [x] Employee expiry autofill: Personal passport upload; Particular and work-permit extraction; editable CSOC expiry; existing workforce Excel mapping retained. Nine tests and isolated desktop/mobile form checks passed.
-- [ ] Employee expiry autofill: real signed-in document upload/OCR/save/read-back blocked by unavailable external-project session and missing real Particular/passport/permit samples.
-- [x] IPA registration: automatic full-document extraction, editable employee form and retained source/details; supplied 16-page IPA returned 33 fields plus 28 extra particulars, 7 tests passed and isolated form checks passed.
-- [ ] IPA registration: signed-in upload → OCR → employee save/read-back awaits an available external-project browser session; no employee record created during checks.
-- [x] ClaimSheet Generator: upload-first OCR identity fields, unique worker/project/site matching, post-read confirmation and sanitized sample-layout Excel export.
-- [ ] ClaimSheet Generator: signed-in real time-card OCR/approval/export checks await an available external-project session and a real sample scan; billing/cost/MRT inputs require confirmed business rules.
-- [x] Archive & Clean: approved private atomic routine installed; admin dry-run/confirmation/holds/archive controls and bounded cleanup steps implemented; retention tests and live count-only checks passed.
-- [ ] Archive & Clean: actual R2 verification, signed-in admin UI and controlled deletion/concurrency trials remain unverified; first real cleanup requires separate confirmation. Automatic mode remains off and recurring scheduler is not provisioned.
-- [x] Phase 3: static-only service-worker cache, precached navigation-only offline fallback, consent-based updates, hourly checks; unit and isolated browser tests passed.
-- [ ] Phase 3: published deployment verification awaits publishing; no deployment requested in this phase.
-- [x] Phase 2: correct P-file deletion and upload metadata errors; signed, lazy profile images.
-- [x] Phase 2: latest chat messages with older-history paging; fixed-size audit pages; 27 regression tests and read-only live paging checks.
-- [ ] Phase 2: signed-in end-to-end photo/chat/audit checks blocked by unavailable external-project browser session; actual deletion/upload tests not performed to preserve user data.
-- [x] Phase 1: replace navigation-wide hydration with session/company on-demand cache and successful-write invalidation.
-- [x] Phase 1: paginate attendance and asset issuances with company/period filters, exact totals, and complete exports.
-- [ ] Phase 1: authenticated UI regression and actual download checks blocked by unavailable external-project browser session; projections, guards, unit tests, live counts and public route verified.
-- [x] Provide provisional Excel bulk-upload templates and Excel export for Staff Directory, Staff Attendance and Staff Payroll.
-- [ ] Finalize staff bulk-upload field mapping and saving: waiting for the user's updated Excel files.
-- [x] Restrict ordinary signup accounts to a welcome-only dashboard without business data loading.
-- [ ] Activate admin role assignment for HR, manager, driver, accounts and IT: blocked on applying staged external database SQL (new role values and atomic assignment RPC).
-- [ ] Enforce database-wide unprivileged signup and role access: blocked on external database SQL execution access and reviewing deployed domain policies; relevant signup/assistant/mobile API guards are implemented.
-- [x] Test access rules (8 passing tests) and verify real role-less sign-in: welcome-only, restricted deep-link redirect, no company data requests; temporary account deleted.
+# Claim sheet dated preview
+
+- [ ] Add a worker-by-worker, date-ordered preview before generation using the same approved rows as Excel.
+- [ ] Test holidays, partial-month ranges, approved edits and visibly excluded rows.
+- [ ] Verify available preview flow and report sign-in limitations.

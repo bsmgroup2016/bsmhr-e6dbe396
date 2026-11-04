@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { CheckCircle2, Download, Pencil, FileSpreadsheet, ScanLine, Trash2, Upload } from "lucide-react";
+import { CheckCircle2, Download, Eye, Pencil, FileSpreadsheet, ScanLine, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { ImportValidationDialog } from "@/components/verification/import-validation-dialog";
 
@@ -23,6 +23,7 @@ import { createClaimWorkbook, exportCombinedClaims, claimSheetTitle } from "@/li
 import { ClaimWorkbookEditor, type ClaimEditorDocument } from "@/components/claim-workbook-editor";
 import { ClaimTemplateManager } from "@/components/claim-template-manager";
 import { TimeCardHoursInputs } from "@/components/time-card-hours-inputs";
+import { ClaimDatePreview } from "@/components/claim-date-preview";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
@@ -110,6 +111,7 @@ function TimeCardsPage() {
   type PendingScan = { fileName: string; fileUrl: string; entries: TimeCardEntry[]; identity: TimeCardIdentity };
   const [batchCardIds, setBatchCardIds] = useState<string[]>([]);
   const [generating, setGenerating] = useState(false);
+  const [claimPreviewOpen, setClaimPreviewOpen] = useState(false);
   const [pendingScans, setPendingScans] = useState<PendingScan[]>([]);
   const [reviewScan, setReviewScan] = useState<PendingScan | null>(null);
   const [activeTab, setActiveTab] = useState("cards");
@@ -158,6 +160,7 @@ function TimeCardsPage() {
     ...(reviewScan ? [reviewScan.identity] : []),
   ], { projects, sites }, true);
   const readyToGenerate = !batchIssue && canGenerateSettledCards(settlementCards, pendingScans.length + (reviewScan ? 1 : 0));
+  const preparedClaims = settlementCards.map(card => ({ card, snapshot: buildClaimSheetFromCard(card) }));
   const mismatches = comparison.filter((r) => r.state !== "Verified").length;
   const lowConfidenceCount = comparison.filter(
     (r) => r.confidence !== undefined && r.confidence < LOW_CONFIDENCE,
@@ -432,8 +435,7 @@ function TimeCardsPage() {
     setGenerating(true);
     try {
       if (settlementCards.some(card => !card.periodStart.startsWith(month))) throw new Error("These cards cover different months. Generate each claim month separately from Time cards.");
-      const prepared = settlementCards.map(card => ({ card, snapshot: buildClaimSheetFromCard(card) }));
-      const drafts = prepared.filter(item => item.snapshot.length).map(({ card, snapshot }) => ({
+      const drafts = preparedClaims.filter(item => item.snapshot.length).map(({ card, snapshot }) => ({
         id: card.id, reference: card.id, employeeId: card.employeeId || undefined,
         companyId: employees.find(employee => employee.id === card.employeeId)?.companyId ?? (companyId || undefined),
         periodStart: card.periodStart, periodEnd: card.periodEnd, totalDays: snapshot.length,
@@ -449,7 +451,7 @@ function TimeCardsPage() {
         if (existing) updateClaimSheet(existing.id, claim);
         else addClaimSheet(claim);
       }
-      refresh(); setActiveTab("sheets");
+      refresh(); setActiveTab("sheets"); setClaimPreviewOpen(false);
       setExcelDocument({ workbook, fileName: timestampedName(`claim_sheet_${month}`, "xlsx") });
       toast.success(`Claim Excel ready — ${drafts.length} approved cards`);
     } catch (error) { toast.error(error instanceof Error ? error.message : "Claim generation failed"); }
@@ -618,9 +620,14 @@ function TimeCardsPage() {
           {!selected && cards.length > 0 && <p className="text-center text-sm text-muted-foreground">Or pick a card below and press <span className="font-medium text-foreground">Open</span> to check and approve it.</p>}
           <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-4">
             <span className="text-sm text-muted-foreground">{approvedCount}/{settlementCards.length + pendingScans.length + (reviewScan ? 1 : 0)} cards approved</span>
-            <Button disabled={!readyToGenerate || uploading || generating} onClick={() => void generateSettledClaims()} className="gap-2"><FileSpreadsheet className="h-4 w-4" />{generating ? "Generating…" : "Generate claim sheet"}</Button>
+            <div className="flex flex-wrap gap-2">
+              <Button variant="outline" disabled={!settlementCards.length || uploading || generating} onClick={() => setClaimPreviewOpen(true)} className="gap-2"><Eye className="h-4 w-4" />Preview dates & hours</Button>
+              <Button disabled={!readyToGenerate || uploading || generating} onClick={() => setClaimPreviewOpen(true)} className="gap-2"><FileSpreadsheet className="h-4 w-4" />Generate claim sheet</Button>
+            </div>
           </div>
         </section>
+
+        <ClaimDatePreview open={claimPreviewOpen} onOpenChange={setClaimPreviewOpen} prepared={preparedClaims} workerName={cardName} workerCode={card => card.entries.find(entry => entry.employeeCode)?.employeeCode || employees.find(employee => employee.id === card.employeeId)?.employeeCode || "—"} ready={readyToGenerate && !uploading} generating={generating} onReview={card => { setClaimPreviewOpen(false); setSelectedId(card.id); setActiveTab("cards"); setVerificationSearch(""); setVerificationFilter("All"); setVerificationOpen(true); }} onGenerate={() => void generateSettledClaims()} />
 
         <Dialog open={reviewScan !== null} onOpenChange={() => {}}>
           <DialogContent>
