@@ -18,9 +18,9 @@ test("Different project readings never block twenty cards from the same site", (
   expect(projectBatchIssue(locations)).toBeNull();
 });
 
-test("One different site blocks even when project is the same or optional", () => {
-  expect(projectBatchIssue([{ siteName: "Site A" }, { siteName: "Site B" }])).toContain("Mixed sites detected");
-  expect(projectBatchIssue([{ projectName: "Project A", siteName: "Site A" }, { projectName: "Project A", siteName: "Site B" }])).toContain("Mixed sites detected");
+test("Different sites never block upload, confirmation or generation", () => {
+  expect(projectBatchIssue([{ siteName: "JB-1183" }, { siteName: "PCB 31" }])).toBeNull();
+  expect(projectBatchIssue([{ projectName: "Project A", siteName: "JB-1183" }, { projectName: "Project A", siteName: "PCB 31" }], {}, true)).toBeNull();
 });
 
 test("Known site code and name resolve to the same site; unknown site is not guessed", () => {
@@ -29,11 +29,11 @@ test("Known site code and name resolve to the same site; unknown site is not gue
   expect(projectBatchIssue([{ siteName: "Site A" }, {}], lookups, true)).toContain("Site is missing");
 });
 
-test("A corrected full re-upload clears the mismatch without retaining old identities", () => {
-  expect(projectBatchIssue([{ siteName: "Site A" }, { siteName: "Site B" }])).not.toBeNull();
+test("Both mixed and matching site batches are accepted", () => {
+  expect(projectBatchIssue([{ siteName: "Site A" }, { siteName: "Site B" }])).toBeNull();
   expect(projectBatchIssue([{ siteName: "Site A" }, { siteName: "Site A" }], {}, true)).toBeNull();
 });
 
-test("Different known site IDs cannot be collapsed by identical printed names", () => {
-  expect(projectBatchIssue([{ siteId: "a", siteName: "Site A" }, { siteId: "b", siteName: "Site A" }], { sites: [{ id: "a", name: "Site A" }, { id: "b", name: "Site B" }] })).toContain("Mixed sites detected");
+test("Different known site IDs do not block generation", () => {
+  expect(projectBatchIssue([{ siteId: "a", siteName: "Site A" }, { siteId: "b", siteName: "Site A" }], { sites: [{ id: "a", name: "Site A" }, { id: "b", name: "Site B" }] }, true)).toBeNull();
 });

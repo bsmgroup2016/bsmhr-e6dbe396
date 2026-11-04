@@ -1,4 +1,5 @@
 # Role-based account access
+- [ ] Remove mixed-site checking from upload, confirmation and generation while retaining required Site entry and approval rules.
 - [x] Independent labelled header OCR anchors Site/month for each physical card before read/audit matching; 20 tests passed including JB-1183, October 2026 and four-worker separation.
 - [ ] Recheck the real PDF through configured OCR and signed-in upload: only screenshots are supplied and no authenticated session is available; existing uploaded cards were not changed.
 - [x] Site-only mismatch checks; confirmation shows Site, optional Project/Client Name selector and editable Claim Month. Selection applies to batch; without selection Excel project/client is blank and site retained. 31 tests passed; build OK. Real signed-in upload remains session-blocked.

@@ -15,21 +15,18 @@ type LocationLookups = {
 
 const normalize = (value?: string) => (value ?? "").trim().toUpperCase().replace(/\s+/g, " ");
 
-/** Compare every printed location; missing text never inherits another worker's site. */
+/** Require site information when requested; differing sites never block a batch. */
 export function projectBatchIssue(locations: CardLocation[], lookups: LocationLookups = {}, requireSite = false): string | null {
-  for (const kind of ["site"] as const) {
+  if (requireSite) {
     const items = lookups.sites ?? [];
-    const found = new Map<string, string>();
     for (const location of locations) {
       const id = location.siteId;
       const name = location.siteName;
       const matches = items.filter(item => id ? item.id === id : Boolean(name && [item.name, item.code].some(value => normalize(value) === normalize(name))));
       const item = matches.length === 1 ? matches[0] : undefined;
       const key = item ? `id:${item.id}` : id ? `id:${id}` : normalize(name);
-      if (kind === "site" && requireSite && !key) return "Site is missing on a card. Confirm the site before generating the claim sheet.";
-      if (key) found.set(key, name?.trim() || item?.name || id || "Unknown");
+      if (!key) return "Site is missing on a card. Confirm the site before generating the claim sheet.";
     }
-    if (found.size > 1) return `Mixed ${kind}s detected: ${[...found.values()].join(" · ")}. Correct the cards and re-upload the complete batch for one project/site. Claim generation is blocked.`;
   }
   return null;
 }
