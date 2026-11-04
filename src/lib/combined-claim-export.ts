@@ -44,7 +44,7 @@ export function groupClaimsByProject(sheets: ClaimSheet[], employees: Employee[]
   return [...groups.values()];
 }
 
-export async function exportCombinedClaims(sheets: ClaimSheet[], employees: Employee[], _title: string, companies: Company[] = [], month = sheets[0]?.periodStart.slice(0, 7) ?? "", lookups: ClaimLookups = {}) {
+export async function createClaimWorkbook(sheets: ClaimSheet[], employees: Employee[], companies: Company[] = [], month = sheets[0]?.periodStart.slice(0, 7) ?? "", lookups: ClaimLookups = {}) {
   const groups = groupClaimsByProject(sheets, employees, month, { ...lookups, companies });
   if (!groups.length) throw new Error("No approved time-card hours in this period");
   const big = groups.find((g) => g.workers.size > SLOTS);
@@ -101,7 +101,20 @@ export async function exportCombinedClaims(sheets: ClaimSheet[], employees: Empl
   });
 
   workbook.calcProperties.fullCalcOnLoad = true;
+  return workbook;
+}
+
+export async function claimWorkbookBlob(workbook: import("exceljs").Workbook) {
+  workbook.calcProperties.fullCalcOnLoad = true;
   const out = await workbook.xlsx.writeBuffer();
-  const blob = new Blob([new Uint8Array(out)], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-  const url = URL.createObjectURL(blob); const link = document.createElement("a"); link.href = url; link.download = lookups.fileName || `claim_sheet_${month}.xlsx`; document.body.appendChild(link); link.click(); link.remove(); setTimeout(() => URL.revokeObjectURL(url), 30000);
+  return new Blob([new Uint8Array(out)], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+}
+
+export function downloadClaimBlob(blob: Blob, fileName: string) {
+  const url = URL.createObjectURL(blob); const link = document.createElement("a"); link.href = url; link.download = fileName; document.body.appendChild(link); link.click(); link.remove(); setTimeout(() => URL.revokeObjectURL(url), 30000);
+}
+
+export async function exportCombinedClaims(sheets: ClaimSheet[], employees: Employee[], _title: string, companies: Company[] = [], month = sheets[0]?.periodStart.slice(0, 7) ?? "", lookups: ClaimLookups = {}) {
+  const workbook = await createClaimWorkbook(sheets, employees, companies, month, lookups);
+  downloadClaimBlob(await claimWorkbookBlob(workbook), lookups.fileName || `claim_sheet_${month}.xlsx`);
 }
