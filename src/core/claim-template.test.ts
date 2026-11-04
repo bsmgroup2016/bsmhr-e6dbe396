@@ -1,6 +1,7 @@
 import { test, expect } from "bun:test";
 import ExcelJS from "exceljs";
 import { claimTemplateLayout, selectClaimTemplate } from "./claim-template";
+import { createClaimWorkbook } from "@/lib/combined-claim-export";
 
 function blank(offset = 0) {
   const book = new ExcelJS.Workbook(); const page = book.addWorksheet("TEMPLATE");
@@ -27,4 +28,22 @@ test("blank TEMPLATE is selected instead of a sample sheet", () => {
 test("unknown replacement layout is rejected rather than silently generating the previous format", () => {
   const book = new ExcelJS.Workbook(); book.addWorksheet("Blank").getCell("A1").value = "Unmapped layout";
   expect(() => selectClaimTemplate(book)).toThrow("STAFF CODE");
+});
+
+test("claim output fills the replacement workbook and retains its formatting and template edits", async () => {
+  const { book, page } = blank(2);
+  page.mergeCells("D5:D6"); page.mergeCells("E5:E6");
+  page.getCell("G5").numFmt = "0.00"; page.getColumn(7).width = 17;
+  page.getCell("J1").value = "USER TEMPLATE EDIT";
+  page.getCell("H5").value = { formula: "SUM(G5:G6)" };
+  const input = await book.xlsx.writeBuffer();
+  const bytes = new Uint8Array(input);
+  const output = await createClaimWorkbook([{ id: "claim", reference: "C1", employeeId: "worker", periodStart: "2026-11-01", periodEnd: "2026-11-30", totalDays: 1, totalNormalHours: 8, totalOtHours: 3, snapshot: [{ date: "2026-11-01", projectName: "REAL SITE", normalHours: 8, otHours: 3, status: "Present" }] }], [{ id: "worker", employeeCode: "PC-22", name: "MD ABU SAYED" } as import("@/lib/types").Employee], [], "2026-11", { templateBuffer: bytes.buffer });
+  const result = output.worksheets[0];
+  expect(result?.getCell("D5").value).toBe("PC-22");
+  expect(result?.getCell("E5").value).toBe("MD ABU SAYED");
+  expect(result?.getCell("G5").value).toBe(8); expect(result?.getCell("G6").value).toBe(3);
+  expect(result?.getCell("J1").value).toBe("USER TEMPLATE EDIT");
+  expect(result?.getCell("G5").numFmt).toBe("0.00"); expect(result?.getColumn(7).width).toBe(17);
+  expect(result?.getCell("D6").master.address).toBe("D5"); expect(result?.getCell("H5").formula).toBe("SUM(G5:G6)");
 });

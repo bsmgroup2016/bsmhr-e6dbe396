@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ClaimWorkbookEditor, type ClaimEditorDocument } from "@/components/claim-workbook-editor";
 import { activeClaimTemplate, loadClaimTemplate, saveClaimTemplate, type SavedClaimTemplate } from "@/lib/claim-template";
-import { claimWorkbookBlob, downloadClaimBlob } from "@/lib/combined-claim-export";
+import { downloadClaimBlob } from "@/lib/combined-claim-export";
 import { selectClaimTemplate } from "@/core/claim-template";
 
 export function ClaimTemplateManager() {
