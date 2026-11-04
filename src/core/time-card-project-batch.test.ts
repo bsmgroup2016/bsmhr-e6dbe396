@@ -4,6 +4,14 @@ import { projectBatchIssue } from "./time-card-project-batch";
 test("Twenty employees from one project/site pass the batch check", () => {
   expect(projectBatchIssue(Array.from({ length: 20 }, () => ({ projectName: "Project A", siteName: "Site A" })), {}, true)).toBeNull();
 });
+test("Four workers are not rejected when OCR repeats their identities as projects", () => {
+  expect(projectBatchIssue([
+    { projectName: "PG-31", employeeCode: "PG-31", siteName: "SITE A" },
+    { projectName: "ZAHID", workerName: "ZAHID", siteName: "SITE A" },
+    { projectName: "PC 292", employeeCode: "PC-292", siteName: "SITE A" },
+    { workerName: "FOURTH WORKER", siteName: "SITE A" },
+  ], {}, true)).toBeNull();
+});
 
 test("One different project among twenty cards blocks generation", () => {
   const locations = Array.from({ length: 20 }, (_, i) => ({ projectName: i === 19 ? "Project B" : "Project A", siteName: "Site A" }));

@@ -1,7 +1,7 @@
 export interface TimeCardIdentity {
   workerName?: string; employeeCode?: string; fin?: string; projectName?: string; siteName?: string;
 }
-export function canConfirmCardDetails(workerId: string, month: string, siteName: string): boolean {
+export function canConfirmCardDetails(_workerId: string, month: string, siteName: string): boolean {
   return Boolean(/^\d{4}-(0[1-9]|1[0-2])$/.test(month) && siteName.trim());
 }
 
