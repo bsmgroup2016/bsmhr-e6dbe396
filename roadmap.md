@@ -1,4 +1,5 @@
 # Role-based account access
+- [ ] Prepare multi-file and merged-PDF time-card ingestion: isolate workers/pages, prevent cross-worker audit/rescan mixing, test twenty-worker template output.
 - [x] Add Blank Template beside heading with Edit, Download and Replace; outputs use newest registered R2 template, dynamic worker/day columns preserve layout. 17 tests passed; original template maps 60 slots/31 days, desktop/mobile dialog checked, unauthenticated API returns 401.
 - [ ] Blank Template: signed-in replacement/save/output read-back blocked by unavailable external-project browser session; real existing template/data not replaced during checks.
 - [x] Claim sheets: Download and adjacent Edit actions; template-preserving Excel draft editing with undo/redo and edited download. 13 tests and isolated browser download passed; all merges retained and 1,088 formulas recalculated with zero errors.
