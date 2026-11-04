@@ -111,7 +111,7 @@ test("Unselected project/client stays blank in Excel while the printed site is r
   const output = await createClaimWorkbook([{ id: "c", reference: "C", periodStart: "2026-10-01", periodEnd: "2026-10-31", totalDays: 1, totalNormalHours: 8, totalOtHours: 4, snapshot: [{ date: "2026-10-01", projectName: "MISREAD WORKER NAME", site: "JB-1183", normalHours: 8, otHours: 4, status: "Present" }] }], [], [], "2026-10", { templateBuffer: bytes.buffer });
   expect(output.worksheets[0]?.getCell("A1").value).toBeNull();
   expect(output.worksheets[0]?.getCell("A2").value).toBe("JB-1183");
-  expect(output.worksheets[0]?.getCell("A3").value).toBe("CLAIM FOR OCT 2026");
+  expect(output.worksheets[0]?.getCell("A3").value).toBe("CLAIM SHEET FOR OCT 2026");
 });
 
 test("Explicit project selection fills its client while retaining the card site", async () => {
