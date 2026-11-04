@@ -25,3 +25,7 @@ test("A corrected full re-upload clears the mismatch without retaining old ident
   expect(projectBatchIssue([{ siteName: "Site A" }, { siteName: "Site B" }])).not.toBeNull();
   expect(projectBatchIssue([{ siteName: "Site A" }, { siteName: "Site A" }], {}, true)).toBeNull();
 });
+
+test("Different known site IDs cannot be collapsed by identical printed names", () => {
+  expect(projectBatchIssue([{ siteId: "a", siteName: "Site A" }, { siteId: "b", siteName: "Site A" }], { sites: [{ id: "a", name: "Site A" }, { id: "b", name: "Site B" }] })).toContain("Mixed sites detected");
+});
