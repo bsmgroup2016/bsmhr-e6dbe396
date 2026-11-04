@@ -1025,8 +1025,8 @@ function TimeCardsPage() {
                 <Button variant="ghost" size="sm" onClick={() => setReconcile(null)}>Dismiss</Button>
               </div>
               {reconcile.issues.length > 0 && <div className="mt-2 max-h-64 overflow-y-auto"><Table>
-                <TableHeader><TableRow><TableHead>Worker</TableHead><TableHead>Date</TableHead><TableHead>Issue</TableHead><TableHead>Preview</TableHead><TableHead>Sheet</TableHead></TableRow></TableHeader>
-                <TableBody>{reconcile.issues.map((i, n) => <TableRow key={n}><TableCell>{i.worker}</TableCell><TableCell className="whitespace-nowrap">{i.date || "—"}</TableCell><TableCell>{i.kind}</TableCell><TableCell>{i.expected}</TableCell><TableCell>{i.actual}</TableCell></TableRow>)}</TableBody>
+                <TableHeader><TableRow><TableHead>Worker</TableHead><TableHead>Date</TableHead><TableHead>Issue</TableHead><TableHead>Preview</TableHead><TableHead>Sheet</TableHead><TableHead /></TableRow></TableHeader>
+                <TableBody>{reconcile.issues.map((i, n) => <TableRow key={n}><TableCell>{i.worker}</TableCell><TableCell className="whitespace-nowrap">{i.date || "—"}</TableCell><TableCell>{i.kind}</TableCell><TableCell>{i.expected}</TableCell><TableCell>{i.actual}</TableCell><TableCell>{i.cardId && cards.some(c => c.id === i.cardId) ? <Button variant="outline" size="sm" onClick={() => { setSelectedId(i.cardId!); setVerificationSearch(i.date); setVerificationFilter("All"); setVerificationOpen(true); }}>Open card entries</Button> : <span className="text-muted-foreground">Card unavailable</span>}</TableCell></TableRow>)}</TableBody>
               </Table></div>}
             </div>}
             <div className="mb-4 flex flex-wrap gap-2">

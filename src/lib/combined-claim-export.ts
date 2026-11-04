@@ -117,7 +117,7 @@ export async function exportCombinedClaims(sheets: ClaimSheet[], employees: Empl
   downloadClaimBlob(await claimWorkbookBlob(workbook), lookups.fileName || `claim_sheet_${month}.xlsx`);
 }
 
-export interface ClaimReconcileIssue { worker: string; date: string; kind: "Missing in sheet" | "Hours differ" | "Extra in sheet" | "Worker not in sheet"; expected: string; actual: string }
+export interface ClaimReconcileIssue { worker: string; date: string; kind: "Missing in sheet" | "Hours differ" | "Extra in sheet" | "Worker not in sheet"; expected: string; actual: string; cardId?: string }
 
 /** Reads the generated workbook back and compares every worker/date cell with the approved snapshot hours. */
 export function reconcileClaimWorkbook(workbook: import("exceljs").Workbook, sheets: ClaimSheet[], employees: Employee[], month: string): ClaimReconcileIssue[] {
@@ -134,6 +134,8 @@ export function reconcileClaimWorkbook(workbook: import("exceljs").Workbook, she
       days.set(day, cell); expected.set(k, days);
     }
   }
+  const cardOf = new Map<string, string>();
+  for (const sheet of sheets) for (const entry of sheet.snapshot) { const employee = employees.find(e => e.id === sheet.employeeId); const k = key(entry.employeeCode || employee?.employeeCode || "", entry.workerName || employee?.name || ""); if (!cardOf.has(k)) cardOf.set(k, entry.sourceCardId || sheet.id); }
   const actual = new Map<string, Map<number, { g: number; ot: number }>>();
   for (const page of workbook.worksheets) {
     let layout; try { layout = claimTemplateLayout(page); } catch { continue; }
@@ -161,5 +163,6 @@ export function reconcileClaimWorkbook(workbook: import("exceljs").Workbook, she
     }
     for (const [d, a] of got) if (!days.has(d)) issues.push({ worker, date: date(d), kind: "Extra in sheet", expected: "blank", actual: fmt(a) });
   }
+  for (const issue of issues) issue.cardId = cardOf.get(issue.worker);
   return issues.sort((a, b) => a.worker.localeCompare(b.worker, undefined, { numeric: true }) || a.date.localeCompare(b.date));
 }
