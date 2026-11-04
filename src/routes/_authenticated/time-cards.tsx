@@ -108,7 +108,6 @@ function TimeCardsPage() {
   const [siteName, setSiteName] = useState("");
   type PendingScan = { fileName: string; fileUrl: string; entries: TimeCardEntry[]; identity: TimeCardIdentity };
   const [batchCardIds, setBatchCardIds] = useState<string[]>([]);
-  const [uploadBatchIssue, setUploadBatchIssue] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
   const [pendingScans, setPendingScans] = useState<PendingScan[]>([]);
   const [reviewScan, setReviewScan] = useState<PendingScan | null>(null);
@@ -133,7 +132,7 @@ function TimeCardsPage() {
   const comparison = useMemo(() => (selected ? compareTimeCard(selected) : []), [selected]);
   const settlementCards = cards.filter(card => batchCardIds.length ? batchCardIds.includes(card.id) : scoped.some(employee => employee.id === card.employeeId) && card.periodStart.startsWith(month));
   const approvedCount = settlementCards.filter(isCardApproved).length;
-  const batchIssue = uploadBatchIssue ?? projectBatchIssue([
+  const batchIssue = projectBatchIssue([
     ...settlementCards.flatMap(card => card.entries),
     ...pendingScans.map(scan => scan.identity),
     ...(reviewScan ? [reviewScan.identity] : []),
@@ -212,12 +211,6 @@ function TimeCardsPage() {
 
   function confirmScan() {
     if (!reviewScan || !canConfirmCardDetails(employeeId, month, siteName)) return;
-    const issue = projectBatchIssue([
-      ...cards.filter(card => batchCardIds.includes(card.id)).flatMap(card => card.entries),
-      { projectId: projectId || undefined, siteId: siteId || undefined, siteName },
-    ], { projects, sites });
-    if (issue) { toast.error(issue); return; }
-    setUploadBatchIssue(null);
     const { start, end } = monthRange(month);
     const draft: Omit<TimeCard, "id"> = { employeeId, periodStart: start, periodEnd: end, fileUrl: reviewScan.fileUrl, fileName: reviewScan.fileName, status: "Draft", entries: reviewScan.entries.map((entry) => ({ ...entry, projectId: projectId || undefined, projectName: projectId ? projects.find((project) => project.id === projectId)?.name : undefined, siteId: siteId || undefined, siteName: siteName.trim() })) };
     const card = employeeId ? addTimeCard(draft) : { ...draft, id: crypto.randomUUID() };
@@ -231,7 +224,6 @@ function TimeCardsPage() {
     const files = fileList ? Array.from(fileList) : [];
     if (files.length === 0) return;
     setUploading(true);
-    setUploadBatchIssue(null);
     setProgress({ done: 0, total: files.length });
     try {
       const scans: PendingScan[] = [];
@@ -254,11 +246,6 @@ function TimeCardsPage() {
         setProgress({ done: i + 1, total: pages.length });
       }
       refresh();
-      const issue = projectBatchIssue(scans.map(scan => scan.identity), { projects, sites });
-      if (issue) {
-        setUploadBatchIssue(issue);
-        toast.error(issue);
-      }
       const [first, ...rest] = scans;
       setBatchCardIds([]);
       setProjectId("");
@@ -390,7 +377,7 @@ function TimeCardsPage() {
   }
 
   async function generateSettledClaims() {
-    const issue = uploadBatchIssue ?? projectBatchIssue(settlementCards.flatMap(card => card.entries), { projects, sites }, true);
+    const issue = projectBatchIssue(settlementCards.flatMap(card => card.entries), { projects, sites }, true);
     if (issue) { toast.error(issue); return; }
     if (!readyToGenerate || generating) return;
     setGenerating(true);
@@ -489,7 +476,7 @@ function TimeCardsPage() {
 
       refresh();
       setBatchCardIds(importedIds);
-      setUploadBatchIssue(null); setPendingScans([]); setReviewScan(null);
+      setPendingScans([]); setReviewScan(null);
       if (importedIds[0]) { setSelectedId(importedIds[0]); setActiveTab("cards"); setVerificationOpen(true); }
       toast.success(`Imported ${data.length} rows for ${byEmployee.size} employee(s)`);
     } catch (e) {
