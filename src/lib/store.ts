@@ -1,3 +1,4 @@
+import { splitDutyHours } from "@/core/work-hours";
 // App state store backed by Supabase.
 // Data is hydrated once (see hydrateStore) into an in-memory cache so the
 // existing synchronous getters keep working; every mutation writes to Supabase.
@@ -2809,16 +2810,19 @@ export function buildClaimSheetFromCard(card: TimeCard) {
       const sys = att.find((a) => a.date === e.date);
       const i = toMin(e.checkIn);
       const o = toMin(e.checkOut);
-      let total = 0;
-      if (i != null && o != null) total = ((o - i + 1440) % 1440) / 60;
-      else if (sys) total = (sys.hoursWorked ?? 0) + (sys.overtimeHours ?? 0);
-      total = Math.round(total * 100) / 100;
+      let normal = 0, ot = 0;
+      if (i != null && o != null) {
+        // 9h duty incl. 1h lunch = 8 normal hours; time after the 9h duty is OT.
+        const split = splitDutyHours(((o - i + 1440) % 1440) / 60, std);
+        normal = split.normalHours; ot = split.otHours;
+      } else if (sys) { normal = sys.hoursWorked ?? 0; ot = sys.overtimeHours ?? 0; }
+      const total = normal + ot;
       return {
         date: e.date,
         checkIn: e.checkIn ?? sys?.checkIn,
         checkOut: e.checkOut ?? sys?.checkOut,
-        normalHours: Math.min(total, std),
-        otHours: Math.max(0, Math.round((total - std) * 100) / 100),
+        normalHours: normal,
+        otHours: ot,
         status: total > 0 ? "Present" : (sys?.status ?? "Absent"),
         ...claimCardLocation(e, st.sites, st.projects, sys?.siteId),
         employeeId: card.employeeId,
