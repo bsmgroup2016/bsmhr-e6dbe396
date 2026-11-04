@@ -1,4 +1,5 @@
 # Role-based account access
+- [ ] Enforce single-project/site time-card batches with visible mismatch notification and final generation guard; preserve records and allow corrected full-batch re-upload.
 - [x] Editable counted GW/OT hours and persisted approval; sequential review followed by separate all-approved template generation. 26 tests passed including edited-hour storage mapping/Excel read-back and 25-card approval gate; isolated desktop/mobile hour controls passed; build OK.
 - [ ] New settlement flow: real signed-in batch upload/edit/approval/generation remains blocked by unavailable external-project session and real batch sample; no live records changed during tests.
 - [x] Prepare multi-file and merged-PDF ingestion: page splitting, separate worker/location/month groups, identity-aware audit and guarded rescan. 24 tests passed, including 20-page splitting and 20-worker XLSX read-back; browser splitting/grouping passed.
