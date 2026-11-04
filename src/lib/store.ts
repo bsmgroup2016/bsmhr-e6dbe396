@@ -2724,6 +2724,8 @@ export type TimeCardComparison = {
   cardOut?: string;
   systemIn?: string;
   systemOut?: string;
+  systemNormalHours?: number;
+  systemOtHours?: number;
   state: "Verified" | "Mismatch" | "Missing in system" | "Missing on card";
   resolution?: TimeCard["entries"][number]["resolution"];
   remarks?: string;
@@ -2760,6 +2762,8 @@ export function compareTimeCard(card: TimeCard): TimeCardComparison[] {
         cardOut,
         systemIn,
         systemOut,
+        systemNormalHours: att?.hoursWorked,
+        systemOtHours: att?.overtimeHours,
         state,
         resolution: entry?.resolution,
         remarks: entry?.remarks,
