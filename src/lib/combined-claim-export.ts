@@ -73,7 +73,7 @@ export async function createClaimWorkbook(sheets: ClaimSheet[], employees: Emplo
     // Fill only the three title cells; the template's styling, formulas and columns stay untouched.
     if (layout.headerRow >= 4) {
       page.getCell("A1").value = (group.clientName || group.projectName).toUpperCase() || null;
-      page.getCell("A2").value = group.siteName.toUpperCase() || null;
+      page.getCell("A2").value = group.siteName || null;
       const label = String(page.getCell("A3").value ?? "").trim() || "CLAIM SHEET FOR";
       page.getCell("A3").value = `${label.replace(/\s+[A-Z]{3}\s+\d{4}$/, "")} ${monthLabel(month)}`;
     }
