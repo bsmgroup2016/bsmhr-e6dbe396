@@ -97,7 +97,6 @@ function TimeCardsPage() {
   const clients = getClients();
   const projects = getProjects().filter((project) => clients.some((client) => client.id === project.clientId));
   const [projectId, setProjectId] = useState("");
-  const [printedProject, setPrintedProject] = useState("");
 
   const [cards, setCards] = useState(getTimeCards());
   const [sheets, setSheets] = useState(getClaimSheets());
@@ -205,12 +204,10 @@ function TimeCardsPage() {
 
   function openScan(scan: PendingScan) {
     setReviewScan(scan);
-    setPrintedProject(scan.identity.projectName ?? "");
     setEmployeeId(matchCardWorker(scoped, scan.identity));
     const matchedSite = uniqueCardMatch(sites, scan.identity.siteName, (site) => [site.name, site.code]);
     setSiteId(matchedSite);
     setSiteName(scan.identity.siteName?.trim() ?? "");
-    setProjectId(uniqueCardMatch(projects, scan.identity.projectName, (project) => [project.name, project.code]));
     setMonth(scan.entries[0]?.date.slice(0, 7) ?? "");
   }
 
@@ -218,12 +215,12 @@ function TimeCardsPage() {
     if (!reviewScan || !canConfirmCardDetails(employeeId, month, siteName)) return;
     const issue = projectBatchIssue([
       ...cards.filter(card => batchCardIds.includes(card.id)).flatMap(card => card.entries),
-      { projectId: projectId || undefined, projectName: projects.find(project => project.id === projectId)?.name ?? (printedProject.trim() || undefined), siteId: siteId || undefined, siteName },
+      { projectId: projectId || undefined, siteId: siteId || undefined, siteName },
     ], { projects, sites });
     if (issue) { toast.error(issue); return; }
     setUploadBatchIssue(null);
     const { start, end } = monthRange(month);
-    const draft: Omit<TimeCard, "id"> = { employeeId, periodStart: start, periodEnd: end, fileUrl: reviewScan.fileUrl, fileName: reviewScan.fileName, status: "Draft", entries: reviewScan.entries.map((entry) => ({ ...entry, projectId: projectId || undefined, projectName: projects.find((project) => project.id === projectId)?.name ?? (printedProject.trim() || undefined), siteId: siteId || undefined, siteName: siteName.trim() })) };
+    const draft: Omit<TimeCard, "id"> = { employeeId, periodStart: start, periodEnd: end, fileUrl: reviewScan.fileUrl, fileName: reviewScan.fileName, status: "Draft", entries: reviewScan.entries.map((entry) => ({ ...entry, projectId: projectId || undefined, projectName: projectId ? projects.find((project) => project.id === projectId)?.name : undefined, siteId: siteId || undefined, siteName: siteName.trim() })) };
     const card = employeeId ? addTimeCard(draft) : { ...draft, id: crypto.randomUUID() };
     if (!employeeId) setCards(items => [...items, card]);
     refresh(); setSelectedId(card.id); setActiveTab("cards");
@@ -265,6 +262,7 @@ function TimeCardsPage() {
       }
       const [first, ...rest] = scans;
       setBatchCardIds([]);
+      setProjectId("");
       setPendingScans(rest);
       if (first) openScan(first);
       if (totalRows > 0) {
@@ -593,10 +591,14 @@ function TimeCardsPage() {
           <DialogContent>
             <DialogHeader><DialogTitle>Review extracted card details</DialogTitle></DialogHeader>
             <p className="text-sm text-muted-foreground">{reviewScan?.fileName} · {reviewScan?.entries.length ?? 0} days read</p>
-            <Label>Project (optional)</Label><Select value={projectId || "none"} onValueChange={(value) => setProjectId(value === "none" ? "" : value)}><SelectTrigger><SelectValue placeholder="Select project (optional)" /></SelectTrigger><SelectContent><SelectItem value="none">No project selected</SelectItem>{projects.map((project) => <SelectItem key={project.id} value={project.id}>{project.name}</SelectItem>)}</SelectContent></Select>
-            <Input aria-label="Printed project name" value={printedProject} placeholder="Project name printed on time card (optional)" onChange={event => { setPrintedProject(event.target.value); setProjectId(""); }} />
             <Label htmlFor="review-site">Site</Label><Input id="review-site" value={siteName} required placeholder="Site name printed on time card" onChange={(event) => { setSiteName(event.target.value); setSiteId(uniqueCardMatch(sites, event.target.value, (site) => [site.name, site.code])); }} />
-            <p className="text-sm text-muted-foreground">Period: {month || "Unreadable"}</p>
+            <Label>Project/Client Name (optional)</Label><Select value={projectId || "none"} onValueChange={(value) => {
+              const id = value === "none" ? "" : value;
+              setProjectId(id);
+              for (const card of cards.filter(item => batchCardIds.includes(item.id))) saveCard(card.id, { entries: card.entries.map(entry => ({ ...entry, projectId: id || undefined, projectName: id ? projects.find(project => project.id === id)?.name : undefined })) });
+              refresh();
+            }}><SelectTrigger aria-label="Project/Client Name"><SelectValue placeholder="Select project (optional)" /></SelectTrigger><SelectContent><SelectItem value="none">No project selected</SelectItem>{projects.map((project) => <SelectItem key={project.id} value={project.id}>{project.name}{clients.find(client => client.id === project.clientId)?.name ? ` / ${clients.find(client => client.id === project.clientId)?.name}` : ""}</SelectItem>)}</SelectContent></Select>
+            <Label htmlFor="review-month">Claim Month</Label><Input id="review-month" type="month" value={month} onChange={event => setMonth(event.target.value)} />
             <Button disabled={!canConfirmCardDetails(employeeId, month, siteName)} onClick={confirmScan}><CheckCircle2 className="mr-2 h-4 w-4" />Confirm & review times</Button>
           </DialogContent>
         </Dialog>
