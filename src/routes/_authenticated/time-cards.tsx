@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { CheckCircle2, FileDown, FileSpreadsheet, ScanLine, Trash2, Upload } from "lucide-react";
+import { CheckCircle2, FileSpreadsheet, ScanLine, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { ImportValidationDialog } from "@/components/verification/import-validation-dialog";
 
@@ -34,7 +34,6 @@ import {
 } from "@/components/ui/select";
 import { ExportButton } from "@/components/data-io";
 import { timestampedName } from "@/lib/xlsx";
-import { downloadClaimSheetPdf } from "@/lib/pdf";
 import { uploadToR2 } from "@/lib/r2";
 import { extractTimeCardData, OCR_NOT_CONFIGURED, isOcrConfigured } from "@/lib/ocr";
 import {
@@ -907,18 +906,6 @@ function TimeCardsPage() {
                         <TableCell className="space-x-1 text-right">
                           <Button size="sm" variant="ghost" onClick={() => void exportSheet(s.id)}>
                             Export
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            title="Download PDF"
-                            onClick={() =>
-                              void downloadClaimSheetPdf(s, {
-                                employeeName: empName(s.employeeId),
-                              }).then(() => toast.success("Claim sheet PDF downloaded"))
-                            }
-                          >
-                            <FileDown className="h-4 w-4" />
                           </Button>
                           <Button
                             size="sm"
