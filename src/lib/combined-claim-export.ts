@@ -51,7 +51,7 @@ export async function createClaimWorkbook(sheets: ClaimSheet[], employees: Emplo
   const base = selectClaimTemplate(workbook);
   const layout = claimTemplateLayout(base);
   const big = groups.find(g => g.workers.size > layout.slots.length);
-  if (big) throw new Error(`${big.projectName || "A project"} has more workers than the template's ${layout.slots.length} slots.`);
+  if (big) throw new Error(`${big.projectName || "A project"} has ${big.workers.size} workers but the template has only ${layout.slots.length} slots. Replace it with a larger blank template.`);
   for (const sheet of workbook.worksheets) if (sheet.id !== base.id) workbook.removeWorksheet(sheet.id);
   const baseModel = structuredClone(base.model);
 
@@ -61,7 +61,9 @@ export async function createClaimWorkbook(sheets: ClaimSheet[], employees: Emplo
 
   groups.forEach((group, index) => {
     let name = (group.projectName || `PROJECT ${index + 1}`).replace(/[\\/*?:[\]]/g, " ").slice(0, 28).trim() || `PROJECT ${index + 1}`;
-    while (used.has(name.toUpperCase())) name = `${name.slice(0, 25)} ${index + 1}`;
+    const stem = name;
+    let suffix = 2;
+    while (used.has(name.toUpperCase())) name = `${stem.slice(0, 25)} ${suffix++}`;
     used.add(name.toUpperCase());
     let page = base;
     if (index === 0) page.name = name;
