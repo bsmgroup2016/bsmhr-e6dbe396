@@ -438,13 +438,6 @@ function TimeCardsPage() {
           </h1>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <SummaryCard title="Time cards" value={cards.length.toString()} icon={<ScanLine className="h-5 w-5" />} variant="info" />
-          <SummaryCard title="Verified" value={cards.filter((c) => c.status === "Verified").length.toString()} icon={<CheckCircle2 className="h-5 w-5" />} variant="success" />
-          <SummaryCard title="With mismatches" value={cards.filter((c) => c.status === "Has Mismatches").length.toString()} icon={<ScanLine className="h-5 w-5" />} variant="destructive" />
-          <SummaryCard title="Claim sheets" value={sheets.length.toString()} icon={<FileSpreadsheet className="h-5 w-5" />} variant="warning" />
-        </div>
-
         <section className="space-y-5 rounded-xl border bg-card p-5 shadow-sm">
           <div className="flex items-center gap-2">
             <FileSpreadsheet className="h-5 w-5 shrink-0 text-primary" />
