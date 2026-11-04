@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import { splitDutyHours, spanFromTimes } from "./work-hours";
 
 describe("duty hour rule", () => {
