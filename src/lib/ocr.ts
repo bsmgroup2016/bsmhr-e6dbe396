@@ -73,6 +73,7 @@ export function isOcrConfigured(): boolean {
 
 export type TimeCardExtractRow = {
   date: string;
+  cardIndex?: number;
   workerName?: string;
   employeeCode?: string;
   fin?: string;

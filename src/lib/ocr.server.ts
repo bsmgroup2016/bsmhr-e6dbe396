@@ -3,6 +3,7 @@
  * layer, so the Lovable gateway and a personal OpenAI key are interchangeable.
  */
 import { askAiJson } from "@/lib/ai.server";
+import { cardRowKey, type BatchCardRow } from "@/core/time-card-batch";
 import { keyFromRef, presignGet } from "@/lib/r2.server";
 import { IPA_INSTRUCTION, type IpaExtract } from "@/core/ipa-registration";
 import { PARTICULAR_INSTRUCTION, DOCUMENT_UNDERSTANDING, IDENTITY_DOCUMENT_INSTRUCTION, CSOC_INSTRUCTION } from "@/core/employee-document-fields";
@@ -43,10 +44,11 @@ export async function readCsoc(ref: string) {
   return readFile(ref, CSOC_INSTRUCTION);
 }
 
-type TcRow = { date: string; checkIn?: string; checkOut?: string; workerName?: string; employeeCode?: string; fin?: string; projectName?: string; siteName?: string };
+type TcRow = BatchCardRow;
 const TC_READ =
   "This is a scanned monthly physical time card. Return a JSON array of rows, one per printed day, " +
-  'each like {"date":"YYYY-MM-DD","checkIn":"HH:MM","checkOut":"HH:MM","workerName":"printed worker name","employeeCode":"printed P-file number","fin":"printed FIN","projectName":"printed project","siteName":"printed site"}. ' +
+  'each like {"cardIndex":1,"date":"YYYY-MM-DD","checkIn":"HH:MM","checkOut":"HH:MM","workerName":"printed worker name","employeeCode":"printed P-file number","fin":"printed FIN","projectName":"printed project","siteName":"printed site"}. ' +
+  "Read EVERY card on the page. Assign each physical card a distinct cardIndex in reading order starting at 1 and repeat it on ALL its rows, even when its name is unreadable. Never merge different workers' rows or omit a card. " +
   "Repeat the printed card identity and project/site header on each row. Omit any field not legible on the card; never infer an identity or project. Read month and year from the card to produce full dates; never assume the current month. Use 24-hour times. Skip days with no punches. Return [] if the card is unreadable.";
 
 const asRows = (d: unknown): TcRow[] =>
@@ -84,7 +86,7 @@ export async function readTimeCard(ref: string) {
           instruction:
             "You are auditing another AI's reading of this scanned time card. Look at the image carefully and " +
             "return YOUR OWN reading for every date listed below (plus any punched day it missed), as a JSON " +
-            'object {"rows":[{"date":"YYYY-MM-DD","checkIn":"HH:MM","checkOut":"HH:MM"}]}. 24-hour times. ' +
+            'object {"rows":[{"cardIndex":1,"date":"YYYY-MM-DD","checkIn":"HH:MM","checkOut":"HH:MM","workerName":"printed name","employeeCode":"printed P-file number","fin":"printed FIN","projectName":"printed project","siteName":"printed site"}]}. Repeat each card identity and cardIndex in reading order on ALL its rows; read EVERY worker separately. 24-hour times. ' +
             "Correct digits that were misread; omit a time only if it is truly unreadable.",
           context: `Other AI's reading: ${JSON.stringify(primary)}`,
         }),
@@ -96,11 +98,12 @@ export async function readTimeCard(ref: string) {
 
   if (!audit) return primary.map((r) => ({ ...r, confidence: 0.75, verifiedBy: primaryBy }));
 
-  const auditMap = new Map(audit.map((r) => [r.date, r]));
+  const auditMap = new Map(audit.map((r) => [cardRowKey(r), r]));
   const same = (a?: string, b?: string) => (a ?? "").trim() === (b ?? "").trim();
   const out = primary.map((r) => {
-    const a = auditMap.get(r.date);
-    auditMap.delete(r.date);
+    const key = cardRowKey(r);
+    const a = auditMap.get(key);
+    auditMap.delete(key);
     if (!a) return { ...r, confidence: 0.6, verifiedBy: "gemini" };
     const inOk = same(r.checkIn, a.checkIn);
     const outOk = same(r.checkOut, a.checkOut);
@@ -114,7 +117,7 @@ export async function readTimeCard(ref: string) {
   });
   // Days only OpenAI saw — flag for review.
   for (const a of auditMap.values()) {
-    out.push({ date: a.date, checkIn: undefined, checkOut: undefined, confidence: 0.3, suggestion: { checkIn: a.checkIn, checkOut: a.checkOut }, verifiedBy: "openai-only" } as never);
+    out.push({ ...a, checkIn: undefined, checkOut: undefined, confidence: 0.3, suggestion: { checkIn: a.checkIn, checkOut: a.checkOut }, verifiedBy: "openai-only" });
   }
   return out.sort((x, y) => x.date.localeCompare(y.date));
 }
