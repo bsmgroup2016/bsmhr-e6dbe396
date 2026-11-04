@@ -577,7 +577,7 @@ function TimeCardsPage() {
             <span className="grid h-14 w-14 place-items-center rounded-full bg-primary text-primary-foreground"><Upload className="h-6 w-6" /></span>
             <span className="text-base font-semibold text-foreground">{uploading ? (progress ? `Reading cards ${progress.done}/${progress.total}…` : "Reading cards…") : isDragOver ? "Drop the cards here" : "Click or drag time cards here"}</span>
             <span className="text-sm text-muted-foreground">
-              {isOcrConfigured() ? "PDF or photos · you can select many at once · details are read automatically" : `${OCR_NOT_CONFIGURED}. Type the card times in manually after upload.`}
+              {isOcrConfigured() ? "PDF or photos · drag & drop or click · select many at once · details are read automatically" : `${OCR_NOT_CONFIGURED}. Type the card times in manually after upload.`}
             </span>
           </label>
           <input id="claim-upload" className="hidden" type="file" multiple accept="image/*,application/pdf" disabled={uploading || reviewScan !== null || pendingScans.length > 0} onChange={(event) => { void handleUpload(event.target.files); event.target.value = ""; }} />
