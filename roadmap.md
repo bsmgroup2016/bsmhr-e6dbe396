@@ -1,4 +1,5 @@
 # Role-based account access
+- [ ] Add replaceable/editable blank claim template beside page heading; route every Excel output through the latest saved template and verify layout preservation.
 - [x] Claim sheets: Download and adjacent Edit actions; template-preserving Excel draft editing with undo/redo and edited download. 13 tests and isolated browser download passed; all merges retained and 1,088 formulas recalculated with zero errors.
 - [ ] Claim Excel editor: real signed-in claim-row Edit/Download check blocked by unavailable external-project browser session; edits are download-only, not persisted operational changes.
 - [x] Make project optional and retain required OCR site names through card saving and claim generation, without creating demo matches. Ten unit tests passed; signed-in upload/save verification remains unavailable.
