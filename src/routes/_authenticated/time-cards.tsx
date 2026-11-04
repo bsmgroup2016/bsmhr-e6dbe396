@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { CheckCircle2, Download, Pencil, FileSpreadsheet, ScanLine, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
@@ -16,6 +16,8 @@ import { canConfirmCardDetails, cardProjectName, matchCardWorker, uniqueCardMatc
 import { completeTimeCardReview } from "@/core/time-card-review";
 import { canGenerateSettledCards, isCardApproved, validCardHours } from "@/core/time-card-settlement";
 import { groupTimeCardRows, splitTimeCardFile } from "@/core/time-card-batch";
+import { redateToMonth } from "@/core/time-card-read";
+import { nextBatchCardId, readBatchState, writeBatchState } from "@/core/time-card-batch-state";
 import { projectBatchIssue } from "@/core/time-card-project-batch";
 import { createClaimWorkbook, exportCombinedClaims, claimSheetTitle } from "@/lib/combined-claim-export";
 import { ClaimWorkbookEditor, type ClaimEditorDocument } from "@/components/claim-workbook-editor";
@@ -83,11 +85,10 @@ export const Route = createFileRoute("/_authenticated/time-cards")({
 });
 
 function monthRange(month: string) {
-  const start = `${month}-01`;
-  const d = new Date(`${month}-01T00:00:00`);
-  d.setMonth(d.getMonth() + 1);
-  d.setDate(0);
-  return { start, end: d.toISOString().slice(0, 10) };
+  const [y, m] = month.split("-").map(Number);
+  // UTC avoids the local timezone dropping the last day of the month.
+  const last = new Date(Date.UTC(y ?? 1970, m ?? 1, 0)).getUTCDate();
+  return { start: `${month}-01`, end: `${month}-${String(last).padStart(2, "0")}` };
 }
 
 function TimeCardsPage() {
@@ -127,6 +128,24 @@ function TimeCardsPage() {
 
 
   const LOW_CONFIDENCE = 0.7;
+
+  // Keep the active batch (session-local cards + queue) across page reloads/remounts.
+  const restored = useRef(false);
+  useEffect(() => {
+    if (restored.current) return;
+    restored.current = true;
+    const saved = readBatchState(window.sessionStorage);
+    if (!saved) return;
+    setCards(items => [...items.filter(card => card.employeeId), ...(saved.localCards as TimeCard[])]);
+    setBatchCardIds(saved.batchCardIds);
+    setPendingScans(saved.pendingScans as PendingScan[]);
+    if (saved.month) setMonth(saved.month);
+    setProjectId(saved.projectId);
+  }, []);
+  useEffect(() => {
+    if (!restored.current) return;
+    writeBatchState(window.sessionStorage, { localCards: cards.filter(card => !card.employeeId && batchCardIds.includes(card.id)), batchCardIds, pendingScans, month, projectId });
+  }, [cards, batchCardIds, pendingScans, month, projectId]);
 
   const selected = cards.find((c) => c.id === selectedId) ?? null;
   const comparison = useMemo(() => (selected ? compareTimeCard(selected) : []), [selected]);
@@ -195,6 +214,9 @@ function TimeCardsPage() {
         fin: group.identity.fin,
         checkIn: r.checkIn,
         checkOut: r.checkOut,
+        normalHours: r.normalHours,
+        otHours: r.otHours,
+        remarks: r.remarks,
         confidence: r.confidence,
         suggestion: r.suggestion,
       })),
@@ -209,14 +231,26 @@ function TimeCardsPage() {
     setSiteName(scan.identity.siteName?.trim() ?? "");
   }
 
+  /** Confirming the first card's Site / Project / Month creates every card in the batch. */
   function confirmScan() {
     if (!reviewScan || !canConfirmCardDetails(employeeId, month, siteName)) return;
     const { start, end } = monthRange(month);
-    const draft: Omit<TimeCard, "id"> = { employeeId, periodStart: start, periodEnd: end, fileUrl: reviewScan.fileUrl, fileName: reviewScan.fileName, status: "Draft", entries: reviewScan.entries.map((entry) => ({ ...entry, projectId: projectId || undefined, projectName: projectId ? projects.find((project) => project.id === projectId)?.name : undefined, siteId: siteId || undefined, siteName: siteName.trim() })) };
-    const card = employeeId ? addTimeCard(draft) : { ...draft, id: crypto.randomUUID() };
-    if (!employeeId) setCards(items => [...items, card]);
-    refresh(); setSelectedId(card.id); setActiveTab("cards");
-    setBatchCardIds(ids => [...ids, card.id]);
+    const projectName = projectId ? projects.find((project) => project.id === projectId)?.name : undefined;
+    const makeCard = (scan: PendingScan, workerId: string, site: string, matchedSiteId: string) => {
+      const draft: Omit<TimeCard, "id"> = { employeeId: workerId, periodStart: start, periodEnd: end, fileUrl: scan.fileUrl, fileName: scan.fileName, status: "Draft",
+        entries: redateToMonth(scan.entries, month).map((entry) => ({ ...entry, projectId: projectId || undefined, projectName, siteId: matchedSiteId || undefined, siteName: site })) };
+      return workerId ? addTimeCard(draft) : { ...draft, id: crypto.randomUUID() };
+    };
+    const created = [makeCard(reviewScan, employeeId, siteName.trim(), siteId)];
+    for (const scan of pendingScans) {
+      const site = scan.identity.siteName?.trim() || siteName.trim();
+      created.push(makeCard(scan, matchCardWorker(scoped, scan.identity), site, uniqueCardMatch(sites, site, (item) => [item.name, item.code])));
+    }
+    const local = created.filter(card => !card.employeeId);
+    if (local.length) setCards(items => [...items, ...local]);
+    refresh(); setSelectedId(created[0]!.id); setActiveTab("cards");
+    setBatchCardIds(ids => [...ids, ...created.map(card => card.id)]);
+    setPendingScans([]);
     setReviewScan(null); setVerificationSearch(""); setVerificationFilter("All"); setVerificationOpen(true);
   }
 
@@ -322,7 +356,8 @@ function TimeCardsPage() {
       if (isMismatch) {
         const idx = entries.findIndex((e) => e.date === r.date);
         if (idx > -1) {
-          entries[idx] = { ...entries[idx], resolution, normalHours: undefined, otHours: undefined };
+          // Accept keeps the card's written hours; Correct switches to system attendance.
+          entries[idx] = resolution === "Accepted" ? { ...entries[idx], resolution } : { ...entries[idx], resolution, normalHours: undefined, otHours: undefined };
         } else {
           entries.push({ date: r.date, resolution });
         }
@@ -358,22 +393,35 @@ function TimeCardsPage() {
     }
   }
 
+  /** Approving accepts the card's rows as shown (card = source), saves hours and opens the next worker. */
   function approveCard(card: TimeCard) {
-    if (!completeTimeCardReview("finalize", () => verifyCard(card), () => {})) return;
     const rows = compareTimeCard(card);
-    saveCard(card.id, { status: "Verified", entries: card.entries.map(entry => {
-      const hours = rows.find(row => row.date === entry.date);
-      return { ...entry, normalHours: hours?.normalHours ?? 0, otHours: hours?.otHours ?? 0, reviewApproved: true };
-    }) });
-    refresh(); setVerificationOpen(false);
-    setVerificationSearch(""); setVerificationFilter("All");
-    const [next, ...rest] = pendingScans;
-    if (next) { setPendingScans(rest); openScan(next); }
-    else {
-      const nextCard = settlementCards.find(item => item.id !== card.id && !isCardApproved(item));
-      if (nextCard) { setSelectedId(nextCard.id); setVerificationOpen(true); }
+    const entries = card.entries.map(entry => {
+      const row = rows.find(item => item.date === entry.date);
+      const resolution = entry.resolution ?? (row && row.state !== "Verified" ? "Accepted" as const : undefined);
+      return { ...entry, resolution, normalHours: row?.normalHours ?? 0, otHours: row?.otHours ?? 0, reviewApproved: true };
+    });
+    if (!validCardHours(entries)) { toast.error("GW and OT hours must be non-negative numbers"); return; }
+    if (!entries.some(entry => entry.resolution !== "Ignored" && ((entry.normalHours ?? 0) > 0 || (entry.otHours ?? 0) > 0))) {
+      toast.error("This time card has no worked hours yet — scan or enter them first");
+      return;
     }
-    toast.success("Card approved — hours saved");
+    saveCard(card.id, { status: "Verified", entries });
+    refresh();
+    setVerificationSearch(""); setVerificationFilter("All");
+    const order = batchCardIds.length ? batchCardIds : settlementCards.map(item => item.id);
+    const nextId = nextBatchCardId(order, card.id, id => { const item = cards.find(c => c.id === id); return !!item && isCardApproved(item); });
+    if (nextId) {
+      setSelectedId(nextId);
+      toast.success(`${cardName(card)} approved — next card opened`);
+    } else if (pendingScans.length) {
+      setVerificationOpen(false);
+      const [next, ...rest] = pendingScans;
+      setPendingScans(rest); openScan(next!);
+    } else {
+      setVerificationOpen(false);
+      toast.success("All cards approved — click Generate claim sheet");
+    }
   }
 
   async function generateSettledClaims() {
@@ -576,7 +624,7 @@ function TimeCardsPage() {
         <Dialog open={reviewScan !== null} onOpenChange={() => {}}>
           <DialogContent>
             <DialogHeader><DialogTitle>Review extracted card details</DialogTitle></DialogHeader>
-            <p className="text-sm text-muted-foreground">{reviewScan?.fileName} · {reviewScan?.entries.length ?? 0} days read</p>
+            <p className="text-sm text-muted-foreground">{reviewScan?.fileName} · {reviewScan?.entries.length ?? 0} worked days read{pendingScans.length ? ` · ${pendingScans.length} more worker card(s) in this batch use the same Claim Month and Project` : ""}</p>
             <Label htmlFor="review-site">Site</Label><Input id="review-site" value={siteName} required placeholder="Site name printed on time card" onChange={(event) => { setSiteName(event.target.value); setSiteId(uniqueCardMatch(sites, event.target.value, (site) => [site.name, site.code])); }} />
             <Label>Project/Client Name (optional)</Label><Select value={projectId || "none"} onValueChange={(value) => {
               const id = value === "none" ? "" : value;
