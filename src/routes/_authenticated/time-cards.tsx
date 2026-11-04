@@ -33,7 +33,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ExportButton } from "@/components/data-io";
-import { exportRows, timestampedName } from "@/lib/xlsx";
+import { timestampedName } from "@/lib/xlsx";
 import { downloadClaimSheetPdf } from "@/lib/pdf";
 import { uploadToR2 } from "@/lib/r2";
 import { extractTimeCardData, OCR_NOT_CONFIGURED, isOcrConfigured } from "@/lib/ocr";
