@@ -140,8 +140,7 @@ export function mergeCardReads(primary: CardRead[], audit: CardRead[] | null, na
         }
       }
       if (periodDoubt) { confidence = Math.min(confidence, 0.5); remarks = [remarks, "Readers disagree on month/year — check Claim Month"].filter(Boolean).join(" · "); }
-      const span2 = spanFromTimes(base.start, base.end);
-      const fallback = span2 === null ? undefined : splitDutyHours(span2);
+      const fallback = span === null ? undefined : splitDutyHours(span);
       rows.push({
         cardIndex: card.cardIndex,
         date: `${y}-${String(m).padStart(2, "0")}-${String(day).padStart(2, "0")}`,
