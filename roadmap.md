@@ -1,4 +1,5 @@
 # Role-based account access
+- [x] Time-card reading rebuilt: Gemini (PDF transport fixed) + OpenAI gpt-5.5 read whole cards in parallel and merge per day; real SING TEC Oct 2026 pages read 30/15/30/15 worked days, site JB-1183, Oct 2026. Approve auto-accepts and opens next card; batch survives reloads; month-end day no longer dropped. 52 tests passed. Signed-in click-through in the preview not run (no session).
 - [x] Remove mixed-site checking from upload, confirmation and generation while retaining required Site entry and approval rules; 21 regression tests passed. Real signed-in upload remains unavailable.
 - [x] Independent labelled header OCR anchors Site/month for each physical card before read/audit matching; 20 tests passed including JB-1183, October 2026 and four-worker separation.
 - [ ] Recheck the real PDF through configured OCR and signed-in upload: only screenshots are supplied and no authenticated session is available; existing uploaded cards were not changed.
