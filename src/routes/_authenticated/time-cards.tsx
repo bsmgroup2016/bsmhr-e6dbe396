@@ -115,6 +115,7 @@ function TimeCardsPage() {
   const [activeTab, setActiveTab] = useState("cards");
   const [month, setMonth] = useState(() => new Date().toISOString().slice(0, 7));
   const [uploading, setUploading] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const [rescanId, setRescanId] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -254,7 +255,7 @@ function TimeCardsPage() {
     setReviewScan(null); setVerificationSearch(""); setVerificationFilter("All"); setVerificationOpen(true);
   }
 
-  async function handleUpload(fileList: FileList | null) {
+  async function handleUpload(fileList: FileList | File[] | null) {
     const files = fileList ? Array.from(fileList) : [];
     if (files.length === 0) return;
     setUploading(true);
