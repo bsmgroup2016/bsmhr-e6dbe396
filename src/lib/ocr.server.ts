@@ -3,8 +3,7 @@
  * layer, so the Lovable gateway and a personal OpenAI key are interchangeable.
  */
 import { askAiJson } from "@/lib/ai.server";
-import { cardRowKey, type BatchCardRow } from "@/core/time-card-batch";
-import { applyCardHeaders, parseCardHeaders, TIME_CARD_HEADER_INSTRUCTION } from "@/core/time-card-headers";
+import { mergeCardReads, parseCardReads, TIME_CARD_READ_INSTRUCTION } from "@/core/time-card-read";
 import { keyFromRef, presignGet } from "@/lib/r2.server";
 import { IPA_INSTRUCTION, type IpaExtract } from "@/core/ipa-registration";
 import { PARTICULAR_INSTRUCTION, DOCUMENT_UNDERSTANDING, IDENTITY_DOCUMENT_INSTRUCTION, CSOC_INSTRUCTION } from "@/core/employee-document-fields";
@@ -45,93 +44,25 @@ export async function readCsoc(ref: string) {
   return readFile(ref, CSOC_INSTRUCTION);
 }
 
-type TcRow = BatchCardRow;
-const TC_READ =
-  "This is a scanned monthly physical time card. Return a JSON array of rows, one per printed day, " +
-  'each like {"cardIndex":1,"date":"YYYY-MM-DD","checkIn":"HH:MM","checkOut":"HH:MM","workerName":"printed worker name","employeeCode":"printed P-file number","fin":"printed FIN","projectName":"printed project","siteName":"printed site"}. ' +
-  "Read EVERY card on the page. Assign each physical card a distinct cardIndex in reading order starting at 1 and repeat it on ALL its rows, even when its name is unreadable. Never merge different workers' rows or omit a card. " +
-  TIME_CARD_HEADER_INSTRUCTION + " " +
-  "Repeat the printed card identity and project/site header on each row. Omit any field not legible on the card; never infer an identity or project. Read month and year from the card to produce full dates; never assume the current month. Use 24-hour times. Skip days with no punches. Return [] if the card is unreadable.";
-
-const asRows = (d: unknown): TcRow[] =>
-  (Array.isArray(d) ? d : Array.isArray((d as { rows?: unknown })?.rows) ? (d as { rows: unknown[] }).rows : [])
-    .filter((r): r is TcRow => !!r && typeof (r as TcRow).date === "string");
-
 /**
- * Dual-AI pipeline: Gemini reads the card, OpenAI audits the same image
- * against Gemini's rows. Agreeing rows get high confidence; disagreements
- * get low confidence + OpenAI's value as a suggestion for manual review.
- * If either provider is unavailable, the other one's read is used alone.
+ * Time cards: Gemini and OpenAI each read the WHOLE card independently and in
+ * parallel; rows are merged day by day. Agreement = high confidence; any
+ * difference is flagged with the other reading for human review.
+ * If one provider fails, the other one's read is used alone (lower confidence).
  */
 export async function readTimeCard(ref: string) {
   const dataUrl = await fetchAsDataUrl(ref);
-  // A focused header pass avoids daily grids and staff codes distracting the read.
-  let headers: ReturnType<typeof parseCardHeaders> = [];
-  try {
-    headers = parseCardHeaders(await askAiJson({ dataUrl,
-      instruction: TIME_CARD_HEADER_INSTRUCTION + ' Return JSON {"cards":[{"cardIndex":1,"siteName":"labelled Site value","workerName":"labelled Name value","employeeCode":"staff code","fin":"FIN only if labelled","year":2026,"month":10}]}. Read only headers, not daily rows. The schema year/month are examples, not defaults.' }));
-  } catch (error) { console.error("timecard header read failed", error); }
-  const headerContext = headers.length ? `Independently read card headers: ${JSON.stringify(headers)}. Recheck against the image and use the same physical cardIndex.` : undefined;
-
-  let primary: TcRow[] | null = null;
-  let primaryBy = "gemini";
-  try {
-    primary = asRows(await askAiJson({ instruction: TC_READ, context: headerContext, dataUrl, only: "gemini" }));
-  } catch (e) {
-    console.error("timecard gemini read failed", e);
-  }
-  if (!primary || primary.length === 0) {
-    primaryBy = "fallback";
-    primary = asRows(await askAiJson({ instruction: TC_READ, context: headerContext, dataUrl }));
-  }
-
-  let audit: TcRow[] | null = null;
-  if (primaryBy === "gemini") {
-    try {
-      audit = asRows(
-        await askAiJson({
-          only: "openai",
-          dataUrl,
-          instruction:
-            "You are auditing another AI's reading of this scanned time card. Look at the image carefully and " +
-            TIME_CARD_HEADER_INSTRUCTION + " " +
-            "return YOUR OWN reading for every date listed below (plus any punched day it missed), as a JSON " +
-            'object {"rows":[{"cardIndex":1,"date":"YYYY-MM-DD","checkIn":"HH:MM","checkOut":"HH:MM","workerName":"printed name","employeeCode":"printed P-file number","fin":"printed FIN","projectName":"printed project","siteName":"printed site"}]}. Repeat each card identity and cardIndex in reading order on ALL its rows; read EVERY worker separately. 24-hour times. ' +
-            "Correct digits that were misread; omit a time only if it is truly unreadable.",
-          context: `${headerContext ?? ""}\nOther AI's reading: ${JSON.stringify(primary)}`,
-        }),
-      );
-    } catch (e) {
-      console.error("timecard openai audit failed", e);
-    }
-  }
-
-  primary = applyCardHeaders(primary, headers);
-  if (audit) audit = applyCardHeaders(audit, headers);
-  if (!audit) return primary.map((r) => ({ ...r, confidence: r.confidence ?? 0.75, verifiedBy: primaryBy }));
-
-  const auditMap = new Map(audit.map((r) => [cardRowKey(r), r]));
-  const same = (a?: string, b?: string) => (a ?? "").trim() === (b ?? "").trim();
-  const out = primary.map((r) => {
-    const key = cardRowKey(r);
-    const a = auditMap.get(key);
-    auditMap.delete(key);
-    if (!a) return { ...r, confidence: 0.6, verifiedBy: "gemini" };
-    const inOk = same(r.checkIn, a.checkIn);
-    const outOk = same(r.checkOut, a.checkOut);
-    if (inOk && outOk) return { ...r, confidence: 0.97, verifiedBy: "gemini+openai" };
-    return {
-      ...r,
-      confidence: inOk || outOk ? 0.55 : 0.35,
-      suggestion: { checkIn: a.checkIn, checkOut: a.checkOut },
-      verifiedBy: "conflict",
-    };
-  });
-  // Days only OpenAI saw — flag for review.
-  for (const a of auditMap.values()) {
-    out.push({ ...a, checkIn: undefined, checkOut: undefined, confidence: 0.3, suggestion: { checkIn: a.checkIn, checkOut: a.checkOut }, verifiedBy: "openai-only" });
-  }
-  return out.sort((x, y) => x.date.localeCompare(y.date));
+  const read = (only: string) => askAiJson({ instruction: TIME_CARD_READ_INSTRUCTION, dataUrl, only, strict: true }).then(parseCardReads);
+  const [gemini, openai] = await Promise.allSettled([read("gemini"), read("openai")]);
+  const g = gemini.status === "fulfilled" && gemini.value.length ? gemini.value : null;
+  const o = openai.status === "fulfilled" && openai.value.length ? openai.value : null;
+  if (gemini.status === "rejected") console.error("timecard gemini read failed", gemini.reason);
+  if (openai.status === "rejected") console.error("timecard openai read failed", openai.reason);
+  if (g) return mergeCardReads(g, o, { primary: "gemini", audit: "openai" });
+  if (o) return mergeCardReads(o, null, { primary: "openai" });
+  // Neither pinned provider worked: use any configured OCR provider in order.
+  const any = parseCardReads(await askAiJson({ instruction: TIME_CARD_READ_INSTRUCTION, dataUrl }));
+  return mergeCardReads(any, null, { primary: "fallback" });
 }
 
 /** Passport bio page or Work Permit / S-Pass card → identity + expiry dates. */

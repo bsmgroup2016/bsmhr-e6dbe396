@@ -5,6 +5,9 @@ export interface BatchCardRow extends TimeCardIdentity {
   cardIndex?: number;
   checkIn?: string;
   checkOut?: string;
+  normalHours?: number;
+  otHours?: number;
+  remarks?: string;
   confidence?: number;
   suggestion?: { checkIn?: string; checkOut?: string };
 }
