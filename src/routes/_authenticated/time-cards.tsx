@@ -19,7 +19,7 @@ import { groupTimeCardRows, splitTimeCardFile } from "@/core/time-card-batch";
 import { redateToMonth } from "@/core/time-card-read";
 import { nextBatchCardId, readBatchState, writeBatchState } from "@/core/time-card-batch-state";
 import { projectBatchIssue } from "@/core/time-card-project-batch";
-import { createClaimWorkbook, exportCombinedClaims, claimSheetTitle } from "@/lib/combined-claim-export";
+import { createClaimWorkbook, exportCombinedClaims, claimSheetTitle, reconcileClaimWorkbook, type ClaimReconcileIssue } from "@/lib/combined-claim-export";
 import { ClaimWorkbookEditor, type ClaimEditorDocument } from "@/components/claim-workbook-editor";
 import { ClaimTemplateManager } from "@/components/claim-template-manager";
 import { TimeCardHoursInputs } from "@/components/time-card-hours-inputs";
@@ -112,6 +112,7 @@ function TimeCardsPage() {
   const [batchCardIds, setBatchCardIds] = useState<string[]>([]);
   const [generating, setGenerating] = useState(false);
   const [claimPreviewOpen, setClaimPreviewOpen] = useState(false);
+  const [reconcile, setReconcile] = useState<{ issues: ClaimReconcileIssue[]; workers: number } | null>(null);
   const [pendingScans, setPendingScans] = useState<PendingScan[]>([]);
   const [reviewScan, setReviewScan] = useState<PendingScan | null>(null);
   const [activeTab, setActiveTab] = useState("cards");
@@ -445,6 +446,9 @@ function TimeCardsPage() {
       if (!drafts.length) throw new Error("No approved worked hours to claim");
       // Validate the active template before saving any claim records.
       const workbook = await createClaimWorkbook(drafts, employees, getCompanies(), month, { projects: getProjects(), sites: getSites(), clients: getClients() });
+      const issues = reconcileClaimWorkbook(workbook, drafts, employees, month);
+      setReconcile({ issues, workers: drafts.length });
+      if (issues.length) toast.warning(`${issues.length} mismatch(es) between preview and generated sheet — see Claim sheets tab`);
       for (const draft of drafts) {
         const existing = getClaimSheets().find(sheet => sheet.snapshot.some(row => row.sourceCardId === draft.id));
         const { id, reference, ...claim } = draft;
@@ -1015,6 +1019,16 @@ function TimeCardsPage() {
           </TabsContent>
 
           <TabsContent value="sheets" className="mt-4">
+            {reconcile && <div className={`mb-4 rounded-md border p-3 text-sm ${reconcile.issues.length ? "border-destructive/50 bg-destructive/10" : "border-success/50 bg-success/10"}`}>
+              <div className="flex items-start justify-between gap-2">
+                <p className="font-medium">{reconcile.issues.length ? `Preview vs generated sheet: ${reconcile.issues.length} mismatch(es) found` : `Preview vs generated sheet: all dates and hours match (${reconcile.workers} workers)`}</p>
+                <Button variant="ghost" size="sm" onClick={() => setReconcile(null)}>Dismiss</Button>
+              </div>
+              {reconcile.issues.length > 0 && <div className="mt-2 max-h-64 overflow-y-auto"><Table>
+                <TableHeader><TableRow><TableHead>Worker</TableHead><TableHead>Date</TableHead><TableHead>Issue</TableHead><TableHead>Preview</TableHead><TableHead>Sheet</TableHead></TableRow></TableHeader>
+                <TableBody>{reconcile.issues.map((i, n) => <TableRow key={n}><TableCell>{i.worker}</TableCell><TableCell className="whitespace-nowrap">{i.date || "—"}</TableCell><TableCell>{i.kind}</TableCell><TableCell>{i.expected}</TableCell><TableCell>{i.actual}</TableCell></TableRow>)}</TableBody>
+              </Table></div>}
+            </div>}
             <div className="mb-4 flex flex-wrap gap-2">
             <Button variant="outline" className="gap-2" disabled={!sheets.length || editingExcel} onClick={() => void editExcel()}><Pencil className="h-4 w-4" />Edit Excel</Button>
             <Button variant="outline" className="gap-2" disabled={!sheets.length} onClick={() => void exportCombinedClaims(sheets.filter((sheet) => (!companyId || sheet.companyId === companyId) && (sheet.periodStart.startsWith(month) || sheet.periodEnd.startsWith(month))), employees, claimSheetTitle(getCompanies().find((c) => c.id === companyId)?.name ?? "ALL COMPANIES", month), getCompanies(), month, { projects: getProjects(), sites: getSites(), clients: getClients() }).catch((error) => toast.error(error instanceof Error ? error.message : "Download failed"))}><Download className="h-4 w-4" />Download claim sheet (Excel)</Button>
