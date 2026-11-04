@@ -20,7 +20,7 @@ export function projectBatchIssue(locations: CardLocation[], lookups: LocationLo
     for (const location of locations) {
       const id = kind === "project" ? location.projectId : location.siteId;
       const name = kind === "project" ? location.projectName : location.siteName;
-      const matches = items.filter(item => item.id === id || Boolean(name && [item.name, item.code].some(value => normalize(value) === normalize(name))));
+      const matches = items.filter(item => id ? item.id === id : Boolean(name && [item.name, item.code].some(value => normalize(value) === normalize(name))));
       const item = matches.length === 1 ? matches[0] : undefined;
       const key = item ? `id:${item.id}` : id ? `id:${id}` : normalize(name);
       if (kind === "site" && requireSite && !key) return "Site is missing on a card. Confirm the site before generating the claim sheet.";
