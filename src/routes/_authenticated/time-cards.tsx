@@ -112,6 +112,7 @@ function TimeCardsPage() {
   const [batchCardIds, setBatchCardIds] = useState<string[]>([]);
   const [generating, setGenerating] = useState(false);
   const [claimPreviewOpen, setClaimPreviewOpen] = useState(false);
+  const [focusIssue, setFocusIssue] = useState<ClaimReconcileIssue | null>(null);
   const [reconcile, setReconcile] = useState<{ issues: ClaimReconcileIssue[]; workers: number } | null>(null);
   const [pendingScans, setPendingScans] = useState<PendingScan[]>([]);
   const [reviewScan, setReviewScan] = useState<PendingScan | null>(null);
@@ -754,7 +755,7 @@ function TimeCardsPage() {
               </Table>
             </div>
 
-            <Dialog open={verificationOpen && selected !== null} onOpenChange={setVerificationOpen}>
+            <Dialog open={verificationOpen && selected !== null} onOpenChange={open => { setVerificationOpen(open); if (!open) setFocusIssue(null); }}>
             {selected ? (
               <DialogContent className="max-h-[90dvh] w-[calc(100%-2rem)] overflow-y-auto sm:max-w-6xl">
                 <div className="flex flex-wrap items-center justify-between gap-2">
@@ -762,6 +763,11 @@ function TimeCardsPage() {
                     <DialogHeader><DialogTitle>
                       Verification — {cardName(selected)}
                     </DialogTitle></DialogHeader>
+                    {focusIssue && focusIssue.cardId === selected.id && <div className="my-2 grid gap-2 rounded-md border border-destructive/50 bg-destructive/10 p-2 text-sm sm:grid-cols-3">
+                      <div><span className="text-muted-foreground">Mismatch · {focusIssue.date || "all dates"}</span><p className="font-medium">{focusIssue.kind}</p></div>
+                      <div><span className="text-muted-foreground">Preview (approved)</span><p className="font-medium tabular-nums">{focusIssue.expected}</p></div>
+                      <div><span className="text-muted-foreground">Generated sheet</span><p className="font-medium tabular-nums">{focusIssue.actual}</p></div>
+                    </div>}
                     <p className="text-xs text-muted-foreground">
                       {mismatches} of {comparison.length} rows need attention. GW hrs: {comparison.reduce((sum, row) => sum + row.normalHours, 0).toFixed(2)} · OT hrs: {comparison.reduce((sum, row) => sum + row.otHours, 0).toFixed(2)}
                     </p>
@@ -1026,7 +1032,7 @@ function TimeCardsPage() {
               </div>
               {reconcile.issues.length > 0 && <div className="mt-2 max-h-64 overflow-y-auto"><Table>
                 <TableHeader><TableRow><TableHead>Worker</TableHead><TableHead>Date</TableHead><TableHead>Issue</TableHead><TableHead>Preview</TableHead><TableHead>Sheet</TableHead><TableHead /></TableRow></TableHeader>
-                <TableBody>{reconcile.issues.map((i, n) => <TableRow key={n}><TableCell>{i.worker}</TableCell><TableCell className="whitespace-nowrap">{i.date || "—"}</TableCell><TableCell>{i.kind}</TableCell><TableCell>{i.expected}</TableCell><TableCell>{i.actual}</TableCell><TableCell>{i.cardId && cards.some(c => c.id === i.cardId) ? <Button variant="outline" size="sm" onClick={() => { setSelectedId(i.cardId!); setVerificationSearch(i.date); setVerificationFilter("All"); setVerificationOpen(true); }}>Open card entries</Button> : <span className="text-muted-foreground">Card unavailable</span>}</TableCell></TableRow>)}</TableBody>
+                <TableBody>{reconcile.issues.map((i, n) => <TableRow key={n}><TableCell>{i.worker}</TableCell><TableCell className="whitespace-nowrap">{i.date || "—"}</TableCell><TableCell>{i.kind}</TableCell><TableCell>{i.expected}</TableCell><TableCell>{i.actual}</TableCell><TableCell>{i.cardId && cards.some(c => c.id === i.cardId) ? <Button variant="outline" size="sm" onClick={() => { setFocusIssue(i); setSelectedId(i.cardId!); setVerificationSearch(i.date); setVerificationFilter("All"); setVerificationOpen(true); }}>Open card entries</Button> : <span className="text-muted-foreground">Card unavailable</span>}</TableCell></TableRow>)}</TableBody>
               </Table></div>}
             </div>}
             <div className="mb-4 flex flex-wrap gap-2">
