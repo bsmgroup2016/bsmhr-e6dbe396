@@ -476,7 +476,7 @@ function TimeCardsPage() {
 
       refresh();
       setBatchCardIds(importedIds);
-      setUploadBatchIssue(null); setPendingScans([]); setReviewScan(null);
+      setPendingScans([]); setReviewScan(null);
       if (importedIds[0]) { setSelectedId(importedIds[0]); setActiveTab("cards"); setVerificationOpen(true); }
       toast.success(`Imported ${data.length} rows for ${byEmployee.size} employee(s)`);
     } catch (e) {
