@@ -17,6 +17,7 @@ import { completeTimeCardReview } from "@/core/time-card-review";
 import { canGenerateSettledCards, isCardApproved, validCardHours } from "@/core/time-card-settlement";
 import { groupTimeCardRows, splitTimeCardFile } from "@/core/time-card-batch";
 import { redateToMonth } from "@/core/time-card-read";
+import { isLowConfidence, lowestConfidenceFirst } from "@/core/confidence-order";
 import { nextBatchCardId, readBatchState, writeBatchState } from "@/core/time-card-batch-state";
 import { projectBatchIssue } from "@/core/time-card-project-batch";
 import { createClaimWorkbook, exportCombinedClaims, claimSheetTitle, reconcileClaimWorkbook, type ClaimReconcileIssue } from "@/lib/combined-claim-export";
@@ -125,6 +126,7 @@ function TimeCardsPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [verificationOpen, setVerificationOpen] = useState(false);
   const [verificationSearch, setVerificationSearch] = useState("");
+  const [uncertainFirst, setUncertainFirst] = useState(true);
   const [verificationFilter, setVerificationFilter] = useState<
     "All" | "Mismatch" | "Unresolved" | "LowConfidence"
     >("All");
@@ -169,7 +171,7 @@ function TimeCardsPage() {
   ).length;
 
   const filteredComparison = useMemo(() => {
-    return comparison.filter((r) => {
+    const rows = comparison.filter((r) => {
       const matchesSearch =
         r.date.includes(verificationSearch) ||
         (r.remarks?.toLowerCase().includes(verificationSearch.toLowerCase()) ?? false);
@@ -184,7 +186,8 @@ function TimeCardsPage() {
 
       return matchesSearch && matchesFilter;
     });
-  }, [comparison, verificationSearch, verificationFilter]);
+    return uncertainFirst ? lowestConfidenceFirst(rows) : rows;
+  }, [comparison, verificationSearch, verificationFilter, uncertainFirst]);
 
   const empName = (id?: string) => employees.find((e) => e.id === id)?.name ?? "—";
   const cardName = (card: TimeCard) => card.entries[0]?.workerName || empName(card.employeeId);
@@ -868,6 +871,15 @@ function TimeCardsPage() {
                         </SelectContent>
                       </Select>
                     </div>
+                    <Button
+                      size="sm"
+                      variant={uncertainFirst ? "secondary" : "outline"}
+                      className="h-8 text-xs"
+                      onClick={() => setUncertainFirst((v) => !v)}
+                      title="Sort days by OCR confidence, least certain first"
+                    >
+                      {uncertainFirst ? "Uncertain first" : "Date order"}
+                    </Button>
                     <div className="flex gap-2">
                       <ExportButton
                         rows={comparison.map((r) => ({
@@ -927,8 +939,15 @@ function TimeCardsPage() {
                       {filteredComparison.map((r) => {
                         const isMismatch = r.state === "Mismatch" || r.state === "Missing in system" || r.state === "Missing on card";
                         return (
-                          <TableRow key={r.date} className={isMismatch ? "bg-destructive/5" : undefined}>
-                            <TableCell className="whitespace-nowrap text-sm font-medium">{r.date}</TableCell>
+                          <TableRow key={r.date} className={`${isMismatch ? "bg-destructive/5" : ""} ${isLowConfidence(r.confidence) ? "border-l-4 border-l-warning bg-warning/10" : ""}`}>
+                            <TableCell className="whitespace-nowrap text-sm font-medium">
+                              <div>{r.date}</div>
+                              {r.confidence !== undefined && (
+                                <div className={`mt-1 text-[10px] font-bold ${isLowConfidence(r.confidence) ? "text-warning" : "text-muted-foreground"}`}>
+                                  {isLowConfidence(r.confidence) ? "Check · " : ""}{Math.round(r.confidence * 100)}%
+                                </div>
+                              )}
+                            </TableCell>
                             <TableCell>
                               <div className="flex flex-col gap-2 py-1">
                                 <div className="grid gap-4 rounded border bg-muted/30 p-2 text-xs lg:grid-cols-2">
