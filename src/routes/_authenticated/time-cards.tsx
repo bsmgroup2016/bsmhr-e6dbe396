@@ -17,6 +17,7 @@ import { completeTimeCardReview } from "@/core/time-card-review";
 import { canGenerateSettledCards, isCardApproved, validCardHours } from "@/core/time-card-settlement";
 import { groupTimeCardRows, splitTimeCardFile } from "@/core/time-card-batch";
 import { redateToMonth } from "@/core/time-card-read";
+import { isLowConfidence, lowestConfidenceFirst } from "@/core/confidence-order";
 import { nextBatchCardId, readBatchState, writeBatchState } from "@/core/time-card-batch-state";
 import { projectBatchIssue } from "@/core/time-card-project-batch";
 import { createClaimWorkbook, exportCombinedClaims, claimSheetTitle, reconcileClaimWorkbook, type ClaimReconcileIssue } from "@/lib/combined-claim-export";
@@ -125,6 +126,7 @@ function TimeCardsPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [verificationOpen, setVerificationOpen] = useState(false);
   const [verificationSearch, setVerificationSearch] = useState("");
+  const [uncertainFirst, setUncertainFirst] = useState(true);
   const [verificationFilter, setVerificationFilter] = useState<
     "All" | "Mismatch" | "Unresolved" | "LowConfidence"
     >("All");
