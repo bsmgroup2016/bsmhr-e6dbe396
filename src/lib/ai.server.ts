@@ -73,6 +73,8 @@ function buildBody(provider: ProviderConfig, req: AiRequest) {
     : prompt;
   return {
     model: provider.model,
+    // Accuracy over cost: think carefully before reading handwritten cards.
+    reasoning_effort: "high",
     messages: [
       {
         role: "system",
