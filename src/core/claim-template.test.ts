@@ -68,12 +68,16 @@ test("twenty workers at one site fill twenty distinct name code G-HRS and OT slo
   }
 });
 
-test("twenty workers cannot be silently truncated into a nineteen-slot template", async () => {
+test("twenty workers on a nineteen-slot template get an extra row pair, none dropped", async () => {
   const { book, page } = blank();
   for (let i = 0; i < 19; i++) { page.getCell(5 + i * 2, 4).value = "G-HRS"; page.getCell(6 + i * 2, 4).value = "OT HOURS"; }
   const claims = Array.from({ length: 20 }, (_, i) => ({ id: `c-${i}`, reference: `C${i}`, employeeId: `w-${i}`, periodStart: "2026-11-01", periodEnd: "2026-11-30", totalDays: 1, totalNormalHours: 8, totalOtHours: 0, snapshot: [{ date: "2026-11-01", site: "REAL SITE", normalHours: 8, otHours: 0, status: "Present" }] }));
   const bytes = new Uint8Array(await book.xlsx.writeBuffer());
-  await expect(createClaimWorkbook(claims, [], [], "2026-11", { templateBuffer: bytes.buffer })).rejects.toThrow("20 workers but the template has only 19 slots");
+  const out = await createClaimWorkbook(claims, [], [], "2026-11", { templateBuffer: bytes.buffer });
+  const sheet = out.worksheets[0]!;
+  expect(String(sheet.getCell(43, 4).value)).toBe("G-HRS");
+  expect(String(sheet.getCell(44, 4).value)).toBe("OT HOURS");
+  expect(sheet.getCell(43, 5).value).toBe(8);
 });
 test("Four unregistered workers retain separate printed names codes and hours on the template", async () => {
   const { book, page } = blank();
