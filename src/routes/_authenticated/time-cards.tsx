@@ -105,6 +105,7 @@ function TimeCardsPage() {
   const [cards, setCards] = useState(getTimeCards());
   const [sheets, setSheets] = useState(getClaimSheets());
   const [excelDocument, setExcelDocument] = useState<ClaimEditorDocument | null>(null);
+  const [previewDocument, setPreviewDocument] = useState<ClaimEditorDocument | null>(null);
   const [editingExcel, setEditingExcel] = useState(false);
   const [employeeId, setEmployeeId] = useState("");
   const sites = getSites();
