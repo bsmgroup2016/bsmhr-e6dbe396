@@ -43,7 +43,7 @@ export function createEvaluator(get: Getter) {
       if (isErr(v)) return v;
       if (v === null) return 0;
       if (typeof v === "number") return v;
-      const n = Number(v); return Number.isFinite(n) && v.trim() !== "" ? n : "#VALUE!";
+      const n = Number(v); return Number.isFinite(n) && String(v).trim() !== "" ? n : "#VALUE!";
     };
 
     function primary(): V {
