@@ -4,6 +4,9 @@ import { expandClaimSlots } from "@/core/claim-template-expand";
 import type { ClaimSheet, Client, Company, Employee, Project, Site } from "@/lib/types";
 
 
+/** Per generated page: template slot count and the rows added for extra workers (for preview). */
+export const claimExpansion = new WeakMap<object, { templateSlots: number; added: number; firstAddedRow: number; workers: number }>();
+
 export function claimSheetTitle(companyName: string, month: string) {
   return `${companyName.toUpperCase()} CLAIM - ${monthLabel(month)}`;
 }
@@ -80,6 +83,7 @@ export async function createClaimWorkbook(sheets: ClaimSheet[], employees: Emplo
     // More workers than template slots: copy the last slot so format and formulas carry over.
     const extra = group.workers.size - layout.slots.length;
     const pageLayout = extra > 0 ? (expandClaimSlots(page, layout.slots, extra, layout.serialCol), claimTemplateLayout(page)) : layout;
+    claimExpansion.set(page, { templateSlots: layout.slots.length, added: Math.max(0, extra), firstAddedRow: (layout.slots.at(-1)?.ot ?? 0) + 1, workers: group.workers.size });
     const workers = [...group.workers.values()].sort((a, b) => a.code.localeCompare(b.code, undefined, { numeric: true }));
     for (const worker of workers) for (const day of worker.days.keys()) {
       if (!layout.days.has(day)) throw new Error(`The blank template has no column for day ${day}. Replace it with a template containing that day.`);
