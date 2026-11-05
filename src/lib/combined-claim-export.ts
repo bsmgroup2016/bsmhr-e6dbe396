@@ -1,5 +1,6 @@
 import { loadClaimTemplate } from "@/lib/claim-template";
 import { claimTemplateLayout, selectClaimTemplate } from "@/core/claim-template";
+import { expandClaimSlots } from "@/core/claim-template-expand";
 import type { ClaimSheet, Client, Company, Employee, Project, Site } from "@/lib/types";
 
 
@@ -51,8 +52,6 @@ export async function createClaimWorkbook(sheets: ClaimSheet[], employees: Emplo
   await workbook.xlsx.load(buffer);
   const base = selectClaimTemplate(workbook);
   const layout = claimTemplateLayout(base);
-  const big = groups.find(g => g.workers.size > layout.slots.length);
-  if (big) throw new Error(`${big.projectName || "A project"} has ${big.workers.size} workers but the template has only ${layout.slots.length} slots. Replace it with a larger blank template.`);
   for (const sheet of workbook.worksheets) if (sheet.id !== base.id) workbook.removeWorksheet(sheet.id);
   const baseModel = structuredClone(base.model);
 
@@ -78,12 +77,15 @@ export async function createClaimWorkbook(sheets: ClaimSheet[], employees: Emplo
       page.getCell("A3").value = `${label.replace(/\s+[A-Z]{3}\s+\d{4}$/, "")} ${monthLabel(month)}`;
     }
 
+    // More workers than template slots: copy the last slot so format and formulas carry over.
+    const extra = group.workers.size - layout.slots.length;
+    const pageLayout = extra > 0 ? (expandClaimSlots(page, layout.slots, extra, layout.serialCol), claimTemplateLayout(page)) : layout;
     const workers = [...group.workers.values()].sort((a, b) => a.code.localeCompare(b.code, undefined, { numeric: true }));
     for (const worker of workers) for (const day of worker.days.keys()) {
       if (!layout.days.has(day)) throw new Error(`The blank template has no column for day ${day}. Replace it with a template containing that day.`);
     }
-    for (let i = 0; i < layout.slots.length; i++) {
-      const { g: r, ot } = layout.slots[i];
+    for (let i = 0; i < pageLayout.slots.length; i++) {
+      const { g: r, ot } = pageLayout.slots[i];
       const worker = workers[i];
       if (!worker) continue;
       page.getCell(r, layout.codeCol).value = worker.code || null;
