@@ -12,5 +12,7 @@ describe("claim template row expansion", () => {
     expect(adjustFormulaForInsert("=SUM(AJ5:AJ34)", 35, 20)).toBe("=SUM(AJ5:AJ54)");
     expect(adjustFormulaForInsert("=E36*$D$37", 35, 20)).toBe("=E56*$D$57");
     expect(adjustFormulaForInsert("=AL29", 35, 20)).toBe("=AL29");
+    // The last worker's own row total must not swallow the new rows.
+    expect(adjustFormulaForInsert("=SUM(E34:AI34)", 35, 20)).toBe("=SUM(E34:AI34)");
   });
 });

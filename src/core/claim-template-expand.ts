@@ -21,7 +21,7 @@ export function adjustFormulaForInsert(formula: string, insertAt: number, delta:
     const s = Number(r1);
     if (!col2) return `${c1}${col1}${a1}${move(s)}`;
     const e = Number(r2);
-    const end = e === insertAt - 1 && s < insertAt ? e + delta : move(e);
+    const end = e === insertAt - 1 && s < e ? e + delta : move(e);
     return `${c1}${col1}${a1}${move(s)}:${c2}${col2}${a2}${end}`;
   });
 }
