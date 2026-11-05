@@ -22,6 +22,7 @@ import { nextBatchCardId, readBatchState, writeBatchState } from "@/core/time-ca
 import { projectBatchIssue } from "@/core/time-card-project-batch";
 import { createClaimWorkbook, exportCombinedClaims, claimSheetTitle, reconcileClaimWorkbook, type ClaimReconcileIssue } from "@/lib/combined-claim-export";
 import { ClaimWorkbookEditor, type ClaimEditorDocument } from "@/components/claim-workbook-editor";
+import { ClaimWorkbookPreview } from "@/components/claim-workbook-preview";
 import { ClaimTemplateManager } from "@/components/claim-template-manager";
 import { TimeCardHoursInputs } from "@/components/time-card-hours-inputs";
 import { ClaimDatePreview } from "@/components/claim-date-preview";
@@ -502,14 +503,15 @@ function TimeCardsPage() {
     }
   }
 
-  async function editExcel(id?: string) {
+  async function editExcel(id?: string, mode: "edit" | "preview" = "edit") {
     if (editingExcel) return;
     const selectedSheets = id ? sheets.filter(s => s.id === id) : sheets.filter(s => (!companyId || s.companyId === companyId) && (s.periodStart.startsWith(month) || s.periodEnd.startsWith(month)));
     const sheetMonth = id ? selectedSheets[0]?.periodStart.slice(0, 7) ?? month : month;
     setEditingExcel(true);
     try {
       const workbook = await createClaimWorkbook(selectedSheets, employees, getCompanies(), sheetMonth, { projects: getProjects(), sites: getSites(), clients: getClients() });
-      setExcelDocument({ workbook, fileName: timestampedName(`claim_sheet_${id ? selectedSheets[0]?.reference ?? sheetMonth : sheetMonth}`, "xlsx") });
+      const doc = { workbook, fileName: timestampedName(`claim_sheet_${id ? selectedSheets[0]?.reference ?? sheetMonth : sheetMonth}`, "xlsx") };
+      if (mode === "preview") setPreviewDocument(doc); else setExcelDocument(doc);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Could not open Excel editor");
     } finally { setEditingExcel(false); }
@@ -1109,6 +1111,7 @@ function TimeCardsPage() {
               </Table></div>}
             </div>}
             <div className="mb-4 flex flex-wrap gap-2">
+            <Button variant="outline" className="gap-2" disabled={!sheets.length || editingExcel} onClick={() => void editExcel(undefined, "preview")}><Eye className="h-4 w-4" />Preview claim sheet</Button>
             <Button variant="outline" className="gap-2" disabled={!sheets.length || editingExcel} onClick={() => void editExcel()}><Pencil className="h-4 w-4" />Edit Excel</Button>
             <Button variant="outline" className="gap-2" disabled={!sheets.length} onClick={() => void exportCombinedClaims(sheets.filter((sheet) => (!companyId || sheet.companyId === companyId) && (sheet.periodStart.startsWith(month) || sheet.periodEnd.startsWith(month))), employees, claimSheetTitle(getCompanies().find((c) => c.id === companyId)?.name ?? "ALL COMPANIES", month), getCompanies(), month, { projects: getProjects(), sites: getSites(), clients: getClients() }).catch((error) => toast.error(error instanceof Error ? error.message : "Download failed"))}><Download className="h-4 w-4" />Download claim sheet (Excel)</Button>
             </div>
@@ -1173,6 +1176,7 @@ function TimeCardsPage() {
           </TabsContent>
         </Tabs>
         <ClaimWorkbookEditor document={excelDocument} onClose={() => setExcelDocument(null)} />
+        <ClaimWorkbookPreview document={previewDocument} onClose={() => setPreviewDocument(null)} />
       </div>
     </AppShell>
   );
