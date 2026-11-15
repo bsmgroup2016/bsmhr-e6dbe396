@@ -100,7 +100,10 @@ function AvailableWorkersPage() {
           ) : (
             <div className="flex flex-wrap gap-2">
               {byTrade.map((t) => (
-                <button
+                <Button
+                  variant={trade === t.trade ? "default" : "outline"}
+                  size="sm"
+                  aria-pressed={trade === t.trade}
                   key={t.trade}
                   onClick={() => setTrade(trade === t.trade ? "all" : t.trade)}
                   className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
@@ -110,7 +113,7 @@ function AvailableWorkersPage() {
                   }`}
                 >
                   {t.trade} · {t.count}
-                </button>
+                </Button>
               ))}
             </div>
           )}
@@ -121,28 +124,29 @@ function AvailableWorkersPage() {
             <div className="relative w-full max-w-sm">
               <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="Name, P-File, passport..."
+                aria-label="Search available workers"
+                placeholder="Name, P-File Number, passport..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="pl-9"
               />
             </div>
             <Select value={trade} onValueChange={setTrade}>
-              <SelectTrigger className="w-48"><SelectValue placeholder="Designation" /></SelectTrigger>
+              <SelectTrigger aria-label="Designation" className="w-full sm:w-48"><SelectValue placeholder="Designation" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All designations</SelectItem>
                 {trades.map((t) => (<SelectItem key={t} value={t}>{t}</SelectItem>))}
               </SelectContent>
             </Select>
             <Select value={company} onValueChange={setCompany}>
-              <SelectTrigger className="w-44"><SelectValue placeholder="Company" /></SelectTrigger>
+              <SelectTrigger aria-label="Company" className="w-full sm:w-44"><SelectValue placeholder="Company" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All companies</SelectItem>
                 {companies.map((c) => (<SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>))}
               </SelectContent>
             </Select>
             <Select value={nationality} onValueChange={setNationality}>
-              <SelectTrigger className="w-40"><SelectValue placeholder="Nationality" /></SelectTrigger>
+              <SelectTrigger aria-label="Nationality" className="w-full sm:w-40"><SelectValue placeholder="Nationality" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All nationalities</SelectItem>
                 {nationalities.map((n) => (<SelectItem key={n} value={n}>{n}</SelectItem>))}
@@ -150,7 +154,8 @@ function AvailableWorkersPage() {
             </Select>
           </div>
 
-          <div className="overflow-hidden rounded-lg border">
+          <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground"><span>{rows.length} of {available.length} available workers</span>{(search || trade !== "all" || company !== "all" || nationality !== "all") && <Button size="sm" variant="ghost" onClick={() => { setSearch(""); setTrade("all"); setCompany("all"); setNationality("all"); }}>Clear filters</Button>}</div>
+          <div className="rounded-lg border">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -165,7 +170,7 @@ function AvailableWorkersPage() {
                 {rows.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={5} className="h-32 text-center">
-                      <EmptyState className="border-0 bg-transparent" icon={<HardHat className="h-5 w-5" />} title="No available workers" description="Everyone matching these filters is deployed." />
+                      <EmptyState size="sm" icon={<HardHat className="h-5 w-5" />} title="No available workers match" description="No available records match this search and filter selection." />
                     </TableCell>
                   </TableRow>
                 ) : (

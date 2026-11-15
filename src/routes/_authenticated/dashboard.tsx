@@ -86,7 +86,7 @@ function SectionHeading({
   icon?: ReactNode;
 }) {
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex flex-wrap items-center gap-2">
       {icon}
       <h2 className="text-base font-semibold tracking-tight text-foreground">{title}</h2>
       {caption ? <span className="ml-auto text-sm text-muted-foreground">{caption}</span> : null}
@@ -367,7 +367,7 @@ function OperationsDashboard() {
     },
     {
       to: "/time-management" as const,
-      title: "Attendance Today",
+      title: "Present Today",
       value: presentToday.toString(),
       caption: `${employees.length} total workers`,
       icon: <CalendarCheck2 className="h-6 w-6" />,
@@ -829,7 +829,7 @@ function OperationsDashboard() {
                 description="Once you start managing assignments and attendance, recent actions will appear here."
               />
             ) : (
-              <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
+              <div tabIndex={0} role="region" aria-label="Recent activity table" className="overflow-x-auto rounded-xl border bg-card shadow-sm">
                 <table className="w-full text-sm">
                   <thead className="bg-muted/50">
                     <tr>
@@ -855,19 +855,11 @@ function OperationsDashboard() {
           </div>
 
           <div className="space-y-3">
-            <SectionHeading title="Status" />
+            <SectionHeading title="Period & document alerts" />
             <div className="space-y-3 rounded-xl border bg-gradient-surface p-5 shadow-sm">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">System</span>
-                <StatusBadge variant="success" label="Operational" dot />
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Payroll period</span>
-                <StatusBadge variant="primary" label="Jul 2026" />
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Attendance lock</span>
-                <StatusBadge variant="warning" label="Pending" dot />
+                <span className="text-sm text-muted-foreground">Current calendar month</span>
+                <StatusBadge variant="primary" label={monthKey} />
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Expiring docs</span>

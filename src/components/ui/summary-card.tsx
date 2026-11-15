@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const summaryCardVariants = cva(
-  "group relative flex flex-col overflow-hidden rounded-2xl border bg-card p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-card hover:border-primary/25 before:absolute before:inset-y-0 before:left-0 before:w-1 before:content-['']",
+  "group relative flex min-w-0 flex-col rounded-xl border bg-card p-5 shadow-sm transition-colors before:absolute before:inset-y-4 before:left-0 before:w-1 before:rounded-r before:content-['']",
   {
     variants: {
       variant: {
@@ -27,7 +27,7 @@ const summaryCardVariants = cva(
 );
 
 const iconVariants = cva(
-  "flex shrink-0 items-center justify-center rounded-xl ring-1 transition-transform duration-300 group-hover:scale-105",
+  "flex shrink-0 items-center justify-center rounded-lg ring-1",
   {
     variants: {
       variant: {
@@ -103,15 +103,15 @@ export function SummaryCard({
   return (
     <div className={cn(summaryCardVariants({ variant, compact }), className)} {...props}>
       <div className="flex flex-1 flex-col justify-between">
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
-            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+            <p className="text-xs font-medium text-muted-foreground">
               {title}
             </p>
             {loading ? (
               <Skeleton className="mt-3 h-9 w-28" />
             ) : (
-              <p className="mt-2 text-3xl font-bold leading-none tracking-tight tabular-nums text-foreground">
+              <p className="mt-2 break-words text-2xl font-semibold leading-snug tabular-nums text-foreground">
                 {value}
               </p>
             )}
@@ -130,7 +130,7 @@ export function SummaryCard({
         )}
 
         {(caption || trend) && !loading && (
-          <div className="mt-3 flex items-center gap-2 border-t border-border/60 pt-2.5 text-xs">
+          <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-border/60 pt-2.5 text-xs">
             {trend && (
               <span
                 className={cn("font-semibold", {

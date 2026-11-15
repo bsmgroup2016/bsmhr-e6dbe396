@@ -141,8 +141,8 @@ function CompaniesPage() {
             compact
           />
           <SummaryCard title="Total workforce" value={String(employees.length)} icon={<Users className="h-5 w-5" />} variant="info" compact />
-          <SummaryCard title="Monthly wages" value={money(groupMonthlyWage)} icon={<Wallet className="h-5 w-5" />} variant="primary" compact />
-          <SummaryCard title="Annual wages" value={money(groupMonthlyWage * 12)} icon={<CalendarClock className="h-5 w-5" />} variant="success" compact />
+          <SummaryCard title="Monthly basic wage estimate" value={money(groupMonthlyWage)} icon={<Wallet className="h-5 w-5" />} variant="primary" compact />
+          <SummaryCard title="Annualised basic wage estimate" value={money(groupMonthlyWage * 12)} icon={<CalendarClock className="h-5 w-5" />} variant="success" compact />
         </div>
 
         <div className="grid gap-4 lg:grid-cols-3">
@@ -155,7 +155,7 @@ function CompaniesPage() {
               onKeyDown={(e) => {
                 if (e.key === "Enter") navigate({ to: "/companies/$id", params: { id: companySlug(c) } });
               }}
-              className={`relative cursor-pointer overflow-hidden rounded-xl border bg-gradient-surface p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-elegant ${
+              className={`relative cursor-pointer rounded-xl border bg-card p-5 shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                 active === c.id ? "ring-2 ring-primary/60" : ""
               }`}
             >
@@ -177,7 +177,7 @@ function CompaniesPage() {
                 <StatusBadge variant={c.status === "Active" ? "success" : "warning"} label={c.status} />
               </div>
 
-              <dl className="mt-4 space-y-1.5 text-xs text-muted-foreground">
+              <dl className="mt-4 space-y-1.5 break-words text-xs text-muted-foreground [&_svg]:shrink-0">
                 <div className="flex items-center gap-2"><Building2 className="h-3.5 w-3.5" /> UEN {c.uen} · {c.industry}</div>
                 <div className="flex items-center gap-2"><MapPin className="h-3.5 w-3.5" /> {c.address}</div>
                 <div className="flex items-center gap-2"><Phone className="h-3.5 w-3.5" /> {c.phone}</div>

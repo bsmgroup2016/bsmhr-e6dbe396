@@ -233,17 +233,17 @@ export default function ProjectsPage() {
           <SummaryCard title="Total projects" value={projects.length.toString()} icon={<Building2 className="h-5 w-5" />} variant="primary" caption="All projects" />
           <SummaryCard title="Active projects" value={activeProjects.toString()} icon={<Building2 className="h-5 w-5" />} variant="success" caption="In progress" />
           <SummaryCard title="Required workers" value={totalRequired.toString()} icon={<Users className="h-5 w-5" />} variant="info" caption="Total manpower" />
-          <SummaryCard title="Sites" value={totalSites.toString()} icon={<MapPin className="h-5 w-5" />} variant="warning" caption="Active locations" />
+          <SummaryCard title="Sites" value={totalSites.toString()} icon={<MapPin className="h-5 w-5" />} variant="warning" caption="All registered locations" />
         </div>
 
         <div className="rounded-xl border bg-card p-4 shadow-sm">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div className="relative w-full max-w-sm">
               <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input type="search" placeholder="Search projects..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+              <Input aria-label="Search projects" type="search" placeholder="Search projects..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
             </div>
             <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as ProjectStatus | "all")}>
-              <SelectTrigger className="w-40">
+              <SelectTrigger aria-label="Project status" className="w-full sm:w-40">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
@@ -258,6 +258,7 @@ export default function ProjectsPage() {
           </div>
 
           {/* Mobile card list */}
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground"><span>{filtered.length} of {projects.length} projects</span>{(search || statusFilter !== "all") && <Button size="sm" variant="ghost" onClick={() => { setSearch(""); setStatusFilter("all"); }}>Clear filters</Button>}</div>
           <div className="mt-4 space-y-3 lg:hidden">
             {filtered.length === 0 ? (
               <EmptyState icon={<Building2 className="h-5 w-5" />} title="No projects found" description="Add a project to get started." />

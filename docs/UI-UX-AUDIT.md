@@ -2,6 +2,49 @@
 
 Date: 15 November 2026
 
+## Second-pass senior design and engineering review
+
+Completed a fresh source review of all sections in the coverage matrix below, plus the assistant, inventory, public account states, shared role dashboard and every Settings child. A supplemental pass inspected the complete dashboard, company pages, organisational panels and all seven Reports tabs, closing the initial delegated review's coverage gaps. There are 50 content route files; the authenticated layout is not a content page. No section is excluded from the inventory; this does not mean every live action has been executed.
+
+### Improvements implemented in this pass
+
+- **Across the application:** restrained solid primary actions, softer card shadows, readable heading line heights, consistent active tabs, clear keyboard focus, wider touch targets, solid form surfaces, invalid-input styling and nonshrinking action buttons. Existing brand colours, Roboto, business rules and claim templates are preserved.
+- **Tables:** stronger header hierarchy, tabular numbers, more comfortable row spacing and keyboard-focusable horizontal scrolling; wide content does not widen the whole page.
+- **Forms and confirmations:** bounded confirmation dialogs on phones, wrapping footers, larger close targets and accessible icon-action names from existing titles. Controls without a title or explicit accessible name still require a route-specific follow-up; there is no claim of universal accessibility compliance.
+- **Navigation:** a keyboard skip-to-content link, a narrower search control at intermediate widths and a shrinking breadcrumb region reduce header crowding.
+- **Empty states:** removed decorative halo/animation and nested framing; recovery actions are more prominent.
+- **Quotations:** visible company/result scope, labelled search/status filters, clear-filter recovery, distinct empty versus no-match states, keyboard-accessible quote detail link, readable scope text, semantic status colours, Excel download label and record-specific delete confirmation.
+- **Available/deployed workers:** labelled filters that stack on phones, filtered/total counts and one-action clearing. Designation selections now use the shared button with a pressed state. Removed the unsupported claim that all nonmatching workers are deployed.
+- **Clients/projects/CRM:** clearer search names, reset controls/counts on client/project lists and a recoverable CRM no-match state. Active-client/site captions reflect the actual status/count basis.
+- **Staff Attendance:** lunch toast tests are collapsed separately from routine attendance controls; attendance date has an explicit accessible name. Attendance/leave calculations are unchanged.
+- **Driver incidents/fuel:** deletion now requires confirmation identifying the date and driver/vehicle; underlying mutations are unchanged and persistence remains unverified.
+- **Settings:** invalid temporary JSON has an inline error with input association; record reload prevents repeated clicks and reports a rejected reload. These are still temporary-preview/reload actions, not database backup/import.
+- **Dashboard:** removed the literal July 2026 payroll-period badge, unsupported Operational badge and hardcoded attendance-lock state. The panel now shows the actual calendar month used by this page and document alerts. Present Today matches the existing present/half-day count. Recent activity scrolls horizontally; section headings wrap.
+- **Companies:** wage values are explicitly basic-wage estimates; annualised values are not presented as settled annual payroll. Company detail has an unframed header, readable long names/contact fields and an expired-or-expiring permit label matching its inclusion of overdue records.
+- **Reports:** replaced the misleading Net profit label with Invoiced less paid expenses without changing the calculation. Loaded-record/all-period scope is visible, leave summary says all periods, month controls have names and the government tab warns that cross-company figures using one sector are not an entity-specific statutory submission.
+- **PPE/history:** PPE page title matches navigation; deployment remarks remain readable without hover-only truncation.
+
+### Remaining issues, not silently changed
+
+1. **Authenticated workflow assurance:** the external account service offers no managed test session. Actual signed-in saves, approvals, uploads, exports, service delivery and read-back remain unverified. No bypass, credentials request or production record writes were performed.
+2. **Persistence:** the original unconfirmed-mutation, approval linkage, document renewal and conversion findings below remain. Adding confirmations does not repair database coordination.
+3. **Calendar consistency:** several screens still derive Today/date defaults from UTC while expiry calculations sometimes use Singapore-offset dates. A separate tested date-boundary correction is needed across all sibling screens; this pass does not change reporting/attendance date rules.
+4. **Company consistency:** driver scope, organisational employee counts by text, company deployment-derived availability, cross-company MOM quota/sector and cross-user refresh need controlled data checks. Reports now disclose scope rather than pretending these values are entity-specific.
+5. **Business-policy confirmation:** staff payroll divisor/half-day rules, inventory/receipt/issuance validation and dormitory uniqueness are not changed by styling. The client's fixed $2,500 manpower-value multiplier is explicitly labelled illustrative, not factual contract revenue.
+6. **Navigation depth:** some result/project/client names still lead to directories rather than exact filtered records; company detail project/client rows need clearer drill-down actions. No inaccessible destination was added.
+7. **Information completeness:** training records versus employee certifications, missing dormitory tables, department-head options capped at 200, reporting-range/chart scope and durable source-card storage retain their documented limitations.
+8. **Visual assurance:** shared controls were exercised in isolation, not by impersonating an authenticated role. Full populated-page, long-content, all-tab and keyboard screen-reader checks remain outstanding.
+
+### Verification for this pass
+
+- **202 tests passed, 0 failed across 27 files**, rerun after the last code edits.
+- **50 content route files have complete leaf metadata** (title, description, Open Graph title/description/type and Twitter card); no placeholder index is present, and the existing root alias remains unchanged.
+- Public /auth and isolated live-served shared controls checked at **1280×1800, 1146×682 and 390×844**.
+- Search entry, status selection, direct tab switching, delete cancellation and delete confirmation all passed; cancellation preserved the harness record. No document-width overflow or page errors in the final runs.
+- Screenshots of desktop/mobile controls and mobile confirmation were visually inspected. This sample uses synthetic records and does not claim a real quotation was deleted or saved.
+- Latest available preview compiler entry: **build OK**.
+- No database, RLS, storage objects, claim templates, statutory rates, payroll formulas or authentication settings changed.
+
 ## Scope and assurance
 
 All 48 authenticated route files (including the layout and root alias) and the three public account pages were inventoried. Route controls, shared navigation, collection dependencies and key cross-section call chains were inspected. This is a source audit with selected browser and automated checks, **not a certification that all live workflows work**.

@@ -234,7 +234,7 @@ function DeploymentHistoryPage() {
                         <TableCell className="text-xs">{r.a.startDate} → {r.a.endDate ?? "ongoing"}</TableCell>
                         <TableCell>{r.days !== null ? `${r.days}d` : "—"}</TableCell>
                         <TableCell><StatusBadge variant={statusVariant(r.a.status)} label={r.a.status} dot /></TableCell>
-                        <TableCell className="max-w-[240px] truncate text-xs text-muted-foreground" title={r.a.remarks ?? ""}>{r.a.remarks ?? "—"}</TableCell>
+                        <TableCell className="min-w-40 max-w-64 whitespace-normal break-words text-xs text-muted-foreground">{r.a.remarks ?? "—"}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

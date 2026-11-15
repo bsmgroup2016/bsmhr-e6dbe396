@@ -144,28 +144,29 @@ function DeployedWorkersPage() {
             <div className="relative w-full max-w-sm">
               <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="Name, P-File, passport..."
+                aria-label="Search deployed workers"
+                placeholder="Name, P-File Number, passport..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="pl-9"
               />
             </div>
             <Select value={project} onValueChange={setProject}>
-              <SelectTrigger className="w-48"><SelectValue placeholder="Project" /></SelectTrigger>
+              <SelectTrigger aria-label="Project" className="w-full sm:w-48"><SelectValue placeholder="Project" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All projects</SelectItem>
                 {projects.map((p) => (<SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>))}
               </SelectContent>
             </Select>
             <Select value={trade} onValueChange={setTrade}>
-              <SelectTrigger className="w-44"><SelectValue placeholder="Designation" /></SelectTrigger>
+              <SelectTrigger aria-label="Designation" className="w-full sm:w-44"><SelectValue placeholder="Designation" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All designations</SelectItem>
                 {trades.map((t) => (<SelectItem key={t} value={t}>{t}</SelectItem>))}
               </SelectContent>
             </Select>
             <Select value={company} onValueChange={setCompany}>
-              <SelectTrigger className="w-44"><SelectValue placeholder="Company" /></SelectTrigger>
+              <SelectTrigger aria-label="Company" className="w-full sm:w-44"><SelectValue placeholder="Company" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All companies</SelectItem>
                 {companies.map((c) => (<SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>))}
@@ -173,7 +174,8 @@ function DeployedWorkersPage() {
             </Select>
           </div>
 
-          <div className="overflow-hidden rounded-lg border">
+          <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground"><span>{rows.length} of {deployed.length} deployments</span>{(search || project !== "all" || trade !== "all" || company !== "all") && <Button size="sm" variant="ghost" onClick={() => { setSearch(""); setProject("all"); setTrade("all"); setCompany("all"); }}>Clear filters</Button>}</div>
+          <div className="rounded-lg border">
             <Table>
               <TableHeader>
                 <TableRow>

@@ -7,6 +7,8 @@ import {
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/app-shell";
+import { EmptyState } from "@/components/ui/empty-state";
+import { ConfirmRecordDelete } from "@/components/confirm-record-action";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -38,10 +40,10 @@ const statuses: QuotationStatus[] = ["Draft", "Sent", "Accepted", "Rejected", "E
 const statusTone: Record<QuotationStatus, string> = {
   Draft: "bg-muted text-muted-foreground",
   Sent: "bg-primary/15 text-primary",
-  Accepted: "bg-emerald-500/15 text-emerald-500",
+  Accepted: "bg-success/15 text-success",
   Rejected: "bg-destructive/15 text-destructive",
-  Expired: "bg-amber-500/15 text-amber-500",
-  Converted: "bg-sky-500/15 text-sky-500",
+  Expired: "bg-warning/15 text-warning-foreground",
+  Converted: "bg-info/15 text-info",
 };
 
 const today = () => new Date().toISOString().slice(0, 10);
@@ -350,9 +352,9 @@ function QuotationsPage() {
               Prepare client quotations, track validity and convert accepted quotes into rates and contracts.
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button size="sm" variant="outline" onClick={exportExcel}>
-              <Download className="mr-2 h-4 w-4" /> Export
+              <Download className="mr-2 h-4 w-4" /> Download Excel
             </Button>
             <Button
               size="sm"
@@ -383,6 +385,7 @@ function QuotationsPage() {
               <div className="relative">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
+                  aria-label="Search quotations"
                   className="pl-8 sm:w-64"
                   placeholder="Search quote no, client, title"
                   value={search}
@@ -390,7 +393,7 @@ function QuotationsPage() {
                 />
               </div>
               <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as typeof statusFilter)}>
-                <SelectTrigger className="sm:w-40"><SelectValue /></SelectTrigger>
+                <SelectTrigger aria-label="Quotation status" className="sm:w-40"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All statuses</SelectItem>
                   {statuses.map((s) => (<SelectItem key={s} value={s}>{s}</SelectItem>))}
@@ -399,7 +402,11 @@ function QuotationsPage() {
             </div>
           </CardHeader>
           <CardContent className="overflow-x-auto">
-            <Table>
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+              <span>{filtered.length} quotations · {companyId ? getCompany(companyId)?.name ?? "Selected company" : "All companies"}</span>
+              {(search.trim() || statusFilter !== "all") && <Button size="sm" variant="ghost" onClick={() => { setSearch(""); setStatusFilter("all"); }}>Clear filters</Button>}
+            </div>
+            <Table aria-label="Quotations">
               <TableHeader>
                 <TableRow>
                   <TableHead>Quote No</TableHead>
@@ -416,13 +423,13 @@ function QuotationsPage() {
                 {filtered.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={8} className="py-10 text-center text-sm text-muted-foreground">
-                      No quotations yet. Create your first client quotation.
+                      <EmptyState size="sm" icon={<FileSignature />} title={search.trim() || statusFilter !== "all" ? "No matching quotations" : "No quotations yet"} description={search.trim() || statusFilter !== "all" ? "Try another search or clear the filters." : "No quotations have been added for this company."} action={search.trim() || statusFilter !== "all" ? { label: "Clear filters", onClick: () => { setSearch(""); setStatusFilter("all"); } } : { label: "New quotation", onClick: () => { resetForm(); setEditId(null); setOpen(true); } }} />
                     </TableCell>
                   </TableRow>
                 )}
                 {filtered.map((q) => (
                   <TableRow key={q.id} className="cursor-pointer" onClick={() => setDetail(q)}>
-                    <TableCell className="font-medium">{q.quoteNo}</TableCell>
+                    <TableCell className="font-medium"><Button variant="link" className="h-auto p-0" onClick={(event) => { event.stopPropagation(); setDetail(q); }}>{q.quoteNo}</Button></TableCell>
                     <TableCell>
                       <div className="flex flex-col">
                         <span>{clientLabel(q)}</span>
@@ -434,7 +441,7 @@ function QuotationsPage() {
                         )}
                       </div>
                     </TableCell>
-                    <TableCell className="max-w-[220px] truncate">{q.title}</TableCell>
+                    <TableCell className="min-w-40 max-w-64 whitespace-normal break-words">{q.title}</TableCell>
                     <TableCell className="text-right">{q.lines.reduce((s, l) => s + l.headcount, 0)}</TableCell>
                     <TableCell className="text-right font-medium">{money(q.total)}</TableCell>
                     <TableCell>{q.validUntil ?? "-"}</TableCell>
@@ -451,7 +458,7 @@ function QuotationsPage() {
                         {q.status === "Sent" && (
                           <>
                             <Button size="icon" variant="ghost" title="Accept" onClick={() => setStatus(q, "Accepted")}>
-                              <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                              <CheckCircle2 className="h-4 w-4 text-success" />
                             </Button>
                             <Button size="icon" variant="ghost" title="Reject" onClick={() => setStatus(q, "Rejected")}>
                               <XCircle className="h-4 w-4 text-destructive" />
@@ -460,7 +467,7 @@ function QuotationsPage() {
                         )}
                         {q.status === "Accepted" && (
                           <Button size="icon" variant="ghost" title="Convert to contract & rates" onClick={() => convert(q)}>
-                            <ArrowRightLeft className="h-4 w-4 text-sky-500" />
+                            <ArrowRightLeft className="h-4 w-4 text-info" />
                           </Button>
                         )}
                         <Button size="icon" variant="ghost" title="Duplicate" onClick={() => duplicate(q)}>
@@ -472,17 +479,10 @@ function QuotationsPage() {
                         <Button size="icon" variant="ghost" title="Download PDF" onClick={() => downloadPdf(q)}>
                           <FileText className="h-4 w-4 text-primary" />
                         </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          title="Delete"
-                          onClick={() => {
+                        <ConfirmRecordDelete record={`quotation ${q.quoteNo}`} onConfirm={() => {
                             deleteQuotation(q.id);
                             toast.success("Quotation deleted");
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
+                          }} />
                       </div>
                     </TableCell>
                   </TableRow>

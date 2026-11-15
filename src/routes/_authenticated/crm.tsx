@@ -210,7 +210,7 @@ export default function CrmPage() {
           <div className="flex flex-wrap items-center gap-3">
             <div className="relative flex-1 min-w-56">
               <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-              <Input className="pl-9" placeholder="Search company, contact, trade…" value={search} onChange={(e) => setSearch(e.target.value)} />
+              <Input aria-label="Search leads" className="pl-9" placeholder="Search company, contact, trade…" value={search} onChange={(e) => setSearch(e.target.value)} />
             </div>
             <Dialog open={leadOpen} onOpenChange={setLeadOpen}>
               <DialogTrigger asChild>
@@ -290,7 +290,7 @@ export default function CrmPage() {
           </div>
 
           {filteredLeads.length === 0 ? (
-            <EmptyState icon={<Target className="h-5 w-5" />} title="No leads yet" description="Add your first prospective client enquiry." />
+            <EmptyState icon={<Target className="h-5 w-5" />} title={q ? "No matching leads" : "No leads yet"} description={q ? "Try another company, contact or designation." : "Add your first prospective client enquiry."} action={q ? { label: "Clear search", onClick: () => setSearch("") } : { label: "New lead", onClick: () => setLeadOpen(true) }} />
           ) : (
             <div className="overflow-x-auto rounded-xl border bg-card">
               <Table>

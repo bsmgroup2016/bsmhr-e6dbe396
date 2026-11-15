@@ -48,6 +48,7 @@ import { ChangeLoginEmail } from "@/components/settings/change-login-email";
 import { ChangePassword } from "@/components/settings/change-password";
 import { ArchiveSettings } from "@/components/settings/archive-settings";
 import { useAuth } from "@/lib/auth";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({
@@ -72,6 +73,8 @@ export default function SettingsPage() {
   const [importData, setImportData] = useState("");
   const [saved, setSaved] = useState(false);
   const [r2Test, setR2Test] = useState<string | null>(null);
+  const [reloading, setReloading] = useState(false);
+  const [importError, setImportError] = useState("");
 
   async function handleTestR2() {
     setR2Test("Checking...");
@@ -95,18 +98,21 @@ export default function SettingsPage() {
   }
 
   function handleImport() {
+    setImportError("");
     try {
       importState(importData);
       setImportData("");
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch {
-      alert("Invalid JSON data");
+      setImportError("Invalid JSON. Check the pasted data and try again; no preview was loaded.");
     }
   }
 
-  function handleReset() {
-    void resetState().then(() => window.location.reload());
+  async function handleReset() {
+    setReloading(true);
+    try { await resetState(); window.location.reload(); }
+    catch { toast.error("Records could not be reloaded. Please try again."); setReloading(false); }
   }
 
   return (
@@ -293,6 +299,9 @@ export default function SettingsPage() {
                 </div>
                 <div>
                   <Textarea
+                    aria-label="Temporary JSON preview"
+                    aria-invalid={Boolean(importError)}
+                    aria-describedby={importError ? "preview-import-error" : undefined}
                     placeholder="Temporary JSON preview (not saved)..."
                     value={importData}
                     onChange={(e) => setImportData(e.target.value)}
@@ -302,11 +311,12 @@ export default function SettingsPage() {
                     <Upload className="mr-2 h-4 w-4" />
                     Load temporary preview
                   </Button>
+                  {importError && <p id="preview-import-error" role="alert" className="mt-2 text-sm text-destructive">{importError}</p>}
                 </div>
                 <div className="border-t pt-4">
-                  <Button variant="outline" onClick={handleReset}>
+                  <Button variant="outline" disabled={reloading} onClick={handleReset}>
                     <Database className="mr-2 h-4 w-4" />
-                    Reload records
+                    {reloading ? "Reloading…" : "Reload records"}
                   </Button>
                 </div>
               </div>

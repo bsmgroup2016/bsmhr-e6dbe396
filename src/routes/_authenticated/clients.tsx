@@ -195,19 +195,19 @@ export default function ClientsPage() {
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <SummaryCard title="Total clients" value={clients.length.toString()} icon={<Building2 className="h-5 w-5" />} variant="primary" caption="All clients" />
-          <SummaryCard title="Active clients" value={activeCount.toString()} icon={<Building2 className="h-5 w-5" />} variant="success" caption="Under contract" />
+          <SummaryCard title="Active clients" value={activeCount.toString()} icon={<Building2 className="h-5 w-5" />} variant="success" caption="Marked Active" />
           <SummaryCard title="Prospects" value={prospectCount.toString()} icon={<Building2 className="h-5 w-5" />} variant="warning" caption="Potential clients" />
-          <SummaryCard title="Est. contract value" value={`$${(totalContractValue / 1000).toFixed(0)}k`} icon={<Building2 className="h-5 w-5" />} variant="info" caption="Based on workers" />
+          <SummaryCard title="Illustrative manpower value" value={`$${(totalContractValue / 1000).toFixed(0)}k`} icon={<Building2 className="h-5 w-5" />} variant="info" caption="Required workers × $2,500; not signed contracts" />
         </div>
 
         <div className="rounded-xl border bg-card p-4 shadow-sm">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div className="relative w-full max-w-sm">
               <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input type="search" placeholder="Search clients..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+              <Input aria-label="Search clients" type="search" placeholder="Search clients..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
             </div>
             <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as ClientStatus | "all")}>
-              <SelectTrigger className="w-40">
+              <SelectTrigger aria-label="Client status" className="w-full sm:w-40">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
@@ -221,7 +221,8 @@ export default function ClientsPage() {
             </Select>
           </div>
 
-          <div className="mt-4 overflow-hidden rounded-lg border">
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground"><span>{filtered.length} of {clients.length} clients</span>{(search || statusFilter !== "all") && <Button size="sm" variant="ghost" onClick={() => { setSearch(""); setStatusFilter("all"); }}>Clear filters</Button>}</div>
+          <div className="mt-4 rounded-lg border">
             <Table>
               <TableHeader>
                 <TableRow>
