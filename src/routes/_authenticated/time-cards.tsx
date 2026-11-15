@@ -48,7 +48,7 @@ import { timestampedName } from "@/lib/xlsx";
 import { uploadToR2 } from "@/lib/r2";
 import { extractTimeCardData, OCR_NOT_CONFIGURED, isOcrConfigured } from "@/lib/ocr";
 import {
-  addClaimSheet,
+  saveGeneratedClaims,
   addTimeCard,
   buildClaimSheetFromCard,
   compareTimeCard,
@@ -63,7 +63,7 @@ import {
   getSites,
   getTimeCards,
   updateTimeCard,
-  updateClaimSheet,
+
 } from "@/lib/store";
 import type { TimeCard, TimeCardEntry } from "@/lib/types";
 
@@ -128,6 +128,7 @@ function TimeCardsPage() {
   const importInput = useRef<HTMLInputElement>(null);
   const [failedFiles, setFailedFiles] = useState<File[]>([]);
   const [uploadErrors, setUploadErrors] = useState<string[]>([]);
+  const [batchCompleted, setBatchCompleted] = useState(false);
   const [batchRestored, setBatchRestored] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
@@ -229,11 +230,11 @@ function TimeCardsPage() {
   function saveCard(id: string, patch: Partial<TimeCard>) {
     const card = cards.find(item => item.id === id);
     if (card && !card.employeeId) setCards(items => items.map(item => item.id === id ? { ...item, ...patch } : item));
-    else updateTimeCard(id, patch);
+    else { updateTimeCard(id, patch); setCards(items => items.map(item => item.id === id ? { ...item, ...patch } : item)); }
   }
 
   function refresh() {
-    setCards(previous => [...getTimeCards(), ...previous.filter(card => !card.employeeId)]);
+    setCards(previous => { const persisted = getTimeCards(); return [...persisted.map(card => previous.find(item => item.id === card.id && batchCardIds.includes(item.id)) ?? card), ...previous.filter(card => !persisted.some(item => item.id === card.id))]; });
     setSheets(getClaimSheets());
   }
 
@@ -302,7 +303,7 @@ function TimeCardsPage() {
   async function handleUpload(fileList: FileList | File[] | null, retry = false) {
     const files = fileList ? Array.from(fileList) : [];
     if (files.length === 0 || uploadLock.current) return;
-    if (!retry && (reviewScan || pendingScans.length || (settlementCards.length && !excelDocument && !reconcile))) { toast.message("Finish the current batch before uploading another batch"); return; }
+    if (!retry && (reviewScan || pendingScans.length || (batchCardIds.length && !batchCompleted))) { toast.message("Finish the current batch before uploading another batch"); return; }
     uploadLock.current = true;
     setUploading(true);
     setProgress({ done: 0, total: files.length });
@@ -329,7 +330,7 @@ function TimeCardsPage() {
       }
       refresh();
       const [first, ...rest] = scans;
-      if (!retry) { setBatchCardIds([]); setProjectId(""); setReconcile(null); }
+      if (!retry) { setBatchCardIds([]); setProjectId(""); setReconcile(null); setBatchCompleted(false); }
       setUploadErrors(failed); setFailedFiles(retryFiles);
       if (retry && reviewScan) setPendingScans(items => [...items, ...scans]);
       else { setPendingScans(items => retry ? [...items, ...rest] : rest); if (first) { if (!retry) setMonth(first.entries[0]?.date.slice(0, 7) ?? ""); openScan(first); } }
@@ -347,6 +348,7 @@ function TimeCardsPage() {
   }
 
   async function rescan(card: TimeCard) {
+    setActiveTab("cards");
     if (!card.fileUrl) {
       toast.error("This card has no scanned file");
       return;
@@ -359,7 +361,7 @@ function TimeCardsPage() {
         return;
       }
       const groups = groupTimeCardRows(ocr.data);
-      const matching = groups.filter(group => matchCardWorker(scoped, group.identity) === card.employeeId && group.entries[0]?.date.slice(0, 7) === card.periodStart.slice(0, 7) && (!card.entries[0]?.siteName || group.identity.siteName?.trim().toUpperCase() === card.entries[0]?.siteName?.trim().toUpperCase()));
+      const matching = groups.filter(group => (card.employeeId ? matchCardWorker(scoped, group.identity) === card.employeeId : group.identity.employeeCode === card.entries.find(entry => entry.employeeCode)?.employeeCode && group.identity.workerName === card.entries.find(entry => entry.workerName)?.workerName) && group.entries[0]?.date.slice(0, 7) === card.periodStart.slice(0, 7) && (!card.entries[0]?.siteName || group.identity.siteName?.trim().toUpperCase() === card.entries[0]?.siteName?.trim().toUpperCase()));
       const scan = matching.length === 1 ? matching[0] : groups.length === 1 && !groups[0]?.identity.employeeCode && !groups[0]?.identity.fin && !groups[0]?.identity.workerName ? groups[0] : undefined;
       if (!scan) throw new Error("Could not uniquely match this worker in the source. Upload and review the cards separately.");
       const entries = mergeEntries(
@@ -368,11 +370,12 @@ function TimeCardsPage() {
           date: r.date,
           checkIn: r.checkIn,
           checkOut: r.checkOut,
+          normalHours: r.normalHours, otHours: r.otHours, remarks: r.remarks, reviewApproved: false,
           confidence: r.confidence,
           suggestion: r.suggestion,
         })),
       );
-      saveCard(card.id, { status: "Draft", entries: entries.map(entry => ({ ...entry, normalHours: undefined, otHours: undefined, reviewApproved: false })) });
+      saveCard(card.id, { status: "Draft", entries: entries.map(entry => ({ ...entry, reviewApproved: false })) });
       refresh();
       setSelectedId(card.id);
       setVerificationOpen(true);
@@ -392,7 +395,7 @@ function TimeCardsPage() {
       : [...selected.entries, { date, ...patch }];
     const affectsHours = ["checkIn", "checkOut", "resolution", "normalHours", "otHours"].some(key => key in patch);
     const resetsHours = "checkIn" in patch || "checkOut" in patch || "resolution" in patch;
-    saveCard(selected.id, { entries: entries.map(entry => ({ ...entry, ...(affectsHours ? { reviewApproved: false } : {}), ...(resetsHours && entry.date === date ? { normalHours: undefined, otHours: undefined } : {}) })), ...(affectsHours ? { status: "Draft" as const } : {}) });
+    saveCard(selected.id, { entries: entries.map(entry => ({ ...entry, ...(affectsHours ? { reviewApproved: false } : {}), ...(resetsHours && patch.resolution !== "Accepted" && entry.date === date ? { normalHours: undefined, otHours: undefined } : {}) })), ...(affectsHours ? { status: "Draft" as const } : {}) });
     refresh();
   }
 
@@ -445,6 +448,8 @@ function TimeCardsPage() {
   /** Approving accepts the card's rows as shown (card = source), saves hours and opens the next worker. */
   function approveCard(card: TimeCard) {
     const rows = compareTimeCard(card);
+    const issue = claimBatchProblem([card], card.periodStart.slice(0, 7));
+    if (issue) { toast.error(issue); return; }
     const entries = card.entries.map(entry => {
       const row = rows.find(item => item.date === entry.date);
       const resolution = entry.resolution ?? (row && row.state !== "Verified" ? "Accepted" as const : undefined);
@@ -493,13 +498,8 @@ function TimeCardsPage() {
       const issues = reconcileClaimWorkbook(workbook, drafts, employees, month);
       setReconcile({ issues, workers: drafts.length });
       if (issues.length) { setActiveTab("sheets"); setClaimPreviewOpen(false); throw new Error(`${issues.length} mismatch(es) found. No claim records were created; review the reported entries before trying again.`); }
-      for (const draft of drafts) {
-        const existing = getClaimSheets().find(sheet => sheet.snapshot.some(row => row.sourceCardId === draft.id));
-        const { id, reference, ...claim } = draft;
-        if (existing) updateClaimSheet(existing.id, claim);
-        else addClaimSheet(claim);
-      }
-      refresh(); setActiveTab("sheets"); setClaimPreviewOpen(false);
+      await saveGeneratedClaims(drafts.map(({ id, reference, ...claim }) => ({ ...claim, sourceCardId: id })));
+      setBatchCompleted(true); refresh(); setActiveTab("sheets"); setClaimPreviewOpen(false);
       setPreviewDocument({ workbook, fileName: timestampedName(`claim_sheet_${month}`, "xlsx") });
       toast.success(`Claim Excel ready — ${drafts.length} approved cards`);
     } catch (error) { toast.error(error instanceof Error ? error.message : "Claim generation failed"); }
@@ -641,6 +641,7 @@ function TimeCardsPage() {
             </div>
           </div>
 
+          {(batchCardIds.length > 0 || pendingScans.length > 0 || uploadErrors.length > 0) && <Button variant="outline" disabled={uploading || generating} onClick={() => { if (!window.confirm("Start a new batch? Saved records remain; unsaved card review and unread file retries will be cleared from this session.")) return; setBatchCardIds([]); setPendingScans([]); setReviewScan(null); setSelectedId(null); setFailedFiles([]); setUploadErrors([]); setReconcile(null); setBatchCompleted(false); }}>Start new batch</Button>}
           {uploadErrors.length > 0 && <div role="alert" className="space-y-2 border-l-4 border-destructive bg-destructive/10 p-3 text-sm"><p className="font-semibold">{uploadErrors.length} file(s) could not be read — generation is blocked until recovered</p><ul className="list-disc pl-5">{uploadErrors.map((error, index) => <li key={index}>{error}</li>)}</ul><Button variant="outline" disabled={uploading} onClick={() => void handleUpload(failedFiles, true)}>Retry failed files</Button></div>}
           {!reviewScan && pendingScans.length > 0 && <Button variant="outline" onClick={() => { const [next, ...rest] = pendingScans; if (next) { setPendingScans(rest); openScan(next); } }}>Resume extracted batch ({pendingScans.length} cards)</Button>}
           {validationIssue && <div role="alert" className="border-l-4 border-destructive bg-destructive/10 p-3 text-sm">{validationIssue}</div>}
@@ -1004,7 +1005,7 @@ function TimeCardsPage() {
                                     <div className="flex gap-1">
                                       <div className="relative">
                                         <Input
-                                          aria-label={`Card time for ${r.date}`} type="time"
+                                          aria-label={`Clock in for ${r.date}`} type="time"
                                           className={`h-7 w-24 text-[11px] ${r.confidence !== undefined && r.confidence < 0.7 ? "border-warning" : ""}`}
                                           value={r.cardIn ?? ""}
                                           onChange={(e) => setEntry(r.date, { checkIn: e.target.value })}
@@ -1013,7 +1014,7 @@ function TimeCardsPage() {
                                       <span className="self-center">—</span>
                                       <div className="relative">
                                         <Input
-                                          aria-label={`Card time for ${r.date}`} type="time"
+                                          aria-label={`Clock out for ${r.date}`} type="time"
                                           className={`h-7 w-24 text-[11px] ${r.confidence !== undefined && r.confidence < 0.7 ? "border-warning" : ""}`}
                                           value={r.cardOut ?? ""}
                                           onChange={(e) => setEntry(r.date, { checkOut: e.target.value })}
@@ -1139,7 +1140,7 @@ function TimeCardsPage() {
               </Table></div>}
             </div>}
             <div className="mb-4 flex flex-wrap items-center gap-2">
-            <Input aria-label="Claim sheets month" type="month" value={month} onChange={event => { if (batchCardIds.length) toast.message("Finish the active batch before switching months"); else setMonth(event.target.value); }} className="w-44" />
+            <Input aria-label="Claim sheets month" type="month" value={month} onChange={event => { if (batchCardIds.length && !batchCompleted) toast.message("Finish the active batch before switching months"); else setMonth(event.target.value); }} className="w-44" />
             <span className="text-sm text-muted-foreground">{visibleSheets.length} worker claim(s)</span>
             <Button variant="outline" className="gap-2" disabled={!visibleSheets.length || editingExcel} onClick={() => void editExcel(undefined, "preview")}><Eye className="h-4 w-4" />Preview claim sheet</Button>
             <Button variant="outline" className="gap-2" disabled={!visibleSheets.length || editingExcel} onClick={() => void editExcel()}><Pencil className="h-4 w-4" />Edit Excel</Button>
