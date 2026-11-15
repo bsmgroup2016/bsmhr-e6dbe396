@@ -584,12 +584,12 @@ export default function PayrollPage() {
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div className="relative w-full max-w-sm">
               <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input type="search" placeholder="Search worker..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+              <Input aria-label="Search payroll workers" type="search" placeholder="Search worker..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
             </div>
             <div className="flex gap-2">
-              <Input type="month" value={month} onChange={(e) => setMonth(e.target.value)} className="w-40" />
+              <Input aria-label="Payroll month" type="month" value={month} onChange={(e) => setMonth(e.target.value)} className="w-40" />
               <Select value={companyFilter} onValueChange={setCompanyFilter}>
-                <SelectTrigger className="w-44">
+                <SelectTrigger aria-label="Payroll company" className="w-44">
                   <Building2 className="mr-1 h-4 w-4 text-muted-foreground" />
                   <SelectValue placeholder="Company" />
                 </SelectTrigger>
@@ -603,7 +603,7 @@ export default function PayrollPage() {
                 </SelectContent>
               </Select>
               <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as PayrollStatus | "all")}>
-                <SelectTrigger className="w-40">
+                <SelectTrigger aria-label="Payroll status filter" className="w-40">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -667,7 +667,7 @@ export default function PayrollPage() {
                         <TableCell>
                           <div className="flex items-center justify-end gap-1">
                             <Select value="" onValueChange={(v) => setStatus(p, v as PayrollStatus)}>
-                              <SelectTrigger className="h-8 w-32 text-xs">
+                              <SelectTrigger aria-label={`Set payroll status for ${emp?.name ?? "worker"}`} className="h-8 w-32 text-xs">
                                 <SelectValue placeholder="Set status" />
                               </SelectTrigger>
                               <SelectContent>
@@ -816,7 +816,7 @@ function PayrollForm({ employees, onSubmit }: { employees: ReturnType<typeof get
         <div className="space-y-2">
           <Label htmlFor="employeeId">Employee</Label>
           <Select name="employeeId" defaultValue={employees[0]?.id}>
-            <SelectTrigger>
+            <SelectTrigger id="employeeId">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -874,7 +874,7 @@ function PayrollForm({ employees, onSubmit }: { employees: ReturnType<typeof get
         <div className="space-y-2">
           <Label htmlFor="status">Status</Label>
           <Select name="status" defaultValue="Draft">
-            <SelectTrigger>
+            <SelectTrigger id="status">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
