@@ -1,5 +1,12 @@
 # Full-section UI/UX and workflow audit
 
+## Workforce deep audit
+
+- [x] Audit worker create/edit/remove/import, IPA autofill, documents/downloads and shared employee data; record findings in docs/WORKFORCE-AUDIT.md.
+- [x] Fix confirmed save/company/partial-import/skill-field/filter/download defects with focused tests; preserve schema and permissions, without production writes.
+- [x] Verify controlled populated tab edits, PDF/ZIP downloads, cancellation and failed/successful removal; 240 tests pass.
+- [ ] Verify real signed-in IPA → worker/documents → cross-section read-back, import project links and iOS downloads. Blocker: no authorized external account browser session or controlled real test batch/device is available.
+
 ## ClaimSheet Generator only: batch reliability and UX
 
 - [x] Add per-card CSV download for original readings, verified revisions, pending corrections and validation result/time; controlled browser download verified 30 CSV rows and exact original/corrected hours and UTC timestamps; 235 tests passed. Live account checks remain blocked below.

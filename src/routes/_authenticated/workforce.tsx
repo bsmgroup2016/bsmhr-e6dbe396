@@ -1,4 +1,8 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
+import { employeeCompanyId, employeeImportPatch } from "@/core/employee-company";
+import { IPA_DETAIL_FIELDS } from "@/core/ipa-detail-fields";
+import { subscribe, saveEmployeeConfirmed, saveEmployeeDocumentsConfirmed, deleteEmployeeConfirmed } from "@/lib/store";
 import { useCreateDialog } from "@/hooks/use-create-dialog";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { activeAssignedEmployeeIds, isEmployeeAvailable } from "@/lib/availability";
@@ -253,6 +257,8 @@ function toEmployeeRow(employee: Employee) {
   }
   row["Days To Expiry"] = daysUntil(employee.passExpiry) ?? "";
   row["Estimated Work Permit Expiry (Unverified)"] = estimatedWorkPermitExpiry(employee.workPermitIssueDate, employee.passType) ?? "";
+  for (const field of IPA_DETAIL_FIELDS) row[field.label] = employee[field.key] ?? "";
+  row["Company"] = getCompanies().find(company => company.id === employee.companyId)?.name ?? employee.branch ?? "";
   return row;
 }
 
@@ -283,6 +289,9 @@ function normalizeDate(value: string) {
 
 export default function WorkforcePage() {
   const [allEmployees, setEmployees] = useState<Employee[]>(getEmployees());
+  useEffect(() => subscribe(() => setEmployees(getEmployees())), []);
+  const createdId = useRef<string | undefined>(undefined);
+  const [deleting, setDeleting] = useState(false);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<EmployeeStatus | "all">("all");
   const [passFilter, setPassFilter] = useState<PassType | "all">("all");
@@ -401,26 +410,26 @@ export default function WorkforcePage() {
     paged.length > 0 && paged.every((e) => selectedIds.includes(e.id));
 
   function resetFilters() {
-    setCompanyFilter("all");
-    setTradeFilter("all");
-    setSiteFilter("all");
-    setStatusFilter("all");
-    setPage(1);
+    showAllEmployees();
   }
 
-  function bulkDelete() {
-    selectedIds.forEach((id) => deleteEmployee(id));
-    setSelectedIds([]);
-    setBulkDeleteOpen(false);
-    refresh();
+  async function bulkDelete() {
+    if (deleting) return;
+    setDeleting(true);
+    const failed: string[] = [];
+    for (const id of selectedIds) {
+      try { await deleteEmployeeConfirmed(id); }
+      catch (error) { failed.push(id); toast.error(error instanceof Error ? error.message : "Employee removal failed"); }
+    }
+    setSelectedIds(failed); setBulkDeleteOpen(failed.length > 0); setDeleting(false); refresh();
   }
 
   const expiringCount = employees.filter((e) => {
-    const days = daysUntil(e.passExpiry);
+    const days = daysUntil(e.workPermitExpiryDate || e.passExpiry);
     return days !== null && days <= 60 && days >= 0;
   }).length;
   const expiredCount = employees.filter((e) => {
-    const days = daysUntil(e.passExpiry);
+    const days = daysUntil(e.workPermitExpiryDate || e.passExpiry);
     return days !== null && days < 0;
   }).length;
 
@@ -432,12 +441,12 @@ export default function WorkforcePage() {
     (e) => e.status === "Pending Verification" || e.status === "Pending Profile Completion",
   );
 
-  function verifyProfile(id: string) {
-    updateEmployee(id, { status: "Active" });
-    refresh();
+  async function verifyProfile(id: string) {
+    try { await saveEmployeeConfirmed({ status: "Active" }, id); refresh(); toast.success("Worker profile verified"); }
+    catch (error) { toast.error(error instanceof Error ? error.message : "Verification failed"); }
   }
 
-  function handleImport(rows: Record<string, string>[]) {
+  async function handleImport(rows: Record<string, string>[]) {
     const errors: string[] = [];
     let imported = 0;
     let updated = 0;
@@ -467,7 +476,8 @@ export default function WorkforcePage() {
       });
     };
 
-    rows.forEach((row, index) => {
+    for (const [index, row] of rows.entries()) {
+      try {
       const get = (key: string) => {
         const column = EMPLOYEE_IMPORT_COLUMNS.find((c) => c.key === key);
         return column ? pick(row, column) : "";
@@ -481,7 +491,7 @@ export default function WorkforcePage() {
 
       if (Number.isNaN(salary)) {
         errors.push(`Row ${index + 2}: invalid daily basic rate`);
-        return;
+        continue;
       }
 
       const joined = normalizeDate(get("joinedOn")) || new Date().toISOString().slice(0, 10);
@@ -511,7 +521,7 @@ export default function WorkforcePage() {
         dateOfBirth: normalizeDate(get("dateOfBirth")) || undefined,
         gender: (get("gender") || undefined) as Employee["gender"],
         maritalStatus: (get("maritalStatus") || undefined) as Employee["maritalStatus"],
-        department: get("department") || undefined,
+        department: get("department") || "Construction",
         workerCategory: (get("workerCategory") || undefined) as Employee["workerCategory"],
         employmentType: (get("employmentType") || undefined) as Employee["employmentType"],
         otRate: Number(get("otRate").replace(/[^0-9.-]/g, "")) || undefined,
@@ -538,7 +548,7 @@ export default function WorkforcePage() {
         remarks: get("remarks") || undefined,
         companyId:
           (companyFilter !== "all" ? companyFilter : undefined) ??
-          getCurrentCompany() ??
+          (getCurrentCompany() || undefined) ??
           companies[0]?.id,
       };
 
@@ -547,68 +557,68 @@ export default function WorkforcePage() {
       const byCode = code
         ? existing.find((e) => (e.employeeCode ?? "").toLowerCase() === code.toLowerCase())
         : undefined;
-      const patch = Object.fromEntries(
-        Object.entries(payload).filter(([, v]) => v !== undefined && v !== "" && v !== "-"),
-      ) as typeof payload;
+      const supplied = Object.fromEntries(EMPLOYEE_IMPORT_COLUMNS.map(column => [column.key, get(column.key)]));
+      const patch = employeeImportPatch(payload, supplied);
+      if (payload.branch) patch.companyId = employeeCompanyId(payload.branch, companies);
       if (byCode) {
-        updateEmployee(byCode.id, patch);
+        await saveEmployeeConfirmed(patch, byCode.id);
         linkProject(byCode.id, get("projectName"), get("clientName"), joined);
         updated += 1;
         imported += 1;
-        return;
+        continue;
       }
       if (code) {
-        const created = addEmployee({ ...payload, employeeCode: code } as never);
+        const created = await saveEmployeeConfirmed({ ...payload, companyId: employeeCompanyId(payload.branch, companies, payload.companyId), employeeCode: code });
         if (created) existing.push(created);
         if (created) linkProject(created.id, get("projectName"), get("clientName"), joined);
         imported += 1;
-        return;
+        continue;
       }
 
       const match = fin ? existing.find((e) => e.fin.toUpperCase() === fin) : undefined;
       if (match) {
-        updateEmployee(match.id, patch);
+        await saveEmployeeConfirmed(patch, match.id);
         linkProject(match.id, get("projectName"), get("clientName"), joined);
         updated += 1;
       } else {
-        const created = addEmployee(payload);
+        const created = await saveEmployeeConfirmed({ ...payload, companyId: employeeCompanyId(payload.branch, companies, payload.companyId) });
         if (created) existing.push(created);
         if (created) linkProject(created.id, get("projectName"), get("clientName"), joined);
       }
       imported += 1;
-    });
+      } catch (error) { errors.push(`Row ${index + 2}: ${error instanceof Error ? error.message : "Save failed"}`); }
+    }
 
     return { imported, errors };
   }
 
-  function handleCreate(formData: FormData) {
-    addEmployee({
-      ...employeeFromForm(formData),
-      site: null,
-      companyId:
-        (companyFilter !== "all" ? companyFilter : undefined) ??
-        getCurrentCompany() ??
-        companies[0]?.id,
-    } as Omit<Employee, "id" | "employeeCode" | "createdAt" | "updatedAt">, (created) => {
-      for (const document of employeeFormDocuments(formData)) addDocument({ ...document, employeeId: created.id });
-    });
+  async function handleCreate(formData: FormData) {
+    const values = employeeFromForm(formData);
+    const created = await saveEmployeeConfirmed({ ...values, site: null, companyId: employeeCompanyId(values.branch, companies, companyFilter !== "all" ? companyFilter : getCurrentCompany()) }, createdId.current);
+    createdId.current = created.id;
+    await saveEmployeeDocumentsConfirmed(created.id, employeeFormDocuments(formData, getDocumentsByEmployee(created.id)));
+    createdId.current = undefined;
     setIsCreateOpen(false);
     refresh();
+    toast.success("Employee registered");
   }
 
-  function handleEdit(formData: FormData) {
+  async function handleEdit(formData: FormData) {
     if (!editingEmployee) return;
-    updateEmployee(editingEmployee.id, employeeFromForm(formData));
-    for (const document of employeeFormDocuments(formData, getDocumentsByEmployee(editingEmployee.id))) addDocument({ ...document, employeeId: editingEmployee.id });
+    const values = employeeFromForm(formData);
+    await saveEmployeeConfirmed({ ...values, companyId: employeeCompanyId(values.branch, companies, editingEmployee.companyId) }, editingEmployee.id);
+    await saveEmployeeDocumentsConfirmed(editingEmployee.id, employeeFormDocuments(formData, getDocumentsByEmployee(editingEmployee.id)));
     setEditingEmployee(null);
     refresh();
+    toast.success("Employee changes saved");
   }
 
-  function handleDelete() {
-    if (!deleteTarget) return;
-    deleteEmployee(deleteTarget.id);
-    setDeleteTarget(null);
-    refresh();
+  async function handleDelete() {
+    if (!deleteTarget || deleting) return;
+    setDeleting(true);
+    try { await deleteEmployeeConfirmed(deleteTarget.id); setDeleteTarget(null); refresh(); toast.success("Employee removed"); }
+    catch (error) { toast.error(error instanceof Error ? error.message : "Employee removal failed"); }
+    finally { setDeleting(false); }
   }
 
   return (
@@ -619,7 +629,7 @@ export default function WorkforcePage() {
             <h1 className="text-3xl font-semibold text-foreground">Workers (Site)</h1>
             <p className="text-sm text-muted-foreground">Employee directory and worker management.</p>
           </div>
-          <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+          <Dialog open={isCreateOpen} onOpenChange={open => { setIsCreateOpen(open); if (!open) createdId.current = undefined; }}>
             <DialogTrigger asChild>
               <Button size="sm" className="mt-2 sm:mt-0">
                 <Plus className="mr-1 h-4 w-4" />
@@ -631,7 +641,7 @@ export default function WorkforcePage() {
                 <DialogTitle>Register new employee</DialogTitle>
                 <DialogDescription>A unique P-File number will be generated automatically.</DialogDescription>
               </DialogHeader>
-              <EmployeeRegistration onSubmit={handleCreate} />
+              <EmployeeRegistration onSubmit={handleCreate} existingEmployeeId={createdId.current} />
             </DialogContent>
           </Dialog>
         </div>
@@ -1131,12 +1141,12 @@ export default function WorkforcePage() {
             <DialogHeader>
               <DialogTitle>Delete {selectedIds.length} employee(s)?</DialogTitle>
               <DialogDescription>
-                The selected employee records will be permanently removed. This cannot be undone.
+                The selected employee records will be permanently removed. Linked attendance, payroll and other records may also be affected. Archive employees from their profiles to retain their history. This cannot be undone.
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
               <Button variant="outline" onClick={() => setBulkDeleteOpen(false)}>Cancel</Button>
-              <Button variant="destructive" onClick={bulkDelete}>Delete</Button>
+              <Button variant="destructive" disabled={deleting} onClick={bulkDelete}>{deleting ? "Deleting…" : "Delete"}</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -1168,14 +1178,14 @@ export default function WorkforcePage() {
             <DialogHeader>
               <DialogTitle>Delete employee?</DialogTitle>
               <DialogDescription>
-                This will permanently remove {deleteTarget?.name} ({deleteTarget?.employeeCode}). This action cannot be undone.
+                This will permanently remove {deleteTarget?.name} ({deleteTarget?.employeeCode}). Linked attendance, payroll and other records may also be affected. Archive from the employee profile to retain history. This action cannot be undone.
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
               <Button variant="outline" onClick={() => setDeleteTarget(null)}>
                 Cancel
               </Button>
-              <Button variant="destructive" onClick={handleDelete}>
+              <Button variant="destructive" disabled={deleting} onClick={handleDelete}>
                 Delete
               </Button>
             </DialogFooter>

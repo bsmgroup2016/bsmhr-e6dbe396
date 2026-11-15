@@ -152,11 +152,15 @@ export function employeeFromForm(fd: FormData): Partial<Employee> {
     safetyCourseType: s("safetyCourseType") || undefined,
     safetyCourseNo: s("safetyCourseNo") || undefined,
     safetyCourseExpiry: date("safetyCourseExpiry"),
+    skillLevel: s("skillLevel") || undefined,
+    skillCertType: s("skillCertType") || undefined,
+    skillCertNo: s("skillCertNo") || undefined,
+    skillCertExpiry: date("skillCertExpiry"),
   };
   // Drop keys whose input was not rendered in this form, so a partial form
   // never overwrites existing data with blanks.
   for (const k of Object.keys(out)) {
-    if (!fd.has(k) && out[k] === undefined) delete out[k];
+    if (!fd.has(k)) delete out[k];
   }
   return out as Partial<Employee>;
 }
@@ -219,8 +223,10 @@ export function EmployeeForm({
   readOnly,
   hideTabList,
   tab: controlledTab,
+  existingEmployeeId,
 }: {
   employee?: Employee;
+  existingEmployeeId?: string;
   initialTab?: string;
   /** Profile view: same fields, locked except Documents; tab list and identity block hidden. */
   readOnly?: boolean;
@@ -228,7 +234,7 @@ export function EmployeeForm({
   hideTabList?: boolean;
   tab?: string;
   initialValues?: Partial<Employee>;
-  onSubmit: (data: FormData) => void;
+  onSubmit: (data: FormData) => void | Promise<void>;
   submitLabel?: string;
 }) {
   const values = employee ?? initialValues;
@@ -244,12 +250,13 @@ export function EmployeeForm({
   );
   const [ipaUrl, setIpaUrl] = useState(values?.ipaDocumentUrl ?? "");
   const [scanning, setScanning] = useState(false);
+  const [saving, setSaving] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
   const [documentReading, setDocumentReading] = useState(0);
   const [documentRefs, setDocumentRefs] = useState<Partial<Record<EmployeeDocumentKind, string>>>({ particular: values?.pFileUrl, passport: storedDocs.passportUpload, workpermit: storedDocs.workPermitUpload, csoc: storedDocs.csocUpload });
   const readingKinds = useRef(new Set<EmployeeDocumentKind>());
 
-  const taken = code.trim() ? isEmployeeCodeTaken(code, employee?.id) : false;
+  const taken = code.trim() ? isEmployeeCodeTaken(code, employee?.id ?? existingEmployeeId) : false;
   const allowedPrefixes = prefixesForCompany(branch);
   const expectedPrefix = allowedPrefixes.length ? allowedPrefixes.join(" / ") : prefixForBranch(branch);
   const staff = isOfficeStaff({ department: values?.department, trade: values?.trade });
@@ -302,8 +309,8 @@ export function EmployeeForm({
       return;
     }
     setScanning(true);
+    try {
     const result = await extractIpaData(url);
-    setScanning(false);
     if (!result.ok) {
       toast.error(result.reason || OCR_NOT_CONFIGURED);
       return;
@@ -313,6 +320,8 @@ export function EmployeeForm({
       count + (typeof value === "string" || typeof value === "number" ? fill(field, String(value)) : 0), 0);
     if (filled === 0) toast.info("Nothing new to fill — check the values against the document");
     else toast.success(`${filled} field(s) filled from the IPA — verify before saving`);
+    } catch (error) { toast.error(error instanceof Error ? error.message : "Could not read IPA. Try again."); }
+    finally { setScanning(false); }
   }
 
   async function autoFillDocument(kind: EmployeeDocumentKind, url: string) {
@@ -326,7 +335,8 @@ export function EmployeeForm({
       const fields = documentEmployeeFields(kind, result.data);
       const filled = Object.entries(fields).reduce((count, [field, value]) => count + fill(field, value), 0);
       toast.info(filled ? `${filled} field(s) filled — verify before saving` : "No empty fields could be filled — check the document and enter missing details manually");
-    } finally {
+    } catch (error) { toast.error(error instanceof Error ? error.message : "Could not read document. Try again."); }
+    finally {
       readingKinds.current.delete(kind);
       setDocumentReading((count) => count - 1);
     }
@@ -367,7 +377,10 @@ export function EmployeeForm({
       onSubmit={(e) => {
         e.preventDefault();
         if (documentReading > 0 || scanning) return;
-        onSubmit(new FormData(e.currentTarget));
+    if (saving || taken) return;
+    const data = new FormData(e.currentTarget);
+    setSaving(true);
+    Promise.resolve().then(() => onSubmit(data)).catch(error => toast.error(error instanceof Error ? error.message : "Could not save employee")).finally(() => setSaving(false));
       }}
       className="space-y-4"
     >
@@ -516,7 +529,7 @@ export function EmployeeForm({
         <TabsContent forceMount data-tab-panel="employment" value="employment" className="mt-4 space-y-4 data-[state=inactive]:hidden">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label="Department">
-              <Input name="department" defaultValue={values?.department ?? ""} />
+              <Input name="department" defaultValue={values?.department ?? (employee ? "" : "Construction")} />
             </Field>
             <Field label="Employment type">
               <Pick name="employmentType" options={EMPLOYMENT_TYPES} defaultValue={values?.employmentType ?? "Full Time"} />
@@ -631,6 +644,10 @@ export function EmployeeForm({
             <Field label="CSOC / SCOS course type"><Input name="safetyCourseType" defaultValue={values?.safetyCourseType ?? ""} /></Field>
             <Field label="CSOC / SCOS certificate number"><Input name="safetyCourseNo" defaultValue={values?.safetyCourseNo ?? ""} /></Field>
             <Field label="CSOC / SCOS expiry"><Input name="safetyCourseExpiry" type="date" defaultValue={dateValue(values?.safetyCourseExpiry)} /></Field>
+            <Field label="Skill level"><Pick name="skillLevel" options={["Basic Skilled", "Higher Skilled"]} defaultValue={values?.skillLevel} /></Field>
+            <Field label="Skill certificate type"><Pick name="skillCertType" options={["TCTO", "SETO", "Multi-Skilling (MSC)", "Skills Evaluation (SEC(K))", "Other"]} defaultValue={values?.skillCertType} /></Field>
+            <Field label="Skill certificate number"><Input name="skillCertNo" defaultValue={values?.skillCertNo ?? ""} /></Field>
+            <Field label="Skill certificate expiry"><Input name="skillCertExpiry" type="date" defaultValue={dateValue(values?.skillCertExpiry)} /></Field>
           </div>
           {ipaFields("pass")}
         </TabsContent>
@@ -781,7 +798,7 @@ export function EmployeeForm({
 
       <div className={readOnly && tab !== "documents" ? "hidden" : "flex justify-end pt-2"}>
         {documentReading > 0 && <span role="status" className="mr-3 text-sm text-muted-foreground">Reading document…</span>}
-        <Button type="submit" disabled={documentReading > 0 || scanning}>{submitLabel ?? (readOnly ? "Save documents" : employee ? "Save changes" : "Register employee")}</Button>
+        <Button type="submit" disabled={documentReading > 0 || scanning || saving || taken}>{saving ? "Saving…" : submitLabel ?? (readOnly ? "Save documents" : employee ? "Save changes" : "Register employee")}</Button>
       </div>
     </form>
   );

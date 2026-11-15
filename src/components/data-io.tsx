@@ -110,7 +110,7 @@ export function ImportDialog({
   description: string;
   columns: ImportColumn[];
   templateName: string;
-  onImport: (rows: Record<string, string>[]) => ImportResult;
+  onImport: (rows: Record<string, string>[]) => ImportResult | Promise<ImportResult>;
   onDone?: () => void;
   label?: string;
   /** Show a column-mapping step so any spreadsheet layout can be imported. */
@@ -216,7 +216,8 @@ export function ImportDialog({
     }
   }
 
-  function confirmImport() {
+  async function confirmImport() {
+    if (busy) return;
     const source = mapRows(rows);
     const valid = source.filter((row) =>
       columns.filter((c) => c.required).every((c) => pick(row, c)),
@@ -227,7 +228,9 @@ export function ImportDialog({
       });
       return;
     }
-    const result = onImport(valid);
+    setBusy(true);
+    try {
+    const result = await onImport(valid);
     if (result.imported > 0) {
       toast.success(`Imported ${result.imported} row${result.imported === 1 ? "" : "s"}`, {
         description: result.errors.length ? `${result.errors.length} row(s) skipped.` : undefined,
@@ -235,9 +238,11 @@ export function ImportDialog({
     } else {
       toast.error("Nothing imported", { description: result.errors[0] });
     }
-    setOpen(false);
-    reset();
+    if (result.errors.length) setIssues(result.errors);
+    else { setOpen(false); reset(); }
     onDone?.();
+    } catch (error) { toast.error(error instanceof Error ? error.message : "Import failed"); }
+    finally { setBusy(false); }
   }
 
   const preview = mapRows(rows).slice(0, 5);
