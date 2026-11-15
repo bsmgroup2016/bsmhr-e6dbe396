@@ -159,12 +159,13 @@ function TimeCardsPage() {
     setPendingScans(saved.pendingScans as PendingScan[]);
     if (saved.month) setMonth(saved.month);
     setProjectId(saved.projectId);
+    setUploadErrors(saved.failedMessages ?? []);
     setBatchRestored(true);
   }, []);
   useEffect(() => {
     if (!batchRestored) return;
-    writeBatchState(window.sessionStorage, { localCards: cards.filter(card => batchCardIds.includes(card.id)), batchCardIds, pendingScans: reviewScan ? [reviewScan, ...pendingScans] : pendingScans, month, projectId });
-  }, [batchRestored, cards, batchCardIds, pendingScans, reviewScan, month, projectId]);
+    writeBatchState(window.sessionStorage, { localCards: cards.filter(card => batchCardIds.includes(card.id)), batchCardIds, pendingScans: reviewScan ? [reviewScan, ...pendingScans] : pendingScans, month, projectId, failedMessages: uploadErrors });
+  }, [batchRestored, cards, batchCardIds, pendingScans, reviewScan, month, projectId, uploadErrors]);
 
   const selected = cards.find((c) => c.id === selectedId) ?? null;
   const comparison = useMemo(() => (selected ? compareTimeCard(selected) : []), [selected]);
@@ -177,7 +178,7 @@ function TimeCardsPage() {
   ], { projects, sites }, true);
   const validationIssue = claimBatchProblem(settlementCards, month);
   const visibleSheets = sheets.filter(sheet => (!companyId || sheet.companyId === companyId) && sheet.periodStart.startsWith(month));
-  const readyToGenerate = !batchIssue && !validationIssue && !failedFiles.length && canGenerateSettledCards(settlementCards, pendingScans.length + (reviewScan ? 1 : 0));
+  const readyToGenerate = !batchIssue && !validationIssue && !uploadErrors.length && canGenerateSettledCards(settlementCards, pendingScans.length + (reviewScan ? 1 : 0));
   const preparedClaims = settlementCards.map(card => ({ card, snapshot: buildClaimSheetFromCard(card) }));
   const mismatches = comparison.filter((r) => r.state !== "Verified").length;
   const lowConfidenceCount = comparison.filter(
@@ -541,6 +542,7 @@ function TimeCardsPage() {
     setImportFile(null);
     if (!data.length) return;
 
+    if (batchCardIds.length && !batchCompleted) { toast.message("Finish or reset the active batch before importing"); return; }
     setUploading(true);
     try {
       const { start, end } = monthRange(month);
@@ -555,6 +557,8 @@ function TimeCardsPage() {
         }
       });
 
+      const matchedCount = [...byEmployee.values()].reduce((sum, rows) => sum + rows.length, 0);
+      if (matchedCount !== data.length) throw new Error(`${data.length - matchedCount} imported row(s) have unknown P-File Numbers. Correct them before importing; no rows were saved.`);
       const importedIds: string[] = [];
       for (const [empId, rows] of byEmployee.entries()) {
         const entries: TimeCardEntry[] = rows.map((r) => ({
@@ -624,15 +628,15 @@ function TimeCardsPage() {
             );
           })()}
 
-          <label htmlFor="claim-upload" onDragOver={(event) => { event.preventDefault(); if (!uploading) setIsDragOver(true); }} onDragLeave={() => setIsDragOver(false)} onDrop={(event) => { event.preventDefault(); setIsDragOver(false); if (!uploading && !reviewScan && !pendingScans.length && event.dataTransfer?.files?.length) { void handleUpload(event.dataTransfer.files); } }} className={`flex flex-col items-center gap-3 rounded-xl border-2 border-dashed p-8 text-center transition-colors ${uploading ? "pointer-events-none border-primary/40 bg-primary/5 opacity-60" : "cursor-pointer"} ${isDragOver ? "border-primary bg-primary/20 scale-[1.01]" : "border-primary/40 bg-primary/5 hover:bg-primary/10"}`}>
+          <label htmlFor="claim-upload" onDragOver={(event) => { event.preventDefault(); if (!uploading) setIsDragOver(true); }} onDragLeave={() => setIsDragOver(false)} onDrop={(event) => { event.preventDefault(); setIsDragOver(false); if (!uploading && !reviewScan && !pendingScans.length && event.dataTransfer?.files?.length) { void handleUpload(event.dataTransfer.files); } }} className={`flex flex-col items-center gap-3 rounded-xl border-2 border-dashed ${settlementCards.length ? "p-4" : "p-8"} text-center transition-colors ${uploading ? "pointer-events-none border-primary/40 bg-primary/5 opacity-60" : "cursor-pointer"} ${isDragOver ? "border-primary bg-primary/20 scale-[1.01]" : "border-primary/40 bg-primary/5 hover:bg-primary/10"}`}>
             <span className="grid h-14 w-14 place-items-center rounded-full bg-primary text-primary-foreground"><Upload className="h-6 w-6" /></span>
-            <Button type="button" variant="outline" disabled={uploading || !!reviewScan || pendingScans.length > 0} onClick={event => { event.preventDefault(); uploadInput.current?.click(); }}><Upload aria-hidden="true" />Choose time cards</Button>
+            <Button type="button" variant="outline" disabled={uploading || !!reviewScan || pendingScans.length > 0 || (batchCardIds.length > 0 && !batchCompleted)} onClick={event => { event.preventDefault(); uploadInput.current?.click(); }}><Upload aria-hidden="true" />Choose time cards</Button>
             <span className="text-base font-semibold text-foreground">{uploading ? (progress ? `Reading cards ${progress.done}/${progress.total}…` : "Reading cards…") : isDragOver ? "Drop the cards here" : "Click or drag time cards here"}</span>
             <span className="text-sm text-muted-foreground">
               {isOcrConfigured() ? "PDF or photos · drag & drop or click · select many at once · details are read automatically" : `${OCR_NOT_CONFIGURED}. Type the card times in manually after upload.`}
             </span>
           </label>
-          <input ref={uploadInput} id="claim-upload" aria-label="Upload time cards" className="hidden" type="file" multiple accept="image/*,application/pdf" disabled={uploading || reviewScan !== null || pendingScans.length > 0} onChange={(event) => { void handleUpload(event.target.files); event.target.value = ""; }} />
+          <input ref={uploadInput} id="claim-upload" aria-label="Upload time cards" className="hidden" type="file" multiple accept="image/*,application/pdf" disabled={uploading || reviewScan !== null || pendingScans.length > 0 || (batchCardIds.length > 0 && !batchCompleted)} onChange={(event) => { void handleUpload(event.target.files); event.target.value = ""; }} />
           <div className="flex flex-wrap items-center justify-center gap-2 text-sm text-muted-foreground">
             <span>Have an Excel file instead?</span>
             <div className="relative">
@@ -642,7 +646,7 @@ function TimeCardsPage() {
           </div>
 
           {(batchCardIds.length > 0 || pendingScans.length > 0 || uploadErrors.length > 0) && <Button variant="outline" disabled={uploading || generating} onClick={() => { if (!window.confirm("Start a new batch? Saved records remain; unsaved card review and unread file retries will be cleared from this session.")) return; setBatchCardIds([]); setPendingScans([]); setReviewScan(null); setSelectedId(null); setFailedFiles([]); setUploadErrors([]); setReconcile(null); setBatchCompleted(false); }}>Start new batch</Button>}
-          {uploadErrors.length > 0 && <div role="alert" className="space-y-2 border-l-4 border-destructive bg-destructive/10 p-3 text-sm"><p className="font-semibold">{uploadErrors.length} file(s) could not be read — generation is blocked until recovered</p><ul className="list-disc pl-5">{uploadErrors.map((error, index) => <li key={index}>{error}</li>)}</ul><Button variant="outline" disabled={uploading} onClick={() => void handleUpload(failedFiles, true)}>Retry failed files</Button></div>}
+          {uploadErrors.length > 0 && <div role="alert" className="space-y-2 border-l-4 border-destructive bg-destructive/10 p-3 text-sm"><p className="font-semibold">{uploadErrors.length} file(s) could not be read — generation is blocked until recovered</p><ul className="list-disc pl-5">{uploadErrors.map((error, index) => <li key={index}>{error}</li>)}</ul><Button variant="outline" disabled={uploading || !failedFiles.length} onClick={() => void handleUpload(failedFiles, true)}>Retry failed files</Button>{!failedFiles.length && <p>The unread files must be selected again. Start a new batch and include every original card.</p>}</div>}
           {!reviewScan && pendingScans.length > 0 && <Button variant="outline" onClick={() => { const [next, ...rest] = pendingScans; if (next) { setPendingScans(rest); openScan(next); } }}>Resume extracted batch ({pendingScans.length} cards)</Button>}
           {validationIssue && <div role="alert" className="border-l-4 border-destructive bg-destructive/10 p-3 text-sm">{validationIssue}</div>}
           {settlementCards.length > 0 && <div className="flex flex-wrap items-center gap-3"><span className="text-sm font-medium">Active batch · {settlementCards.length} cards · {month}</span><Button variant="outline" onClick={() => { const next = settlementCards.find(card => !isCardApproved(card)); if (next) { setSelectedId(next.id); setActiveTab("cards"); setVerificationOpen(true); } }} disabled={approvedCount === settlementCards.length}>Continue review ({settlementCards.length - approvedCount} remaining)</Button></div>}
@@ -652,7 +656,7 @@ function TimeCardsPage() {
             <div className="grid items-end gap-4 md:grid-cols-2">
             <div className="min-w-0 space-y-2">
               <Label htmlFor="claim-project">Project (optional)</Label>
-              <Select value={selected.entries.find((entry) => entry.projectId)?.projectId ?? "none"} onValueChange={(value) => { const id = value === "none" ? undefined : value; saveCard(selected.id, { entries: selected.entries.map((entry) => ({ ...entry, projectId: id, projectName: id ? projects.find((project) => project.id === id)?.name : undefined })) }); setProjectId(id ?? ""); refresh(); }}>
+              <Select value={selected.entries.find((entry) => entry.projectId)?.projectId ?? "none"} onValueChange={(value) => { const id = value === "none" ? undefined : value; for (const card of settlementCards) saveCard(card.id, { entries: card.entries.map((entry) => ({ ...entry, projectId: id, projectName: id ? projects.find((project) => project.id === id)?.name : undefined })) }); setProjectId(id ?? ""); refresh(); }}>
                 <SelectTrigger id="claim-project" className="w-full"><SelectValue placeholder="Select project" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">No project selected</SelectItem>
@@ -696,8 +700,8 @@ function TimeCardsPage() {
               refresh();
             }}><SelectTrigger aria-label="Project/Client Name"><SelectValue placeholder="Select project (optional)" /></SelectTrigger><SelectContent><SelectItem value="none">No project selected</SelectItem>{projects.map((project) => <SelectItem key={project.id} value={project.id}>{project.name}{clients.find(client => client.id === project.clientId)?.name ? ` / ${clients.find(client => client.id === project.clientId)?.name}` : ""}</SelectItem>)}</SelectContent></Select>
             <Label htmlFor="review-month">Claim Month</Label><Input id="review-month" type="month" value={month} onChange={event => setMonth(event.target.value)} />
-            {failedFiles.length > 0 && <p role="alert" className="text-sm text-destructive">Close this dialog and retry the unread files before confirming the batch.</p>}
-            <Button disabled={failedFiles.length > 0 || !canConfirmCardDetails(employeeId, month, siteName)} onClick={confirmScan}><CheckCircle2 className="mr-2 h-4 w-4" />Confirm & review times</Button>
+            {uploadErrors.length > 0 && <p role="alert" className="text-sm text-destructive">Close this dialog and retry the unread files before confirming the batch.</p>}
+            <Button disabled={uploadErrors.length > 0 || !canConfirmCardDetails(employeeId, month, siteName)} onClick={confirmScan}><CheckCircle2 className="mr-2 h-4 w-4" />Confirm & review times</Button>
           </DialogContent>
         </Dialog>
 
@@ -1167,7 +1171,7 @@ function TimeCardsPage() {
                           className="border-0 bg-transparent"
                           icon={<FileSpreadsheet className="h-5 w-5" />}
                           title="No claim sheets"
-                          description="Generate one from verified attendance."
+                          description="Approve the uploaded time cards and generate a claim sheet."
                         />
                       </TableCell>
                     </TableRow>
