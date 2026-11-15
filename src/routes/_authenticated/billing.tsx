@@ -375,7 +375,7 @@ function BillingPage() {
   return (
     <AppShell>
       <div className="w-full space-y-6">
-        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-5">
           <div>
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">
               Billing & Invoicing
@@ -472,11 +472,12 @@ function BillingPage() {
             </TabsContent>
 
             <TabsContent value="invoices" className="mt-4">
-              <div className="rounded-xl border bg-card p-4 shadow-sm">
-                <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <div className="space-y-4">
+                <div className="flex flex-col gap-3 rounded-lg bg-muted/50 p-4 lg:flex-row lg:items-center lg:justify-between">
                   <div className="relative w-full max-w-sm">
                     <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
+                      aria-label="Search invoices"
                       type="search"
                       placeholder="Search invoice no or client..."
                       value={search}
@@ -488,7 +489,7 @@ function BillingPage() {
                     value={statusFilter}
                     onValueChange={(v) => setStatusFilter(v as InvoiceStatus | "all")}
                   >
-                    <SelectTrigger className="w-48">
+                    <SelectTrigger aria-label="Invoice status" className="w-full sm:w-48">
                       <SelectValue placeholder="Status" />
                     </SelectTrigger>
                     <SelectContent>

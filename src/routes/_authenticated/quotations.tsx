@@ -376,7 +376,7 @@ function QuotationsPage() {
           <KpiCard label="Win rate" value={`${kpi.winRate}%`} hint="Accepted vs decided" />
         </div>
 
-        <Card>
+        <Card className="rounded-none border-0 bg-transparent shadow-none">
           <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <CardTitle className="flex items-center gap-2 text-base">
               <FileSignature className="h-4 w-4" /> Quotations
@@ -401,7 +401,7 @@ function QuotationsPage() {
               </Select>
             </div>
           </CardHeader>
-          <CardContent className="overflow-x-auto">
+          <CardContent className="overflow-x-auto px-0 sm:px-0">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
               <span>{filtered.length} quotations · {companyId ? getCompany(companyId)?.name ?? "Selected company" : "All companies"}</span>
               {(search.trim() || statusFilter !== "all") && <Button size="sm" variant="ghost" onClick={() => { setSearch(""); setStatusFilter("all"); }}>Clear filters</Button>}
@@ -864,13 +864,11 @@ function QuotationsPage() {
 
 function KpiCard({ label, value, hint }: { label: string; value: string; hint: string }) {
   return (
-    <Card>
-      <CardContent className="pt-6">
-        <p className="text-xs uppercase tracking-wide text-muted-foreground">{label}</p>
-        <p className="mt-1 text-2xl font-semibold text-foreground">{value}</p>
-        <p className="mt-1 text-xs text-muted-foreground">{hint}</p>
-      </CardContent>
-    </Card>
+    <div data-ui="summary-metric" className="min-w-0">
+      <p className="text-xs font-medium text-muted-foreground">{label}</p>
+      <p className="mt-2 break-words text-2xl font-semibold tabular-nums text-foreground">{value}</p>
+      <p className="mt-2 text-xs text-muted-foreground">{hint}</p>
+    </div>
   );
 }
 

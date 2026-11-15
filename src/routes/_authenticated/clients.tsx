@@ -200,8 +200,8 @@ export default function ClientsPage() {
           <SummaryCard title="Illustrative manpower value" value={`$${(totalContractValue / 1000).toFixed(0)}k`} icon={<Building2 className="h-5 w-5" />} variant="info" caption="Required workers × $2,500; not signed contracts" />
         </div>
 
-        <div className="rounded-xl border bg-card p-4 shadow-sm">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="space-y-4">
+          <div className="flex flex-col gap-3 rounded-lg bg-muted/50 p-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="relative w-full max-w-sm">
               <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input aria-label="Search clients" type="search" placeholder="Search clients..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />

@@ -117,7 +117,7 @@ export default function SettingsPage() {
 
   return (
     <AppShell>
-      <div className="mx-auto max-w-4xl space-y-6">
+      <div className="w-full space-y-6">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">Settings</h1>
           <p className="text-sm text-muted-foreground">Configure system preferences and manage data.</p>

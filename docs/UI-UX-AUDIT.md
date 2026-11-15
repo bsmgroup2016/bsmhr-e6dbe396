@@ -2,6 +2,14 @@
 
 Date: 15 November 2026
 
+## Visible section-layout rollout
+
+The shared authenticated shell now provides category context for every listed operational section except Attendance & OT, which already owns its category heading. Shared page headings are larger; summary tiles become open metric strips; section tabs use an underlined selected state; data tables have a separate framed surface, distinct headers and alternating rows. These presentation rules are scoped to the workspace, not dialog portals or workbook grids.
+
+Workers, payroll, clients, billing, leave, quotations, training and Settings received additional page-level changes: removed duplicate worker-create action, separated payroll actions from its title, made payroll generation primary, unframed list sections, grouped filters, named invoice/leave controls, converted quotation KPIs to open metrics, matched worker/payroll/training titles to navigation and widened Settings. All existing handlers, amounts, role rules and claim-template generation remain unchanged.
+
+Verification: 202 existing tests passed; 50 content routes retain complete metadata; latest preview compiler entry is build OK. Isolated live-served shared layouts were exercised at 1280×1800, 1146×682 and 390×844, with working tab selection/search and no page errors. Desktop/mobile screenshots confirm open summaries and visibly different tabs/tables. Real authenticated populated pages remain unverified because no authorized session is available in the test browser; this is not a claim of end-to-end verification.
+
 ## Second-pass senior design and engineering review
 
 Completed a fresh source review of all sections in the coverage matrix below, plus the assistant, inventory, public account states, shared role dashboard and every Settings child. A supplemental pass inspected the complete dashboard, company pages, organisational panels and all seven Reports tabs, closing the initial delegated review's coverage gaps. There are 50 content route files; the authenticated layout is not a content page. No section is excluded from the inventory; this does not mean every live action has been executed.

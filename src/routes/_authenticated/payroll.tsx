@@ -442,12 +442,13 @@ export default function PayrollPage() {
   return (
     <AppShell>
       <div className="w-full space-y-6">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-col gap-5">
           <div className="min-w-0">
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Payroll</h1>
+            <h1 className="text-3xl font-semibold text-foreground">Workforce Payroll</h1>
+            <p className="mt-2 text-sm text-muted-foreground">Payroll period · {month}</p>
           </div>
-          <div className="flex min-w-0 flex-wrap items-center gap-2 lg:justify-end">
-            <Button size="sm" variant="outline" onClick={handleGenerate}>
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <Button size="sm" onClick={handleGenerate}>
               <Wand2 className="mr-1 h-4 w-4" />
               Generate {month}
             </Button>
@@ -510,7 +511,7 @@ export default function PayrollPage() {
 
             <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
               <DialogTrigger asChild>
-                <Button size="sm">
+                <Button size="sm" variant="outline">
                   <Plus className="mr-1 h-4 w-4" />
                   Add entry
                 </Button>

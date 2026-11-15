@@ -193,7 +193,7 @@ export default function TrainingPage() {
       <div className="w-full space-y-6">
         <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Training &amp; Safety</h1>
+            <h1 className="text-3xl font-semibold text-foreground">Training &amp; WSH Safety</h1>
             <p className="text-sm text-muted-foreground">Course register, certification expiry tracking and workplace incident log.</p>
           </div>
           <Button size="sm" variant="outline" className="mt-2 sm:mt-0" onClick={handleExport} disabled={filteredRecords.length === 0}>

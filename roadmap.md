@@ -1,5 +1,11 @@
 # Full-section UI/UX and workflow audit
 
+## Visible layouts across remaining sections
+
+- [x] Give every operational section a prominent heading and section context, matching the clearer attendance page.
+- [x] Replace floating summary tiles with open metric strips and make section tabs and data tables clearly differentiated; add page-specific refinements to workers, payroll, billing, clients, leave, quotations, training and Settings.
+- [x] Verify shared layouts and controls at three desktop/mobile sizes; 202 tests pass and 50 routes retain metadata. Business logic, data and Excel templates unchanged; authenticated populated-page checks remain blocked as noted below.
+
 ## Second-pass premium usability audit
 
 - [x] Re-audit every content section in three coverage groups plus a dashboard/company/reports deep pass; distinguish source findings from authenticated verification.

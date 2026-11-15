@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 
 const Table = React.forwardRef<HTMLTableElement, React.HTMLAttributes<HTMLTableElement>>(
   ({ className, ...props }, ref) => (
-    <div tabIndex={0} role="region" aria-label={props["aria-label"] ?? "Scrollable table"} className="relative w-full min-w-0 overflow-auto overscroll-x-contain rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+    <div data-ui="records-table" tabIndex={0} role="region" aria-label={props["aria-label"] ?? "Scrollable table"} className="relative w-full min-w-0 overflow-auto overscroll-x-contain rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
       <table ref={ref} className={cn("w-full caption-bottom text-sm tabular-nums", className)} {...props} />
     </div>
   ),

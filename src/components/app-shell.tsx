@@ -6,6 +6,7 @@ import { OfflineBanner } from "@/components/offline-banner";
 import { InstallAppBanner } from "@/components/install-app-banner";
 import { LiveChatWidget } from "@/components/live-chat-widget";
 import { AssistantAlerts } from "@/components/assistant-alerts";
+import { SectionContext } from "@/components/section-context";
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -20,7 +21,7 @@ export function AppShell({ children }: AppShellProps) {
         <AppHeader />
         <InstallAppBanner />
         <OfflineBanner />
-        <main id="main-content" tabIndex={-1} className="workspace-content min-w-0 flex-1 p-4 pb-24 outline-none sm:p-8 md:pb-10">{children}</main>
+        <main id="main-content" tabIndex={-1} className="workspace-content min-w-0 flex-1 p-4 pb-24 outline-none sm:p-8 md:pb-10"><SectionContext />{children}</main>
         <MobileNav />
         <LiveChatWidget />
         <AssistantAlerts />

@@ -616,7 +616,7 @@ export default function WorkforcePage() {
       <div className="w-full space-y-6">
         <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Workforce</h1>
+            <h1 className="text-3xl font-semibold text-foreground">Workers (Site)</h1>
             <p className="text-sm text-muted-foreground">Employee directory and worker management.</p>
           </div>
           <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
@@ -690,14 +690,10 @@ export default function WorkforcePage() {
           </div>
         ) : null}
 
-        <div className="space-y-4 rounded-xl border bg-card p-4 shadow-sm">
+        <div className="space-y-4">
           {/* Action bar */}
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex flex-wrap items-center gap-2">
-              <Button size="sm" onClick={() => setIsCreateOpen(true)} className="gap-1.5">
-                <Plus className="h-4 w-4" />
-                Add Employee
-              </Button>
               <Button
                 size="sm"
                 variant="destructive"

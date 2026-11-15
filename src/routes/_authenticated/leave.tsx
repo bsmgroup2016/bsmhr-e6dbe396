@@ -200,11 +200,12 @@ export default function LeavePage() {
           <SummaryCard title="Approved days" value={totalDays.toString()} icon={<CalendarDays className="h-5 w-5" />} variant="primary" caption="Total" />
         </div>
 
-        <div className="rounded-xl border bg-card p-4 shadow-sm">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="space-y-4">
+          <div className="flex flex-col gap-3 rounded-lg bg-muted/50 p-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="relative w-full max-w-sm">
               <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
+                aria-label="Search leave requests"
                 type="search"
                 placeholder="Search worker or leave type..."
                 value={search}
@@ -213,7 +214,7 @@ export default function LeavePage() {
               />
             </div>
             <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as LeaveStatus | "all")}>
-              <SelectTrigger className="w-44">
+              <SelectTrigger aria-label="Leave status" className="w-full sm:w-44">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
