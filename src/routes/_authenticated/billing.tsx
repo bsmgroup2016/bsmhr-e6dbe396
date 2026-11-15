@@ -780,9 +780,9 @@ function BillingPage() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label>Method</Label>
+                <Label htmlFor="payMethod">Method</Label>
                 <Select value={payMode} onValueChange={(v) => setPayMode(v as PaymentMode)}>
-                  <SelectTrigger>
+                  <SelectTrigger id="payMethod">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>

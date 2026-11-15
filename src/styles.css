@@ -189,6 +189,17 @@
     background-color: var(--color-background);
     color: var(--color-foreground);
   }
+
+  /* Native links and custom controls share the same keyboard focus signal. */
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 3px;
+  }
+
+  [data-sidebar]:focus-visible,
+  [data-sidebar] :focus-visible {
+    outline-color: var(--sidebar-ring);
+  }
 }
 
 .workspace-content h1 { line-height: 1.25; text-wrap: balance; }

@@ -271,7 +271,7 @@ export default function ClientsPage() {
                         <TableCell>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild onClick={(evt) => evt.stopPropagation()}>
-                              <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <Button variant="ghost" size="icon" aria-label={`Client actions for ${c.name}`} className="min-h-11 min-w-11">
                                 <MoreHorizontal className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
@@ -410,7 +410,7 @@ function ClientForm({ client, onSubmit }: { client?: Client; onSubmit: (data: Fo
         <div className="space-y-2">
           <Label htmlFor="industry">Industry</Label>
           <Select name="industry" defaultValue={client?.industry || industries[0]}>
-            <SelectTrigger>
+            <SelectTrigger id="industry">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -425,7 +425,7 @@ function ClientForm({ client, onSubmit }: { client?: Client; onSubmit: (data: Fo
         <div className="space-y-2">
           <Label htmlFor="status">Status</Label>
           <Select name="status" defaultValue={client?.status || "Active"}>
-            <SelectTrigger>
+            <SelectTrigger id="status">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

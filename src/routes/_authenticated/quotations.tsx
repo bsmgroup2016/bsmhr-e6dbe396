@@ -509,13 +509,13 @@ function QuotationsPage() {
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <Label>Quote number</Label>
-              <Input value={quoteNo} onChange={(e) => setQuoteNo(e.target.value)} />
+              <Label htmlFor="quotations-quote-number-1">Quote number</Label>
+              <Input id="quotations-quote-number-1" value={quoteNo} onChange={(e) => setQuoteNo(e.target.value)} />
             </div>
             <div className="space-y-1.5">
-              <Label>Quoting company</Label>
+              <Label htmlFor="quotations-quoting-company-2">Quoting company</Label>
               <Select value={formCompanyId} onValueChange={setFormCompanyId}>
-                <SelectTrigger><SelectValue placeholder="Select company" /></SelectTrigger>
+                <SelectTrigger id="quotations-quoting-company-2"><SelectValue placeholder="Select company" /></SelectTrigger>
                 <SelectContent>
                   {companies.map((c) => (
                     <SelectItem key={c.id} value={c.id}>{c.legalName || c.name}</SelectItem>
@@ -527,7 +527,7 @@ function QuotationsPage() {
             <div className="space-y-1.5">
               <Label>Quote for</Label>
               <Select value={clientMode} onValueChange={(v) => setClientMode(v as "new" | "existing")}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger aria-label="Quote for"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="new">New prospect (not a client yet)</SelectItem>
                   <SelectItem value="existing">Existing client</SelectItem>
@@ -537,9 +537,9 @@ function QuotationsPage() {
 
             {clientMode === "existing" ? (
               <div className="space-y-1.5 sm:col-span-2">
-                <Label>Client</Label>
+                <Label htmlFor="quotations-client-3">Client</Label>
                 <Select value={clientId} onValueChange={setClientId}>
-                  <SelectTrigger><SelectValue placeholder="Select client" /></SelectTrigger>
+                  <SelectTrigger id="quotations-client-3"><SelectValue placeholder="Select client" /></SelectTrigger>
                   <SelectContent>
                     {clients.map((c) => (<SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>))}
                   </SelectContent>
@@ -548,24 +548,24 @@ function QuotationsPage() {
             ) : (
               <>
                 <div className="space-y-1.5">
-                  <Label>Company name</Label>
-                  <Input
+                  <Label htmlFor="quotations-company-name-4">Company name</Label>
+                  <Input id="quotations-company-name-4"
                     value={prospectCompany}
                     onChange={(e) => setProspectCompany(e.target.value)}
                     placeholder="e.g. Sembawang Marine Pte Ltd"
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Contact person</Label>
-                  <Input
+                  <Label htmlFor="quotations-contact-person-5">Contact person</Label>
+                  <Input id="quotations-contact-person-5"
                     value={prospectContact}
                     onChange={(e) => setProspectContact(e.target.value)}
                     placeholder="Mr. Tan"
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Email</Label>
-                  <Input
+                  <Label htmlFor="quotations-email-6">Email</Label>
+                  <Input id="quotations-email-6"
                     type="email"
                     value={prospectEmail}
                     onChange={(e) => setProspectEmail(e.target.value)}
@@ -573,16 +573,16 @@ function QuotationsPage() {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Phone / WhatsApp</Label>
-                  <Input
+                  <Label htmlFor="quotations-phone-whatsapp-7">Phone / WhatsApp</Label>
+                  <Input id="quotations-phone-whatsapp-7"
                     value={prospectPhone}
                     onChange={(e) => setProspectPhone(e.target.value)}
                     placeholder="+65 9xxx xxxx"
                   />
                 </div>
                 <div className="space-y-1.5 sm:col-span-2">
-                  <Label>Address (optional)</Label>
-                  <Input
+                  <Label htmlFor="quotations-address-optional-8">Address (optional)</Label>
+                  <Input id="quotations-address-optional-8"
                     value={prospectAddress}
                     onChange={(e) => setProspectAddress(e.target.value)}
                     placeholder="Billing / site address"
@@ -595,9 +595,9 @@ function QuotationsPage() {
               </>
             )}
             <div className="space-y-1.5">
-              <Label>Project / site (optional)</Label>
+              <Label htmlFor="quotations-project-site-optional-9">Project / site (optional)</Label>
               <Select value={projectId} onValueChange={setProjectId}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger id="quotations-project-site-optional-9"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All projects</SelectItem>
                   {projects
@@ -607,20 +607,20 @@ function QuotationsPage() {
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label>Attention to</Label>
-              <Input value={contactPerson} onChange={(e) => setContactPerson(e.target.value)} placeholder="Contact person" />
+              <Label htmlFor="quotations-attention-to-10">Attention to</Label>
+              <Input id="quotations-attention-to-10" value={contactPerson} onChange={(e) => setContactPerson(e.target.value)} placeholder="Contact person" />
             </div>
             <div className="space-y-1.5 sm:col-span-2">
-              <Label>Subject / scope</Label>
-              <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Supply of general workers & scaffolders" />
+              <Label htmlFor="quotations-subject-scope-11">Subject / scope</Label>
+              <Input id="quotations-subject-scope-11" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Supply of general workers & scaffolders" />
             </div>
             <div className="space-y-1.5">
-              <Label>Quote date</Label>
-              <Input type="date" value={quoteDate} onChange={(e) => setQuoteDate(e.target.value)} />
+              <Label htmlFor="quotations-quote-date-12">Quote date</Label>
+              <Input id="quotations-quote-date-12" type="date" value={quoteDate} onChange={(e) => setQuoteDate(e.target.value)} />
             </div>
             <div className="space-y-1.5">
-              <Label>Valid until</Label>
-              <Input type="date" value={validUntil} onChange={(e) => setValidUntil(e.target.value)} />
+              <Label htmlFor="quotations-valid-until-13">Valid until</Label>
+              <Input id="quotations-valid-until-13" type="date" value={validUntil} onChange={(e) => setValidUntil(e.target.value)} />
             </div>
           </div>
 
@@ -635,8 +635,8 @@ function QuotationsPage() {
             {lines.map((line, idx) => (
               <div key={line.id} className="grid gap-2 rounded-lg border p-3 sm:grid-cols-12">
                 <div className="space-y-1 sm:col-span-3">
-                  <Label className="text-xs">Designation</Label>
-                  <Input
+                  <Label className="text-xs" htmlFor={`quotations-designation-14-${line.id}`}>Designation</Label>
+                  <Input id={`quotations-designation-14-${line.id}`}
                     value={line.designation}
                     placeholder="General Worker"
                     onChange={(e) =>
@@ -652,15 +652,15 @@ function QuotationsPage() {
                       setLines((ls) => ls.map((l, i) => (i === idx ? { ...l, unit: v as RateUnit } : l)))
                     }
                   >
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectTrigger aria-label="Rate type"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {units.map((u) => (<SelectItem key={u} value={u}>{u}</SelectItem>))}
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-1 sm:col-span-1">
-                  <Label className="text-xs">Pax</Label>
-                  <Input
+                  <Label className="text-xs" htmlFor={`quotations-pax-15-${line.id}`}>Pax</Label>
+                  <Input id={`quotations-pax-15-${line.id}`}
                     type="number"
                     min={1}
                     value={line.headcount}
@@ -670,8 +670,8 @@ function QuotationsPage() {
                   />
                 </div>
                 <div className="space-y-1 sm:col-span-2">
-                  <Label className="text-xs">Normal rate</Label>
-                  <Input
+                  <Label className="text-xs" htmlFor={`quotations-normal-rate-16-${line.id}`}>Normal rate</Label>
+                  <Input id={`quotations-normal-rate-16-${line.id}`}
                     type="number"
                     step="0.01"
                     value={line.normalRate}
@@ -687,8 +687,8 @@ function QuotationsPage() {
                   />
                 </div>
                 <div className="space-y-1 sm:col-span-2">
-                  <Label className="text-xs">OT rate</Label>
-                  <Input
+                  <Label className="text-xs" htmlFor={`quotations-ot-rate-17-${line.id}`}>OT rate</Label>
+                  <Input id={`quotations-ot-rate-17-${line.id}`}
                     type="number"
                     step="0.01"
                     value={line.otRate}
@@ -698,8 +698,8 @@ function QuotationsPage() {
                   />
                 </div>
                 <div className="space-y-1 sm:col-span-1">
-                  <Label className="text-xs">Units</Label>
-                  <Input
+                  <Label className="text-xs" htmlFor={`quotations-units-18-${line.id}`}>Units</Label>
+                  <Input id={`quotations-units-18-${line.id}`}
                     type="number"
                     value={line.unitsPerPeriod}
                     onChange={(e) =>
@@ -716,6 +716,7 @@ function QuotationsPage() {
                     <Button
                       size="sm"
                       variant="ghost"
+                      aria-label={`Remove quotation line ${idx + 1}`}
                       onClick={() => setLines((ls) => ls.filter((_, i) => i !== idx))}
                     >
                       <Trash2 className="h-4 w-4 text-destructive" />
@@ -728,16 +729,16 @@ function QuotationsPage() {
 
           <div className="grid gap-4 sm:grid-cols-3">
             <div className="space-y-1.5">
-              <Label>Discount ($)</Label>
-              <Input type="number" step="0.01" value={discount} onChange={(e) => setDiscount(Number(e.target.value))} />
+              <Label htmlFor="quotations-discount-19">Discount ($)</Label>
+              <Input id="quotations-discount-19" type="number" step="0.01" value={discount} onChange={(e) => setDiscount(Number(e.target.value))} />
             </div>
             <div className="space-y-1.5">
-              <Label>GST (%)</Label>
-              <Input type="number" step="0.01" value={gstRate} onChange={(e) => setGstRate(Number(e.target.value))} />
+              <Label htmlFor="quotations-gst-20">GST (%)</Label>
+              <Input id="quotations-gst-20" type="number" step="0.01" value={gstRate} onChange={(e) => setGstRate(Number(e.target.value))} />
             </div>
             <div className="space-y-1.5">
-              <Label>Payment terms (days)</Label>
-              <Input
+              <Label htmlFor="quotations-payment-terms-days-21">Payment terms (days)</Label>
+              <Input id="quotations-payment-terms-days-21"
                 type="number"
                 value={paymentTermsDays}
                 onChange={(e) => setPaymentTermsDays(Number(e.target.value))}
@@ -746,12 +747,12 @@ function QuotationsPage() {
           </div>
 
           <div className="space-y-1.5">
-            <Label>Terms & conditions</Label>
-            <Textarea rows={3} value={terms} onChange={(e) => setTerms(e.target.value)} />
+            <Label htmlFor="quotations-terms-conditions-22">Terms & conditions</Label>
+            <Textarea id="quotations-terms-conditions-22" rows={3} value={terms} onChange={(e) => setTerms(e.target.value)} />
           </div>
           <div className="space-y-1.5">
-            <Label>Internal notes</Label>
-            <Textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
+            <Label htmlFor="quotations-internal-notes-23">Internal notes</Label>
+            <Textarea id="quotations-internal-notes-23" rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
           </div>
 
           <div className="rounded-lg border bg-muted/30 p-4 text-sm">

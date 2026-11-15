@@ -233,7 +233,7 @@ export default function TrainingPage() {
               <div className="sm:col-span-2">
                 <Label>Course</Label>
                 <Select value={recordForm.courseId} onValueChange={(v) => setRecordForm({ ...recordForm, courseId: v })}>
-                  <SelectTrigger><SelectValue placeholder="Select course" /></SelectTrigger>
+                  <SelectTrigger aria-label="Course"><SelectValue placeholder="Select course" /></SelectTrigger>
                   <SelectContent>
                     {scopedCourses.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
                   </SelectContent>
@@ -242,25 +242,25 @@ export default function TrainingPage() {
               <div className="sm:col-span-2">
                 <Label>Worker</Label>
                 <Select value={recordForm.employeeId} onValueChange={(v) => setRecordForm({ ...recordForm, employeeId: v })}>
-                  <SelectTrigger><SelectValue placeholder="Select worker" /></SelectTrigger>
+                  <SelectTrigger aria-label="Worker"><SelectValue placeholder="Select worker" /></SelectTrigger>
                   <SelectContent>
                     {companyEmployees.map((e) => <SelectItem key={e.id} value={e.id}>{e.name} — {e.employeeCode}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
-              <div><Label>Completion date</Label><Input type="date" value={recordForm.completionDate} onChange={(e) => setRecordForm({ ...recordForm, completionDate: e.target.value })} /></div>
-              <div><Label>Expiry date</Label><Input type="date" value={recordForm.expiryDate} onChange={(e) => setRecordForm({ ...recordForm, expiryDate: e.target.value })} /></div>
-              <div><Label>Certificate no</Label><Input value={recordForm.certificateNo} onChange={(e) => setRecordForm({ ...recordForm, certificateNo: e.target.value })} /></div>
+              <div><Label htmlFor="training-completion-date-1">Completion date</Label><Input id="training-completion-date-1" type="date" value={recordForm.completionDate} onChange={(e) => setRecordForm({ ...recordForm, completionDate: e.target.value })} /></div>
+              <div><Label htmlFor="training-expiry-date-2">Expiry date</Label><Input id="training-expiry-date-2" type="date" value={recordForm.expiryDate} onChange={(e) => setRecordForm({ ...recordForm, expiryDate: e.target.value })} /></div>
+              <div><Label htmlFor="training-certificate-no-3">Certificate no</Label><Input id="training-certificate-no-3" value={recordForm.certificateNo} onChange={(e) => setRecordForm({ ...recordForm, certificateNo: e.target.value })} /></div>
               <div>
                 <Label>Status</Label>
                 <Select value={recordForm.status} onValueChange={(v) => setRecordForm({ ...recordForm, status: v as TrainingRecord["status"] })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger aria-label="Status"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {trainingStatuses.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
-              <div className="sm:col-span-2"><Label>Remarks</Label><Textarea value={recordForm.remarks} onChange={(e) => setRecordForm({ ...recordForm, remarks: e.target.value })} /></div>
+              <div className="sm:col-span-2"><Label htmlFor="training-remarks-4">Remarks</Label><Textarea id="training-remarks-4" value={recordForm.remarks} onChange={(e) => setRecordForm({ ...recordForm, remarks: e.target.value })} /></div>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setRecordOpen(false)}>Cancel</Button>
@@ -281,7 +281,7 @@ export default function TrainingPage() {
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="relative w-full max-w-sm">
                   <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input type="search" placeholder="Search worker or course..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+                  <Input aria-label="Search certifications by worker or course" type="search" placeholder="Search worker or course..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
                 </div>
                 <Button size="sm" onClick={() => openRecord()}>
                   <Plus className="mr-1 h-4 w-4" /> Add certificate
@@ -369,31 +369,31 @@ export default function TrainingPage() {
                       <DialogDescription>Register a safety, trade or supervisor course.</DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-3 sm:grid-cols-2">
-                      <div><Label>Course code</Label><Input value={courseForm.code} onChange={(e) => setCourseForm({ ...courseForm, code: e.target.value })} placeholder="Auto" /></div>
-                      <div><Label>Name</Label><Input value={courseForm.name} onChange={(e) => setCourseForm({ ...courseForm, name: e.target.value })} placeholder="e.g. Work at Height" /></div>
+                      <div><Label htmlFor="training-course-code-5">Course code</Label><Input id="training-course-code-5" value={courseForm.code} onChange={(e) => setCourseForm({ ...courseForm, code: e.target.value })} placeholder="Auto" /></div>
+                      <div><Label htmlFor="training-name-6">Name</Label><Input id="training-name-6" value={courseForm.name} onChange={(e) => setCourseForm({ ...courseForm, name: e.target.value })} placeholder="e.g. Work at Height" /></div>
                       <div>
                         <Label>Group</Label>
                         <Select value={courseForm.category} onValueChange={(v) => setCourseForm({ ...courseForm, category: v as TrainingCourse["category"] })}>
-                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectTrigger aria-label="Group"><SelectValue /></SelectTrigger>
                           <SelectContent>
                             {COURSE_GROUPS.map((g) => <SelectItem key={g.category} value={g.category}>{g.label}</SelectItem>)}
                           </SelectContent>
                         </Select>
                       </div>
-                      <div><Label>Provider</Label><Input value={courseForm.provider} onChange={(e) => setCourseForm({ ...courseForm, provider: e.target.value })} /></div>
-                      <div><Label>Validity (months)</Label><Input type="number" min={0} value={courseForm.validityMonths} onChange={(e) => setCourseForm({ ...courseForm, validityMonths: Number(e.target.value) })} /></div>
-                      <div><Label>Cost ($)</Label><Input type="number" min={0} value={courseForm.cost} onChange={(e) => setCourseForm({ ...courseForm, cost: Number(e.target.value) })} /></div>
+                      <div><Label htmlFor="training-provider-7">Provider</Label><Input id="training-provider-7" value={courseForm.provider} onChange={(e) => setCourseForm({ ...courseForm, provider: e.target.value })} /></div>
+                      <div><Label htmlFor="training-validity-months-8">Validity (months)</Label><Input id="training-validity-months-8" type="number" min={0} value={courseForm.validityMonths} onChange={(e) => setCourseForm({ ...courseForm, validityMonths: Number(e.target.value) })} /></div>
+                      <div><Label htmlFor="training-cost-9">Cost ($)</Label><Input id="training-cost-9" type="number" min={0} value={courseForm.cost} onChange={(e) => setCourseForm({ ...courseForm, cost: Number(e.target.value) })} /></div>
                       <div>
                         <Label>Mandatory</Label>
                         <Select value={courseForm.mandatory ? "yes" : "no"} onValueChange={(v) => setCourseForm({ ...courseForm, mandatory: v === "yes" })}>
-                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectTrigger aria-label="Mandatory"><SelectValue /></SelectTrigger>
                           <SelectContent>
                             <SelectItem value="yes">Yes</SelectItem>
                             <SelectItem value="no">No</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
-                      <div className="sm:col-span-2"><Label>Remarks</Label><Textarea value={courseForm.remarks} onChange={(e) => setCourseForm({ ...courseForm, remarks: e.target.value })} /></div>
+                      <div className="sm:col-span-2"><Label htmlFor="training-remarks-10">Remarks</Label><Textarea id="training-remarks-10" value={courseForm.remarks} onChange={(e) => setCourseForm({ ...courseForm, remarks: e.target.value })} /></div>
                     </div>
                     <DialogFooter>
                       <Button variant="outline" onClick={() => setCourseOpen(false)}>Cancel</Button>
@@ -465,11 +465,11 @@ export default function TrainingPage() {
                       <DialogDescription>Log a near miss, injury or dangerous occurrence.</DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-3 sm:grid-cols-2">
-                      <div><Label>Date</Label><Input type="date" value={incidentForm.incidentDate} onChange={(e) => setIncidentForm({ ...incidentForm, incidentDate: e.target.value })} /></div>
+                      <div><Label htmlFor="training-date-11">Date</Label><Input id="training-date-11" type="date" value={incidentForm.incidentDate} onChange={(e) => setIncidentForm({ ...incidentForm, incidentDate: e.target.value })} /></div>
                       <div>
                         <Label>Type</Label>
                         <Select value={incidentForm.incidentType} onValueChange={(v) => setIncidentForm({ ...incidentForm, incidentType: v as SafetyIncident["incidentType"] })}>
-                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectTrigger aria-label="Type"><SelectValue /></SelectTrigger>
                           <SelectContent>
                             {incidentTypes.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
                           </SelectContent>
@@ -478,17 +478,17 @@ export default function TrainingPage() {
                       <div>
                         <Label>Severity</Label>
                         <Select value={incidentForm.severity} onValueChange={(v) => setIncidentForm({ ...incidentForm, severity: v as SafetyIncident["severity"] })}>
-                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectTrigger aria-label="Severity"><SelectValue /></SelectTrigger>
                           <SelectContent>
                             {severities.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                           </SelectContent>
                         </Select>
                       </div>
-                      <div><Label>Lost days</Label><Input type="number" min={0} value={incidentForm.lostDays} onChange={(e) => setIncidentForm({ ...incidentForm, lostDays: Number(e.target.value) })} /></div>
+                      <div><Label htmlFor="training-lost-days-12">Lost days</Label><Input id="training-lost-days-12" type="number" min={0} value={incidentForm.lostDays} onChange={(e) => setIncidentForm({ ...incidentForm, lostDays: Number(e.target.value) })} /></div>
                       <div>
                         <Label>Site</Label>
                         <Select value={incidentForm.siteId} onValueChange={(v) => setIncidentForm({ ...incidentForm, siteId: v })}>
-                          <SelectTrigger><SelectValue placeholder="Optional" /></SelectTrigger>
+                          <SelectTrigger aria-label="Site"><SelectValue placeholder="Optional" /></SelectTrigger>
                           <SelectContent>
                             {sites.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
                           </SelectContent>
@@ -497,7 +497,7 @@ export default function TrainingPage() {
                       <div>
                         <Label>Worker involved</Label>
                         <Select value={incidentForm.employeeId} onValueChange={(v) => setIncidentForm({ ...incidentForm, employeeId: v })}>
-                          <SelectTrigger><SelectValue placeholder="Optional" /></SelectTrigger>
+                          <SelectTrigger aria-label="Worker involved"><SelectValue placeholder="Optional" /></SelectTrigger>
                           <SelectContent>
                             {companyEmployees.map((e) => <SelectItem key={e.id} value={e.id}>{e.name} — {e.employeeCode}</SelectItem>)}
                           </SelectContent>
@@ -506,7 +506,7 @@ export default function TrainingPage() {
                       <div>
                         <Label>MOM reported</Label>
                         <Select value={incidentForm.momReported ? "yes" : "no"} onValueChange={(v) => setIncidentForm({ ...incidentForm, momReported: v === "yes" })}>
-                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectTrigger aria-label="MOM reported"><SelectValue /></SelectTrigger>
                           <SelectContent>
                             <SelectItem value="no">No</SelectItem>
                             <SelectItem value="yes">Yes</SelectItem>
@@ -516,14 +516,14 @@ export default function TrainingPage() {
                       <div>
                         <Label>Status</Label>
                         <Select value={incidentForm.status} onValueChange={(v) => setIncidentForm({ ...incidentForm, status: v as SafetyIncident["status"] })}>
-                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectTrigger aria-label="Status"><SelectValue /></SelectTrigger>
                           <SelectContent>
                             {incidentStatuses.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                           </SelectContent>
                         </Select>
                       </div>
-                      <div className="sm:col-span-2"><Label>Description</Label><Textarea value={incidentForm.description} onChange={(e) => setIncidentForm({ ...incidentForm, description: e.target.value })} /></div>
-                      <div className="sm:col-span-2"><Label>Action taken</Label><Textarea value={incidentForm.actionTaken} onChange={(e) => setIncidentForm({ ...incidentForm, actionTaken: e.target.value })} /></div>
+                      <div className="sm:col-span-2"><Label htmlFor="training-description-13">Description</Label><Textarea id="training-description-13" value={incidentForm.description} onChange={(e) => setIncidentForm({ ...incidentForm, description: e.target.value })} /></div>
+                      <div className="sm:col-span-2"><Label htmlFor="training-action-taken-14">Action taken</Label><Textarea id="training-action-taken-14" value={incidentForm.actionTaken} onChange={(e) => setIncidentForm({ ...incidentForm, actionTaken: e.target.value })} /></div>
                     </div>
                     <DialogFooter>
                       <Button variant="outline" onClick={() => setIncidentOpen(false)}>Cancel</Button>

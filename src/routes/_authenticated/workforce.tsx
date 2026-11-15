@@ -806,7 +806,7 @@ export default function WorkforcePage() {
               <div className="space-y-1.5">
                 <Label className="text-xs font-semibold">Company</Label>
                 <Select value={companyFilter} onValueChange={(v) => { setCompanyFilter(v); setPage(1); }}>
-                  <SelectTrigger><SelectValue placeholder="Select Company…" /></SelectTrigger>
+                  <SelectTrigger aria-label="Worker company"><SelectValue placeholder="Select Company…" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All companies</SelectItem>
                     {companies.map((c) => (
@@ -818,7 +818,7 @@ export default function WorkforcePage() {
               <div className="space-y-1.5">
                 <Label className="text-xs font-semibold">Designation</Label>
                 <Select value={tradeFilter} onValueChange={(v) => { setTradeFilter(v); setPage(1); }}>
-                  <SelectTrigger><SelectValue placeholder="Select Department…" /></SelectTrigger>
+                  <SelectTrigger aria-label="Worker designation"><SelectValue placeholder="Select Department…" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All trades</SelectItem>
                     {trades.map((t) => (
@@ -830,7 +830,7 @@ export default function WorkforcePage() {
               <div className="space-y-1.5">
                 <Label className="text-xs font-semibold">Site</Label>
                 <Select value={siteFilter} onValueChange={(v) => { setSiteFilter(v); setPage(1); }}>
-                  <SelectTrigger><SelectValue placeholder="Select Site…" /></SelectTrigger>
+                  <SelectTrigger aria-label="Worker site"><SelectValue placeholder="Select Site…" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All sites</SelectItem>
                     {sites.map((s) => (
@@ -842,7 +842,7 @@ export default function WorkforcePage() {
               <div className="space-y-1.5">
                 <Label className="text-xs font-semibold">Status</Label>
                 <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v as EmployeeStatus | "all"); setPage(1); }}>
-                  <SelectTrigger><SelectValue placeholder="Select Status…" /></SelectTrigger>
+                  <SelectTrigger aria-label="Worker status"><SelectValue placeholder="Select Status…" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All status</SelectItem>
                     {statuses.map((s) => (
@@ -858,28 +858,28 @@ export default function WorkforcePage() {
 
             <div className="mt-4 flex flex-wrap items-center gap-2 border-t pt-4">
               <Select value={passFilter} onValueChange={(v) => setPassFilter(v as PassType | "all")}>
-                <SelectTrigger className="w-40"><SelectValue placeholder="Pass type" /></SelectTrigger>
+                <SelectTrigger aria-label="Worker pass type" className="w-40"><SelectValue placeholder="Pass type" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All passes</SelectItem>
                   {passTypes.map((p) => (<SelectItem key={p} value={p}>{p}</SelectItem>))}
                 </SelectContent>
               </Select>
               <Select value={categoryFilter} onValueChange={(v) => setCategoryFilter(v as WorkerCategory | "all")}>
-                <SelectTrigger className="w-40"><SelectValue placeholder="Category" /></SelectTrigger>
+                <SelectTrigger aria-label="Worker category" className="w-40"><SelectValue placeholder="Category" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All categories</SelectItem>
                   {WORKER_CATEGORIES.map((c) => (<SelectItem key={c} value={c}>{c}</SelectItem>))}
                 </SelectContent>
               </Select>
               <Select value={deployFilter} onValueChange={(v) => setDeployFilter(v as DeploymentStatus | "all")}>
-                <SelectTrigger className="w-40"><SelectValue placeholder="Deployment" /></SelectTrigger>
+                <SelectTrigger aria-label="Worker deployment" className="w-40"><SelectValue placeholder="Deployment" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All deployment</SelectItem>
                   {DEPLOYMENT_STATUSES.map((d) => (<SelectItem key={d} value={d}>{d}</SelectItem>))}
                 </SelectContent>
               </Select>
               <Select value={nationalityFilter} onValueChange={setNationalityFilter}>
-                <SelectTrigger className="w-40"><SelectValue placeholder="Nationality" /></SelectTrigger>
+                <SelectTrigger aria-label="Worker nationality" className="w-40"><SelectValue placeholder="Nationality" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All nationalities</SelectItem>
                   {nationalities.map((n) => (<SelectItem key={n} value={n}>{n}</SelectItem>))}
@@ -895,7 +895,7 @@ export default function WorkforcePage() {
               <>
                 <div className="flex flex-1 items-center gap-2 lg:justify-start">
                   <Select value={perPage} onValueChange={(v) => { setPerPage(v); setPage(1); }}>
-                    <SelectTrigger className="h-9 w-20"><SelectValue /></SelectTrigger>
+                    <SelectTrigger aria-label="Workers per page" className="h-9 w-20"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {["10", "25", "50", "100"].map((n) => (<SelectItem key={n} value={n}>{n}</SelectItem>))}
                     </SelectContent>
@@ -926,7 +926,7 @@ export default function WorkforcePage() {
               <>
                 <div className="flex items-center gap-2">
                   <Select value={perPage} onValueChange={(v) => { setPerPage(v); setPage(1); }}>
-                    <SelectTrigger className="h-9 w-20"><SelectValue /></SelectTrigger>
+                    <SelectTrigger aria-label="Workers per page" className="h-9 w-20"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {["10", "25", "50", "100"].map((n) => (<SelectItem key={n} value={n}>{n}</SelectItem>))}
                     </SelectContent>

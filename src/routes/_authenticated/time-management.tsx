@@ -728,7 +728,7 @@ export default function TimeManagementPage() {
                         <TableCell className="text-right">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button size="icon" variant="ghost">
+                              <Button size="icon" variant="ghost" aria-label={`Attendance actions for ${emp?.name ?? "worker"} on ${a.date}`}>
                                 <MoreHorizontal className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
@@ -892,12 +892,12 @@ function DailySheet({
       <div className="flex flex-wrap items-end gap-3">
         <div className="space-y-1">
           <Label>Date</Label>
-          <Input type="date" value={sheetDate} onChange={(e) => setSheetDate(e.target.value)} className="w-40" />
+          <Input aria-label="Daily sheet date" type="date" value={sheetDate} onChange={(e) => setSheetDate(e.target.value)} className="w-40" />
         </div>
         <div className="space-y-1">
           <Label>Site</Label>
           <Select value={siteId} onValueChange={setSiteId}>
-            <SelectTrigger className="w-52">
+            <SelectTrigger aria-label="Daily sheet site" className="w-52">
               <SelectValue placeholder="Select site" />
             </SelectTrigger>
             <SelectContent>
@@ -947,7 +947,7 @@ function DailySheet({
                     </TableCell>
                     <TableCell>
                       <Select value={row.status} onValueChange={(v) => setRow(e.id, { status: v as AttendanceStatus })}>
-                        <SelectTrigger className="h-8">
+                        <SelectTrigger aria-label={`Attendance status for ${e.name} (${e.employeeCode})`} className="h-8">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -961,6 +961,7 @@ function DailySheet({
                     </TableCell>
                     <TableCell>
                       <Input
+                        aria-label={`Normal hours for ${e.name} (${e.employeeCode})`}
                         type="number"
                         step="0.5"
                         className="h-8"
@@ -970,6 +971,7 @@ function DailySheet({
                     </TableCell>
                     <TableCell>
                       <Input
+                        aria-label={`Overtime hours for ${e.name} (${e.employeeCode})`}
                         type="number"
                         step="0.5"
                         className="h-8"
@@ -1007,7 +1009,7 @@ function AttendanceForm({ employees, sites, onSubmit, record }: { employees: Ret
         <div className="space-y-2">
           <Label htmlFor="employeeId">Employee</Label>
           <Select name="employeeId" defaultValue={record?.employeeId ?? employees[0]?.id}>
-            <SelectTrigger>
+            <SelectTrigger id="employeeId">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -1026,7 +1028,7 @@ function AttendanceForm({ employees, sites, onSubmit, record }: { employees: Ret
         <div className="space-y-2">
           <Label htmlFor="siteId">Site</Label>
           <Select name="siteId" defaultValue={record?.siteId}>
-            <SelectTrigger>
+            <SelectTrigger id="siteId">
               <SelectValue placeholder="Select site" />
             </SelectTrigger>
             <SelectContent>
@@ -1042,7 +1044,7 @@ function AttendanceForm({ employees, sites, onSubmit, record }: { employees: Ret
         <div className="space-y-2">
           <Label htmlFor="status">Status</Label>
           <Select name="status" defaultValue={record?.status ?? "Present"}>
-            <SelectTrigger>
+            <SelectTrigger id="status">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
