@@ -8,6 +8,7 @@ export interface BatchState {
   month: string;
   projectId: string;
   failedMessages?: string[];
+  scanStatuses?: import("./time-card-ocr-status").CardScanStatus[];
 }
 
 type StorageLike = Pick<Storage, "getItem" | "setItem" | "removeItem">;
@@ -25,13 +26,14 @@ export function readBatchState(storage: StorageLike): BatchState | null {
       month: typeof value.month === "string" ? value.month : "",
       projectId: typeof value.projectId === "string" ? value.projectId : "",
       failedMessages: Array.isArray(value.failedMessages) ? value.failedMessages.filter((item): item is string => typeof item === "string") : [],
+      scanStatuses: Array.isArray(value.scanStatuses) ? value.scanStatuses.filter(item => item && typeof item.id === "string" && typeof item.fileName === "string").map(item => item.status === "Reading" || item.status === "Queued" ? { ...item, status: "Failed" as const, error: "Reading interrupted. Reselect the original file to retry." } : item) : [],
     };
   } catch { return null; }
 }
 
 export function writeBatchState(storage: StorageLike, state: BatchState) {
   try {
-    if (!state.batchCardIds.length && !state.pendingScans.length) storage.removeItem(KEY);
+    if (!state.batchCardIds.length && !state.pendingScans.length && !state.failedMessages?.length && !state.scanStatuses?.length) storage.removeItem(KEY);
     else storage.setItem(KEY, JSON.stringify(state));
   } catch { /* storage full or disabled: batch stays in memory only */ }
 }

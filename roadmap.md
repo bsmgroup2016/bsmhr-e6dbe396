@@ -2,6 +2,8 @@
 
 ## ClaimSheet Generator only: batch reliability and UX
 
+- [ ] Add per-card OCR results, validation/retry status and explicit uncertainty confirmation; verify with controlled cards.
+
 - [x] Audit upload, review, approval, restoration, previews and Excel output for 20–30+ workers.
 - [x] Fix confirmed page/workbook issues with focused regression tests and clear batch recovery states.
 - [x] Verify actual-template 20/30/50-worker workbooks and isolated 30-card sequential review at three sizes; document live OCR/authentication limitations separately.
