@@ -1,5 +1,10 @@
 # Full-section UI/UX and workflow audit
 
+## Colour contrast
+
+- [x] Improve shared text, control boundaries and semantic status contrast while preserving the palette.
+- [x] Measure contrast and actual warning ink, inspect three desktop/mobile sizes and run 202 regression tests; signed-in populated pages remain blocked as documented below.
+
 ## Accessibility across updated sections
 
 - [x] Audit keyboard access, accessible names and focus visibility in shared controls and updated pages.

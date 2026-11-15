@@ -12,7 +12,7 @@ const statusBadgeVariants = cva(
         warning: "border-transparent bg-warning text-warning-foreground",
         destructive: "border-transparent bg-destructive text-destructive-foreground",
         info: "border-transparent bg-info text-info-foreground",
-        outline: "border-border bg-card text-foreground",
+        outline: "border-input bg-card text-foreground",
         ghost: "border-transparent bg-transparent text-muted-foreground",
       },
       dot: {
@@ -38,10 +38,8 @@ export function StatusBadge({ label, className, variant, dot, ...props }: Status
     <span className={cn(statusBadgeVariants({ variant, dot }), className)} {...props}>
       {dot && (
         <span
-          className={cn("h-1.5 w-1.5 rounded-full", {
-            "bg-primary-foreground": variant === "primary" || variant === "success" || variant === "destructive" || variant === "info" || variant === "warning",
-            "bg-foreground": variant === "default" || variant === "outline" || variant === "ghost",
-          })}
+          aria-hidden="true"
+          className="h-1.5 w-1.5 rounded-full bg-current"
         />
       )}
       {label}
