@@ -39,7 +39,7 @@ export function groupClaimsByProject(sheets: ClaimSheet[], employees: Employee[]
       const site = lookups.sites?.find((s) => s.id === entry.siteId);
       const projectName = entry.projectId ? (project?.name || entry.projectName || "").trim() : "";
       const siteName = (entry.site || site?.name || "").trim();
-      const key = (entry.projectId || siteName.toUpperCase() || "UNASSIGNED") + "|" + (sheet.companyId ?? "");
+      const key = `${entry.projectId || "UNASSIGNED"}|${siteName}|${sheet.companyId ?? ""}`;
       const clientName = lookups.clients?.find((c) => c.id === project?.clientId)?.name ?? "";
       const group = groups.get(key) ?? { key, projectName, siteName, clientName, companyName: company?.name ?? "", workers: new Map() };
       const workerKey = sheet.employeeId || entry.employeeId || entry.employeeCode?.trim().toUpperCase() || entry.sourceCardId || sheet.id;

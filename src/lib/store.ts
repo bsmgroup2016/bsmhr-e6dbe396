@@ -2856,11 +2856,11 @@ export async function saveGeneratedClaims(claims: (Omit<ClaimSheet, "id" | "refe
   const existing = getClaimSheets();
   const rows = claims.map(({ sourceCardId, ...claim }) => {
     const prior = existing.find(sheet => sheet.snapshot.some(row => row.sourceCardId === sourceCardId));
-    return { ...claim, id: prior?.id ?? newId(), reference: prior?.reference ?? `CS-${newId()}` };
+    return { ...claim, id: prior?.id ?? sourceCardId, reference: prior?.reference ?? `CS-${sourceCardId}` };
   });
   const { data, error } = await supabase.from("claim_sheets").upsert(rows.map(row => ({ id: row.id, ...toClaimSheet(row) }))).select();
   if (error) throw new Error(`Claim records could not be saved: ${error.message}`);
-  if (!data || data.length !== rows.length) throw new Error("Could not confirm all saved claim records. Reopen this batch before retrying.");
+  if (!data || data.length !== rows.length || rows.some(row => !data.some(saved => saved.id === row.id))) throw new Error("Could not confirm all saved claim records. Reopen this batch before retrying.");
   const confirmed = data.map(fromClaimSheet);
   const current = getState();
   setState({ ...current, claimSheets: [...confirmed, ...current.claimSheets.filter(sheet => !confirmed.some(saved => saved.id === sheet.id))] });

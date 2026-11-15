@@ -17,6 +17,14 @@ function blank(offset = 0) {
   return { book, page };
 }
 
+test("selected project does not replace or collapse distinct printed site headings", async () => {
+  const { book } = blank(); const bytes = new Uint8Array(await book.xlsx.writeBuffer());
+  const claims = ["JB-1183", "Second site"].map((site, i) => ({ id: `c${i}`, reference: `c${i}`, periodStart: "2026-11-01", periodEnd: "2026-11-30", totalDays: 1, totalNormalHours: 8, totalOtHours: 3.5, snapshot: [{ date: "2026-11-01", projectId: "project", projectName: "Selected project", site, employeeCode: `P-${i}`, workerName: `WORKER ${i}`, normalHours: 8, otHours: 3.5, status: "Present" }] }));
+  const out = await createClaimWorkbook(claims, [], [], "2026-11", { templateBuffer: bytes.buffer });
+  expect(out.worksheets).toHaveLength(2);
+  expect(out.worksheets.map(page => page.getCell("A2").value)).toEqual(["JB-1183", "Second site"]);
+});
+
 test("replacement layout maps moved staff and daily hour columns rather than original coordinates", () => {
   const { page } = blank(2); const layout = claimTemplateLayout(page);
   expect(layout.codeCol).toBe(4); expect(layout.nameCol).toBe(5);

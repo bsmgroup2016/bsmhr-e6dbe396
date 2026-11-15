@@ -640,7 +640,7 @@ function TimeCardsPage() {
           <div className="flex flex-wrap items-center justify-center gap-2 text-sm text-muted-foreground">
             <span>Have an Excel file instead?</span>
             <div className="relative">
-              <Button type="button" variant="link" disabled={uploading || !!reviewScan || pendingScans.length > 0} onClick={() => importInput.current?.click()} className="h-auto p-0">Import time-card rows</Button>
+              <Button type="button" variant="link" disabled={uploading || !!reviewScan || pendingScans.length > 0 || (batchCardIds.length > 0 && !batchCompleted)} onClick={() => importInput.current?.click()} className="h-auto p-0">Import time-card rows</Button>
               <input ref={importInput} type="file" aria-label="Import time-card Excel rows" className="hidden" accept=".xlsx,.xls,.csv" onChange={(e) => { const file = e.target.files?.[0]; if (file) { setImportFile(file); setIsImportOpen(true); } e.target.value = ""; }} />
             </div>
           </div>
