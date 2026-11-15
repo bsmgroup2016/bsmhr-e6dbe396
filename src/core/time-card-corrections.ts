@@ -6,6 +6,14 @@ export function cardReading(entry: TimeCardEntry): TimeCardReading {
   return Object.fromEntries(readingFields.map(field => [field, entry[field]])) as TimeCardReading;
 }
 
+export function preserveManualReading(existing: TimeCardEntry | undefined, incoming: TimeCardEntry): TimeCardEntry {
+  if (!existing) return incoming;
+  if (existing.correctionAudit?.pending || existing.correctionAudit?.revisions.length) {
+    return { ...incoming, ...existing, confidence: incoming.confidence, suggestion: incoming.suggestion };
+  }
+  return { ...existing, ...incoming };
+}
+
 /** Preserve the first reading; edits require revalidation, not just card approval. */
 export function trackCardCorrection(before: TimeCardEntry, after: TimeCardEntry, at = new Date().toISOString()): TimeCardEntry {
   if (!readingFields.some(field => before[field] !== after[field])) return after;

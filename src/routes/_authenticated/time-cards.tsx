@@ -29,7 +29,7 @@ import { TimeCardOcrResults } from "@/components/time-card-ocr-results";
 import { uncertaintyReason, unresolvedOcrEntries, revalidateOcrEntry, matchesOcrFilter, cardOcrFlags, type OcrResultFilter, type CardScanStatus } from "@/core/time-card-ocr-status";
 import { TimeCardHoursInputs } from "@/components/time-card-hours-inputs";
 import { TimeCardCorrectionHistory } from "@/components/time-card-correction-history";
-import { trackCardCorrection } from "@/core/time-card-corrections";
+import { cardReading, preserveManualReading, trackCardCorrection } from "@/core/time-card-corrections";
 import { ClaimDatePreview } from "@/components/claim-date-preview";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -255,7 +255,7 @@ function TimeCardsPage() {
 
   function mergeEntries(existing: TimeCardEntry[], incoming: TimeCardEntry[]) {
     const map = new Map(existing.map((e) => [e.date, e]));
-    for (const row of incoming) map.set(row.date, { ...map.get(row.date), ...row });
+    for (const row of incoming) map.set(row.date, preserveManualReading(map.get(row.date), row));
     return [...map.values()].sort((a, b) => a.date.localeCompare(b.date));
   }
 
@@ -272,6 +272,7 @@ function TimeCardsPage() {
         workerName: group.identity.workerName,
         employeeCode: group.identity.employeeCode,
         fin: group.identity.fin,
+        siteName: group.identity.siteName,
         checkIn: r.checkIn,
         checkOut: r.checkOut,
         normalHours: r.normalHours,
@@ -279,7 +280,7 @@ function TimeCardsPage() {
         remarks: r.remarks,
         confidence: r.confidence,
         suggestion: r.suggestion,
-      })),
+      })).map(entry => ({ ...entry, correctionAudit: { original: cardReading(entry), pending: false, revisions: [] } })),
     }));
   }
 

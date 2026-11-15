@@ -1,15 +1,15 @@
 import { expect, test } from "bun:test";
 import ExcelJS from "exceljs";
-import { trackCardCorrection } from "./time-card-corrections";
+import { preserveManualReading, trackCardCorrection } from "./time-card-corrections";
 import { revalidateOcrEntry, unresolvedOcrEntries } from "./time-card-ocr-status";
 import { canGenerateSettledCards } from "./time-card-settlement";
 import { fromTimeCard, toTimeCard } from "@/lib/db";
 import { buildClaimSheetFromCard } from "@/lib/store";
 import { createClaimWorkbook, reconcileClaimWorkbook } from "@/lib/combined-claim-export";
-import type { TimeCard } from "@/lib/types";
+import type { TimeCard, TimeCardEntry } from "@/lib/types";
 
 const original = { date: "2026-11-15", workerName: "OCR NAME", employeeCode: "PC-22", siteName: "OCR SITE", normalHours: 8, otHours: 3.5, confidence: 0.95 };
-const card = (entry = original): TimeCard => ({ id: "manual", employeeId: "", periodStart: "2026-11-01", periodEnd: "2026-11-30", status: "Draft", entries: [entry] });
+const card = (entry: TimeCardEntry = original): TimeCard => ({ id: "manual", employeeId: "", periodStart: "2026-11-01", periodEnd: "2026-11-30", status: "Draft", entries: [entry] });
 
 test("high-confidence manual edits require revalidation and retain original OCR and correction times", () => {
   const edited = trackCardCorrection(original, { ...original, otHours: 4.5 }, "2026-11-15T18:29:00Z");
@@ -30,6 +30,15 @@ test("failed revalidation never records a verified correction", () => {
   expect(result.error).not.toBeNull();
   expect(result.card.entries[0].correctionAudit?.pending).toBe(true);
   expect(result.card.entries[0].correctionAudit?.revisions).toHaveLength(0);
+});
+
+test("retry OCR never replaces previously manually corrected values or their history", () => {
+  const edited = trackCardCorrection(original, { ...original, otHours: 4.5 });
+  const verified = revalidateOcrEntry(card(edited), 0).card.entries[0];
+  const reread = preserveManualReading(verified, { ...original, otHours: 2, confidence: 0.4 });
+  expect(reread.otHours).toBe(4.5);
+  expect(reread.correctionAudit?.original.otHours).toBe(3.5);
+  expect(reread.correctionAudit?.revisions).toHaveLength(1);
 });
 
 test("30 corrected cards survive persistence mapping and fill exact corrected date identity site and hours in downloaded Excel", async () => {
