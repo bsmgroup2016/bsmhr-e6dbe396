@@ -4,6 +4,7 @@ import { claimTemplateLayout, selectClaimTemplate } from "./claim-template";
 import { createClaimWorkbook } from "@/lib/combined-claim-export";
 import { countedCardHours } from "./time-card-settlement";
 import { fromTimeCard, toTimeCard } from "@/lib/db";
+import { createEvaluator } from "./claim-formula-eval";
 
 function blank(offset = 0) {
   const book = new ExcelJS.Workbook(); const page = book.addWorksheet("TEMPLATE");
@@ -78,6 +79,36 @@ test("twenty workers on a nineteen-slot template get an extra row pair, none dro
   expect(String(sheet.getCell(43, 4).value)).toBe("G-HRS");
   expect(String(sheet.getCell(44, 4).value)).toBe("OT HOURS");
   expect(sheet.getCell(43, 5).value).toBe(8);
+});
+
+test("25-worker saved Excel keeps worker 15's total at 11 hours and the grand total at 275", async () => {
+  const { book, page } = blank();
+  for (let i = 0; i < 15; i++) {
+    const g = 5 + i * 2, ot = g + 1;
+    page.getCell(g, 4).value = "G-HRS";
+    page.getCell(ot, 4).value = "OT HOURS";
+    page.getCell(g, 6).value = { formula: `SUM(E${g}:E${ot})` };
+  }
+  page.getCell("F35").value = { formula: "SUM(F5:F34)" };
+  const claims = Array.from({ length: 25 }, (_, i) => ({
+    id: `claim-${i}`, reference: `C${i}`, periodStart: "2026-11-01", periodEnd: "2026-11-30",
+    totalDays: 1, totalNormalHours: 8, totalOtHours: 3,
+    snapshot: [{ sourceCardId: `card-${i}`, workerName: `WORKER ${i + 1}`, employeeCode: `P-${i + 1}`, date: "2026-11-01", site: "SITE A", normalHours: 8, otHours: 3, status: "Present" }],
+  }));
+  const bytes = new Uint8Array(await book.xlsx.writeBuffer());
+  const output = await createClaimWorkbook(claims, [], [], "2026-11", { templateBuffer: bytes.buffer });
+  const saved = new ExcelJS.Workbook();
+  await saved.xlsx.load(await output.xlsx.writeBuffer());
+  const result = saved.worksheets[0];
+  if (!result) throw new Error("Missing generated sheet");
+  const evaluator = createEvaluator((row, col) => {
+    const cell = result.getCell(row, col);
+    return { formula: cell.formula, value: cell.value };
+  });
+  expect(result.getCell("F33").formula).toBe("SUM(E33:E34)");
+  for (let i = 0; i < 25; i++) expect(evaluator.cellValue(5 + i * 2, 6)).toBe(11);
+  expect(result.getCell("F55").formula).toBe("SUM(F5:F54)");
+  expect(evaluator.cellValue(55, 6)).toBe(275);
 });
 test("Four unregistered workers retain separate printed names codes and hours on the template", async () => {
   const { book, page } = blank();

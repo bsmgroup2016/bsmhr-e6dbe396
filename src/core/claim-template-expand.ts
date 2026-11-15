@@ -13,15 +13,16 @@ export function shiftFormulaRows(formula: string, offset: number) {
 /**
  * Adjusts a formula after `delta` rows were inserted at `insertAt`:
  * references at/after the insert point move down, and ranges that end on the
- * last worker row (insertAt - 1) grow to include the new workers.
+ * last worker row (insertAt - 1) grow to include the new workers only for
+ * sheet-wide totals, not formulas inside an existing worker slot.
  */
-export function adjustFormulaForInsert(formula: string, insertAt: number, delta: number) {
+export function adjustFormulaForInsert(formula: string, insertAt: number, delta: number, growBoundaryRanges = true) {
   const move = (r: number) => (r >= insertAt ? r + delta : r);
   return formula.replace(REF, (_m, c1, col1, a1, r1, c2, col2, a2, r2) => {
     const s = Number(r1);
     if (!col2) return `${c1}${col1}${a1}${move(s)}`;
     const e = Number(r2);
-    const end = e === insertAt - 1 && s < e ? e + delta : move(e);
+    const end = growBoundaryRanges && e === insertAt - 1 && s < e ? e + delta : move(e);
     return `${c1}${col1}${a1}${move(s)}:${c2}${col2}${a2}${end}`;
   });
 }
@@ -73,7 +74,8 @@ export function expandClaimSlots(sheet: Worksheet, slots: { g: number; ot: numbe
     slotRows.forEach((cells, i) => {
       const r = base + i;
       const offset = r - (i ? last.ot : last.g);
-      if (slotHeights[i]) sheet.getRow(r).height = slotHeights[i]!;
+      const height = slotHeights[i];
+      if (height) sheet.getRow(r).height = height;
       for (const s of cells) {
         const cell = sheet.getCell(r, s.col);
         const v = s.value as { formula?: string } | null;
@@ -104,11 +106,12 @@ export function expandClaimSlots(sheet: Worksheet, slots: { g: number; ot: numbe
   }
   for (const m of footerMerges) { try { sheet.mergeCells(`${m.c1}${m.r1 + delta}:${m.c2}${m.r2 + delta}`); } catch { /* overlap */ } }
 
-  // Formulas above the slots (e.g. headers) that total worker rows must grow too.
+  // Header totals grow; worker formulas only move references below the insertion.
   for (let r = 1; r < insertAt; r++) for (let c = 1; c <= cols; c++) {
     const cell = sheet.getCell(r, c);
     if (!cell.formula) continue;
-    const next = adjustFormulaForInsert(cell.formula, insertAt, delta);
+    const inWorkerSlot = slots.some(slot => r >= slot.g && r <= slot.ot);
+    const next = adjustFormulaForInsert(cell.formula, insertAt, delta, !inWorkerSlot);
     if (next !== cell.formula) cell.value = { formula: next } as never;
   }
 }
