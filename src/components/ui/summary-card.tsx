@@ -101,7 +101,7 @@ export function SummaryCard({
   ...props
 }: SummaryCardProps) {
   return (
-    <div className={cn(summaryCardVariants({ variant, compact }), className)} {...props}>
+    <div data-ui="summary-metric" className={cn(summaryCardVariants({ variant, compact }), className)} {...props}>
       <div className="flex flex-1 flex-col justify-between">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
