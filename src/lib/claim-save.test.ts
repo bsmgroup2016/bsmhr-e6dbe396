@@ -13,7 +13,7 @@ test("claim save rejects failures, confirms all IDs, and retries without duplica
       written.push(rows.map(row => String(row.id)));
       return { select: async () => mode === "fail" ? { data: null, error: { message: "Save denied" } } : { data: mode === "partial" ? rows.slice(0, 1) : rows, error: null } };
     } };
-  }) as typeof supabase.from;
+  }) as unknown as typeof supabase.from;
   clearSessionStore();
   const claims = ["00000000-0000-4000-8000-000000000001", "00000000-0000-4000-8000-000000000002"].map(sourceCardId => ({ sourceCardId, periodStart: "2026-11-01", periodEnd: "2026-11-30", totalDays: 1, totalNormalHours: 8, totalOtHours: 3.5, snapshot: [{ sourceCardId, date: "2026-11-15", normalHours: 8, otHours: 3.5, status: "Present" }] }));
   try {
