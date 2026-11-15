@@ -148,7 +148,7 @@ export default function SettingsPage() {
                 <div className="space-y-2">
                   <Label htmlFor="branch">Current branch</Label>
                   <Select value={currentBranch} onValueChange={setBranch}>
-                    <SelectTrigger>
+                    <SelectTrigger id="branch">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -372,6 +372,7 @@ function BranchPrefixManager() {
           rows.map((r) => (
             <div key={r.id} className="flex flex-wrap items-center gap-2 rounded-lg border p-2">
               <Input
+                aria-label={`Prefix code for ${r.name || r.code}`}
                 className="w-24"
                 value={r.code}
                 onChange={(e) => {
@@ -380,6 +381,7 @@ function BranchPrefixManager() {
                 }}
               />
               <Input
+                aria-label={`Branch name for prefix ${r.code}`}
                 className="min-w-40 flex-1"
                 value={r.name}
                 onChange={(e) => {
@@ -390,6 +392,8 @@ function BranchPrefixManager() {
               <Button
                 variant="outline"
                 size="sm"
+                aria-label={`Active prefix ${r.code}`}
+                aria-pressed={r.active}
                 onClick={() => {
                   updateBranchPrefix(r.id, { active: !r.active });
                   refresh();
