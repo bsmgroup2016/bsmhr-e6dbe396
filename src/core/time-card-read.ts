@@ -99,8 +99,10 @@ function matchAudit(card: CardRead, primary: CardRead[], audit: CardRead[]) {
 /** Merge two independent readings; agreement = high confidence, disagreement = flagged. */
 export function mergeCardReads(primary: CardRead[], audit: CardRead[] | null, names: { primary: string; audit?: string } = { primary: "gemini", audit: "openai" }): ReadRow[] {
   const rows: ReadRow[] = [];
+  const matched = new Set<CardRead>();
   for (const card of primary) {
     const other = audit ? matchAudit(card, primary, audit) : undefined;
+    if (other) matched.add(other);
     const site = pick(card.siteName, other?.siteName, (x, y) => norm(x) === norm(y));
     const year = pick(card.year, other?.year, (x, y) => x === y);
     const month = pick(card.month, other?.month, (x, y) => x === y);
@@ -151,19 +153,27 @@ export function mergeCardReads(primary: CardRead[], audit: CardRead[] | null, na
       });
     }
   }
+  // An entire worker seen only by the second reader must not disappear.
+  const remaining = audit?.filter(card => !matched.has(card)) ?? [];
+  let nextIndex = Math.max(0, ...primary.map(card => card.cardIndex));
+  for (const card of remaining) {
+    const additional = mergeCardReads([{ ...card, cardIndex: ++nextIndex }], null, { primary: names.audit ?? "audit" });
+    rows.push(...additional.map(row => ({ ...row, confidence: Math.min(row.confidence, 0.4), remarks: [row.remarks, "Only the second reader found this worker — verify the original card"].filter(Boolean).join(" · ") })));
+  }
   return rows;
 }
 
 /** Move entries to the confirmed claim month, keeping the day of month. */
 export function redateToMonth<T extends { date: string }>(entries: T[], month: string): T[] {
   const [y, m] = month.split("-").map(Number);
-  if (!y || !m) return entries;
+  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) throw new Error("Choose a valid claim month");
   const max = new Date(Date.UTC(y, m, 0)).getUTCDate();
   const seen = new Set<number>();
-  return entries.flatMap(entry => {
+  return entries.map(entry => {
     const day = Number(entry.date.slice(8, 10));
-    if (!day || day > max || seen.has(day)) return [];
+    if (!Number.isInteger(day) || day < 1 || day > max) throw new Error(`Date ${entry.date} cannot fit in ${month}. Check Claim Month; no dates have been removed.`);
+    if (seen.has(day)) throw new Error(`Duplicate day ${day}. Review the source instead of dropping or adding hours.`);
     seen.add(day);
-    return [{ ...entry, date: `${month}-${String(day).padStart(2, "0")}` }];
+    return { ...entry, date: `${month}-${String(day).padStart(2, "0")}` };
   });
 }

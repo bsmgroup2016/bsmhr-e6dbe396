@@ -33,3 +33,9 @@ test("Invalid negative and nonfinite hours block approval", () => {
   expect(validCardHours([{ date: "2026-11-04", normalHours: NaN }])).toBe(false);
   expect(validCardHours([{ date: "2026-11-04", normalHours: 8, otHours: 4 }])).toBe(true);
 });
+
+test("A blank card date never inherits system hours unless Use System Time is explicitly selected", () => {
+  const system = { hoursWorked: 8, overtimeHours: 4 };
+  expect(countedCardHours({ date: "2026-11-15" }, system)).toEqual({ normalHours: 0, otHours: 0 });
+  expect(countedCardHours({ date: "2026-11-15", resolution: "Corrected" }, system)).toEqual({ normalHours: 8, otHours: 4 });
+});
