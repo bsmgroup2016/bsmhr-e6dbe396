@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { employeeCompanyId, employeeImportPatch } from "@/core/employee-company";
+import { IPA_DETAIL_FIELDS } from "@/core/ipa-detail-fields";
 import { subscribe, saveEmployeeConfirmed, saveEmployeeDocumentsConfirmed, deleteEmployeeConfirmed } from "@/lib/store";
 import { useCreateDialog } from "@/hooks/use-create-dialog";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
@@ -256,6 +257,8 @@ function toEmployeeRow(employee: Employee) {
   }
   row["Days To Expiry"] = daysUntil(employee.passExpiry) ?? "";
   row["Estimated Work Permit Expiry (Unverified)"] = estimatedWorkPermitExpiry(employee.workPermitIssueDate, employee.passType) ?? "";
+  for (const field of IPA_DETAIL_FIELDS) row[field.label] = employee[field.key] ?? "";
+  row["Company"] = getCompanies().find(company => company.id === employee.companyId)?.name ?? employee.branch ?? "";
   return row;
 }
 
@@ -518,7 +521,7 @@ export default function WorkforcePage() {
         dateOfBirth: normalizeDate(get("dateOfBirth")) || undefined,
         gender: (get("gender") || undefined) as Employee["gender"],
         maritalStatus: (get("maritalStatus") || undefined) as Employee["maritalStatus"],
-        department: get("department") || undefined,
+        department: get("department") || "Construction",
         workerCategory: (get("workerCategory") || undefined) as Employee["workerCategory"],
         employmentType: (get("employmentType") || undefined) as Employee["employmentType"],
         otRate: Number(get("otRate").replace(/[^0-9.-]/g, "")) || undefined,
