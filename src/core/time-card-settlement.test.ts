@@ -33,6 +33,12 @@ test("Invalid negative and nonfinite hours block approval", () => {
   expect(validCardHours([{ date: "2026-11-04", normalHours: NaN }])).toBe(false);
   expect(validCardHours([{ date: "2026-11-04", normalHours: 8, otHours: 4 }])).toBe(true);
 });
+test("bulk approval cannot bypass explicit uncertainty review", () => {
+  const card: TimeCard = { id: "c", employeeId: "", periodStart: "2026-11-01", periodEnd: "2026-11-30", status: "Verified", entries: [{ date: "2026-11-15", confidence: 0.45, reviewApproved: true, normalHours: 8, otHours: 3.5 }] };
+  expect(canGenerateSettledCards([card], 0)).toBe(false);
+  card.entries[0] = { ...card.entries[0], date: "2026-11-15", ocrReviewed: true };
+  expect(canGenerateSettledCards([card], 0)).toBe(true);
+});
 
 test("A blank card date never inherits system hours unless Use System Time is explicitly selected", () => {
   const system = { hoursWorked: 8, overtimeHours: 4 };

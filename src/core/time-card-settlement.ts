@@ -1,5 +1,6 @@
 import type { TimeCard, TimeCardEntry } from "@/lib/types";
 import { spanFromTimes, splitDutyHours } from "./work-hours";
+import { unresolvedOcrEntries } from "./time-card-ocr-status";
 
 export function countedCardHours(entry: TimeCardEntry, system?: { checkIn?: string; checkOut?: string; hoursWorked?: number; overtimeHours?: number }) {
   if (entry.resolution === "Ignored") return { normalHours: 0, otHours: 0 };
@@ -17,7 +18,7 @@ export function validCardHours(entries: TimeCardEntry[]) {
 }
 
 export function isCardApproved(card: TimeCard) {
-  return card.status === "Verified" && card.entries.length > 0 && card.entries.every(entry => entry.reviewApproved === true) && validCardHours(card.entries);
+  return card.status === "Verified" && card.entries.length > 0 && card.entries.every(entry => entry.reviewApproved === true) && validCardHours(card.entries) && unresolvedOcrEntries(card.entries).length === 0;
 }
 
 export function canGenerateSettledCards(cards: TimeCard[], pendingCount: number) {
