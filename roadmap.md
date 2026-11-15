@@ -8,4 +8,4 @@
 
 - [x] Reproduce the last original worker's range total absorbing added workers.
 - [x] Keep per-worker ranges bounded while extending sheet-wide totals.
-- [ ] Verify generated and saved Excel totals with 15 original slots and 25 workers.
+- [x] Verify generated and saved Excel totals with 15 original slots and 25 workers: each worker totals 11 hours, grand total 275; all 16 related tests pass.
