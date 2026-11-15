@@ -2,6 +2,8 @@
 
 ## ClaimSheet Generator only: batch reliability and UX
 
+- [ ] Ensure revalidated manual corrections reach Excel; add per-entry original OCR, timestamped correction history and regression/browser checks.
+
 - [x] Add in-card manual correction/revalidation and shared filters for errors, retries and uncertain readings; controlled desktop/mobile tests cover edits, invalid dates, rechecking and fresh approval. Live account/OCR checks remain blocked below.
 
 - [x] Add per-card OCR results, validation/retry status and explicit uncertainty confirmation; verify with controlled cards. Live provider/account checks remain blocked below.

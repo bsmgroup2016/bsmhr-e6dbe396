@@ -28,6 +28,8 @@ import { ClaimTemplateManager } from "@/components/claim-template-manager";
 import { TimeCardOcrResults } from "@/components/time-card-ocr-results";
 import { uncertaintyReason, unresolvedOcrEntries, revalidateOcrEntry, matchesOcrFilter, cardOcrFlags, type OcrResultFilter, type CardScanStatus } from "@/core/time-card-ocr-status";
 import { TimeCardHoursInputs } from "@/components/time-card-hours-inputs";
+import { TimeCardCorrectionHistory } from "@/components/time-card-correction-history";
+import { trackCardCorrection } from "@/core/time-card-corrections";
 import { ClaimDatePreview } from "@/components/claim-date-preview";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -235,8 +237,13 @@ function TimeCardsPage() {
   };
 
   // Unlinked generator cards stay local: time_cards requires a real employee FK.
-  function saveCard(id: string, patch: Partial<TimeCard>) {
+  function saveCard(id: string, patch: Partial<TimeCard>, manual = false) {
     const card = cards.find(item => item.id === id);
+    if (manual && card && patch.entries) {
+      const at = new Date().toISOString();
+      patch = { ...patch, status: "Draft", entries: patch.entries.map((entry, index) => trackCardCorrection(card.entries[index] ?? { date: entry.date }, entry, at)) };
+      setReconcile(null); setBatchCompleted(false);
+    }
     if (card && !card.employeeId) setCards(items => items.map(item => item.id === id ? { ...item, ...patch } : item));
     else { updateTimeCard(id, patch); setCards(items => items.map(item => item.id === id ? { ...item, ...patch } : item)); }
   }
@@ -416,12 +423,12 @@ function TimeCardsPage() {
     if (!selected) return;
     const targetIndex = selected.entries.findIndex(entry => entry.date === date);
     const entries = targetIndex >= 0
-      ? selected.entries.map((entry, index) => index === targetIndex ? { ...entry, ...patch } : entry)
+      ? selected.entries.map((entry, index) => index === targetIndex ? { ...entry, ...patch, ...(("checkIn" in patch || "checkOut" in patch || "normalHours" in patch || "otHours" in patch) ? { resolution: "Accepted" as const } : {}) } : entry)
       : [...selected.entries, { date, ...patch }];
     const resetsHours = "checkIn" in patch || "checkOut" in patch || "resolution" in patch;
     saveCard(selected.id, { status: "Draft", entries: entries.map((entry, index) => ({ ...entry, reviewApproved: false,
       ...(index === targetIndex ? { ocrReviewed: false } : {}),
-      ...(resetsHours && patch.resolution !== "Accepted" && index === targetIndex ? { normalHours: undefined, otHours: undefined } : {}) })) });
+      ...(resetsHours && patch.resolution !== "Accepted" && index === targetIndex ? { normalHours: undefined, otHours: undefined } : {}) })) }, true);
     setReconcile(null); setBatchCompleted(false); refresh();
   }
 
@@ -450,7 +457,7 @@ function TimeCardsPage() {
         }
       }
     });
-    saveCard(selected.id, { status: "Draft", entries: entries.map(entry => ({ ...entry, reviewApproved: false, ...(resolution !== "Accepted" ? { ocrReviewed: false } : {}) })) });
+    saveCard(selected.id, { status: "Draft", entries: entries.map(entry => ({ ...entry, reviewApproved: false, ...(resolution !== "Accepted" ? { ocrReviewed: false } : {}) })) }, true);
     refresh();
     toast.success(`Bulk updated ${filteredComparison.length} rows to ${resolution}`);
   }
@@ -704,7 +711,7 @@ function TimeCardsPage() {
               </Select>
               {!projects.length && <p className="text-sm text-muted-foreground">No projects available for this company.</p>}
             </div>
-            <div className="space-y-2"><Label htmlFor="claim-site">Site</Label><Input id="claim-site" value={selected.entries.find((entry) => entry.siteName)?.siteName ?? sites.find((site) => site.id === selected.entries.find((entry) => entry.siteId)?.siteId)?.name ?? ""} onChange={(event) => { const name = event.target.value; saveCard(selected.id, { status: "Draft", entries: selected.entries.map((entry) => ({ ...entry, siteName: name, siteId: uniqueCardMatch(sites, name, (site) => [site.name, site.code]) || undefined })) }); refresh(); }} /></div>
+            <div className="space-y-2"><Label htmlFor="claim-site">Site</Label><Input id="claim-site" value={selected.entries.find((entry) => entry.siteName)?.siteName ?? sites.find((site) => site.id === selected.entries.find((entry) => entry.siteId)?.siteId)?.name ?? ""} onChange={(event) => { const name = event.target.value; saveCard(selected.id, { status: "Draft", entries: selected.entries.map((entry) => ({ ...entry, siteName: name, siteId: uniqueCardMatch(sites, name, (site) => [site.name, site.code]) || undefined })) }, true); refresh(); }} /></div>
             <div className="space-y-2">
               <Label htmlFor="claim-month">Claim period</Label>
               <Input id="claim-month" type="month" value={selected.periodStart.slice(0, 7)} readOnly />
@@ -864,7 +871,7 @@ function TimeCardsPage() {
                       {([['workerName', 'Worker name'], ['employeeCode', 'Staff code'], ['siteName', 'Printed site']] as const).map(([field, label]) => <div key={field} className="space-y-1">
                         <Label htmlFor={`ocr-${field}`}>{label}</Label>
                         <Input id={`ocr-${field}`} value={selected.entries.find(entry => entry[field])?.[field] ?? ""} onChange={event => {
-                          saveCard(selected.id, { status: "Draft", entries: selected.entries.map(entry => ({ ...entry, [field]: event.target.value, ocrReviewed: false, reviewApproved: false })) }); refresh();
+                          saveCard(selected.id, { status: "Draft", entries: selected.entries.map(entry => ({ ...entry, [field]: event.target.value, ocrReviewed: false, reviewApproved: false })) }, true); refresh();
                         }} />
                       </div>)}
                     </div>
@@ -1086,6 +1093,7 @@ function TimeCardsPage() {
                                     })()}
                                     <TimeCardHoursInputs date={r.date} normalHours={r.normalHours} otHours={r.otHours} disabled={r.resolution === "Ignored"} onChange={patch => setEntry(r.date, patch)} />
                                     {!uncertaintyReason(selected.entries.find(entry => entry.date === r.date) ?? r) && <Button variant="outline" size="sm" onClick={() => recheckEntry(selected.entries.findIndex(entry => entry.date === r.date))}><CheckCircle2 aria-hidden="true" />Revalidate entry</Button>}
+                                    {(() => { const entry = selected.entries.find(item => item.date === r.date); return entry ? <TimeCardCorrectionHistory entry={entry} /> : null; })()}
                                     {r.suggestion && (
                                       <div className="mt-1 flex flex-wrap gap-1 border-t border-dashed pt-1">
                                         <span className="text-[9px] text-muted-foreground">Suggest:</span>

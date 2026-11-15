@@ -1,5 +1,6 @@
 import type { TimeCard, TimeCardEntry } from "@/lib/types";
 import { claimBatchProblem } from "./claim-batch-validation";
+import { verifyCardCorrection } from "./time-card-corrections";
 
 export interface CardScanStatus {
   id: string;
@@ -21,7 +22,7 @@ export function uncertaintyReason(entry: TimeCardEntry): string | null {
 }
 
 export function unresolvedOcrEntries(entries: TimeCardEntry[]) {
-  return entries.filter(entry => uncertaintyReason(entry) && !entry.ocrReviewed);
+  return entries.filter(entry => entry.correctionAudit?.pending || (uncertaintyReason(entry) && !entry.ocrReviewed));
 }
 
 export type OcrResultFilter = "All" | "Issues" | "Errors" | "Retry" | "Uncertain";
@@ -41,7 +42,7 @@ export function matchesOcrFilter(filter: OcrResultFilter, flags: { error: boolea
 }
 
 /** Checking edited values never approves a card or upgrades the reader's confidence. */
-export function revalidateOcrEntry(card: TimeCard, index: number): { card: TimeCard; error: string | null } {
+export function revalidateOcrEntry(card: TimeCard, index: number, at = new Date().toISOString()): { card: TimeCard; error: string | null } {
   const entry = card.entries[index];
   if (!entry) return { card, error: "Entry not found" };
   const issue = claimBatchProblem([card], card.periodStart.slice(0, 7));
@@ -49,5 +50,5 @@ export function revalidateOcrEntry(card: TimeCard, index: number): { card: TimeC
   if (card.entries.some(row => [row.normalHours, row.otHours].some(value => value !== undefined && (!Number.isFinite(value) || value < 0)))) {
     return { card, error: "GW and OT hours must be non-negative numbers" };
   }
-  return { card: { ...card, status: "Draft", entries: card.entries.map((row, i) => ({ ...row, reviewApproved: false, ...(i === index ? { ocrReviewed: true } : {}) })) }, error: null };
+  return { card: { ...card, status: "Draft", entries: card.entries.map((row, i) => ({ ...(i === index ? verifyCardCorrection(row, at) : row), reviewApproved: false })) }, error: null };
 }
