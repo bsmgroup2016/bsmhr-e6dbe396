@@ -845,6 +845,14 @@ function TimeCardsPage() {
                       Verification — {cardName(selected)}
                     </DialogTitle></DialogHeader>
                     {selected.fileUrl && <a className="text-sm text-primary underline" href={selected.fileUrl} target="_blank" rel="noreferrer">Open original time card</a>}
+                    <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                      {([['workerName', 'Worker name'], ['employeeCode', 'Staff code'], ['siteName', 'Printed site']] as const).map(([field, label]) => <div key={field} className="space-y-1">
+                        <Label htmlFor={`ocr-${field}`}>{label}</Label>
+                        <Input id={`ocr-${field}`} value={selected.entries.find(entry => entry[field])?.[field] ?? ""} onChange={event => {
+                          saveCard(selected.id, { status: "Draft", entries: selected.entries.map(entry => ({ ...entry, [field]: event.target.value, ocrReviewed: false, reviewApproved: false })) }); refresh();
+                        }} />
+                      </div>)}
+                    </div>
                     {focusIssue && focusIssue.cardId === selected.id && <div className="my-2 rounded-md border border-destructive/50 bg-destructive/10 p-2 text-sm">
                       <div className="grid gap-2 sm:grid-cols-3">
                         <div><span className="text-muted-foreground">Mismatch · {focusIssue.date || "all dates"}</span><p className="font-medium">{focusIssue.kind}</p></div>
