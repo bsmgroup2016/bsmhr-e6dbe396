@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useCreateDialog } from "@/hooks/use-create-dialog";
 import { createFileRoute } from "@tanstack/react-router";
 import {
   Plus,
@@ -79,6 +80,8 @@ export const Route = createFileRoute("/_authenticated/projects")({
       { name: "description", content: "Track BSM Engineering project sites, manpower requirements, and deployment status across Singapore." },
       { property: "og:title", content: "Projects & Sites — BSM Workforce & Operations" },
       { property: "og:description", content: "Manage projects, sites, and manpower requirements." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: ProjectsPage,
@@ -91,7 +94,7 @@ export default function ProjectsPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<ProjectStatus | "all">("all");
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
-  const [isCreateProjectOpen, setIsCreateProjectOpen] = useState(
+  const [isCreateProjectOpen, setIsCreateProjectOpen] = useCreateDialog(
     Route.useSearch().new === true,
   );
   const [editingProject, setEditingProject] = useState<Project | null>(null);

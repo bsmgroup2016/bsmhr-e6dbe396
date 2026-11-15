@@ -29,6 +29,8 @@ export const Route = createFileRoute("/_authenticated/compliance")({
       { name: "description", content: "Work pass, passport and document expiry tracking for MOM compliance." },
       { property: "og:title", content: "Compliance & Expiry — BSM Workforce & Operations" },
       { property: "og:description", content: "Work pass, passport and document expiry tracking for MOM compliance." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: CompliancePage,

@@ -55,6 +55,8 @@ export const Route = createFileRoute("/_authenticated/approvals")({
       { name: "description", content: "Review and approve workflow requests." },
       { property: "og:title", content: "Approvals — BSM Workforce & Operations" },
       { property: "og:description", content: "Review and approve workflow requests." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: ApprovalsPage,
@@ -107,8 +109,8 @@ export default function ApprovalsPage() {
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <SummaryCard title="Pending" value={pendingCount.toString()} icon={<Clock className="h-5 w-5" />} variant="warning" caption="Needs action" />
-          <SummaryCard title="Approved" value={approvedCount.toString()} icon={<CheckCircle2 className="h-5 w-5" />} variant="success" caption="This month" />
-          <SummaryCard title="Rejected" value={rejectedCount.toString()} icon={<XCircle className="h-5 w-5" />} variant="destructive" caption="This month" />
+          <SummaryCard title="Approved" value={approvedCount.toString()} icon={<CheckCircle2 className="h-5 w-5" />} variant="success" caption="All requests" />
+          <SummaryCard title="Rejected" value={rejectedCount.toString()} icon={<XCircle className="h-5 w-5" />} variant="destructive" caption="All requests" />
           <SummaryCard title="Total" value={approvals.length.toString()} icon={<FileCheck className="h-5 w-5" />} variant="primary" caption="All requests" />
         </div>
 

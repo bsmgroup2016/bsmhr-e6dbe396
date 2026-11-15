@@ -12,7 +12,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Link } from "@tanstack/react-router";
+import { Link, useRouterState } from "@tanstack/react-router";
 
 import { buildAlerts } from "@/lib/alerts";
 import { AiNoticesTray } from "@/components/assistant-alerts";
@@ -37,7 +37,6 @@ const quickCreateItems = [
   { label: "Employee", to: "/workforce", search: { new: true } },
   { label: "Client", to: "/clients", search: { new: true } },
   { label: "Project", to: "/projects", search: { new: true } },
-  { label: "Site", to: "/projects", search: {} },
   { label: "Assignment", to: "/operations", search: { new: true } },
   { label: "Attendance entry", to: "/time-management", search: { new: true } },
 ] as const;
@@ -56,6 +55,7 @@ function readSeen(): string[] {
 
 export function AppHeader() {
   const { user, roles, signOut } = useAuth();
+  const currentPath = useRouterState({ select: (state) => state.location.pathname });
   const canSearch = roles.includes("admin");
   const visibleCreateItems = quickCreateItems.filter((item) => canAccess(item.to, roles));
   const initials = user?.email?.slice(0, 2).toUpperCase() ?? "BS";
@@ -95,7 +95,8 @@ export function AppHeader() {
 
         <div className="flex flex-1 items-center justify-end gap-2">
           {canSearch && <>
-          <button
+          <Button
+            variant="outline"
             type="button"
             onClick={() => setSearchOpen(true)}
             className="relative hidden h-8 w-64 items-center rounded-md border bg-background/60 pl-9 pr-2 text-left text-sm text-muted-foreground transition-colors hover:bg-accent/50 sm:flex"
@@ -105,7 +106,7 @@ export function AppHeader() {
             <kbd className="rounded border bg-muted px-1.5 py-0.5 text-[10px] font-medium">
               ⌘K
             </kbd>
-          </button>
+          </Button>
           <Button
             variant="ghost"
             size="icon"
@@ -130,7 +131,9 @@ export function AppHeader() {
               <DropdownMenuSeparator />
               {visibleCreateItems.map((item) => (
                 <DropdownMenuItem key={item.label} asChild>
-                  <Link to={item.to} search={item.search}>
+                  <Link to={item.to} search={item.search} onClick={() => {
+                    if (currentPath === item.to) window.dispatchEvent(new CustomEvent("bsm:quick-create", { detail: item.to }));
+                  }}>
                     {item.label}
                   </Link>
                 </DropdownMenuItem>
@@ -180,19 +183,19 @@ export function AppHeader() {
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="gap-2 pl-1">
+              <Button variant="ghost" size="sm" aria-label="My account" className="max-w-52 gap-2 pl-1">
                 <div className="h-7 w-7 rounded-full bg-gradient-primary flex items-center justify-center text-xs font-semibold text-primary-foreground shadow-elegant">
                   {initials}
                 </div>
-                <span className="hidden text-xs font-medium sm:inline">{user?.email ?? "Admin"}</span>
+                <span className="hidden min-w-0 truncate text-xs font-medium lg:inline">{user?.email ?? "Account"}</span>
                 <ChevronDown className="hidden h-3.5 w-3.5 sm:inline" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>My account</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>Profile</DropdownMenuItem>
-              <DropdownMenuItem>Preferences</DropdownMenuItem>
+              {canAccess("/my-portal", roles) && <DropdownMenuItem asChild><Link to="/my-portal">My profile</Link></DropdownMenuItem>}
+              {canAccess("/settings", roles) && <DropdownMenuItem asChild><Link to="/settings">Settings & security</Link></DropdownMenuItem>}
               <DropdownMenuSeparator />
               <DropdownMenuItem className="text-destructive" onClick={() => signOut()}>
                 Sign out

@@ -19,6 +19,8 @@ export const Route = createFileRoute("/_authenticated/alerts")({
       { name: "description", content: "Every expiry, approval and overdue item across the operation in one feed." },
       { property: "og:title", content: "Alerts Centre — BSM Workforce & Operations" },
       { property: "og:description", content: "Every expiry, approval and overdue item across the operation in one feed." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: AlertsPage,

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   Settings,
   Building,
@@ -38,7 +38,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
-import { getBranches, getCurrentBranch, setCurrentBranch, exportState, importState, resetState, getAllBranchPrefixes, addBranchPrefix, updateBranchPrefix, deleteBranchPrefix } from "@/lib/store";
+import { getBranches, getCurrentBranch, setCurrentBranch, getCompanies, getCurrentCompany, exportState, importState, resetState, getAllBranchPrefixes, addBranchPrefix, updateBranchPrefix, deleteBranchPrefix } from "@/lib/store";
 import { checkR2Status } from "@/lib/r2";
 import { SystemHealth } from "@/components/settings/system-health";
 import { AutomationCentre } from "@/components/settings/automation-centre";
@@ -66,6 +66,7 @@ export const Route = createFileRoute("/_authenticated/settings")({
 export default function SettingsPage() {
   const { isAdmin } = useAuth();
   const branches = getBranches();
+  const company = getCompanies().find((item) => item.id === getCurrentCompany());
   const [currentBranch, setBranch] = useState(getCurrentBranch());
   const [exportData, setExportData] = useState("");
   const [importData, setImportData] = useState("");
@@ -105,10 +106,7 @@ export default function SettingsPage() {
   }
 
   function handleReset() {
-    if (confirm("This will clear all local data and restore defaults. Continue?")) {
-      resetState();
-      window.location.reload();
-    }
+    void resetState().then(() => window.location.reload());
   }
 
   return (
@@ -130,8 +128,8 @@ export default function SettingsPage() {
             <TabsTrigger value="data">Data</TabsTrigger>
             <TabsTrigger value="automation">Automation</TabsTrigger>
             <TabsTrigger value="health">Health</TabsTrigger>
-            <TabsTrigger value="notifications">Notifications</TabsTrigger>
             <TabsTrigger value="security">Security</TabsTrigger>
+            <TabsTrigger value="notifications">Notifications</TabsTrigger>
           </TabsList>
 
           <TabsContent value="general" className="mt-4 space-y-4">
@@ -173,17 +171,18 @@ export default function SettingsPage() {
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="companyName">Company name</Label>
-                  <Input id="companyName" defaultValue="BSM Engineering Pte Ltd" />
+                  <Input id="companyName" value={company?.legalName || company?.name || ""} placeholder="Not configured" readOnly aria-readonly="true" />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="uen">UEN</Label>
-                  <Input id="uen" defaultValue="201234567A" />
+                  <Input id="uen" value={company?.uen || ""} placeholder="Not configured" readOnly aria-readonly="true" />
                 </div>
                 <div className="space-y-2 sm:col-span-2">
                   <Label htmlFor="address">Address</Label>
-                  <Input id="address" defaultValue="Singapore" />
+                  <Input id="address" value={company?.address || ""} placeholder="Not configured" readOnly aria-readonly="true" />
                 </div>
               </div>
+              <Button variant="link" asChild className="mt-3 px-0"><Link to="/companies">Manage company details</Link></Button>
             </div>
 
             <CompanyLogos />
@@ -195,7 +194,8 @@ export default function SettingsPage() {
             <div className="rounded-xl border bg-card p-5 shadow-sm">
               <div className="flex items-center gap-2 mb-4">
                 <Bell className="h-5 w-5 text-muted-foreground" />
-                <h2 className="text-lg font-semibold">Alerts</h2>
+                <h2 className="text-lg font-semibold">Alert preferences</h2>
+                <Badge variant="secondary">Unavailable</Badge>
               </div>
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
@@ -203,21 +203,21 @@ export default function SettingsPage() {
                     <p className="font-medium">Pass expiry alerts</p>
                     <p className="text-sm text-muted-foreground">Notify before work passes expire.</p>
                   </div>
-                  <Switch defaultChecked />
+                  <Switch disabled aria-label="Pass expiry alerts — unavailable" />
                 </div>
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="font-medium">Approval notifications</p>
                     <p className="text-sm text-muted-foreground">Email when a request needs approval.</p>
                   </div>
-                  <Switch defaultChecked />
+                  <Switch disabled aria-label="Approval notifications — unavailable" />
                 </div>
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="font-medium">Payroll reminders</p>
                     <p className="text-sm text-muted-foreground">Remind before payroll deadline.</p>
                   </div>
-                  <Switch defaultChecked />
+                  <Switch disabled aria-label="Payroll reminders — unavailable" />
                 </div>
               </div>
             </div>
@@ -229,7 +229,8 @@ export default function SettingsPage() {
             <div className="rounded-xl border bg-card p-5 shadow-sm">
               <div className="flex items-center gap-2 mb-4">
                 <Shield className="h-5 w-5 text-muted-foreground" />
-                <h2 className="text-lg font-semibold">Access</h2>
+                <h2 className="text-lg font-semibold">Access preferences</h2>
+                <Badge variant="secondary">Unavailable</Badge>
               </div>
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
@@ -237,14 +238,14 @@ export default function SettingsPage() {
                     <p className="font-medium">Require approval for assignments</p>
                     <p className="text-sm text-muted-foreground">All assignments go through approval workflow.</p>
                   </div>
-                  <Switch defaultChecked />
+                  <Switch disabled aria-label="Assignment approval preference — unavailable" />
                 </div>
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="font-medium">Audit logging</p>
                     <p className="text-sm text-muted-foreground">Record all data changes.</p>
                   </div>
-                  <Switch defaultChecked />
+                  <Switch disabled aria-label="Audit logging preference — unavailable" />
                 </div>
               </div>
             </div>
@@ -280,7 +281,7 @@ export default function SettingsPage() {
                 <div>
                   <Button variant="outline" onClick={handleExport}>
                     <Download className="mr-2 h-4 w-4" />
-                    Export all data
+                    View loaded records
                   </Button>
                   {exportData && (
                     <Textarea
@@ -292,20 +293,20 @@ export default function SettingsPage() {
                 </div>
                 <div>
                   <Textarea
-                    placeholder="Paste exported JSON to import..."
+                    placeholder="Temporary JSON preview (not saved)..."
                     value={importData}
                     onChange={(e) => setImportData(e.target.value)}
                     className="h-32 font-mono text-xs"
                   />
                   <Button className="mt-2" variant="outline" onClick={handleImport}>
                     <Upload className="mr-2 h-4 w-4" />
-                    Import data
+                    Load temporary preview
                   </Button>
                 </div>
                 <div className="border-t pt-4">
-                  <Button variant="destructive" onClick={handleReset}>
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Reset to defaults
+                  <Button variant="outline" onClick={handleReset}>
+                    <Database className="mr-2 h-4 w-4" />
+                    Reload records
                   </Button>
                 </div>
               </div>

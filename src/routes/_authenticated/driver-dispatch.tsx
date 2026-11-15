@@ -156,7 +156,7 @@ function DriverDispatchPage() {
       setOpen(false);
       setForm({ ...form, instruction: "", pickup: "", dropoff: "", passengers: 0 });
       await reload();
-      toast.success(`Instruction sent to ${driver?.name ?? "driver"} — push notification delivered to his phone`);
+      toast.success(`Instruction saved for ${driver?.name ?? "driver"}`);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Could not send instruction");
     }

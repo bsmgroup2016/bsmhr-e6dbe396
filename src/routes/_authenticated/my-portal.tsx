@@ -64,6 +64,8 @@ export const Route = createFileRoute("/_authenticated/my-portal")({
       { name: "description", content: "Your profile, documents, payslips and leave requests." },
       { property: "og:title", content: "My Portal — BSM Workforce & Operations" },
       { property: "og:description", content: "Self-service portal for employees." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: MyPortalPage,

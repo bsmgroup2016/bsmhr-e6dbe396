@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useCreateDialog } from "@/hooks/use-create-dialog";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   Plus,
@@ -74,6 +75,8 @@ export const Route = createFileRoute("/_authenticated/clients")({
       { name: "description", content: "Manage BSM Engineering's client portfolio and service contracts in the Singapore construction and marine sectors." },
       { property: "og:title", content: "Clients — BSM Workforce & Operations" },
       { property: "og:description", content: "Manage BSM Engineering client companies." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: ClientsPage,
@@ -84,7 +87,7 @@ export default function ClientsPage() {
   const [projects] = useState(getProjects());
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<ClientStatus | "all">("all");
-  const [isCreateOpen, setIsCreateOpen] = useState(Route.useSearch().new === true);
+  const [isCreateOpen, setIsCreateOpen] = useCreateDialog(Route.useSearch().new === true);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [viewingClient, setViewingClient] = useState<Client | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Client | null>(null);

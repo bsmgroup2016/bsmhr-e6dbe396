@@ -1,3 +1,11 @@
+# Full-section UI/UX and workflow audit
+
+- [x] Inventory all 48 authenticated route files and public account pages; trace section controls, dependencies and connected actions without changing business records.
+- [x] Run automated checks: 202 passed; inspect public desktop/mobile pages and isolated shared controls, with no page errors or viewport clipping.
+- [x] Improve shared navigation, quick-create, tabs, dialogs, retry/search states, employee links, honest settings/payroll/audit/delivery labels and MOM panel data dependencies; preserve calculations, templates, roles and storage.
+- [x] Document coverage and remaining findings in docs/UI-UX-AUDIT.md; latest preview build is clean.
+- [ ] Verify signed-in section flows and record read-back, then repair remaining persistence/approval/renewal/conversion/quantity issues under controlled tests. Blocker: external account service has no authorized browser test session or isolated business-record test environment available; no production writes or authentication bypass performed.
+
 # Claim sheet dated preview
 
 - [x] Add a worker-by-worker, date-ordered preview before generation using the same approved rows as Excel.

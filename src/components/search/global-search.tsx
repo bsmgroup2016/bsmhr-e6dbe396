@@ -30,6 +30,7 @@ import {
   subscribe,
 } from "@/lib/store";
 import { employeeSlug } from "@/lib/employee-slug";
+import { Button } from "@/components/ui/button";
 
 export type SearchHit = {
   id: string;
@@ -127,14 +128,19 @@ export function GlobalSearchDialog({
   const navigate = useNavigate();
   const [revision, setRevision] = useState(0);
   const [loadError, setLoadError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [attempt, setAttempt] = useState(0);
   useEffect(() => subscribe(() => setRevision((value) => value + 1)), []);
   useEffect(() => {
     if (!open) return;
     let alive = true;
+    setLoadError("");
+    setLoading(true);
     void ensureStoreCollections(["employees", "clients", "projects", "sites", "invoices", "vehicles", "dormitories", "assignments"])
-      .catch((error: Error) => { if (alive) setLoadError(error.message); });
+      .catch((error: Error) => { if (alive) setLoadError(error.message); })
+      .finally(() => { if (alive) setLoading(false); });
     return () => { alive = false; };
-  }, [open]);
+  }, [open, attempt]);
   const index = useSearchIndex(revision);
   const [query, setQuery] = useState("");
 
@@ -166,7 +172,9 @@ export function GlobalSearchDialog({
         onValueChange={setQuery}
       />
       <CommandList>
-        <CommandEmpty>{loadError || "No matches found."}</CommandEmpty>
+        {loading && <div role="status" className="px-4 py-3 text-sm text-muted-foreground">Loading records…</div>}
+        {loadError && <div role="alert" className="flex items-center justify-between gap-3 px-4 py-3 text-sm text-destructive"><span>Search records could not load.</span><Button variant="outline" size="sm" onClick={() => setAttempt((value) => value + 1)}>Retry</Button></div>}
+        <CommandEmpty>{loading ? "Searching…" : loadError ? "Results may be incomplete." : "No matches found."}</CommandEmpty>
         {results.map(([group, items]) => (
           <CommandGroup key={group} heading={group}>
             {items.map((hit) => (

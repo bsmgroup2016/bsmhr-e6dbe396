@@ -115,6 +115,8 @@ export const Route = createFileRoute("/_authenticated/reports")({
       { name: "description", content: "Workforce, compliance, financial and operational analytics." },
       { property: "og:title", content: "Reports & Analytics — BSM Workforce & Operations" },
       { property: "og:description", content: "Workforce, compliance, financial and operational analytics." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: ReportsPage,

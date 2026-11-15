@@ -47,6 +47,7 @@
   --color-warning-foreground: var(--warning-foreground);
   --color-info: var(--info);
   --color-info-foreground: var(--info-foreground);
+  --color-overlay: var(--overlay);
 
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
@@ -89,7 +90,8 @@
  * Roboto typography, comfortable density.
  */
 :root {
-  --font-sans: "Inter", "Roboto", "ui-sans-serif", "system-ui", "-apple-system", "Segoe UI", sans-serif;
+  --font-sans: "Roboto", "ui-sans-serif", "system-ui", "-apple-system", "Segoe UI", sans-serif;
+  --overlay: oklch(0.12 0.025 281 / 65%);
   --radius: 0.875rem;
 
   /* Surfaces */
@@ -179,12 +181,22 @@
 @layer base {
   * {
     border-color: var(--color-border);
+    letter-spacing: 0;
   }
 
   body {
     font-family: var(--font-sans);
     background-color: var(--color-background);
     color: var(--color-foreground);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 

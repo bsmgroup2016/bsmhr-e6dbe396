@@ -121,7 +121,7 @@ export default function AuditLogsPage() {
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={() => void handleExport()} disabled={!filtered.length}>
               <Download className="mr-1 h-4 w-4" />
-              Export CSV
+              Download current page
             </Button>
             <Button variant="outline" size="sm" onClick={() => void load()} disabled={loading}>
               {loading ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <History className="mr-1 h-4 w-4" />}
@@ -134,7 +134,7 @@ export default function AuditLogsPage() {
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div className="relative w-full max-w-sm">
               <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input type="search" placeholder="Search logs..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+              <Input type="search" aria-label="Search current page" placeholder="Search current page..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
             </div>
             <div className="flex flex-wrap gap-2">
               <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="w-40" aria-label="From date" />
@@ -209,7 +209,7 @@ export default function AuditLogsPage() {
             </Table>
           </div>
 
-          <div className="mt-3 flex items-center justify-between text-sm text-muted-foreground">
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-sm text-muted-foreground">
             <span>{filtered.length} entries shown · {data.total} total · Page {params.page + 1}</span>
             <div className="flex gap-2">
               <Button variant="ghost" size="sm" disabled={loading || params.page === 0} onClick={() => void navigate({ search: (previous) => ({ ...previous, page: previous.page - 1 }) })}>Previous</Button>

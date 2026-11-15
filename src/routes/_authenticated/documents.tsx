@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { createFileRoute } from "@tanstack/react-router";
 import {
@@ -85,12 +85,15 @@ const documentTypes: DocumentType[] = [
 const documentStatuses: DocumentStatus[] = ["Valid", "Expiring Soon", "Expired", "Pending", "Superseded"];
 
 export const Route = createFileRoute("/_authenticated/documents")({
+  validateSearch: (search: Record<string, unknown>) => ({ employee: typeof search.employee === "string" ? search.employee : undefined }),
   head: () => ({
     meta: [
       { title: "Documents — BSM Workforce & Operations" },
       { name: "description", content: "Track employee documents, pass expiry, and compliance." },
       { property: "og:title", content: "Documents — BSM Workforce & Operations" },
       { property: "og:description", content: "Track employee documents, pass expiry, and compliance." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: DocumentsPage,
@@ -124,7 +127,9 @@ export default function DocumentsPage() {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<DocumentType | "all">("all");
   const [statusFilter, setStatusFilter] = useState<DocumentStatus | "all">("all");
-  const [employeeFilter, setEmployeeFilter] = useState<string>("all");
+  const requestedEmployee = Route.useSearch().employee;
+  const [employeeFilter, setEmployeeFilter] = useState<string>(requestedEmployee ?? "all");
+  useEffect(() => { setEmployeeFilter(requestedEmployee ?? "all"); }, [requestedEmployee]);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingDoc, setEditingDoc] = useState<EmployeeDocument | null>(null);
   const [viewingDoc, setViewingDoc] = useState<EmployeeDocument | null>(null);

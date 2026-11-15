@@ -101,6 +101,8 @@ export const Route = createFileRoute("/_authenticated/payroll")({
       { name: "description", content: "Singapore-compliant payroll management for BSM Engineering. CPF e-Submission, SDL, SHG, and IR8A processing." },
       { property: "og:title", content: "Payroll — BSM Workforce & Operations" },
       { property: "og:description", content: "Monthly payroll and payslip management." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: PayrollPage,
