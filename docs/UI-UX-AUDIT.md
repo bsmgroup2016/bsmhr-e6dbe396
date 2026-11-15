@@ -4,7 +4,7 @@ Date: 15 November 2026
 
 ## Scope and assurance
 
-All 45 authenticated content-route files and the three public account pages were inventoried. Route controls, shared navigation, collection dependencies and key cross-section call chains were inspected. This is a source audit with selected browser and automated checks, **not a certification that all live workflows work**.
+All 48 authenticated route files (including the layout and root alias) and the three public account pages were inventoried. Route controls, shared navigation, collection dependencies and key cross-section call chains were inspected. This is a source audit with selected browser and automated checks, **not a certification that all live workflows work**.
 
 The available browser opens signed out. The project uses an external account service; no managed test session is available. No credentials were requested, no authentication was bypassed, and no production business records, schema, roles, policies, storage objects or claim templates were changed. Settings/provider delivery, storage reads, OCR and protected record mutations remain unverified end-to-end.
 
@@ -115,6 +115,6 @@ These need controlled authenticated record tests and incremental business-workfl
 - Public browser: / and /dashboard correctly lead to /auth while signed out; /admin and expired /reset-password render without page errors.
 - Sign-up tab opens its phone/password form; password recovery opens Account email / Send reset link. No signup or email was submitted.
 - Public checks at 1280×1800, 1146×682 and 390×844 found no document-width overflow; screenshots retained under /tmp/browser/ui-audit.
-- Shared-control checks are isolated component checks, not authenticated business-flow evidence.
+- Isolated shared-control browser checks passed at 1280×1800, 1146×682 and 390×844: the last tab was selectable, long dialogs stayed within the viewport, and the footer Finish button scrolled into view and closed the dialog. No page errors. These are not authenticated business-flow evidence.
 - Latest preview compiler result must remain clean before completion.
 - **Blocked:** signed-in full-section and real mutation read-back checks require an authorized test session/environment. Hosted authentication settings, service credentials and provider delivery remain unverified.

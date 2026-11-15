@@ -1,9 +1,10 @@
 # Full-section UI/UX and workflow audit
 
-- [ ] Inventory every section and trace navigation, data dependencies, and connected actions without changing business records.
-- [ ] Run existing automated checks and inspect desktop/mobile pages; record what cannot be verified without a signed-in session.
-- [ ] Improve confirmed UI/UX problems using shared controls, preserving business calculations, templates, roles and storage.
-- [ ] Verify changed interactions and document section coverage, outstanding findings and blockers.
+- [x] Inventory all 48 authenticated route files and public account pages; trace section controls, dependencies and connected actions without changing business records.
+- [x] Run automated checks: 202 passed; inspect public desktop/mobile pages and isolated shared controls, with no page errors or viewport clipping.
+- [x] Improve shared navigation, quick-create, tabs, dialogs, retry/search states, employee links, honest settings/payroll/audit/delivery labels and MOM panel data dependencies; preserve calculations, templates, roles and storage.
+- [x] Document coverage and remaining findings in docs/UI-UX-AUDIT.md; latest preview build is clean.
+- [ ] Verify signed-in section flows and record read-back, then repair remaining persistence/approval/renewal/conversion/quantity issues under controlled tests. Blocker: external account service has no authorized browser test session or isolated business-record test environment available; no production writes or authentication bypass performed.
 
 # Claim sheet dated preview
 
