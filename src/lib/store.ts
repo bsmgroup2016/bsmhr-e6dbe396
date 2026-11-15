@@ -275,7 +275,7 @@ export async function saveEmployeeConfirmed(updates: Partial<Employee>, id?: str
 export async function saveEmployeeDocumentsConfirmed(employeeId: string, documents: Omit<EmployeeDocument, "id" | "employeeId" | "uploadedAt" | "updatedAt">[]): Promise<void> {
   const pending = documents.filter(document => !getDocumentsByEmployee(employeeId).some(existing => existing.fileUrl === document.fileUrl));
   if (!pending.length) return;
-  const rows = pending.map(document => ({ ...document, id: newId(), employeeId, uploadedAt: new Date().toISOString() }));
+  const rows = pending.map(document => ({ ...document, id: newId(), employeeId, uploadedAt: new Date().toISOString(), updatedAt: new Date().toISOString() }));
   const { data, error } = await supabase.from("employee_documents").insert(rows.map(row => ({ id: row.id, ...toDocument(row) }))).select("id");
   if (error) throw new Error(`Worker saved, but documents were not registered: ${error.message}. Retry saving without uploading again.`);
   if (data?.length !== rows.length) throw new Error("Worker saved, but not every document registration was confirmed. Retry saving without uploading again.");

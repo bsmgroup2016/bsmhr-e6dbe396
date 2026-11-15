@@ -1,5 +1,8 @@
 import { useAuth } from "@/lib/auth";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
+import { employeeCompanyId } from "@/core/employee-company";
+import { subscribe, getCompanies, saveEmployeeConfirmed, saveEmployeeDocumentsConfirmed } from "@/lib/store";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
   ArrowLeft, Pencil, Ban, LogOut, Archive, Upload, CalendarCheck, Wallet, Briefcase,
@@ -91,6 +94,7 @@ function EmployeeProfilePage() {
   const { slug } = Route.useParams();
   const navigate = useNavigate();
   const [version, force] = useState(0);
+  useEffect(() => subscribe(() => force(n => n + 1)), []);
   const [profileTab, setProfileTab] = useState("personal");
   const { isAdmin } = useAuth();
   const [editing, setEditing] = useState(false);
@@ -119,17 +123,25 @@ function EmployeeProfilePage() {
   const projects = getProjects();
   const clients = getClients();
 
-  const active = assignments.find((a) => a.status === "Active");
+  const active = assignments.find((a) => a.status === "Active" || a.status === "Approved");
   const activeSite = sites.find((s) => s.id === active?.siteId);
   const activeProject = projects.find((p) => p.id === active?.projectId);
   const activeClient = clients.find((c) => c.id === activeProject?.clientId);
   /** Staff carry an Employee ID and a fixed monthly salary — no hourly/site data. */
   const staff = isOfficeStaff(employee);
 
-  function patch(updates: Partial<Employee>) {
+  async function patch(updates: Partial<Employee>) {
     if (!employee) return;
-    updateEmployee(employee.id, updates);
-    force((n) => n + 1);
+    try { await saveEmployeeConfirmed(updates, employee.id); toast.success("Employee updated"); }
+    catch (error) { toast.error(error instanceof Error ? error.message : "Employee update failed"); }
+  }
+
+  async function saveForm(fd: FormData) {
+    if (!employee) return;
+    const values = employeeFromForm(fd);
+    await saveEmployeeConfirmed({ ...values, companyId: employeeCompanyId(values.branch, getCompanies(), employee.companyId) }, employee.id);
+    await saveEmployeeDocumentsConfirmed(employee.id, employeeFormDocuments(fd, getDocumentsByEmployee(employee.id)));
+    setEditing(false); toast.success("Employee changes saved");
   }
 
   return (
@@ -296,11 +308,7 @@ function EmployeeProfilePage() {
 
           {FORM_TABS.includes(profileTab) ? (
             <div className="mt-4 rounded-lg border bg-card p-4">
-              <EmployeeForm key={`${employee.id}-${version}`} employee={employee} readOnly={!isAdmin} tab={profileTab} hideTabList onSubmit={(fd) => {
-                updateEmployee(employee.id, employeeFromForm(fd));
-                for (const document of employeeFormDocuments(fd, getDocumentsByEmployee(employee.id))) addDocument({ ...document, employeeId: employee.id });
-                force((n) => n + 1);
-              }} />
+              <EmployeeForm key={employee.id} employee={employee} readOnly={!isAdmin} tab={profileTab} hideTabList onSubmit={saveForm} />
             </div>
           ) : null}
 
@@ -380,12 +388,7 @@ function EmployeeProfilePage() {
             </DialogHeader>
             <EmployeeForm
               employee={employee}
-              onSubmit={(fd) => {
-                updateEmployee(employee.id, employeeFromForm(fd));
-                for (const document of employeeFormDocuments(fd, getDocumentsByEmployee(employee.id))) addDocument({ ...document, employeeId: employee.id });
-                setEditing(false);
-                force((n) => n + 1);
-              }}
+              onSubmit={saveForm}
             />
           </DialogContent>
         </Dialog>
