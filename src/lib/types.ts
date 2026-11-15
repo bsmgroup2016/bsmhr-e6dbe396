@@ -457,7 +457,15 @@ export interface TimeCardEntry {
   remarks?: string;
   confidence?: number;
   suggestion?: { checkIn?: string; checkOut?: string };
+  correctionAudit?: {
+    original: TimeCardReading;
+    editedAt?: string;
+    pending: boolean;
+    revisions: { correctedAt: string; verifiedAt: string; changes: { field: keyof TimeCardReading; before?: string | number; after?: string | number }[] }[];
+  };
 }
+
+export type TimeCardReading = Pick<TimeCardEntry, "date" | "workerName" | "employeeCode" | "fin" | "siteName" | "projectId" | "projectName" | "checkIn" | "checkOut" | "normalHours" | "otHours" | "resolution" | "remarks">;
 
 export interface TimeCard {
   id: string;
