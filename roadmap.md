@@ -1,5 +1,11 @@
 # Full-section UI/UX and workflow audit
 
+## Accessibility across updated sections
+
+- [ ] Audit keyboard access, accessible names and focus visibility in shared controls and updated pages.
+- [ ] Fix confirmed presentation issues without changing permissions, records or calculations.
+- [ ] Verify keyboard flows in shared controls and public pages; document signed-in verification limitations.
+
 ## Visible layouts across remaining sections
 
 - [x] Give every operational section a prominent heading and section context, matching the clearer attendance page.
