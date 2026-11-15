@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { uncertaintyReason, unresolvedOcrEntries, revalidateOcrEntry, matchesOcrFilter } from "./time-card-ocr-status";
+import { uncertaintyReason, unresolvedOcrEntries, revalidateOcrEntry, matchesOcrFilter, scanOcrFlags, cardOcrFlags } from "./time-card-ocr-status";
 import type { TimeCard } from "@/lib/types";
 import { readBatchState, writeBatchState } from "./time-card-batch-state";
 test("uncertain OCR must be explicitly checked even after a manual hour edit", () => {
@@ -48,4 +48,11 @@ test("OCR filters separately select errors, retries and unresolved uncertainty",
   expect(matchesOcrFilter("Retry", { error: false, retry: true, uncertain: false })).toBe(true);
   expect(matchesOcrFilter("Uncertain", { error: false, retry: false, uncertain: true })).toBe(true);
   expect(matchesOcrFilter("Issues", { error: false, retry: false, uncertain: false })).toBe(false);
+});
+test("failed first reads and successful retries both appear in retry filter", () => {
+  expect(scanOcrFlags({ id: "f", fileName: "card.pdf", status: "Failed", attempts: 1 })).toMatchObject({ error: true, retry: true });
+  const retried = { id: "rescan:manual", fileName: "card.pdf", status: "Read" as const, attempts: 2, uncertain: 1 };
+  const checked = revalidateOcrEntry(manualCard, 0).card;
+  expect(cardOcrFlags(checked, [retried], "2026-11")).toEqual({ error: false, retry: true, uncertain: false });
+  expect(cardOcrFlags(checked, [retried], "2026-12").error).toBe(true);
 });
