@@ -82,24 +82,24 @@ export function AppHeader() {
   }, [alerts]);
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 flex-col border-b border-border/70 bg-gradient-surface backdrop-blur supports-[backdrop-filter]:bg-card/70">
-      <div className="flex flex-1 items-center gap-2 px-5">
+    <header className="sticky top-0 z-30 flex h-16 flex-col border-b border-border/70 bg-card/95 backdrop-blur">
+      <div className="flex min-w-0 flex-1 items-center gap-2 px-3 sm:px-5">
         <SidebarTrigger className="h-8 w-8 shrink-0">
           <SidebarIcon className="h-4 w-4" />
           <span className="sr-only">Toggle sidebar</span>
         </SidebarTrigger>
 
-        <div className="hidden md:flex items-center gap-4">
+        <div className="hidden min-w-0 flex-1 items-center gap-4 md:flex">
           <AppBreadcrumbs />
         </div>
 
-        <div className="flex flex-1 items-center justify-end gap-2">
+        <div className="ml-auto flex min-w-0 shrink-0 items-center justify-end gap-1 sm:gap-2">
           {canSearch && <>
           <Button
             variant="outline"
             type="button"
             onClick={() => setSearchOpen(true)}
-            className="relative hidden h-8 w-64 items-center rounded-md border bg-background/60 pl-9 pr-2 text-left text-sm text-muted-foreground transition-colors hover:bg-accent/50 sm:flex"
+            className="relative hidden h-9 w-40 items-center rounded-md border bg-background/60 pl-9 pr-2 text-left text-sm text-muted-foreground transition-colors hover:bg-accent/50 sm:flex xl:w-56"
           >
             <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2" />
             <span className="flex-1 truncate">Search anything…</span>

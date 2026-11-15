@@ -34,24 +34,17 @@ export function EmptyState({
   return (
     <div
       className={cn(
-        "relative isolate flex flex-col items-center justify-center overflow-hidden rounded-xl border border-dashed bg-card text-center",
-        "bg-gradient-surface shadow-sm",
+        "flex min-w-0 flex-col items-center justify-center rounded-xl text-center",
         compact ? "p-6" : "px-8 py-12",
         className,
       )}
       {...props}
     >
-      {/* soft indigo halo behind the icon */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 -top-16 -z-10 mx-auto h-40 w-40 rounded-full bg-primary/10 blur-3xl"
-      />
-
       {icon && (
         <div
           className={cn(
-            "animate-empty-float mb-4 grid shrink-0 place-items-center rounded-2xl",
-            "border border-primary/15 bg-primary/8 text-primary shadow-sm",
+            "mb-4 grid shrink-0 place-items-center rounded-lg",
+            "bg-muted text-muted-foreground",
             "[&_svg]:size-6",
             compact ? "size-11" : "size-14 [&_svg]:size-7",
           )}
