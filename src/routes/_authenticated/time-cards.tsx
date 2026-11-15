@@ -437,7 +437,7 @@ function TimeCardsPage() {
         }
       }
     });
-    saveCard(selected.id, { status: "Draft", entries: entries.map(entry => ({ ...entry, reviewApproved: false })) });
+    saveCard(selected.id, { status: "Draft", entries: entries.map(entry => ({ ...entry, reviewApproved: false, ...(resolution !== "Accepted" ? { ocrReviewed: false } : {}) })) });
     refresh();
     toast.success(`Bulk updated ${filteredComparison.length} rows to ${resolution}`);
   }

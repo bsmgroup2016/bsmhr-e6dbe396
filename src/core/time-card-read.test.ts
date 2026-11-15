@@ -28,6 +28,14 @@ describe("whole-card time card reading", () => {
     expect(day21.normalHours).toBe(8);
     expect(day21.otHours).toBe(3);
   });
+  it("marks conflicting site and worker identity readings for manual review", () => {
+    const primary = parseCardReads(card([{ day: 15, normal: 8, ot: 3.5 }]));
+    const second = parseCardReads(card([{ day: 15, normal: 8, ot: 3.5 }], { siteName: "JB-1188", workerName: "OTHER READING" }));
+    const rows = mergeCardReads(primary, second);
+    expect(rows[0]?.confidence).toBeLessThan(0.7);
+    expect(rows[0]?.remarks).toContain("siteName: JB-1183 / JB-1188");
+    expect(rows[0]?.remarks).toContain("workerName:");
+  });
 
   it("flags written hours that do not match the times under the 9h duty rule", () => {
     const rows = mergeCardReads(parseCardReads(card(fullMonth({ 3: { ot: 4 } }))), null);
