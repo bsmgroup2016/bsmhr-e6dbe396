@@ -240,7 +240,7 @@ export default function ReportsPage() {
           <SummaryCard title="Active workers" value={activeCount.toString()} icon={<Users className="h-5 w-5" />} variant="primary" caption={`${deployedCount} deployed on sites`} />
           <SummaryCard title="Pass alerts" value={(passExpiry.expired + passExpiry.expiringSoon).toString()} icon={<AlertTriangle className="h-5 w-5" />} variant="warning" caption={`${passExpiry.expired} expired`} />
           <SummaryCard title="Total payroll" value={`$${totalPayroll.toLocaleString()}`} icon={<DollarSign className="h-5 w-5" />} variant="info" caption="All months" />
-          <SummaryCard title="Net profit" value={`$${(totalInvoices - totalPaidExpenses).toLocaleString()}`} icon={<TrendingUp className="h-5 w-5" />} variant="success" caption={`$${totalReceipts.toLocaleString()} received`} />
+          <SummaryCard title="Invoiced less paid expenses" value={`$${(totalInvoices - totalPaidExpenses).toLocaleString()}`} icon={<TrendingUp className="h-5 w-5" />} variant="success" caption={`All periods · $${totalReceipts.toLocaleString()} received`} />
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">

@@ -140,8 +140,7 @@ function CompanyDashboardPage() {
         </Button>
 
         {/* Header */}
-        <div className="relative overflow-hidden rounded-2xl border bg-gradient-surface p-6 shadow-sm">
-          <div className={`absolute inset-x-0 top-0 h-1.5 ${accentBg[company.accent]}`} />
+        <div className="border-b pb-6">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="flex min-w-0 items-center gap-4">
               <div
@@ -158,7 +157,7 @@ function CompanyDashboardPage() {
               </div>
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h1 className="truncate text-2xl font-semibold tracking-tight">{company.name}</h1>
+                  <h1 className="break-words text-2xl font-semibold">{company.name}</h1>
                   <StatusBadge variant={company.status === "Active" ? "success" : "warning"} label={company.status} />
                   {current === company.id && <StatusBadge variant="info" dot label="Current" />}
                 </div>
@@ -183,7 +182,7 @@ function CompanyDashboardPage() {
             </div>
           </div>
 
-          <dl className="mt-5 grid gap-2 text-xs text-muted-foreground sm:grid-cols-3">
+          <dl className="mt-5 grid gap-2 break-words text-xs text-muted-foreground sm:grid-cols-3 [&_svg]:shrink-0">
             <div className="flex items-center gap-2"><MapPin className="h-3.5 w-3.5" /> {company.address || "—"}</div>
             <div className="flex items-center gap-2"><Phone className="h-3.5 w-3.5" /> {company.phone || "—"}</div>
             <div className="flex items-center gap-2"><Mail className="h-3.5 w-3.5" /> {company.email || "—"}</div>
@@ -206,7 +205,7 @@ function CompanyDashboardPage() {
             ]}
           />
           <SummaryCard
-            title="Permits expiring (90d)" value={String(data.expiring.length)}
+            title="Expired / expiring permits (90d)" value={String(data.expiring.length)}
             icon={<ShieldAlert className="h-5 w-5" />}
             variant={soonest !== null && soonest <= 30 ? "destructive" : data.expiring.length ? "warning" : "success"}
             badges={soonest !== null ? [{ label: `${soonest}d left (soonest)`, tone: soonest <= 15 ? "critical" : soonest <= 30 ? "warning" : "info" }] : undefined}
@@ -221,7 +220,7 @@ function CompanyDashboardPage() {
             icon={<Wallet className="h-5 w-5" />} variant="primary" compact
           />
           <SummaryCard
-            title="Annual wage" value={money(data.monthlyWage * 12)}
+            title="Annualised basic wage estimate" value={money(data.monthlyWage * 12)}
             icon={<CalendarClock className="h-5 w-5" />} variant="info" compact
           />
           <SummaryCard

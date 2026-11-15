@@ -4,6 +4,7 @@ import { AlertTriangle, Fuel, Plus, Trash2, Download, CheckCircle2, Gauge } from
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/app-shell";
+import { ConfirmRecordDelete } from "@/components/confirm-record-action";
 import { SummaryCard } from "@/components/ui/summary-card";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -268,9 +269,7 @@ function DriverCompliancePage() {
                                   <CheckCircle2 className="h-4 w-4" />
                                 </Button>
                               )}
-                              <Button size="icon" variant="ghost" title="Delete" onClick={() => { deleteDriverIncident(i.id); refresh(); }}>
-                                <Trash2 className="h-4 w-4 text-destructive" />
-                              </Button>
+                              <ConfirmRecordDelete record={`incident on ${i.date} for ${empName(i.employeeId)}`} onConfirm={() => { deleteDriverIncident(i.id); refresh(); }} />
                             </div>
                           </TableCell>
                         </TableRow>
@@ -367,9 +366,7 @@ function DriverCompliancePage() {
                           <TableCell>{f.station || "—"}</TableCell>
                           <TableCell className="sticky right-0 bg-card">
                             <div className="flex justify-end">
-                              <Button size="icon" variant="ghost" title="Delete" onClick={() => { deleteFuelLog(f.id); refresh(); }}>
-                                <Trash2 className="h-4 w-4 text-destructive" />
-                              </Button>
+                              <ConfirmRecordDelete record={`fuel log on ${f.date} for ${plate(f.vehicleId)}`} onConfirm={() => { deleteFuelLog(f.id); refresh(); }} />
                             </div>
                           </TableCell>
                         </TableRow>
