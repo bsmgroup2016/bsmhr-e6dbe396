@@ -2,6 +2,22 @@
 
 Date: 15 November 2026
 
+## Accessibility follow-up
+
+### Findings and fixes by severity
+
+- **Critical: unnamed controls in six updated sections.** Attendance daily-sheet status/hour inputs and record menus (`time-management.tsx`), worker filters (`workforce.tsx`), payroll filters/status controls (`payroll.tsx`), client action menus (`clients.tsx`), quotation fields/remove-line controls (`quotations.tsx`) and certification/course/incident forms (`training.tsx`) lacked reliable accessible names. Screen-reader users could not reliably distinguish the control's purpose or worker. Added explicit names or connected visible labels; repeated quotation inputs use stable per-line IDs, and attendance inputs include worker identity.
+- **Critical: broken visible-label associations.** Attendance, payroll and client form selectors, Settings branch selection (`settings.tsx`) and billing payment method (`billing.tsx`) now connect labels to their actual trigger IDs. Existing Radix keyboard and focus management remains intact.
+- **Warning: inconsistent keyboard focus and small navigation targets.** Global token-based focus outlines cover native links/custom focusable controls, alongside existing primitive rings (`styles.css`). Header sidebar/search/alerts/portal targets are at least 44px (`app-header.tsx`). Other compact record actions still use existing coarse-pointer sizing; this is not a complete touch-target audit.
+- **Info: navigation and table semantics.** Mobile navigation has a named landmark and current-page state (`nav/mobile-nav.tsx`); shared table headers have column scope (`ui/table.tsx`). Prefix inputs identify their branch; the active-prefix toggle announces its pressed state. Existing skip-to-content, English document language and Radix tab/menu/dialog semantics were preserved.
+
+### Verification and limitations
+
+- Keyboard-only shared-control checks passed at 1280×1800, 1146×682 and 390×844: Enter switches attendance mode; arrow keys switch tabs; keyboard selection changes company; Tab stays within the dialog; Escape closes it and restores the opener's focus. Screenshots confirm visible focus, with no viewport overflow or page errors.
+- Public sign-in Email → Password keyboard navigation passed. Signed-in attendance still redirects to `/auth`; no authorized external-service session is available. Actual populated section interactions and assistive-technology speech output remain unverified. Isolated controls are not authenticated end-to-end evidence.
+- 202 existing regression tests passed; all 50 content routes retain leaf metadata; preview compiler reports build OK. No business records, permissions, formulas, template layouts or hosted account settings changed.
+- This focused Accessibility Review fixes confirmed issues in updated controls, not a claim of whole-app WCAG compliance; older forms, live announcements and all portal variants require a separate exhaustive audit.
+
 ## Visible section-layout rollout
 
 The shared authenticated shell now provides category context for every listed operational section except Attendance & OT, which already owns its category heading. Shared page headings are larger; summary tiles become open metric strips; section tabs use an underlined selected state; data tables have a separate framed surface, distinct headers and alternating rows. These presentation rules are scoped to the workspace, not dialog portals or workbook grids.

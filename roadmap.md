@@ -2,9 +2,9 @@
 
 ## Accessibility across updated sections
 
-- [ ] Audit keyboard access, accessible names and focus visibility in shared controls and updated pages.
-- [ ] Fix confirmed presentation issues without changing permissions, records or calculations.
-- [ ] Verify keyboard flows in shared controls and public pages; document signed-in verification limitations.
+- [x] Audit keyboard access, accessible names and focus visibility in shared controls and updated pages.
+- [x] Fix confirmed presentation issues without changing permissions, records or calculations.
+- [x] Verify keyboard flows in shared controls and public pages at three sizes; document signed-in verification limitations in docs/UI-UX-AUDIT.md. 202 tests pass.
 
 ## Visible layouts across remaining sections
 
