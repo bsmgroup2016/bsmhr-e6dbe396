@@ -638,7 +638,7 @@ export default function WorkforcePage() {
                 <DialogTitle>Register new employee</DialogTitle>
                 <DialogDescription>A unique P-File number will be generated automatically.</DialogDescription>
               </DialogHeader>
-              <EmployeeRegistration onSubmit={handleCreate} />
+              <EmployeeRegistration onSubmit={handleCreate} existingEmployeeId={createdId.current} />
             </DialogContent>
           </Dialog>
         </div>
@@ -1138,7 +1138,7 @@ export default function WorkforcePage() {
             <DialogHeader>
               <DialogTitle>Delete {selectedIds.length} employee(s)?</DialogTitle>
               <DialogDescription>
-                The selected employee records will be permanently removed. This cannot be undone.
+                The selected employee records will be permanently removed. Linked attendance, payroll and other records may also be affected. Archive employees from their profiles to retain their history. This cannot be undone.
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
@@ -1175,7 +1175,7 @@ export default function WorkforcePage() {
             <DialogHeader>
               <DialogTitle>Delete employee?</DialogTitle>
               <DialogDescription>
-                This will permanently remove {deleteTarget?.name} ({deleteTarget?.employeeCode}). This action cannot be undone.
+                This will permanently remove {deleteTarget?.name} ({deleteTarget?.employeeCode}). Linked attendance, payroll and other records may also be affected. Archive from the employee profile to retain history. This action cannot be undone.
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>

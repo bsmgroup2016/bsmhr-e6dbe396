@@ -223,8 +223,10 @@ export function EmployeeForm({
   readOnly,
   hideTabList,
   tab: controlledTab,
+  existingEmployeeId,
 }: {
   employee?: Employee;
+  existingEmployeeId?: string;
   initialTab?: string;
   /** Profile view: same fields, locked except Documents; tab list and identity block hidden. */
   readOnly?: boolean;
@@ -254,7 +256,7 @@ export function EmployeeForm({
   const [documentRefs, setDocumentRefs] = useState<Partial<Record<EmployeeDocumentKind, string>>>({ particular: values?.pFileUrl, passport: storedDocs.passportUpload, workpermit: storedDocs.workPermitUpload, csoc: storedDocs.csocUpload });
   const readingKinds = useRef(new Set<EmployeeDocumentKind>());
 
-  const taken = code.trim() ? isEmployeeCodeTaken(code, employee?.id) : false;
+  const taken = code.trim() ? isEmployeeCodeTaken(code, employee?.id ?? existingEmployeeId) : false;
   const allowedPrefixes = prefixesForCompany(branch);
   const expectedPrefix = allowedPrefixes.length ? allowedPrefixes.join(" / ") : prefixForBranch(branch);
   const staff = isOfficeStaff({ department: values?.department, trade: values?.trade });

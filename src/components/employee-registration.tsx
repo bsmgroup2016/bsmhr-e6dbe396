@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-export function EmployeeRegistration({ onSubmit }: { onSubmit: (data: FormData) => void | Promise<void> }) {
+export function EmployeeRegistration({ onSubmit, existingEmployeeId }: { onSubmit: (data: FormData) => void | Promise<void>; existingEmployeeId?: string }) {
   const [method, setMethod] = useState("ipa");
   const [url, setUrl] = useState("");
   const [reading, setReading] = useState(false);
@@ -107,11 +107,11 @@ export function EmployeeRegistration({ onSubmit }: { onSubmit: (data: FormData) 
               </div>
               <Button type="button" disabled={!company || taken} onClick={() => { setConfirmed({ code: typed || auto, branch: company }); setRevision((v) => v + 1); }}>Continue</Button>
             </div>;
-          })() : <EmployeeForm key={revision} initialValues={{ ...ipaEmployeeDefaults(extracted, url, confirmed.branch), branch: confirmed.branch, employeeCode: confirmed.code }} onSubmit={onSubmit} />}
+          })() : <EmployeeForm key={revision} existingEmployeeId={existingEmployeeId} initialValues={{ ...ipaEmployeeDefaults(extracted, url, confirmed.branch), branch: confirmed.branch, employeeCode: confirmed.code }} onSubmit={onSubmit} />}
         </>}
       </TabsContent>
       <TabsContent forceMount value="manual" className="mt-5 data-[state=inactive]:hidden">
-        <EmployeeForm onSubmit={onSubmit} />
+        <EmployeeForm existingEmployeeId={existingEmployeeId} onSubmit={onSubmit} />
       </TabsContent>
     </Tabs>
   );
