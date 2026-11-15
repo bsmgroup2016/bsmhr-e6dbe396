@@ -227,6 +227,7 @@ export default function ReportsPage() {
           <div>
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">Reports & Analytics</h1>
             <p className="text-sm text-muted-foreground">Workforce, compliance, financial and operational insights.</p>
+            <p className="mt-1 text-xs text-muted-foreground">Loaded records across companies · All periods unless a month is shown.</p>
           </div>
           <div className="mt-2 flex flex-wrap gap-2 sm:mt-0">
             <Button size="sm" onClick={exportFullPack}>
@@ -386,7 +387,7 @@ export default function ReportsPage() {
             <div className="flex items-center gap-2">
               <Label>Month</Label>
               <Select value={month} onValueChange={setMonth}>
-                <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+                <SelectTrigger aria-label="Attendance month" className="w-40"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {months.map((m) => <SelectItem key={m} value={m}>{formatMonth(m)}</SelectItem>)}
                 </SelectContent>
@@ -399,7 +400,7 @@ export default function ReportsPage() {
               <SummaryCard title="MC" value={attendanceCounts.mc.toString()} icon={<ClipboardList className="h-5 w-5" />} variant="warning" />
             </div>
             <div className="rounded-xl border bg-card p-4 shadow-sm">
-              <h3 className="text-sm font-medium mb-4">Leave summary</h3>
+              <h3 className="text-sm font-medium mb-4">Leave summary — all periods</h3>
               <div className="overflow-hidden rounded-lg border">
                 <Table>
                   <TableHeader>
@@ -557,11 +558,12 @@ export default function ReportsPage() {
           </TabsContent>
 
           <TabsContent value="government" className="space-y-4 mt-4">
+            <p className="text-sm text-warning-foreground bg-warning/10 border border-warning/30 rounded-md p-3">Cross-company overview using the {sector} sector. Quota and manpower use all loaded workers; only levy and CPF rows use the selected month. This is not an entity-specific statutory submission.</p>
             <div className="flex flex-wrap items-end gap-2">
               <div>
                 <Label className="text-xs">Month</Label>
                 <Select value={month} onValueChange={setMonth}>
-                  <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+                  <SelectTrigger aria-label="Levy and CPF month" className="w-40"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {months.map((m) => <SelectItem key={m} value={m}>{formatMonth(m)}</SelectItem>)}
                   </SelectContent>

@@ -2,9 +2,9 @@
 
 ## Second-pass premium usability audit
 
-- [ ] Re-audit every content section in three coverage groups; distinguish source findings from authenticated verification.
-- [ ] Improve shared visual hierarchy, form/table ergonomics, navigation and page-specific usability without changing business calculations or stored records.
-- [ ] Apply concrete safe fixes from each coverage group and record remaining functional blockers.
+- [x] Re-audit every content section in three coverage groups plus a dashboard/company/reports deep pass; distinguish source findings from authenticated verification.
+- [x] Improve shared visual hierarchy, form/table ergonomics, navigation and page-specific usability without changing business calculations or stored records.
+- [x] Apply concrete safe fixes from each coverage group and record remaining functional blockers.
 - [ ] Run regression tests, desktop/mobile browser checks and metadata coverage; publish the updated audit report.
 
 - [x] Inventory all 48 authenticated route files and public account pages; trace section controls, dependencies and connected actions without changing business records.

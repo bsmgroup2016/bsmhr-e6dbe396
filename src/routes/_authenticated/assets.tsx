@@ -243,7 +243,7 @@ export default function AssetsPage() {
       <div className="w-full space-y-6">
         <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Inventory &amp; PPE</h1>
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">PPE Management</h1>
             <p className="text-sm text-muted-foreground">Inventory management, PPE issuance, equipment register and calibration tracking.</p>
           </div>
           <Button size="sm" variant="outline" className="mt-2 sm:mt-0" onClick={handleExport} disabled={page.total === 0}>
