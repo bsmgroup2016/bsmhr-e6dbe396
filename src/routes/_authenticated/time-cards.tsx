@@ -29,6 +29,7 @@ import { TimeCardOcrResults } from "@/components/time-card-ocr-results";
 import { uncertaintyReason, unresolvedOcrEntries, revalidateOcrEntry, matchesOcrFilter, cardOcrFlags, type OcrResultFilter, type CardScanStatus } from "@/core/time-card-ocr-status";
 import { TimeCardHoursInputs } from "@/components/time-card-hours-inputs";
 import { TimeCardCorrectionHistory } from "@/components/time-card-correction-history";
+import { TimeCardHistoryDownload } from "@/components/time-card-history-download";
 import { cardReading, preserveManualReading, trackCardCorrection } from "@/core/time-card-corrections";
 import { ClaimDatePreview } from "@/components/claim-date-preview";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -867,7 +868,10 @@ function TimeCardsPage() {
                     <DialogHeader><DialogTitle>
                       Verification — {cardName(selected)}
                     </DialogTitle></DialogHeader>
-                    {selected.fileUrl && <a className="text-sm text-primary underline" href={selected.fileUrl} target="_blank" rel="noreferrer">Open original time card</a>}
+                    <div className="mt-2 flex flex-wrap items-center gap-3">
+                      {selected.fileUrl && <a className="text-sm text-primary underline" href={selected.fileUrl} target="_blank" rel="noreferrer">Open original time card</a>}
+                      <TimeCardHistoryDownload card={selected} />
+                    </div>
                     <div className="mt-3 grid gap-3 sm:grid-cols-3">
                       {([['workerName', 'Worker name'], ['employeeCode', 'Staff code'], ['siteName', 'Printed site']] as const).map(([field, label]) => <div key={field} className="space-y-1">
                         <Label htmlFor={`ocr-${field}`}>{label}</Label>
