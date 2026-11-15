@@ -149,8 +149,8 @@ export function AppSidebar() {
 
   const visibleAdminItems = adminItems.filter((item) => canAccess(item.url, roles));
   const adminActive = visibleAdminItems.some((item) => isActive(item.url));
-  const [adminOpen, setAdminOpen] = useState(adminActive);
-  const settingsOpen = adminOpen || adminActive;
+  const [adminOpen, setAdminOpen] = useState<boolean | null>(null);
+  const settingsOpen = adminOpen ?? adminActive;
 
   const initials = user?.email?.slice(0, 2).toUpperCase() ?? "BS";
   const roleLabel = roles.length ? roles.join(", ").replace(/_/g, " ") : "No role assigned";
@@ -207,7 +207,8 @@ export function AppSidebar() {
                 <SidebarMenuButton
                   isActive={adminActive}
                   tooltip="Settings"
-                  onClick={() => setAdminOpen((v) => !v)}
+                  aria-expanded={settingsOpen}
+                  onClick={() => setAdminOpen(!settingsOpen)}
                 >
                   <Settings className="h-4 w-4 shrink-0" />
                   <span className="truncate">Settings</span>
@@ -242,15 +243,12 @@ export function AppSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
-              asChild
               tooltip="Sign out"
               className="text-sidebar-foreground/80"
               onClick={() => signOut()}
             >
-              <button className="flex w-full items-center gap-3">
                 {isLoading ? <Loader2 className="h-4 w-4 shrink-0 animate-spin" /> : <LogOut className="h-4 w-4 shrink-0" />}
                 <span className="truncate">Sign out</span>
-              </button>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

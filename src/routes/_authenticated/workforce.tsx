@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useCreateDialog } from "@/hooks/use-create-dialog";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { activeAssignedEmployeeIds, isEmployeeAvailable } from "@/lib/availability";
 import {
@@ -291,7 +292,7 @@ export default function WorkforcePage() {
   const [nationalityFilter, setNationalityFilter] = useState<string>("all");
   const routeSearch = Route.useSearch();
   const openCreateFromUrl = routeSearch.new === true;
-  const [isCreateOpen, setIsCreateOpen] = useState(openCreateFromUrl);
+  const [isCreateOpen, setIsCreateOpen] = useCreateDialog(openCreateFromUrl);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   const [editTab, setEditTab] = useState("personal");
   const [viewingEmployee, setViewingEmployee] = useState<Employee | null>(null);

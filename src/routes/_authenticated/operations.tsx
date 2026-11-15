@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useCreateDialog } from "@/hooks/use-create-dialog";
 import { createFileRoute } from "@tanstack/react-router";
 import {
   Plus, Search, HardHat, Users, ArrowRightLeft, Clock, MoreHorizontal, Pencil, Eye,
@@ -70,7 +71,7 @@ export default function OperationsPage() {
   const [projectFilter, setProjectFilter] = useState("all");
   const [siteFilter, setSiteFilter] = useState("all");
   const [tab, setTab] = useState("overview");
-  const [isCreateOpen, setIsCreateOpen] = useState(Route.useSearch().new === true);
+  const [isCreateOpen, setIsCreateOpen] = useCreateDialog(Route.useSearch().new === true);
   const [bulkOpen, setBulkOpen] = useState(false);
   const [viewing, setViewing] = useState<Assignment | null>(null);
   const [editStatus, setEditStatus] = useState<Assignment | null>(null);

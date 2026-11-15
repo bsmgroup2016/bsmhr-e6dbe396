@@ -1,4 +1,5 @@
 import { Suspense, useMemo, useState } from "react";
+import { useCreateDialog } from "@/hooks/use-create-dialog";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { historyQueryOptions, historySummaryOptions, allHistory } from "@/lib/history-data";
 import { fromAttendance } from "@/lib/db";
@@ -125,7 +126,7 @@ export default function TimeManagementPage() {
   const [sites] = useState(getSites());
   const search = params.search; const setSearch = (v: string) => change("search", v);
   const date = params.date; const setDate = (v: string) => change("date", v);
-  const [isCreateOpen, setIsCreateOpen] = useState(Route.useSearch().new === true);
+  const [isCreateOpen, setIsCreateOpen] = useCreateDialog(Route.useSearch().new === true);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const summaryMonth = params.month; const setSummaryMonth = (v: string) => change("month", v);
   const noLocationOnly = params.noLocation; const setNoLocationOnly = (_: unknown) => change("noLocation", !noLocationOnly);

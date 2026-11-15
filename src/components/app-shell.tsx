@@ -15,11 +15,11 @@ export function AppShell({ children }: AppShellProps) {
   return (
     <SidebarProvider defaultOpen={true}>
       <AppSidebar />
-      <SidebarInset className="min-h-svh bg-background">
+      <SidebarInset className="min-h-svh min-w-0 bg-background">
         <AppHeader />
         <InstallAppBanner />
         <OfflineBanner />
-        <main className="flex-1 p-5 pb-24 sm:p-8 md:pb-10">{children}</main>
+        <main id="main-content" tabIndex={-1} className="min-w-0 flex-1 p-4 pb-24 outline-none sm:p-8 md:pb-10">{children}</main>
         <MobileNav />
         <LiveChatWidget />
         <AssistantAlerts />

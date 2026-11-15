@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useCreateDialog } from "@/hooks/use-create-dialog";
 import { createFileRoute } from "@tanstack/react-router";
 import {
   Plus,
@@ -91,7 +92,7 @@ export default function ProjectsPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<ProjectStatus | "all">("all");
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
-  const [isCreateProjectOpen, setIsCreateProjectOpen] = useState(
+  const [isCreateProjectOpen, setIsCreateProjectOpen] = useCreateDialog(
     Route.useSearch().new === true,
   );
   const [editingProject, setEditingProject] = useState<Project | null>(null);
