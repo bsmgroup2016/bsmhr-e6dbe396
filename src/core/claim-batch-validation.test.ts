@@ -11,3 +11,7 @@ test("the same worker date in two cards cannot double-count", () => {
 test("impossible month-end dates cannot disappear from generation", () => {
   expect(claimBatchProblem([card("a", "P-1", "2026-11-31")], "2026-11")).toContain("no dates will be dropped");
 });
+test("a worked date with incomplete times cannot silently become zero hours", () => {
+  const c = card("a", "P-1", "2026-11-15"); c.entries = [{ date: "2026-11-15", checkIn: "08:00" }];
+  expect(claimBatchProblem([c], "2026-11")).toContain("Incomplete hours");
+});
