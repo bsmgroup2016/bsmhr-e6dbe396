@@ -12,7 +12,7 @@ const pages: Record<string, CollectionKey[]> = {
   projects: ["clients", "projects", "sites", "assignments", "employees", "certifications"],
   operations: ["employees", "projects", "sites", "assignments", "users", "clients", "certifications", "documents", "payroll", "rateAgreements", "expenses", "invoices"],
   documents: ["documents", "employees"], compliance: ["employees", "documents", "certifications"],
-  mom: ["employees", "documents", "certifications"],
+  mom: ["employees", "documents", "certifications", "payroll", "loans", "loanRepayments", "medicalClaims"],
   approvals: ["approvals", "users", "employees", "leaveRequests", "assignments"],
   "time-management": ["employees", "sites"],
   "staff-attendance": ["employees", "attendance", "leaveRequests"],

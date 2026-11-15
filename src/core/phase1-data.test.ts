@@ -45,6 +45,9 @@ describe("Phase 1 data loading", () => {
     expect(pageCollections("/time-management")).toEqual(["companies", "employees", "sites"]);
     expect(pageCollections("/assistant")).toEqual(["companies"]);
   });
+  test("MOM salary, deductions, loans and medical panels load their records on direct entry", () => {
+    expect(pageCollections("/mom")).toEqual(["companies", "employees", "documents", "certifications", "payroll", "loans", "loanRepayments", "medicalClaims"]);
+  });
   test("explicit projections contain no wildcard", () => {
     for (const columns of Object.values(TABLE_COLUMNS)) expect(columns).not.toContain("*");
     expect(TABLE_COLUMNS.attendance.split(",")).toContain("employee_id");

@@ -55,6 +55,8 @@ export const Route = createFileRoute("/_authenticated/approvals")({
       { name: "description", content: "Review and approve workflow requests." },
       { property: "og:title", content: "Approvals — BSM Workforce & Operations" },
       { property: "og:description", content: "Review and approve workflow requests." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: ApprovalsPage,

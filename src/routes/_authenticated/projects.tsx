@@ -80,6 +80,8 @@ export const Route = createFileRoute("/_authenticated/projects")({
       { name: "description", content: "Track BSM Engineering project sites, manpower requirements, and deployment status across Singapore." },
       { property: "og:title", content: "Projects & Sites — BSM Workforce & Operations" },
       { property: "og:description", content: "Manage projects, sites, and manpower requirements." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: ProjectsPage,

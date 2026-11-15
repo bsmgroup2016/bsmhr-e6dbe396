@@ -75,6 +75,8 @@ export const Route = createFileRoute("/_authenticated/clients")({
       { name: "description", content: "Manage BSM Engineering's client portfolio and service contracts in the Singapore construction and marine sectors." },
       { property: "og:title", content: "Clients — BSM Workforce & Operations" },
       { property: "og:description", content: "Manage BSM Engineering client companies." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: ClientsPage,

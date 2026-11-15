@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   Settings,
   Building,
@@ -38,7 +38,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
-import { getBranches, getCurrentBranch, setCurrentBranch, exportState, importState, resetState, getAllBranchPrefixes, addBranchPrefix, updateBranchPrefix, deleteBranchPrefix } from "@/lib/store";
+import { getBranches, getCurrentBranch, setCurrentBranch, getCompanies, getCurrentCompany, exportState, importState, resetState, getAllBranchPrefixes, addBranchPrefix, updateBranchPrefix, deleteBranchPrefix } from "@/lib/store";
 import { checkR2Status } from "@/lib/r2";
 import { SystemHealth } from "@/components/settings/system-health";
 import { AutomationCentre } from "@/components/settings/automation-centre";
@@ -66,6 +66,7 @@ export const Route = createFileRoute("/_authenticated/settings")({
 export default function SettingsPage() {
   const { isAdmin } = useAuth();
   const branches = getBranches();
+  const company = getCompanies().find((item) => item.id === getCurrentCompany());
   const [currentBranch, setBranch] = useState(getCurrentBranch());
   const [exportData, setExportData] = useState("");
   const [importData, setImportData] = useState("");
@@ -105,10 +106,7 @@ export default function SettingsPage() {
   }
 
   function handleReset() {
-    if (confirm("This will clear all local data and restore defaults. Continue?")) {
-      resetState();
-      window.location.reload();
-    }
+    void resetState().then(() => window.location.reload());
   }
 
   return (
@@ -130,8 +128,8 @@ export default function SettingsPage() {
             <TabsTrigger value="data">Data</TabsTrigger>
             <TabsTrigger value="automation">Automation</TabsTrigger>
             <TabsTrigger value="health">Health</TabsTrigger>
-            <TabsTrigger value="notifications">Notifications</TabsTrigger>
             <TabsTrigger value="security">Security</TabsTrigger>
+            <TabsTrigger value="notifications">Notifications</TabsTrigger>
           </TabsList>
 
           <TabsContent value="general" className="mt-4 space-y-4">
@@ -173,17 +171,18 @@ export default function SettingsPage() {
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="companyName">Company name</Label>
-                  <Input id="companyName" value="BSM Engineering Pte Ltd" readOnly aria-readonly="true" />
+                  <Input id="companyName" value={company?.legalName || company?.name || ""} placeholder="Not configured" readOnly aria-readonly="true" />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="uen">UEN</Label>
-                  <Input id="uen" value="" placeholder="Not configured" readOnly aria-readonly="true" />
+                  <Input id="uen" value={company?.uen || ""} placeholder="Not configured" readOnly aria-readonly="true" />
                 </div>
                 <div className="space-y-2 sm:col-span-2">
                   <Label htmlFor="address">Address</Label>
-                  <Input id="address" value="Singapore" readOnly aria-readonly="true" />
+                  <Input id="address" value={company?.address || ""} placeholder="Not configured" readOnly aria-readonly="true" />
                 </div>
               </div>
+              <Button variant="link" asChild className="mt-3 px-0"><Link to="/companies">Manage company details</Link></Button>
             </div>
 
             <CompanyLogos />
@@ -195,7 +194,8 @@ export default function SettingsPage() {
             <div className="rounded-xl border bg-card p-5 shadow-sm">
               <div className="flex items-center gap-2 mb-4">
                 <Bell className="h-5 w-5 text-muted-foreground" />
-                <h2 className="text-lg font-semibold">Alerts</h2>
+                <h2 className="text-lg font-semibold">Alert preferences</h2>
+                <Badge variant="secondary">Unavailable</Badge>
               </div>
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
@@ -229,7 +229,8 @@ export default function SettingsPage() {
             <div className="rounded-xl border bg-card p-5 shadow-sm">
               <div className="flex items-center gap-2 mb-4">
                 <Shield className="h-5 w-5 text-muted-foreground" />
-                <h2 className="text-lg font-semibold">Access</h2>
+                <h2 className="text-lg font-semibold">Access preferences</h2>
+                <Badge variant="secondary">Unavailable</Badge>
               </div>
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
@@ -280,7 +281,7 @@ export default function SettingsPage() {
                 <div>
                   <Button variant="outline" onClick={handleExport}>
                     <Download className="mr-2 h-4 w-4" />
-                    Download loaded records
+                    View loaded records
                   </Button>
                   {exportData && (
                     <Textarea
@@ -292,7 +293,7 @@ export default function SettingsPage() {
                 </div>
                 <div>
                   <Textarea
-                    placeholder="Paste exported JSON to import..."
+                    placeholder="Temporary JSON preview (not saved)..."
                     value={importData}
                     onChange={(e) => setImportData(e.target.value)}
                     className="h-32 font-mono text-xs"
@@ -303,8 +304,8 @@ export default function SettingsPage() {
                   </Button>
                 </div>
                 <div className="border-t pt-4">
-                  <Button variant="destructive" onClick={handleReset}>
-                    <Trash2 className="mr-2 h-4 w-4" />
+                  <Button variant="outline" onClick={handleReset}>
+                    <Database className="mr-2 h-4 w-4" />
                     Reload records
                   </Button>
                 </div>

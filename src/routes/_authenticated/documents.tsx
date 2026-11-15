@@ -92,6 +92,8 @@ export const Route = createFileRoute("/_authenticated/documents")({
       { name: "description", content: "Track employee documents, pass expiry, and compliance." },
       { property: "og:title", content: "Documents — BSM Workforce & Operations" },
       { property: "og:description", content: "Track employee documents, pass expiry, and compliance." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: DocumentsPage,

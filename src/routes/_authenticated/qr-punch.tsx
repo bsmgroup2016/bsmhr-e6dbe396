@@ -29,6 +29,8 @@ export const Route = createFileRoute("/_authenticated/qr-punch")({
       { name: "description", content: "Scan the site QR poster to clock in or out." },
       { property: "og:title", content: "QR Attendance — BSM Workforce & Operations" },
       { property: "og:description", content: "Scan the site QR poster to clock in or out." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: QrPunchPage,

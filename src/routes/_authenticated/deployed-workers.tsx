@@ -34,6 +34,8 @@ export const Route = createFileRoute("/_authenticated/deployed-workers")({
       { name: "description", content: "Workers currently assigned to projects, with site and duration." },
       { property: "og:title", content: "Deployed Workers — BSM Workforce & Operations" },
       { property: "og:description", content: "Workers currently assigned to projects, with site and duration." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: DeployedWorkersPage,
