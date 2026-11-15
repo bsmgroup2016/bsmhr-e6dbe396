@@ -3,6 +3,10 @@ import ExcelJS from "exceljs";
 import { adjustFormulaForInsert, expandClaimSlots, shiftFormulaRows } from "./claim-template-expand";
 
 describe("claim template row expansion", () => {
+  it("does not rewrite quoted text or unrelated worksheet references", () => {
+    expect(adjustFormulaForInsert('Rates!A40+IF(A1="A40",1,0)+A40', 35, 10)).toBe('Rates!A40+IF(A1="A40",1,0)+A50');
+    expect(shiftFormulaRows('SUM(E33:E34)+\'Rate Sheet\'!$A$40+IF(A1="E33",1,0)', 2)).toBe('SUM(E35:E36)+\'Rate Sheet\'!$A$40+IF(A3="E33",1,0)');
+  });
   it("keeps the last original worker's two-row total bounded when ten workers are added", () => {
     const book = new ExcelJS.Workbook();
     const page = book.addWorksheet("TEMPLATE");
