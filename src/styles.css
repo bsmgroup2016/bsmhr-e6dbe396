@@ -181,7 +181,8 @@
 }
 
 /* Amber fills retain dark labels; warning copy needs a darker ink on light surfaces. */
-@utility text-warning {
+.text-warning,
+.hover\:text-warning:hover {
   color: var(--warning-text);
 }
 
