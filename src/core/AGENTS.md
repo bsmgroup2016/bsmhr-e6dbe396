@@ -1,2 +1,3 @@
 - OCR correction and result filters share pure validation helpers; manual revalidation preserves OCR confidence and resets approval so edited values cannot silently remain approved.
 - Manual correction history uses compact original readings and verified timestamped deltas in existing entry JSON; pending edits block approval, rescans retain manual values, and Excel consumes current approved values.
+- Correction-history CSV derives from the same entry audit, labels missing legacy originals honestly, includes UTC timestamps, and escapes spreadsheet formulas; downloads use synchronous Blob clicks with delayed URL cleanup.

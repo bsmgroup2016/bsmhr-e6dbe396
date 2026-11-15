@@ -2,6 +2,8 @@
 
 ## ClaimSheet Generator only: batch reliability and UX
 
+- [x] Add per-card CSV download for original readings, verified revisions, pending corrections and validation result/time; controlled browser download verified 30 CSV rows and exact original/corrected hours and UTC timestamps; 235 tests passed. Live account checks remain blocked below.
+
 - [x] Ensure revalidated corrections reach Excel: 30-card saved-workbook read-back passed; original OCR and timestamped revision history survive entry mapping, manual values survive retry, and controlled desktop/mobile edit/revalidate/reopen checks passed with 232 regression tests. Live account read-back remains blocked below.
 
 - [x] Add in-card manual correction/revalidation and shared filters for errors, retries and uncertain readings; controlled desktop/mobile tests cover edits, invalid dates, rechecking and fresh approval. Live account/OCR checks remain blocked below.
