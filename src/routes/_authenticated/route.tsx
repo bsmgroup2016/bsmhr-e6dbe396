@@ -8,6 +8,7 @@ import { useAuth } from "@/lib/auth";
 import { canAccess, hasAssignedRole } from "@/core/access";
 import { WelcomeDashboard } from "@/components/role-dashboard";
 import { useQueryClient } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -30,6 +31,7 @@ function AuthenticatedLayout() {
   const queryClient = useQueryClient();
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [retry, setRetry] = useState(0);
   const [, force] = useState(0);
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const companyId = getCurrentCompany();
@@ -47,7 +49,7 @@ function AuthenticatedLayout() {
       alive = false;
       unsub();
     };
-  }, [isLoading, roles.join(","), pathname, companyId]);
+  }, [isLoading, roles.join(","), pathname, companyId, retry]);
 
   useEffect(() => {
     const written = (event: Event) => {
@@ -70,6 +72,7 @@ function AuthenticatedLayout() {
         <div>
           <p className="text-sm font-medium text-destructive">Could not load data</p>
           <p className="mt-1 text-sm text-muted-foreground">{error}</p>
+          <Button className="mt-4" onClick={() => setRetry((value) => value + 1)}>Try again</Button>
         </div>
       </div>
     );
@@ -77,8 +80,9 @@ function AuthenticatedLayout() {
 
   if (!ready) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
+      <div role="status" aria-live="polite" className="flex min-h-screen items-center justify-center gap-3">
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        <span className="text-sm text-muted-foreground">Loading records…</span>
       </div>
     );
   }

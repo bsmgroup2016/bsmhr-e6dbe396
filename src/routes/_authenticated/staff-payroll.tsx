@@ -108,7 +108,7 @@ function StaffPayrollPage() {
         Deduction: Number(r.deduction.toFixed(2)),
         "OT Hours": r.otHours,
         "OT Pay": Number(r.otPay.toFixed(2)),
-        "Net Pay": Number(r.net.toFixed(2)),
+        "Estimated Pay Before Statutory Deductions": Number(r.net.toFixed(2)),
       })),
       timestampedName(`staff_payroll_${month}`, "xlsx"),
       "Staff Payroll",
@@ -122,9 +122,9 @@ function StaffPayrollPage() {
       <div className="w-full space-y-6">
         <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Staff Payroll</h1>
+            <h1 className="text-2xl font-semibold tracking-tight">Staff Payroll Estimate</h1>
             <p className="text-sm text-muted-foreground">
-              Monthly fixed salary for office staff — absent days deducted at salary / {WORKING_DAYS} days, OT added on top.
+              Before CPF and other statutory deductions · absence divisor: {WORKING_DAYS} days.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -137,7 +137,7 @@ function StaffPayrollPage() {
           <SummaryCard title="Staff on payroll" value={String(totals.staff)} icon={<Users className="h-5 w-5" />} />
           <SummaryCard title="Gross monthly" value={money(totals.gross)} icon={<Wallet className="h-5 w-5" />} />
           <SummaryCard title="Absence deduction" value={money(totals.deduction)} icon={<CalendarOff className="h-5 w-5" />} variant="destructive" />
-          <SummaryCard title="Net payable" value={money(totals.net)} icon={<Clock className="h-5 w-5" />} variant="success" />
+          <SummaryCard title="Estimated pay" value={money(totals.net)} icon={<Clock className="h-5 w-5" />} variant="success" caption="Before statutory deductions" />
         </div>
 
         <div className="relative max-w-sm">
@@ -163,7 +163,7 @@ function StaffPayrollPage() {
                 <TableHead className="text-right">Deduction</TableHead>
                 <TableHead className="text-right">OT hrs</TableHead>
                 <TableHead className="text-right">OT pay</TableHead>
-                <TableHead className="text-right">Net pay</TableHead>
+                <TableHead className="text-right">Estimated pay</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
