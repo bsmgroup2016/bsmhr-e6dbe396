@@ -1,5 +1,11 @@
 # Full-section UI/UX and workflow audit
 
+## ClaimSheet Generator only: batch reliability and UX
+
+- [ ] Audit upload, review, approval, restoration, previews and Excel output for 20–30+ workers.
+- [ ] Fix confirmed page/workbook issues with focused regression tests and clear batch recovery states.
+- [ ] Verify large generated workbooks and page controls; document live OCR/authentication limitations separately.
+
 ## Colour contrast
 
 - [x] Improve shared text, control boundaries and semantic status contrast while preserving the palette.
