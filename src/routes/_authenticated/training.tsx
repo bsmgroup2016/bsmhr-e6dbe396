@@ -233,7 +233,7 @@ export default function TrainingPage() {
               <div className="sm:col-span-2">
                 <Label>Course</Label>
                 <Select value={recordForm.courseId} onValueChange={(v) => setRecordForm({ ...recordForm, courseId: v })}>
-                  <SelectTrigger><SelectValue placeholder="Select course" /></SelectTrigger>
+                  <SelectTrigger aria-label="Course"><SelectValue placeholder="Select course" /></SelectTrigger>
                   <SelectContent>
                     {scopedCourses.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
                   </SelectContent>
@@ -242,7 +242,7 @@ export default function TrainingPage() {
               <div className="sm:col-span-2">
                 <Label>Worker</Label>
                 <Select value={recordForm.employeeId} onValueChange={(v) => setRecordForm({ ...recordForm, employeeId: v })}>
-                  <SelectTrigger><SelectValue placeholder="Select worker" /></SelectTrigger>
+                  <SelectTrigger aria-label="Worker"><SelectValue placeholder="Select worker" /></SelectTrigger>
                   <SelectContent>
                     {companyEmployees.map((e) => <SelectItem key={e.id} value={e.id}>{e.name} — {e.employeeCode}</SelectItem>)}
                   </SelectContent>
@@ -254,7 +254,7 @@ export default function TrainingPage() {
               <div>
                 <Label>Status</Label>
                 <Select value={recordForm.status} onValueChange={(v) => setRecordForm({ ...recordForm, status: v as TrainingRecord["status"] })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger aria-label="Status"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {trainingStatuses.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                   </SelectContent>
@@ -374,7 +374,7 @@ export default function TrainingPage() {
                       <div>
                         <Label>Group</Label>
                         <Select value={courseForm.category} onValueChange={(v) => setCourseForm({ ...courseForm, category: v as TrainingCourse["category"] })}>
-                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectTrigger aria-label="Group"><SelectValue /></SelectTrigger>
                           <SelectContent>
                             {COURSE_GROUPS.map((g) => <SelectItem key={g.category} value={g.category}>{g.label}</SelectItem>)}
                           </SelectContent>
@@ -386,7 +386,7 @@ export default function TrainingPage() {
                       <div>
                         <Label>Mandatory</Label>
                         <Select value={courseForm.mandatory ? "yes" : "no"} onValueChange={(v) => setCourseForm({ ...courseForm, mandatory: v === "yes" })}>
-                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectTrigger aria-label="Mandatory"><SelectValue /></SelectTrigger>
                           <SelectContent>
                             <SelectItem value="yes">Yes</SelectItem>
                             <SelectItem value="no">No</SelectItem>
@@ -469,7 +469,7 @@ export default function TrainingPage() {
                       <div>
                         <Label>Type</Label>
                         <Select value={incidentForm.incidentType} onValueChange={(v) => setIncidentForm({ ...incidentForm, incidentType: v as SafetyIncident["incidentType"] })}>
-                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectTrigger aria-label="Type"><SelectValue /></SelectTrigger>
                           <SelectContent>
                             {incidentTypes.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
                           </SelectContent>
@@ -478,7 +478,7 @@ export default function TrainingPage() {
                       <div>
                         <Label>Severity</Label>
                         <Select value={incidentForm.severity} onValueChange={(v) => setIncidentForm({ ...incidentForm, severity: v as SafetyIncident["severity"] })}>
-                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectTrigger aria-label="Severity"><SelectValue /></SelectTrigger>
                           <SelectContent>
                             {severities.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                           </SelectContent>
@@ -488,7 +488,7 @@ export default function TrainingPage() {
                       <div>
                         <Label>Site</Label>
                         <Select value={incidentForm.siteId} onValueChange={(v) => setIncidentForm({ ...incidentForm, siteId: v })}>
-                          <SelectTrigger><SelectValue placeholder="Optional" /></SelectTrigger>
+                          <SelectTrigger aria-label="Site"><SelectValue placeholder="Optional" /></SelectTrigger>
                           <SelectContent>
                             {sites.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
                           </SelectContent>
@@ -497,7 +497,7 @@ export default function TrainingPage() {
                       <div>
                         <Label>Worker involved</Label>
                         <Select value={incidentForm.employeeId} onValueChange={(v) => setIncidentForm({ ...incidentForm, employeeId: v })}>
-                          <SelectTrigger><SelectValue placeholder="Optional" /></SelectTrigger>
+                          <SelectTrigger aria-label="Worker involved"><SelectValue placeholder="Optional" /></SelectTrigger>
                           <SelectContent>
                             {companyEmployees.map((e) => <SelectItem key={e.id} value={e.id}>{e.name} — {e.employeeCode}</SelectItem>)}
                           </SelectContent>
@@ -506,7 +506,7 @@ export default function TrainingPage() {
                       <div>
                         <Label>MOM reported</Label>
                         <Select value={incidentForm.momReported ? "yes" : "no"} onValueChange={(v) => setIncidentForm({ ...incidentForm, momReported: v === "yes" })}>
-                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectTrigger aria-label="MOM reported"><SelectValue /></SelectTrigger>
                           <SelectContent>
                             <SelectItem value="no">No</SelectItem>
                             <SelectItem value="yes">Yes</SelectItem>
@@ -516,7 +516,7 @@ export default function TrainingPage() {
                       <div>
                         <Label>Status</Label>
                         <Select value={incidentForm.status} onValueChange={(v) => setIncidentForm({ ...incidentForm, status: v as SafetyIncident["status"] })}>
-                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectTrigger aria-label="Status"><SelectValue /></SelectTrigger>
                           <SelectContent>
                             {incidentStatuses.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                           </SelectContent>

@@ -527,7 +527,7 @@ function QuotationsPage() {
             <div className="space-y-1.5">
               <Label>Quote for</Label>
               <Select value={clientMode} onValueChange={(v) => setClientMode(v as "new" | "existing")}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger aria-label="Quote for"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="new">New prospect (not a client yet)</SelectItem>
                   <SelectItem value="existing">Existing client</SelectItem>
@@ -652,7 +652,7 @@ function QuotationsPage() {
                       setLines((ls) => ls.map((l, i) => (i === idx ? { ...l, unit: v as RateUnit } : l)))
                     }
                   >
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectTrigger aria-label="Rate type"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {units.map((u) => (<SelectItem key={u} value={u}>{u}</SelectItem>))}
                     </SelectContent>
