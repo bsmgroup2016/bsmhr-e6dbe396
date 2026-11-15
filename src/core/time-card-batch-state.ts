@@ -7,6 +7,7 @@ export interface BatchState {
   pendingScans: unknown[];
   month: string;
   projectId: string;
+  failedMessages?: string[];
 }
 
 type StorageLike = Pick<Storage, "getItem" | "setItem" | "removeItem">;
@@ -23,6 +24,7 @@ export function readBatchState(storage: StorageLike): BatchState | null {
       pendingScans: Array.isArray(value.pendingScans) ? value.pendingScans : [],
       month: typeof value.month === "string" ? value.month : "",
       projectId: typeof value.projectId === "string" ? value.projectId : "",
+      failedMessages: Array.isArray(value.failedMessages) ? value.failedMessages.filter((item): item is string => typeof item === "string") : [],
     };
   } catch { return null; }
 }

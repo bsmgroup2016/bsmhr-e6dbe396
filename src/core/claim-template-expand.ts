@@ -86,7 +86,11 @@ export function expandClaimSlots(sheet: Worksheet, slots: { g: number; ot: numbe
         const cell = sheet.getCell(r, s.col);
         const v = s.value as { formula?: string } | null;
         cell.value = v && typeof v === "object" && "formula" in v && v.formula
-          ? { formula: shiftFormulaRows(v.formula, offset) } as never
+          ? { formula: mapLocalReferences(v.formula, (_m, c1, col1, a1, r1, c2, col2, a2, r2) => {
+              const move = (row: string, absolute: string) => Number(row) >= insertAt ? Number(row) + delta : absolute ? Number(row) : Number(row) + offset;
+              const first = `${c1}${col1}${a1}${move(r1, a1)}`;
+              return col2 ? `${first}:${c2}${col2}${a2}${move(r2, a2)}` : first;
+            }) } as never
           : (s.value as never);
         cell.style = structuredClone(s.style) as never;
       }
@@ -111,6 +115,7 @@ export function expandClaimSlots(sheet: Worksheet, slots: { g: number; ot: numbe
     }
   }
   for (const m of footerMerges) { try { sheet.mergeCells(`${m.c1}${m.r1 + delta}:${m.c2}${m.r2 + delta}`); } catch { /* overlap */ } }
+  if (sheet.pageSetup.printArea) sheet.pageSetup.printArea = adjustFormulaForInsert(sheet.pageSetup.printArea, insertAt, delta);
 
   // Header totals grow; worker formulas only move references below the insertion.
   for (let r = 1; r < insertAt; r++) for (let c = 1; c <= cols; c++) {
