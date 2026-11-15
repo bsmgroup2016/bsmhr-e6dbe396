@@ -2,6 +2,12 @@
 
 Date: 15 November 2026
 
+## Colour contrast follow-up
+
+- Shared secondary text is darker; input/select/outline-button boundaries are more distinct. Success, information and error fills now use deeper semantic colours with readable light labels. Warning fills remain amber with dark labels; standalone warning text uses a separate dark amber ink. Status dots inherit their label colour, fixing pale dots on amber badges. Gradient endpoints were darkened where they carry light labels.
+- Browser measurements of the shared palette: secondary text on muted surfaces **6.85:1**; success/information/error badge labels **6.54:1 / 6.67:1 / 5.88:1**; warning labels **7.66:1**; warning text on white **8.29:1**; primary labels **5.43:1**; input boundaries on white **4.13:1**. These sampled text pairs exceed 4.5:1 and the sampled boundary exceeds 3:1; this does not certify every translucent/hover/gradient combination or whole-app WCAG compliance.
+- Actual rendered warning text confirmed the dark-ink value. Shared statuses, summary labels and form controls visually inspected at 1280×1800, 1206×682 and 390×844 without overflow or page errors. Public sign-in was captured; signed-in populated pages remain unavailable to the test browser. No business data, permissions or calculations changed; 202 existing tests pass and all 50 content routes retain metadata.
+
 ## Accessibility follow-up
 
 ### Findings and fixes by severity

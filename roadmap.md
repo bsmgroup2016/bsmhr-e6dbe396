@@ -2,8 +2,8 @@
 
 ## Colour contrast
 
-- [ ] Improve shared text, control boundaries and semantic status contrast while preserving the palette.
-- [ ] Measure rendered contrast, inspect desktop/mobile states and run regression checks.
+- [x] Improve shared text, control boundaries and semantic status contrast while preserving the palette.
+- [x] Measure contrast and actual warning ink, inspect three desktop/mobile sizes and run 202 regression tests; signed-in populated pages remain blocked as documented below.
 
 ## Accessibility across updated sections
 
