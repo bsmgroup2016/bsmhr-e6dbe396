@@ -119,7 +119,7 @@ function TimeCardsPage() {
   const [reconcile, setReconcile] = useState<{ issues: ClaimReconcileIssue[]; workers: number } | null>(null);
   const [pendingScans, setPendingScans] = useState<PendingScan[]>([]);
   const [reviewScan, setReviewScan] = useState<PendingScan | null>(null);
-  const [activeTab, setActiveTab] = useState("cards");
+  const [activeTab, setActiveTab] = useState("sheets");
   const [month, setMonth] = useState(() => new Date().toISOString().slice(0, 7));
   const [uploading, setUploading] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
