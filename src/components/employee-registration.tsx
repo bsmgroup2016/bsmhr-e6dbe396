@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-export function EmployeeRegistration({ onSubmit }: { onSubmit: (data: FormData) => void }) {
+export function EmployeeRegistration({ onSubmit }: { onSubmit: (data: FormData) => void | Promise<void> }) {
   const [method, setMethod] = useState("ipa");
   const [url, setUrl] = useState("");
   const [reading, setReading] = useState(false);

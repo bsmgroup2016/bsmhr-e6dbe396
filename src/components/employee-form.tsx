@@ -228,7 +228,7 @@ export function EmployeeForm({
   hideTabList?: boolean;
   tab?: string;
   initialValues?: Partial<Employee>;
-  onSubmit: (data: FormData) => void;
+  onSubmit: (data: FormData) => void | Promise<void>;
   submitLabel?: string;
 }) {
   const values = employee ?? initialValues;
@@ -244,6 +244,7 @@ export function EmployeeForm({
   );
   const [ipaUrl, setIpaUrl] = useState(values?.ipaDocumentUrl ?? "");
   const [scanning, setScanning] = useState(false);
+  const [saving, setSaving] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
   const [documentReading, setDocumentReading] = useState(0);
   const [documentRefs, setDocumentRefs] = useState<Partial<Record<EmployeeDocumentKind, string>>>({ particular: values?.pFileUrl, passport: storedDocs.passportUpload, workpermit: storedDocs.workPermitUpload, csoc: storedDocs.csocUpload });
@@ -367,7 +368,10 @@ export function EmployeeForm({
       onSubmit={(e) => {
         e.preventDefault();
         if (documentReading > 0 || scanning) return;
-        onSubmit(new FormData(e.currentTarget));
+    if (saving || taken) return;
+    const data = new FormData(e.currentTarget);
+    setSaving(true);
+    Promise.resolve().then(() => onSubmit(data)).catch(error => toast.error(error instanceof Error ? error.message : "Could not save employee")).finally(() => setSaving(false));
       }}
       className="space-y-4"
     >
@@ -781,7 +785,7 @@ export function EmployeeForm({
 
       <div className={readOnly && tab !== "documents" ? "hidden" : "flex justify-end pt-2"}>
         {documentReading > 0 && <span role="status" className="mr-3 text-sm text-muted-foreground">Reading document…</span>}
-        <Button type="submit" disabled={documentReading > 0 || scanning}>{submitLabel ?? (readOnly ? "Save documents" : employee ? "Save changes" : "Register employee")}</Button>
+        <Button type="submit" disabled={documentReading > 0 || scanning || saving || taken}>{saving ? "Saving…" : submitLabel ?? (readOnly ? "Save documents" : employee ? "Save changes" : "Register employee")}</Button>
       </div>
     </form>
   );

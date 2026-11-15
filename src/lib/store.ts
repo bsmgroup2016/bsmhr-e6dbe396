@@ -26,7 +26,7 @@ import { assertAvailableTable } from "@/core/data-tables";
 import { claimCardLocation } from "@/core/time-card-matching";
 import { computeStatutory, round2 } from "@/lib/sg-payroll";
 import {
-  loadCollection, COLLECTIONS, type CollectionKey, toEmployee, toClient, toProject, toSite, toAssignment,
+  loadCollection, COLLECTIONS, type CollectionKey, fromEmployee, toEmployee, toClient, toProject, toSite, toAssignment,
   toDocument, toAttendance, toPayroll, toApproval, toCompany, toLeave,
   toRate, toInvoice,
   toDormitory, toAllocation, toVehicle, toTrip,
@@ -249,6 +249,52 @@ export function mergeHistoryRows(key: "attendance" | "issuances", rows: Attendan
 /* ---------------- employees ---------------- */
 export function getEmployees(): Employee[] { return getState().employees; }
 export function getEmployee(id: string): Employee | undefined { return getState().employees.find((e) => e.id === id); }
+
+/** Workforce writes report success only after caller-RLS confirms the saved row. */
+export async function saveEmployeeConfirmed(updates: Partial<Employee>, id?: string): Promise<Employee> {
+  const existing = id ? getEmployee(id) : undefined;
+  if (id && !existing) throw new Error("Employee not found");
+  const code = updates.employeeCode?.trim() || existing?.employeeCode || nextEmployeeCode(updates.branch ?? "");
+  if (isEmployeeCodeTaken(code, id)) throw new Error(`P-File Number ${code} is already in use`);
+  const now = new Date().toISOString();
+  const row = { ...existing, ...updates, id: id ?? newId(), employeeCode: code, createdAt: existing?.createdAt ?? now, updatedAt: now } as Employee;
+  const query = id ? supabase.from("employees").update(toEmployee(row)).eq("id", id) : supabase.from("employees").insert({ id: row.id, ...toEmployee(row) });
+  const { data, error } = await query.select().single();
+  if (error) throw new Error(error.message);
+  if (!data || data.id !== row.id) throw new Error("The employee save could not be confirmed");
+  const saved = { ...fromEmployee(data), site: existing?.site ?? null };
+  const current = getState();
+  setState({ ...current, employees: existing ? current.employees.map(employee => employee.id === saved.id ? saved : employee) : [saved, ...current.employees.filter(employee => employee.id !== saved.id)] });
+  sessionDataCache.invalidate("employees|");
+  sessionDataCache.invalidate("attendance|");
+  sessionDataCache.invalidate("asset_issuances|");
+  addAuditLog(id ? "UPDATE" : "CREATE", "Employee", saved.id, `${id ? "Updated" : "Created"} employee ${saved.name} (${saved.employeeCode})`);
+  return saved;
+}
+
+export async function saveEmployeeDocumentsConfirmed(employeeId: string, documents: Omit<EmployeeDocument, "id" | "employeeId" | "uploadedAt" | "updatedAt">[]): Promise<void> {
+  const pending = documents.filter(document => !getDocumentsByEmployee(employeeId).some(existing => existing.fileUrl === document.fileUrl));
+  if (!pending.length) return;
+  const rows = pending.map(document => ({ ...document, id: newId(), employeeId, uploadedAt: new Date().toISOString() }));
+  const { data, error } = await supabase.from("employee_documents").insert(rows.map(row => ({ id: row.id, ...toDocument(row) }))).select("id");
+  if (error) throw new Error(`Worker saved, but documents were not registered: ${error.message}. Retry saving without uploading again.`);
+  if (data?.length !== rows.length) throw new Error("Worker saved, but not every document registration was confirmed. Retry saving without uploading again.");
+  const current = getState();
+  setState({ ...current, documents: [...rows, ...current.documents] });
+  sessionDataCache.invalidate("employee_documents|");
+}
+
+export async function deleteEmployeeConfirmed(id: string): Promise<void> {
+  const employee = getEmployee(id);
+  if (!employee) throw new Error("Employee not found");
+  const { data, error } = await supabase.from("employees").delete().eq("id", id).select("id");
+  if (error) throw new Error(error.message);
+  if (!data?.some(row => row.id === id)) throw new Error("Employee removal was not confirmed. The record has been kept.");
+  const current = getState();
+  setState({ ...current, employees: current.employees.filter(row => row.id !== id) });
+  sessionDataCache.clear();
+  addAuditLog("DELETE", "Employee", id, `Deleted employee ${employee.name} (${employee.employeeCode})`);
+}
 
 export function addEmployee(employee: Omit<Employee, "id" | "employeeCode" | "createdAt" | "updatedAt">, onSaved?: (employee: Employee) => void): Employee {
   const s = getState();
