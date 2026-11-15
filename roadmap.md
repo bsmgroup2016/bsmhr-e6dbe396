@@ -1,5 +1,11 @@
 # Full-section UI/UX and workflow audit
 
+## Workforce deep audit
+
+- [ ] Audit worker create/edit/remove/import, IPA autofill, documents/downloads and shared employee data.
+- [ ] Fix confirmed defects with focused tests and safe error/retry handling; preserve payroll, documents and permissions.
+- [ ] Verify controlled populated workflows and downloads; report live-account verification limits explicitly.
+
 ## ClaimSheet Generator only: batch reliability and UX
 
 - [x] Add per-card CSV download for original readings, verified revisions, pending corrections and validation result/time; controlled browser download verified 30 CSV rows and exact original/corrected hours and UTC timestamps; 235 tests passed. Live account checks remain blocked below.
