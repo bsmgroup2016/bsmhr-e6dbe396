@@ -1,3 +1,10 @@
+# Full-section UI/UX and workflow audit
+
+- [ ] Inventory every section and trace navigation, data dependencies, and connected actions without changing business records.
+- [ ] Run existing automated checks and inspect desktop/mobile pages; record what cannot be verified without a signed-in session.
+- [ ] Improve confirmed UI/UX problems using shared controls, preserving business calculations, templates, roles and storage.
+- [ ] Verify changed interactions and document section coverage, outstanding findings and blockers.
+
 # Claim sheet dated preview
 
 - [x] Add a worker-by-worker, date-ordered preview before generation using the same approved rows as Excel.
