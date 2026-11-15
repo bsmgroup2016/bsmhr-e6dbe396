@@ -30,6 +30,7 @@ import {
   subscribe,
 } from "@/lib/store";
 import { employeeSlug } from "@/lib/employee-slug";
+import { Button } from "@/components/ui/button";
 
 export type SearchHit = {
   id: string;
