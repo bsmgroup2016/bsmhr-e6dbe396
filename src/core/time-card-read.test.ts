@@ -46,6 +46,18 @@ describe("whole-card time card reading", () => {
 });
 
 describe("batch settlement", () => {
+  it("does not silently remove day 31 or duplicate dates when changing Claim Month", () => {
+    expect(() => redateToMonth([{ date: "2026-10-31" }], "2026-11")).toThrow("no dates have been removed");
+    expect(() => redateToMonth([{ date: "2026-10-15" }, { date: "2026-10-15" }], "2026-11")).toThrow("Duplicate day");
+  });
+  it("keeps and flags a worker read only by the second OCR provider", () => {
+    const first = parseCardReads(card([{ day: 15, normal: 8, ot: 4 }]));
+    const second = [...first, { ...first[0], cardIndex: 2, employeeCode: "P-30", workerName: "SECOND WORKER", days: [{ day: 30, normal: 8, ot: 3.5 }] }];
+    const rows = mergeCardReads(first, second);
+    expect(rows.map(row => row.employeeCode)).toEqual(["PC-34", "P-30"]);
+    expect(rows[1]?.confidence).toBeLessThan(0.7);
+    expect(rows[1]?.date).toBe("2026-10-30");
+  });
   it("opens the next unapproved worker after approval, wrapping around", () => {
     const approved = new Set(["a", "b"]);
     expect(nextBatchCardId(["a", "b", "c", "d"], "b", id => approved.has(id))).toBe("c");

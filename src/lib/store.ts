@@ -38,7 +38,7 @@ import { toRequisition, toCandidate } from "@/lib/db";
 import { toLead, toActivity } from "@/lib/db";
 import { toExpense, toPaymentReceipt } from "@/lib/db";
 import { toItem, toMovement, toPurchaseOrder } from "@/lib/db";
-import { toBranchPrefix, toCertification, toTimeCard, toClaimSheet } from "@/lib/db";
+import { toBranchPrefix, toCertification, toTimeCard, toClaimSheet, fromClaimSheet } from "@/lib/db";
 import { toContract } from "@/lib/db";
 import { toQuotation } from "@/lib/db";
 import { toMedicalClaim, toLoan, toLoanRepayment, fromManpowerRequest, toManpowerRequest, fromManpowerRequestItem, toManpowerRequestItem } from "@/lib/db";
@@ -2849,6 +2849,22 @@ export function updateClaimSheet(id: string, updates: Partial<ClaimSheet>) {
   const updated = { ...existing, ...updates, id: existing.id, reference: existing.reference };
   setState({ ...s, claimSheets: s.claimSheets.map(sheet => sheet.id === id ? updated : sheet) });
   void supabase.from("claim_sheets").update(toClaimSheet(updated)).eq("id", id).then(({ error }) => fail("claim_sheets", error));
+}
+
+/** Generator-only confirmed batch write; never announce saved claims after an optimistic mutation. */
+export async function saveGeneratedClaims(claims: (Omit<ClaimSheet, "id" | "reference"> & { sourceCardId: string })[]) {
+  const existing = getClaimSheets();
+  const rows = claims.map(({ sourceCardId, ...claim }) => {
+    const prior = existing.find(sheet => sheet.snapshot.some(row => row.sourceCardId === sourceCardId));
+    return { ...claim, id: prior?.id ?? sourceCardId, reference: prior?.reference ?? `CS-${sourceCardId}` };
+  });
+  const { data, error } = await supabase.from("claim_sheets").upsert(rows.map(row => ({ id: row.id, ...toClaimSheet(row) }))).select();
+  if (error) throw new Error(`Claim records could not be saved: ${error.message}`);
+  if (!data || data.length !== rows.length || rows.some(row => !data.some(saved => saved.id === row.id))) throw new Error("Could not confirm all saved claim records. Reopen this batch before retrying.");
+  const confirmed = data.map(fromClaimSheet);
+  const current = getState();
+  setState({ ...current, claimSheets: [...confirmed, ...current.claimSheets.filter(sheet => !confirmed.some(saved => saved.id === sheet.id))] });
+  return confirmed;
 }
 
 

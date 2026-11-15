@@ -2,6 +2,30 @@
 
 Date: 15 November 2026
 
+## ClaimSheet Generator: focused batch reliability audit
+
+Scope: this page and its claim/time-card helpers only. No migrations, permission changes, production uploads, template replacements or live business-record writes were performed.
+
+### Confirmed findings and corrections
+
+- Second OCR reader could find a worker omitted by the primary reader. Such workers now remain in the batch, explicitly flagged for original-card review.
+- Changing Claim Month could silently discard day 31 or repeated dates. Invalid calendar dates and duplicate worker/date combinations now stop approval/generation with a recoverable explanation.
+- Blank card rows could inherit system attendance hours without explicit selection. They now remain zero unless Use System Time is selected; incomplete written times require review or explicit hours.
+- Failed pages could be overlooked. Failure warnings block confirmation/generation, retries retain successful cards, and warnings survive reload. Browser File objects cannot survive reload: the interface explicitly requires reselecting all originals in a fresh batch.
+- Active batches now show card count, remaining reviews, resume and reset controls. New uploads/imports cannot replace an unfinished batch. Project selection applies to every active card; site edits require approval again.
+- Unmatched Excel-import worker codes now reject the import instead of silently losing rows.
+- Generated worksheets clear only worker identities and daily input hours, avoiding leftover sample hours. Exact printed site headings stay distinct even with a shared selected project; differing sites are not blocked.
+- Extra workers retain paired rows, merges/styles, bounded worker totals, moved absolute-footer references and extended print areas. Quoted formula text and unrelated sheet references are not rewritten.
+- Unexpected output workers are included in reconciliation. Reconciliation runs before claim saving; saving awaits caller-authorized returned records and checks their IDs. Stable source-card IDs make retries idempotent.
+
+### Verification and honest limits
+
+- Automated regression suite: large batch, 50-page PDF splitting, weekends/partial months, month-end rejection, duplicate prevention, approval/hour handling, dirty templates, formula boundaries and bidirectional reconciliation are covered.
+- Actual bundled template: generated, serialized and reloaded 20-, 30- and 50-worker workbooks. Every case matched approved date/hour inputs, had the expected slot count and zero evaluator formula errors. These are ExcelJS/read-back checks, not visual Microsoft Excel certification.
+- Isolated live-served page: 30 synthetic cards approved sequentially; each next worker opened, all 30 appeared in the dated preview, Claim sheets remained the default. Desktop, compact desktop and phone sizes had no document overflow or page errors. This intentionally excluded the authenticated shell and did not save records.
+- No authorized browser session for the externally managed account service is available. Real signed-in OCR → storage → approval → persisted claim → download remains unverified. No new real card batch was provided; OCR accuracy cannot be guaranteed from deterministic workbook checks.
+- Advanced replacement-template formulas (cross-sheet, external references, named/structured ranges), complex print layouts, embedded objects and exceptionally large real OCR batches need their own controlled sample validation. Human review remains necessary for uncertain OCR.
+
 ## Colour contrast follow-up
 
 - Shared secondary text is darker; input/select/outline-button boundaries are more distinct. Success, information and error fills now use deeper semantic colours with readable light labels. Warning fills remain amber with dark labels; standalone warning text uses a separate dark amber ink. Status dots inherit their label colour, fixing pale dots on amber badges. Gradient endpoints were darkened where they carry light labels.

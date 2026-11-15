@@ -23,16 +23,23 @@ interface ProjectGroup { key: string; projectName: string; siteName: string; cli
 /** Groups approved claim rows by project/site and worker. Unknown values stay blank. */
 export function groupClaimsByProject(sheets: ClaimSheet[], employees: Employee[], month: string, lookups: ClaimLookups = {}) {
   const groups = new Map<string, ProjectGroup>();
+  const sources = new Set<string>();
+  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) throw new Error("Choose a valid claim month");
   for (const sheet of sheets) {
     const employee = employees.find((e) => e.id === sheet.employeeId);
     const company = lookups.companies?.find((c) => c.id === sheet.companyId);
     for (const entry of sheet.snapshot) {
+      const parsed = new Date(`${entry.date}T00:00:00Z`);
+      if (!Number.isFinite(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== entry.date) throw new Error(`Invalid date ${entry.date}. Review the source card; no hours have been omitted.`);
       if (!entry.date.startsWith(month) || (!entry.normalHours && !entry.otHours)) continue;
+      const source = `${entry.sourceCardId || sheet.id}|${entry.employeeCode || sheet.employeeId || entry.workerName || ""}|${entry.date}`;
+      if (sources.has(source)) throw new Error(`Duplicate source entry ${entry.employeeCode || entry.workerName || sheet.reference} · ${entry.date}. Review the duplicate before downloading.`);
+      sources.add(source);
       const project = lookups.projects?.find((p) => p.id === entry.projectId);
       const site = lookups.sites?.find((s) => s.id === entry.siteId);
       const projectName = entry.projectId ? (project?.name || entry.projectName || "").trim() : "";
       const siteName = (entry.site || site?.name || "").trim();
-      const key = (entry.projectId || siteName.toUpperCase() || "UNASSIGNED") + "|" + (sheet.companyId ?? "");
+      const key = `${entry.projectId || "UNASSIGNED"}|${siteName}|${sheet.companyId ?? ""}`;
       const clientName = lookups.clients?.find((c) => c.id === project?.clientId)?.name ?? "";
       const group = groups.get(key) ?? { key, projectName, siteName, clientName, companyName: company?.name ?? "", workers: new Map() };
       const workerKey = sheet.employeeId || entry.employeeId || entry.employeeCode?.trim().toUpperCase() || entry.sourceCardId || sheet.id;
@@ -55,12 +62,16 @@ export async function createClaimWorkbook(sheets: ClaimSheet[], employees: Emplo
   await workbook.xlsx.load(buffer);
   const base = selectClaimTemplate(workbook);
   const layout = claimTemplateLayout(base);
-  for (const sheet of workbook.worksheets) if (sheet.id !== base.id) workbook.removeWorksheet(sheet.id);
+  for (const sheet of [...workbook.worksheets]) if (sheet.id !== base.id) {
+    let isClaim = false;
+    try { claimTemplateLayout(sheet); isClaim = true; } catch { /* preserve support sheets */ }
+    if (isClaim) workbook.removeWorksheet(sheet.id);
+  }
   const baseModel = structuredClone(base.model);
 
   const [y, m] = month.split("-").map(Number);
   const daysInMonth = new Date(Date.UTC(y, m, 0)).getUTCDate();
-  const used = new Set<string>();
+  const used = new Set(workbook.worksheets.filter(sheet => sheet.id !== base.id).map(sheet => sheet.name.toUpperCase()));
 
   groups.forEach((group, index) => {
     let name = (group.projectName || `PROJECT ${index + 1}`).replace(/[\\/*?:[\]]/g, " ").slice(0, 28).trim() || `PROJECT ${index + 1}`;
@@ -88,10 +99,17 @@ export async function createClaimWorkbook(sheets: ClaimSheet[], employees: Emplo
     for (const worker of workers) for (const day of worker.days.keys()) {
       if (!layout.days.has(day)) throw new Error(`The blank template has no column for day ${day}. Replace it with a template containing that day.`);
     }
+    // Only writable identity/date inputs are cleared; formulas, style and other cells remain intact.
+    for (const slot of pageLayout.slots) {
+      page.getCell(slot.g, layout.codeCol).value = null;
+      page.getCell(slot.g, layout.nameCol).value = null;
+      for (const row of [slot.g, slot.ot]) for (const col of layout.days.values()) page.getCell(row, col).value = null;
+    }
     for (let i = 0; i < pageLayout.slots.length; i++) {
       const { g: r, ot } = pageLayout.slots[i];
       const worker = workers[i];
       if (!worker) continue;
+      if (layout.serialCol) page.getCell(r, layout.serialCol).value = i + 1;
       page.getCell(r, layout.codeCol).value = worker.code || null;
       page.getCell(r, layout.nameCol).value = worker.name || null;
       for (const [day, v] of worker.days) {
@@ -123,7 +141,7 @@ export async function exportCombinedClaims(sheets: ClaimSheet[], employees: Empl
   downloadClaimBlob(await claimWorkbookBlob(workbook), lookups.fileName || `claim_sheet_${month}.xlsx`);
 }
 
-export interface ClaimReconcileIssue { worker: string; date: string; kind: "Missing in sheet" | "Hours differ" | "Extra in sheet" | "Worker not in sheet"; expected: string; actual: string; cardId?: string }
+export interface ClaimReconcileIssue { worker: string; date: string; kind: "Missing in sheet" | "Hours differ" | "Extra in sheet" | "Worker not in sheet" | "Unexpected worker"; expected: string; actual: string; cardId?: string }
 
 /** Reads the generated workbook back and compares every worker/date cell with the approved snapshot hours. */
 export function reconcileClaimWorkbook(workbook: import("exceljs").Workbook, sheets: ClaimSheet[], employees: Employee[], month: string): ClaimReconcileIssue[] {
@@ -169,6 +187,7 @@ export function reconcileClaimWorkbook(workbook: import("exceljs").Workbook, she
     }
     for (const [d, a] of got) if (!days.has(d)) issues.push({ worker, date: date(d), kind: "Extra in sheet", expected: "blank", actual: fmt(a) });
   }
+  for (const [worker, days] of actual) if (!expected.has(worker)) issues.push({ worker, date: "", kind: "Unexpected worker", expected: "not present", actual: `${days.size} worked dates` });
   for (const issue of issues) issue.cardId = cardOf.get(issue.worker);
   return issues.sort((a, b) => a.worker.localeCompare(b.worker, undefined, { numeric: true }) || a.date.localeCompare(b.date));
 }

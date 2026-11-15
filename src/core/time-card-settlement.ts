@@ -5,7 +5,7 @@ export function countedCardHours(entry: TimeCardEntry, system?: { checkIn?: stri
   if (entry.resolution === "Ignored") return { normalHours: 0, otHours: 0 };
   const useSystem = entry.resolution === "Corrected";
   const span = spanFromTimes(useSystem ? system?.checkIn : entry.checkIn, useSystem ? system?.checkOut : entry.checkOut);
-  const calculated = span === null ? { normalHours: system?.hoursWorked ?? 0, otHours: system?.overtimeHours ?? 0 } : splitDutyHours(span);
+  const calculated = span === null ? { normalHours: useSystem ? system?.hoursWorked ?? 0 : 0, otHours: useSystem ? system?.overtimeHours ?? 0 : 0 } : splitDutyHours(span);
   return {
     normalHours: entry.normalHours ?? calculated.normalHours,
     otHours: entry.otHours ?? calculated.otHours,

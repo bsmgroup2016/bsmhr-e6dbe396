@@ -25,3 +25,10 @@ test("a worked Sunday missing from the sheet is reported", () => {
   const issues = reconcileClaimWorkbook(book(8, 0), sheet([["2026-10-01", 8, 0], ["2026-10-02", 8, 2]]), [], "2026-10");
   expect(issues.map(i => [i.date, i.kind])).toEqual([["2026-10-02", "Missing in sheet"]]);
 });
+test("unexpected workers in the workbook are reported instead of passing reconciliation", () => {
+  const b = book(8, 3.5); const p = b.worksheets[0];
+  if (!p) throw new Error("Missing worksheet");
+  p.getCell("D7").value = "G-HRS"; p.getCell("D8").value = "OT HOURS";
+  p.getCell("B7").value = "GHOST"; p.getCell("E7").value = 123;
+  expect(reconcileClaimWorkbook(b, sheet([["2026-10-01", 8, 3.5]]), [], "2026-10").map(issue => issue.kind)).toContain("Unexpected worker");
+});

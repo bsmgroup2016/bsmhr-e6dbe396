@@ -17,6 +17,14 @@ function blank(offset = 0) {
   return { book, page };
 }
 
+test("selected project does not replace or collapse distinct printed site headings", async () => {
+  const { book } = blank(); const bytes = new Uint8Array(await book.xlsx.writeBuffer());
+  const claims = ["JB-1183", "Second site"].map((site, i) => ({ id: `c${i}`, reference: `c${i}`, periodStart: "2026-11-01", periodEnd: "2026-11-30", totalDays: 1, totalNormalHours: 8, totalOtHours: 3.5, snapshot: [{ date: "2026-11-01", projectId: "project", projectName: "Selected project", site, employeeCode: `P-${i}`, workerName: `WORKER ${i}`, normalHours: 8, otHours: 3.5, status: "Present" }] }));
+  const out = await createClaimWorkbook(claims, [], [], "2026-11", { templateBuffer: bytes.buffer });
+  expect(out.worksheets).toHaveLength(2);
+  expect(out.worksheets.map(page => page.getCell("A2").value)).toEqual(["JB-1183", "Second site"]);
+});
+
 test("replacement layout maps moved staff and daily hour columns rather than original coordinates", () => {
   const { page } = blank(2); const layout = claimTemplateLayout(page);
   expect(layout.codeCol).toBe(4); expect(layout.nameCol).toBe(5);
@@ -155,4 +163,50 @@ test("Explicit project selection fills its client while retaining the card site"
   const output = await createClaimWorkbook([{ id: "c", reference: "C", periodStart: "2026-10-01", periodEnd: "2026-10-31", totalDays: 1, totalNormalHours: 8, totalOtHours: 4, snapshot: [{ date: "2026-10-01", projectId: "p", site: "JB-1183", normalHours: 8, otHours: 4, status: "Present" }] }], [], [], "2026-10", { templateBuffer: bytes.buffer, projects: [{ id: "p", name: "SELECTED PROJECT", clientId: "client" } as import("@/lib/types").Project], clients: [{ id: "client", name: "SELECTED CLIENT" } as import("@/lib/types").Client] });
   expect(output.worksheets[0]?.getCell("A1").value).toBe("SELECTED CLIENT");
   expect(output.worksheets[0]?.getCell("A2").value).toBe("JB-1183");
+});
+
+test("dirty template inputs are blanked without touching formulas or unknown fields", async () => {
+  const { book, page } = blank();
+  page.getCell("F4").value = 31;
+  page.getCell("E6").value = 99; page.getCell("F5").value = 77;
+  page.getCell("D7").value = "G-HRS"; page.getCell("D8").value = "OT HOURS";
+  page.getCell("B7").value = "OLD CODE"; page.getCell("C7").value = "OLD WORKER";
+  page.getCell("G7").value = { formula: "SUM(E7:F7)" };
+  page.getCell("J1").value = "DO NOT TOUCH";
+  const bytes = new Uint8Array(await book.xlsx.writeBuffer());
+  const claims = [{ id: "c", reference: "C", periodStart: "2026-11-01", periodEnd: "2026-11-30", totalDays: 1, totalNormalHours: 8, totalOtHours: 0, snapshot: [{ employeeCode: "P-1", workerName: "WORKER", date: "2026-11-01", site: "JB-1183", normalHours: 8, otHours: 0, status: "Present" }] }];
+  const output = await createClaimWorkbook(claims, [], [], "2026-11", { templateBuffer: bytes.buffer });
+  const p = output.worksheets[0];
+  expect(p?.getCell("E6").value).toBeNull(); expect(p?.getCell("F5").value).toBeNull();
+  expect(p?.getCell("B7").value).toBeNull(); expect(p?.getCell("C7").value).toBeNull();
+  expect(p?.getCell("G7").formula).toBe("SUM(E7:F7)"); expect(p?.getCell("J1").value).toBe("DO NOT TOUCH");
+  await expect(createClaimWorkbook([...claims, ...claims], [], [], "2026-11", { templateBuffer: bytes.buffer })).rejects.toThrow("Duplicate source entry");
+});
+
+for (const count of [20, 30, 50]) test(`${count} workers expand 15 slots with exact Sunday/partial-month dates, decimal OT and correct saved totals`, async () => {
+  const { book, page } = blank();
+  for (let day = 1; day <= 30; day++) page.getCell(4, day + 4).value = day;
+  for (let index = 0; index < 15; index++) {
+    const g = 5 + index * 2, ot = g + 1;
+    page.getCell(g, 4).value = "G-HRS"; page.getCell(ot, 4).value = "OT HOURS";
+    page.mergeCells(`B${g}:B${ot}`); page.mergeCells(`C${g}:C${ot}`);
+    page.getRow(g).height = 23; page.getCell(g, 19).numFmt = "0.00";
+    page.getCell(g, 35).value = { formula: `SUM(E${g}:AH${ot})` };
+  }
+  page.getCell("AI35").value = { formula: "SUM(AI5:AI34)" };
+  const claims = Array.from({ length: count }, (_, index) => ({ id: `c${index}`, reference: `C${index}`, periodStart: "2026-11-01", periodEnd: "2026-11-30", totalDays: 2, totalNormalHours: 16, totalOtHours: 3.5, snapshot: [15, 30].map(day => ({ sourceCardId: `card${index}`, employeeCode: `P-${index + 1}`, workerName: `WORKER ${index + 1}`, date: `2026-11-${day}`, site: "JB-1183", normalHours: 8, otHours: day === 15 ? 3.5 : 0, status: "Present" })) }));
+  const bytes = new Uint8Array(await book.xlsx.writeBuffer());
+  const output = await createClaimWorkbook(claims, [], [], "2026-11", { templateBuffer: bytes.buffer });
+  const saved = new ExcelJS.Workbook(); await saved.xlsx.load(await output.xlsx.writeBuffer());
+  const p = saved.worksheets[0]; if (!p) throw new Error("Missing worksheet");
+  const ev = createEvaluator((row, col) => ({ formula: p.getCell(row, col).formula, value: p.getCell(row, col).value }));
+  for (let index = 0; index < count; index++) {
+    const g = 5 + index * 2;
+    expect(p.getCell(g, 2).value).toBe(`P-${index + 1}`);
+    expect(p.getCell(g, 19).value).toBe(8); expect(p.getCell(g + 1, 19).value).toBe(3.5);
+    expect(p.getCell(g, 34).value).toBe(8); expect(p.getCell(g + 1, 34).value).toBeNull();
+    expect(p.getCell(g, 5).value).toBeNull(); expect(ev.cellValue(g, 35)).toBe(19.5);
+    expect(p.getCell(g + 1, 2).master.address).toBe(`B${g}`); expect(p.getRow(g).height).toBe(23);
+  }
+  expect(ev.cellValue(5 + count * 2, 35)).toBe(count * 19.5);
 });

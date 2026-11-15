@@ -34,3 +34,11 @@ test("duplicate days in one physical card fail rather than double count", () => 
 test("one worker's different sites and months stay separate", () => {
   expect(groupTimeCardRows([{ employeeCode: "P-1", siteName: "A", date: "2026-11-01" }, { employeeCode: "P-1", siteName: "B", date: "2026-11-01" }, { employeeCode: "P-1", siteName: "A", date: "2026-12-01" }])).toHaveLength(3);
 });
+test("a fifty-page PDF retains all physical cards in reading order", async () => {
+  const source = await PDFDocument.create();
+  for (let i = 0; i < 50; i++) source.addPage([300 + i, 500]);
+  const pages = await splitTimeCardFile(new File([new Uint8Array(await source.save())], "fifty.pdf", { type: "application/pdf" }));
+  expect(pages).toHaveLength(50);
+  const final = pages[49]; if (!final) throw new Error("Missing final card");
+  expect((await PDFDocument.load(await final.arrayBuffer())).getPages()[0]?.getWidth()).toBe(349);
+});
