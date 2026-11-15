@@ -26,7 +26,7 @@ import { ClaimWorkbookEditor, type ClaimEditorDocument } from "@/components/clai
 import { ClaimWorkbookPreview } from "@/components/claim-workbook-preview";
 import { ClaimTemplateManager } from "@/components/claim-template-manager";
 import { TimeCardOcrResults } from "@/components/time-card-ocr-results";
-import { uncertaintyReason, unresolvedOcrEntries, type CardScanStatus } from "@/core/time-card-ocr-status";
+import { uncertaintyReason, unresolvedOcrEntries, revalidateOcrEntry, matchesOcrFilter, cardOcrFlags, type OcrResultFilter, type CardScanStatus } from "@/core/time-card-ocr-status";
 import { TimeCardHoursInputs } from "@/components/time-card-hours-inputs";
 import { ClaimDatePreview } from "@/components/claim-date-preview";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -128,6 +128,7 @@ function TimeCardsPage() {
   const uploadLock = useRef(false);
   const uploadInput = useRef<HTMLInputElement>(null);
   const importInput = useRef<HTMLInputElement>(null);
+  const [ocrFilter, setOcrFilter] = useState<OcrResultFilter>("All");
   const [scanStatuses, setScanStatuses] = useState<CardScanStatus[]>([]);
   const [failedFiles, setFailedFiles] = useState<File[]>([]);
   const [uploadErrors, setUploadErrors] = useState<string[]>([]);
@@ -141,7 +142,7 @@ function TimeCardsPage() {
   const [verificationSearch, setVerificationSearch] = useState("");
   const [uncertainFirst, setUncertainFirst] = useState(true);
   const [verificationFilter, setVerificationFilter] = useState<
-    "All" | "Mismatch" | "Unresolved" | "LowConfidence"
+    "All" | "Mismatch" | "Unresolved" | "LowConfidence" | "Uncertain"
     >("All");
   const [importFile, setImportFile] = useState<File | null>(null);
   const [isImportOpen, setIsImportOpen] = useState(false);
@@ -172,6 +173,7 @@ function TimeCardsPage() {
   }, [batchRestored, cards, batchCardIds, pendingScans, reviewScan, month, projectId, uploadErrors, scanStatuses]);
 
   const selected = cards.find((c) => c.id === selectedId) ?? null;
+  const filteredCards = cards.filter(card => matchesOcrFilter(ocrFilter, cardOcrFlags(card, scanStatuses, month)));
   const comparison = useMemo(() => (selected ? compareTimeCard(selected) : []), [selected]);
   const settlementCards = cards.filter(card => batchCardIds.length ? batchCardIds.includes(card.id) : scoped.some(employee => employee.id === card.employeeId) && card.periodStart.startsWith(month));
   const approvedCount = settlementCards.filter(isCardApproved).length;
@@ -199,6 +201,7 @@ function TimeCardsPage() {
         verificationFilter === "All" ||
         (verificationFilter === "Mismatch" && r.state !== "Verified") ||
         (verificationFilter === "Unresolved" && r.state !== "Verified" && !r.resolution) ||
+        (verificationFilter === "Uncertain" && !!unresolvedOcrEntries(selected?.entries.filter(entry => entry.date === r.date) ?? []).length) ||
         (verificationFilter === "LowConfidence" &&
           r.confidence !== undefined &&
           r.confidence < LOW_CONFIDENCE);
@@ -206,7 +209,7 @@ function TimeCardsPage() {
       return matchesSearch && matchesFilter;
     });
     return uncertainFirst ? lowestConfidenceFirst(rows) : rows;
-  }, [comparison, verificationSearch, verificationFilter, uncertainFirst]);
+  }, [comparison, verificationSearch, verificationFilter, uncertainFirst, selected]);
 
   const empName = (id?: string) => employees.find((e) => e.id === id)?.name ?? "—";
   const cardName = (card: TimeCard) => card.entries[0]?.workerName || empName(card.employeeId);
@@ -411,14 +414,24 @@ function TimeCardsPage() {
 
   function setEntry(date: string, patch: Partial<TimeCardEntry>) {
     if (!selected) return;
-    const exists = selected.entries.some((e) => e.date === date);
-    const entries = exists
-      ? selected.entries.map((e) => (e.date === date ? { ...e, ...patch } : e))
+    const targetIndex = selected.entries.findIndex(entry => entry.date === date);
+    const entries = targetIndex >= 0
+      ? selected.entries.map((entry, index) => index === targetIndex ? { ...entry, ...patch } : entry)
       : [...selected.entries, { date, ...patch }];
-    const affectsHours = ["checkIn", "checkOut", "resolution", "normalHours", "otHours"].some(key => key in patch);
     const resetsHours = "checkIn" in patch || "checkOut" in patch || "resolution" in patch;
-    saveCard(selected.id, { entries: entries.map(entry => ({ ...entry, ...(affectsHours ? { reviewApproved: false } : {}), ...(affectsHours && entry.date === date ? { ocrReviewed: false } : {}), ...(resetsHours && patch.resolution !== "Accepted" && entry.date === date ? { normalHours: undefined, otHours: undefined } : {}) })), ...(affectsHours ? { status: "Draft" as const } : {}) });
-    refresh();
+    saveCard(selected.id, { status: "Draft", entries: entries.map((entry, index) => ({ ...entry, reviewApproved: false,
+      ...(index === targetIndex ? { ocrReviewed: false } : {}),
+      ...(resetsHours && patch.resolution !== "Accepted" && index === targetIndex ? { normalHours: undefined, otHours: undefined } : {}) })) });
+    setReconcile(null); setBatchCompleted(false); refresh();
+  }
+
+  function recheckEntry(index: number) {
+    if (!selected) return;
+    const result = revalidateOcrEntry(selected, index);
+    if (result.error) { toast.error(result.error); return; }
+    saveCard(selected.id, { entries: result.card.entries, status: result.card.status });
+    setReconcile(null); setBatchCompleted(false); refresh();
+    toast.success("Manual correction validated — approve the card when all readings are checked");
   }
 
   function bulkUpdateResolution(resolution: TimeCardEntry["resolution"]) {
@@ -443,6 +456,8 @@ function TimeCardsPage() {
   }
 
   function verifyCard(card: TimeCard): boolean {
+    const issue = claimBatchProblem([card], month);
+    if (issue || unresolvedOcrEntries(card.entries).length) { toast.error(issue || "Revalidate each uncertain reading against the original card first"); return false; }
     if (!validCardHours(card.entries)) { toast.error("GW and OT hours must be non-negative numbers"); return false; }
     const rows = compareTimeCard(card);
     const unresolved = rows.filter((r) => r.state !== "Verified" && !r.resolution).length;
@@ -671,7 +686,7 @@ function TimeCardsPage() {
           {(batchCardIds.length > 0 || pendingScans.length > 0 || uploadErrors.length > 0) && <Button variant="outline" disabled={uploading || generating} onClick={() => { if (!window.confirm("Start a new batch? Saved records remain; unsaved card review and unread file retries will be cleared from this session.")) return; setBatchCardIds([]); setPendingScans([]); setReviewScan(null); setSelectedId(null); setFailedFiles([]); setUploadErrors([]); setReconcile(null); setBatchCompleted(false); setScanStatuses([]); }}>Start new batch</Button>}
           {uploadErrors.length > 0 && <div role="alert" className="space-y-2 border-l-4 border-destructive bg-destructive/10 p-3 text-sm"><p className="font-semibold">{uploadErrors.length} file(s) could not be read — generation is blocked until recovered</p><ul className="list-disc pl-5">{uploadErrors.map((error, index) => <li key={index}>{error}</li>)}</ul><Button variant="outline" disabled={uploading || !failedFiles.length} onClick={() => void handleUpload(failedFiles, true)}>Retry failed files</Button>{!failedFiles.length && <p>The unread files must be selected again. Start a new batch and include every original card.</p>}</div>}
           {!reviewScan && pendingScans.length > 0 && <Button variant="outline" onClick={() => { const [next, ...rest] = pendingScans; if (next) { setPendingScans(rest); openScan(next); } }}>Resume extracted batch ({pendingScans.length} cards)</Button>}
-          <TimeCardOcrResults scans={scanStatuses} cards={settlementCards} busy={uploading || generating || rescanId !== null} onRetry={name => { if (name.startsWith("rescan:")) { const card = cards.find(item => item.id === name.slice(7)); if (card) void rescan(card); return; } const file = failedFiles.find(item => item.name === name); if (file) void handleUpload([file], true); else toast.message("Reselect the original files in a new batch to retry this interrupted read."); }} onReview={card => { setSelectedId(card.id); setActiveTab("cards"); setVerificationSearch(""); setVerificationFilter("All"); setVerificationOpen(true); }} />
+          <TimeCardOcrResults filter={ocrFilter} onFilterChange={setOcrFilter} month={month} scans={scanStatuses} cards={settlementCards} busy={uploading || generating || rescanId !== null} onRetry={name => { if (name.startsWith("rescan:")) { const card = cards.find(item => item.id === name.slice(7)); if (card) void rescan(card); return; } const file = failedFiles.find(item => item.name === name); if (file) void handleUpload([file], true); else toast.message("Reselect the original files in a new batch to retry this interrupted read."); }} onReview={card => { setSelectedId(card.id); setActiveTab("cards"); setVerificationSearch(""); setVerificationFilter("All"); setVerificationOpen(true); }} />
           {validationIssue && <div role="alert" className="border-l-4 border-destructive bg-destructive/10 p-3 text-sm">{validationIssue}</div>}
           {settlementCards.length > 0 && <div className="flex flex-wrap items-center gap-3"><span className="text-sm font-medium">Active batch · {settlementCards.length} cards · {month}</span><Button variant="outline" onClick={() => { const next = settlementCards.find(card => !isCardApproved(card)); if (next) { setSelectedId(next.id); setActiveTab("cards"); setVerificationOpen(true); } }} disabled={approvedCount === settlementCards.length}>Continue review ({settlementCards.length - approvedCount} remaining)</Button></div>}
           {batchIssue && <div role="alert" className="border-l-4 border-destructive bg-destructive/10 p-3 text-sm text-foreground">{batchIssue}</div>}
@@ -761,19 +776,19 @@ function TimeCardsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {cards.length === 0 ? (
+                  {filteredCards.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={5} className="h-32 text-center">
                         <EmptyState
                           className="border-0 bg-transparent"
                           icon={<ScanLine className="h-5 w-5" />}
-                          title="No time cards"
-                          description="Upload a scanned card to start verification."
+                          title={cards.length ? "No cards match this filter" : "No time cards"}
+                          description={cards.length ? undefined : "Upload a scanned card to start verification."}
                         />
                       </TableCell>
                     </TableRow>
                   ) : (
-                    cards.map((c) => (
+                    filteredCards.map((c) => (
                       <TableRow
                         key={c.id}
                         className={selectedId === c.id ? "bg-muted/50" : undefined}
@@ -932,6 +947,7 @@ function TimeCardsPage() {
                           <SelectItem value="All">All Rows</SelectItem>
                           <SelectItem value="Mismatch">All Diffs</SelectItem>
                           <SelectItem value="Unresolved">Needs Action</SelectItem>
+                          <SelectItem value="Uncertain">Uncertain information</SelectItem>
                           <SelectItem value="LowConfidence">
                             Low Confidence ({lowConfidenceCount})
                           </SelectItem>
@@ -993,6 +1009,7 @@ function TimeCardsPage() {
                   </div>
                 </div>
 
+                {claimBatchProblem([selected], month) && <p role="alert" className="mt-3 text-sm text-destructive">{claimBatchProblem([selected], month)}</p>}
                 <div className="mt-4 overflow-hidden rounded-lg border">
                   <Table>
                     <TableHeader>
@@ -1008,7 +1025,7 @@ function TimeCardsPage() {
                         return (
                           <TableRow key={r.date} className={`${isMismatch ? "bg-destructive/5" : ""} ${uncertaintyReason(selected.entries.find(entry => entry.date === r.date) ?? r) ? "border-l-4 border-l-warning bg-warning/10" : ""}`}>
                             <TableCell className="whitespace-nowrap text-sm font-medium">
-                              <div>{r.date}</div>
+                              <Input aria-label={`Entry date ${r.date}`} type="date" className="h-8 w-40" value={r.date} onChange={event => setEntry(r.date, { date: event.target.value })} />
                               {r.confidence !== undefined && (
                                 <div className={`mt-1 text-[10px] font-bold ${isLowConfidence(r.confidence) ? "text-warning" : "text-muted-foreground"}`}>
                                   {isLowConfidence(r.confidence) ? "Check · " : ""}{Math.round(r.confidence * 100)}%
@@ -1064,7 +1081,7 @@ function TimeCardsPage() {
                                       return <div className="space-y-2 border-l-4 border-warning p-2 text-sm">
                                         <p className="font-medium text-warning">Manual check required</p>
                                         <p className="break-words">{reason}</p>
-                                        <Button size="sm" variant={entry.ocrReviewed ? "secondary" : "outline"} aria-pressed={!!entry.ocrReviewed} onClick={() => setEntry(r.date, { ocrReviewed: !entry.ocrReviewed })}><CheckCircle2 aria-hidden="true" />{entry.ocrReviewed ? "Checked against original" : "Mark checked against original"}</Button>
+                                        <Button size="sm" variant={entry.ocrReviewed ? "secondary" : "outline"} aria-pressed={!!entry.ocrReviewed} onClick={() => entry.ocrReviewed ? setEntry(r.date, { ocrReviewed: false }) : recheckEntry(selected.entries.indexOf(entry))}><CheckCircle2 aria-hidden="true" />{entry.ocrReviewed ? "Checked against original" : "Revalidate against original"}</Button>
                                       </div>;
                                     })()}
                                     <TimeCardHoursInputs date={r.date} normalHours={r.normalHours} otHours={r.otHours} disabled={r.resolution === "Ignored"} onChange={patch => setEntry(r.date, patch)} />

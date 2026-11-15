@@ -26,6 +26,15 @@ export function unresolvedOcrEntries(entries: TimeCardEntry[]) {
 
 export type OcrResultFilter = "All" | "Issues" | "Errors" | "Retry" | "Uncertain";
 
+export function cardOcrFlags(card: TimeCard, scans: CardScanStatus[], month: string) {
+  const related = scans.filter(scan => scan.id === `rescan:${card.id}` || scan.fileName === card.fileName);
+  return { error: !!claimBatchProblem([card], month) || related.some(scan => scan.status === "Failed"), retry: related.some(scan => scan.attempts > 1), uncertain: unresolvedOcrEntries(card.entries).length > 0 };
+}
+
+export function scanOcrFlags(scan: CardScanStatus) {
+  return { error: scan.status === "Failed", retry: scan.attempts > 1, uncertain: (scan.uncertain ?? 0) > 0 };
+}
+
 export function matchesOcrFilter(filter: OcrResultFilter, flags: { error: boolean; retry: boolean; uncertain: boolean }) {
   return filter === "All" || (filter === "Issues" && (flags.error || flags.retry || flags.uncertain)) ||
     (filter === "Errors" && flags.error) || (filter === "Retry" && flags.retry) || (filter === "Uncertain" && flags.uncertain);
