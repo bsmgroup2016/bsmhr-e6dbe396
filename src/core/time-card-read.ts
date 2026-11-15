@@ -109,6 +109,7 @@ export function mergeCardReads(primary: CardRead[], audit: CardRead[] | null, na
     const y = year.value, m = month.value;
     if (!y || !m) continue;
     const periodDoubt = !!other && (!year.agree || !month.agree);
+    const headerConflicts = other ? (["siteName", "workerName", "employeeCode", "fin"] as const).filter(field => norm(card[field]) !== norm(other[field])) : [];
     const max = new Date(Date.UTC(y, m, 0)).getUTCDate();
     const identity = {
       workerName: card.workerName ?? other?.workerName,
@@ -142,6 +143,10 @@ export function mergeCardReads(primary: CardRead[], audit: CardRead[] | null, na
         }
       }
       if (periodDoubt) { confidence = Math.min(confidence, 0.5); remarks = [remarks, "Readers disagree on month/year — check Claim Month"].filter(Boolean).join(" · "); }
+      if (headerConflicts.length && other) {
+        confidence = Math.min(confidence, 0.5);
+        remarks = [remarks, `Readers disagree on card details: ${headerConflicts.map(field => `${field}: ${card[field] || "unreadable"} / ${other[field] || "unreadable"}`).join("; ")} — verify the original`].filter(Boolean).join(" · ");
+      }
       const fallback = span === null ? undefined : splitDutyHours(span);
       rows.push({
         cardIndex: card.cardIndex,

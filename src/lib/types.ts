@@ -446,6 +446,7 @@ export interface TimeCardEntry {
   normalHours?: number;
   otHours?: number;
   reviewApproved?: boolean;
+  ocrReviewed?: boolean;
   projectId?: string;
   siteId?: string;
   projectName?: string;

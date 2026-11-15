@@ -2,6 +2,14 @@
 
 Date: 15 November 2026
 
+## Card-level OCR status and uncertainty review
+
+- Added per-file queued/reading/read/failed states, attempt counts, extracted worker/date counts, uncertainty totals and individual retry controls. Results remain session-local; no new database table or storage payload is introduced.
+- Each confirmed card shows its OCR dates, date-validation result, remaining uncertainty and a direct review action. Failed reads and interruptions remain visible after reload; original File objects still require reselection.
+- Low-confidence rows, alternate readings and reader disagreements have explicit manual-check warnings. Header disagreements include both site/identity readings. The worker review offers editable name, staff code, printed site, times and GW/OT hours plus original-card access.
+- Each uncertain date requires an explicit checked-against-original acknowledgement. Bulk approval cannot bypass it. Hour edits, changed identity/site and rescans invalidate the acknowledgement. Approval and generation remain separate.
+- Controlled browser verification exercised 30 uncertain cards: premature approval was blocked, explicit checks enabled sequential approval, all workers remained in the dated preview, and no page errors occurred. Results and warnings were visually inspected; 224 regression tests passed before the final identity-input addition. Live authenticated provider/storage checks remain unavailable as documented below.
+
 ## ClaimSheet Generator: focused batch reliability audit
 
 Scope: this page and its claim/time-card helpers only. No migrations, permission changes, production uploads, template replacements or live business-record writes were performed.
