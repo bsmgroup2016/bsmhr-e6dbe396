@@ -162,7 +162,7 @@ function TimeCardsPage() {
     setPendingScans(saved.pendingScans as PendingScan[]);
     if (saved.month) setMonth(saved.month);
     setProjectId(saved.projectId);
-    setUploadErrors(saved.failedMessages ?? []);
+    setUploadErrors([...new Set([...(saved.failedMessages ?? []), ...(saved.scanStatuses ?? []).filter(item => item.status === "Failed").map(item => `${item.fileName}: ${item.error || "Read failed"}`)])]);
     setScanStatuses(saved.scanStatuses ?? []);
     setBatchRestored(true);
   }, []);
@@ -372,11 +372,13 @@ function TimeCardsPage() {
       return;
     }
     setRescanId(card.id);
+    const statusId = `rescan:${card.id}`;
+    const statusName = card.fileName || card.entries[0]?.employeeCode || card.id;
+    setScanStatuses(items => [...items.filter(item => item.id !== statusId), { id: statusId, fileName: statusName, status: "Reading", attempts: (items.find(item => item.id === statusId)?.attempts ?? 0) + 1 }]);
     try {
       const ocr = await extractTimeCardData(card.fileUrl);
       if (!ocr.ok) {
-        toast.message(ocr.reason || OCR_NOT_CONFIGURED);
-        return;
+        throw new Error(ocr.reason || OCR_NOT_CONFIGURED);
       }
       const groups = groupTimeCardRows(ocr.data);
       const matching = groups.filter(group => (card.employeeId ? matchCardWorker(scoped, group.identity) === card.employeeId : group.identity.employeeCode === card.entries.find(entry => entry.employeeCode)?.employeeCode && group.identity.workerName === card.entries.find(entry => entry.workerName)?.workerName) && group.entries[0]?.date.slice(0, 7) === card.periodStart.slice(0, 7) && (!card.entries[0]?.siteName || group.identity.siteName?.trim().toUpperCase() === card.entries[0]?.siteName?.trim().toUpperCase()));
@@ -394,11 +396,13 @@ function TimeCardsPage() {
         })),
       );
       saveCard(card.id, { status: "Draft", entries: entries.map(entry => ({ ...entry, reviewApproved: false, ocrReviewed: false })) });
+      setScanStatuses(items => items.map(item => item.id === statusId ? { ...item, status: "Read", workers: 1, days: scan.entries.length, uncertain: unresolvedOcrEntries(entries).length, error: undefined } : item));
       refresh();
       setSelectedId(card.id);
       setVerificationOpen(true);
       toast.success(`Auto-filled ${scan.entries.length} row(s)`);
     } catch (e) {
+      setScanStatuses(items => items.map(item => item.id === statusId ? { ...item, status: "Failed", error: e instanceof Error ? e.message : "Rescan failed" } : item));
       toast.error(e instanceof Error ? e.message : "Rescan failed");
     } finally {
       setRescanId(null);
