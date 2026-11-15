@@ -13,7 +13,7 @@ export function TimeCardOcrResults({ scans, cards, busy, onRetry, onReview, filt
     <div className="flex flex-wrap items-center justify-between gap-3">
       <h3 className="flex items-center gap-2 font-semibold"><ScanLine className="h-4 w-4" aria-hidden="true" />Card OCR results</h3>
       <Select value={filter} onValueChange={value => onFilterChange(value as OcrResultFilter)}><SelectTrigger aria-label="Filter OCR cards" className="w-52"><SelectValue /></SelectTrigger><SelectContent>
-        <SelectItem value="All">All results</SelectItem><SelectItem value="Issues">Needs attention</SelectItem><SelectItem value="Errors">OCR / validation errors</SelectItem><SelectItem value="Retry">Retried cards</SelectItem><SelectItem value="Uncertain">Uncertain information</SelectItem>
+        <SelectItem value="All">All results</SelectItem><SelectItem value="Issues">Needs attention</SelectItem><SelectItem value="Errors">OCR / validation errors</SelectItem><SelectItem value="Retry">Retry / retried cards</SelectItem><SelectItem value="Uncertain">Uncertain information</SelectItem>
       </SelectContent></Select>
     </div>
     <p role="status" className="text-sm text-muted-foreground">{filteredCards.length} cards · {filteredScans.length} file readings</p>

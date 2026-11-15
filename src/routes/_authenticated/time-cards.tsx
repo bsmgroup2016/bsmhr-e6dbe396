@@ -1025,7 +1025,7 @@ function TimeCardsPage() {
                         return (
                           <TableRow key={r.date} className={`${isMismatch ? "bg-destructive/5" : ""} ${uncertaintyReason(selected.entries.find(entry => entry.date === r.date) ?? r) ? "border-l-4 border-l-warning bg-warning/10" : ""}`}>
                             <TableCell className="whitespace-nowrap text-sm font-medium">
-                              <Input aria-label={`Entry date ${r.date}`} type="date" className="h-8 w-40" value={r.date} onChange={event => setEntry(r.date, { date: event.target.value })} />
+                              <Input aria-label={`Entry date ${r.date}`} type="date" className="h-8 w-40" value={r.date} onChange={event => { if (event.target.value) setEntry(r.date, { date: event.target.value }); }} />
                               {r.confidence !== undefined && (
                                 <div className={`mt-1 text-[10px] font-bold ${isLowConfidence(r.confidence) ? "text-warning" : "text-muted-foreground"}`}>
                                   {isLowConfidence(r.confidence) ? "Check · " : ""}{Math.round(r.confidence * 100)}%
@@ -1085,6 +1085,7 @@ function TimeCardsPage() {
                                       </div>;
                                     })()}
                                     <TimeCardHoursInputs date={r.date} normalHours={r.normalHours} otHours={r.otHours} disabled={r.resolution === "Ignored"} onChange={patch => setEntry(r.date, patch)} />
+                                    {!uncertaintyReason(selected.entries.find(entry => entry.date === r.date) ?? r) && <Button variant="outline" size="sm" onClick={() => recheckEntry(selected.entries.findIndex(entry => entry.date === r.date))}><CheckCircle2 aria-hidden="true" />Revalidate entry</Button>}
                                     {r.suggestion && (
                                       <div className="mt-1 flex flex-wrap gap-1 border-t border-dashed pt-1">
                                         <span className="text-[9px] text-muted-foreground">Suggest:</span>

@@ -1,0 +1,1 @@
+- OCR correction and result filters share pure validation helpers; manual revalidation preserves OCR confidence and resets approval so edited values cannot silently remain approved.
