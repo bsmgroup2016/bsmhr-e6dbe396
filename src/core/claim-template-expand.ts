@@ -2,9 +2,15 @@ import type { Worksheet } from "exceljs";
 
 const REF = /(?<![A-Za-z0-9_.$])(\$?)([A-Z]{1,3})(\$?)(\d+)(?::(\$?)([A-Z]{1,3})(\$?)(\d+))?(?![A-Za-z0-9_(])/g;
 
+function mapLocalReferences(formula: string, replace: (...parts: string[]) => string) {
+  // Quoted strings and sheet-qualified references are not local insertion targets.
+  return formula.split(/("(?:[^"]|"")*"|'(?:[^']|'')*'!\$?[A-Z]{1,3}\$?\d+(?::\$?[A-Z]{1,3}\$?\d+)?|[A-Za-z_][A-Za-z0-9_.]*!\$?[A-Z]{1,3}\$?\d+(?::\$?[A-Z]{1,3}\$?\d+)?)/g)
+    .map((part, index) => index % 2 ? part : part.replace(REF, replace)).join("");
+}
+
 /** Moves relative row references in a formula by `offset` (used when copying a worker slot). */
 export function shiftFormulaRows(formula: string, offset: number) {
-  return formula.replace(REF, (_m, c1, col1, a1, r1, c2, col2, a2, r2) => {
+  return mapLocalReferences(formula, (_m, c1, col1, a1, r1, c2, col2, a2, r2) => {
     const one = `${c1}${col1}${a1}${a1 ? r1 : Number(r1) + offset}`;
     return col2 ? `${one}:${c2}${col2}${a2}${a2 ? r2 : Number(r2) + offset}` : one;
   });
@@ -18,7 +24,7 @@ export function shiftFormulaRows(formula: string, offset: number) {
  */
 export function adjustFormulaForInsert(formula: string, insertAt: number, delta: number, growBoundaryRanges = true) {
   const move = (r: number) => (r >= insertAt ? r + delta : r);
-  return formula.replace(REF, (_m, c1, col1, a1, r1, c2, col2, a2, r2) => {
+  return mapLocalReferences(formula, (_m, c1, col1, a1, r1, c2, col2, a2, r2) => {
     const s = Number(r1);
     if (!col2) return `${c1}${col1}${a1}${move(s)}`;
     const e = Number(r2);
