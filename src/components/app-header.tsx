@@ -84,7 +84,7 @@ export function AppHeader() {
   return (
     <header className="sticky top-0 z-30 flex h-16 flex-col border-b border-border/70 bg-card/95 backdrop-blur">
       <div className="flex min-w-0 flex-1 items-center gap-2 px-3 sm:px-5">
-        <SidebarTrigger className="h-8 w-8 shrink-0">
+        <SidebarTrigger aria-label="Toggle sidebar" className="min-h-11 min-w-11 shrink-0">
           <SidebarIcon className="h-4 w-4" />
           <span className="sr-only">Toggle sidebar</span>
         </SidebarTrigger>
@@ -110,7 +110,8 @@ export function AppHeader() {
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8 shrink-0 sm:hidden"
+            aria-label="Search all records"
+            className="min-h-11 min-w-11 shrink-0 sm:hidden"
             onClick={() => setSearchOpen(true)}
           >
             <Search className="h-4 w-4" />
@@ -148,9 +149,9 @@ export function AppHeader() {
                 asChild
                 variant="ghost"
                 size="icon"
-                className="relative h-8 w-8 shrink-0"
+                className="relative min-h-11 min-w-11 shrink-0"
               >
-                <Link to="/alerts" onClick={markAllSeen}>
+                <Link to="/alerts" aria-label={`Alerts Centre${unseenCount > 0 ? `, ${unseenCount} unread alerts` : ""}`} onClick={markAllSeen}>
                   <BellRing className="h-4 w-4" />
                   {unseenCount > 0 && (
                     <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-semibold text-destructive-foreground ring-1 ring-background">
@@ -170,7 +171,7 @@ export function AppHeader() {
                 asChild
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 shrink-0"
+                className="min-h-11 min-w-11 shrink-0"
               >
                 <Link to="/my-portal">
                   <UserRound className="h-4 w-4" />

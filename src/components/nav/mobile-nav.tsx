@@ -20,7 +20,7 @@ export function MobileNav() {
   if (!visible.length) return null;
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 border-t bg-card/95 backdrop-blur md:hidden">
+    <nav aria-label="Mobile navigation" className="fixed inset-x-0 bottom-0 z-40 border-t bg-card/95 backdrop-blur md:hidden">
       <ul className="flex items-stretch justify-around pb-[env(safe-area-inset-bottom)]">
         {visible.map((item) => {
           const active = pathname.startsWith(item.to);
@@ -29,12 +29,13 @@ export function MobileNav() {
             <li key={item.to} className="flex-1">
               <Link
                 to={item.to}
+                aria-current={active ? "page" : undefined}
                 className={cn(
                   "flex flex-col items-center gap-0.5 py-2 text-[11px] font-medium transition-colors",
                   active ? "text-primary" : "text-muted-foreground hover:text-foreground",
                 )}
               >
-                <Icon className="h-5 w-5" />
+                <Icon aria-hidden="true" className="h-5 w-5" />
                 <span>{item.label}</span>
               </Link>
             </li>
