@@ -1,5 +1,12 @@
 # Full-section UI/UX and workflow audit
 
+## Second-pass premium usability audit
+
+- [ ] Re-audit every content section in three coverage groups; distinguish source findings from authenticated verification.
+- [ ] Improve shared visual hierarchy, form/table ergonomics, navigation and page-specific usability without changing business calculations or stored records.
+- [ ] Apply concrete safe fixes from each coverage group and record remaining functional blockers.
+- [ ] Run regression tests, desktop/mobile browser checks and metadata coverage; publish the updated audit report.
+
 - [x] Inventory all 48 authenticated route files and public account pages; trace section controls, dependencies and connected actions without changing business records.
 - [x] Run automated checks: 202 passed; inspect public desktop/mobile pages and isolated shared controls, with no page errors or viewport clipping.
 - [x] Improve shared navigation, quick-create, tabs, dialogs, retry/search states, employee links, honest settings/payroll/audit/delivery labels and MOM panel data dependencies; preserve calculations, templates, roles and storage.
