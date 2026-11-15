@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
+import { AttendanceViewControls } from "@/components/attendance-view-controls";
 import { ExportButton, ImportDialog } from "@/components/data-io";
 import { SummaryCard } from "@/components/ui/summary-card";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -106,9 +107,9 @@ export const Route = createFileRoute("/_authenticated/time-management")({
   }),
   head: () => ({
     meta: [
-      { title: "Time Management — BSM Workforce & Operations" },
+      { title: "Attendance & OT — BSM Workforce & Operations" },
       { name: "description", content: "Daily attendance and timesheets." },
-      { property: "og:title", content: "Time Management — BSM Workforce & Operations" },
+      { property: "og:title", content: "Attendance & OT — BSM Workforce & Operations" },
       { property: "og:description", content: "Daily attendance and timesheets." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -395,12 +396,13 @@ export default function TimeManagementPage() {
   return (
     <AppShell>
       <div className="w-full space-y-6">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div className="flex flex-col gap-5 border-b pb-6">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Time Management</h1>
-            <p className="text-sm text-muted-foreground">Daily attendance and timesheet records.</p>
+            <div className="mb-2 flex items-center gap-2 text-xs font-medium text-primary"><Calendar className="size-4" />WORKFORCE / ATTENDANCE</div>
+            <h1 className="text-3xl font-semibold text-foreground">Attendance &amp; OT</h1>
+            <p className="text-sm text-muted-foreground">{companyFilter === "all" ? "All companies" : companies.find((company) => company.id === companyFilter)?.name ?? "Selected company"} · {viewMode === "day" ? date : summaryMonth}</p>
           </div>
-          <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border/60 bg-card/60 p-2 shadow-sm backdrop-blur">
+          <div className="flex flex-wrap items-center gap-2">
             <Input
               type="month"
               value={summaryMonth}
@@ -435,7 +437,7 @@ export default function TimeManagementPage() {
             <div className="hidden h-6 w-px bg-border sm:block" />
             <Dialog open={isSheetOpen} onOpenChange={setIsSheetOpen}>
               <DialogTrigger asChild>
-                <Button size="sm" variant="secondary">
+                <Button size="sm" variant="outline">
                   <ClipboardList className="mr-1 h-4 w-4" />
                   Daily sheet
                 </Button>
@@ -474,7 +476,7 @@ export default function TimeManagementPage() {
             />
             <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
               <DialogTrigger asChild>
-                <Button size="sm">
+                <Button size="sm" className="order-first">
                   <Plus className="mr-1 h-4 w-4" />
                   Mark attendance
                 </Button>
@@ -500,57 +502,22 @@ export default function TimeManagementPage() {
           const mOt = monthRows.reduce((s, r) => s + r.otHours, 0);
           const ot = stats.ot;
           return (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-              <SummaryCard title={isMonth ? "Present days" : "Present"} value={String(isMonth ? mPresent : present)} icon={<CheckCircle2 className="h-5 w-5" />} variant="success" caption={caption} />
-              <SummaryCard title="Absent / MC" value={String(isMonth ? mAbsent : absent)} icon={<AlertCircle className="h-5 w-5" />} variant="destructive" caption={caption} />
-              <SummaryCard title="Leave / Off" value={String(isMonth ? mLeave : leave)} icon={<Clock className="h-5 w-5" />} variant="warning" caption={caption} />
-              <SummaryCard title="OT hours" value={(isMonth ? mOt : ot).toFixed(1)} icon={<Clock className="h-5 w-5" />} variant="warning" caption={caption} />
-              <SummaryCard title="Total hours" value={(isMonth ? mHours : totalHours).toFixed(1)} icon={<Clock className="h-5 w-5" />} variant="info" caption={caption} />
+            <div className="grid grid-cols-2 gap-4 border-b pb-6 lg:grid-cols-5">
+              <SummaryCard className="min-h-0 rounded-none border-0 bg-transparent p-0 shadow-none before:hidden" compact title={isMonth ? "Present days" : "Present"} value={String(isMonth ? mPresent : present)} icon={<CheckCircle2 className="h-5 w-5" />} variant="success" caption={caption} />
+              <SummaryCard className="min-h-0 rounded-none border-0 bg-transparent p-0 shadow-none before:hidden" compact title="Absent / MC" value={String(isMonth ? mAbsent : absent)} icon={<AlertCircle className="h-5 w-5" />} variant="destructive" caption={caption} />
+              <SummaryCard className="min-h-0 rounded-none border-0 bg-transparent p-0 shadow-none before:hidden" compact title="Leave / Off" value={String(isMonth ? mLeave : leave)} icon={<Clock className="h-5 w-5" />} variant="warning" caption={caption} />
+              <SummaryCard className="min-h-0 rounded-none border-0 bg-transparent p-0 shadow-none before:hidden" compact title="OT hours" value={(isMonth ? mOt : ot).toFixed(1)} icon={<Clock className="h-5 w-5" />} variant="warning" caption={caption} />
+              <SummaryCard className="min-h-0 rounded-none border-0 bg-transparent p-0 shadow-none before:hidden" compact title="Total hours" value={(isMonth ? mHours : totalHours).toFixed(1)} icon={<Clock className="h-5 w-5" />} variant="info" caption={caption} />
             </div>
           );
         })()}
 
-        <div className="rounded-xl border bg-card p-4 shadow-sm">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-            <div className="relative w-full max-w-sm">
-              <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input type="search" placeholder="Employee name / P-File No..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
-            </div>
-            <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-              {viewMode === "day" ? (
-                <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-40" />
-              ) : (
-                <Input
-                  type="month"
-                  value={summaryMonth}
-                  onChange={(e) => setSummaryMonth(e.target.value)}
-                  className="w-40"
-                />
-              )}
-              <Select value={viewMode} onValueChange={(v) => setViewMode(v as "day" | "month")}>
-                <SelectTrigger className="w-32">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="day">Daily view</SelectItem>
-                  <SelectItem value="month">Monthly view</SelectItem>
-                </SelectContent>
-              </Select>
-              <Button
-                type="button"
-                size="sm"
-                variant={noLocationOnly ? "default" : "outline"}
-                onClick={() => setNoLocationOnly(!noLocationOnly)}
-              >
-                Without location
-              </Button>
-            </div>
-          </div>
+        <div className="space-y-4">
+          <AttendanceViewControls view={viewMode} date={date} month={summaryMonth} search={search} onViewChange={setViewMode} onDateChange={setDate} onMonthChange={setSummaryMonth} onSearchChange={setSearch} />
 
-          <div className="mt-3 flex flex-wrap items-center gap-2">
+          <div className="grid grid-cols-1 gap-3 rounded-lg bg-muted/50 p-4 sm:grid-cols-2 xl:grid-cols-5">
             <Select value={employeeFilter} onValueChange={setEmployeeFilter}>
-              <SelectTrigger className="w-56">
+              <SelectTrigger aria-label="Employee" className="w-full">
                 <SelectValue placeholder="Employee" />
               </SelectTrigger>
               <SelectContent>
@@ -563,7 +530,7 @@ export default function TimeManagementPage() {
               </SelectContent>
             </Select>
             <Select value={companyFilter} onValueChange={setCompanyFilter}>
-              <SelectTrigger className="w-44">
+              <SelectTrigger aria-label="Company" className="w-full">
                 <SelectValue placeholder="Company" />
               </SelectTrigger>
               <SelectContent>
@@ -576,7 +543,7 @@ export default function TimeManagementPage() {
               </SelectContent>
             </Select>
             <Select value={groupFilter} onValueChange={(v) => setGroupFilter(v as typeof groupFilter)}>
-              <SelectTrigger className="w-40">
+              <SelectTrigger aria-label="Workforce group" className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -586,7 +553,7 @@ export default function TimeManagementPage() {
               </SelectContent>
             </Select>
             <Select value={designationFilter} onValueChange={setDesignationFilter}>
-              <SelectTrigger className="w-48">
+              <SelectTrigger aria-label="Designation" className="w-full">
                 <SelectValue placeholder="Designation" />
               </SelectTrigger>
               <SelectContent>
@@ -600,7 +567,7 @@ export default function TimeManagementPage() {
             </Select>
             {viewMode === "day" ? (
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-40">
+                <SelectTrigger aria-label="Attendance status" className="w-full">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -613,11 +580,18 @@ export default function TimeManagementPage() {
                 </SelectContent>
               </Select>
             ) : null}
-            <span className="ml-auto text-xs text-muted-foreground">
+          </div>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-3">
+              <h2 className="text-base font-semibold">{viewMode === "day" ? "Daily records" : "Monthly timesheets"}</h2>
+            <span className="rounded-full bg-secondary px-2.5 py-1 text-xs font-medium text-secondary-foreground">
               {viewMode === "day"
                 ? `${page.total} records`
                 : `${monthRows.length} employees`}
             </span>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+            <Button type="button" size="sm" aria-pressed={noLocationOnly} variant={noLocationOnly ? "default" : "outline"} onClick={() => setNoLocationOnly(!noLocationOnly)}>Without location</Button>
             <Button
               size="sm"
               variant="ghost"
@@ -632,6 +606,7 @@ export default function TimeManagementPage() {
             >
               Clear filters
             </Button>
+            </div>
           </div>
 
           {viewMode === "month" ? (
