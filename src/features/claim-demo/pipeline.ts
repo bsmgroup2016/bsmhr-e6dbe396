@@ -25,6 +25,24 @@ function toDays(month: string, entries: TimeCardEntry[]): DayEntry[] {
   });
 }
 
+/** PDFs are drawn to an image so the preview never depends on the browser's PDF viewer. */
+async function previewUrl(page: File): Promise<string> {
+  if (page.type !== "application/pdf") return URL.createObjectURL(page);
+  try {
+    const pdfjs = await import("pdfjs-dist");
+    const worker = (await import("pdfjs-dist/build/pdf.worker.min.mjs?url")).default;
+    pdfjs.GlobalWorkerOptions.workerSrc = worker;
+    const pdf = await pdfjs.getDocument({ data: await page.arrayBuffer() }).promise;
+    const p = await pdf.getPage(1);
+    const vp = p.getViewport({ scale: 2 });
+    const c = document.createElement("canvas");
+    c.width = vp.width; c.height = vp.height;
+    await p.render({ canvasContext: c.getContext("2d")!, viewport: vp, canvas: c } as never).promise;
+    const b = await new Promise<Blob>((r) => c.toBlob((x) => r(x!), "image/jpeg", 0.9));
+    return URL.createObjectURL(b);
+  } catch { return URL.createObjectURL(page); }
+}
+
 export type ReadResult = { workers: Worker[]; failed: string[]; month: string; site: string };
 
 /** Splits PDFs per page, stores each page, reads it with OCR and returns one Worker per card. */
@@ -42,7 +60,7 @@ export async function readCards(files: File[], onProgress: (done: number, total:
       if (!ocr.ok) throw new Error(ocr.reason);
       const groups = groupTimeCardRows(ocr.data);
       if (!groups.length) throw new Error("no dates could be read");
-      const preview = URL.createObjectURL(page);
+      const preview = await previewUrl(page);
       for (const g of groups) {
         const entries = [...g.entries].sort((a, b) => a.date.localeCompare(b.date)) as TimeCardEntry[];
         const month = entries[0].date.slice(0, 7);
@@ -52,7 +70,7 @@ export async function readCards(files: File[], onProgress: (done: number, total:
         if (!g.identity.employeeCode) flags.push({ field: "code", reason: "could not read" });
         const low = entries.filter((e) => (e.confidence ?? 1) < 0.6).length;
         if (low) flags.push({ field: "name", reason: `${low} day(s) read with low confidence` });
-        workers.push({ id: crypto.randomUUID(), name, code: tidyCode(g.identity.employeeCode ?? ""), category: (g.entries.find((e) => (e as { occupation?: string }).occupation) as { occupation?: string } | undefined)?.occupation ?? "", address: "", flags, days: toDays(month, entries), site: g.identity.siteName ?? "", preview, isPdf: page.type === "application/pdf", fileName: page.name });
+        workers.push({ id: crypto.randomUUID(), name, code: tidyCode(g.identity.employeeCode ?? ""), category: (g.entries.find((e) => (e as { occupation?: string }).occupation) as { occupation?: string } | undefined)?.occupation ?? "", address: "", flags, days: toDays(month, entries), site: g.identity.siteName ?? "", preview, isPdf: false, fileName: page.name });
         (workers[workers.length - 1] as Worker & { month?: string }).month = month;
       }
     } catch (e) { failed.push(`${page.name}: ${e instanceof Error ? e.message : "could not be read"}`); }
