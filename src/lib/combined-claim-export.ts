@@ -204,7 +204,7 @@ export async function claimWorkbookBlob(workbook: import("exceljs").Workbook) {
   workbook.calcProperties.fullCalcOnLoad = true;
   const raw = await workbook.xlsx.writeBuffer();
   const out = await repairClaimXlsx(raw as ArrayBuffer, claimTemplateSource.get(workbook));
-  return new Blob([out], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+  return new Blob([new Uint8Array(out)], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
 }
 
 export function downloadClaimBlob(blob: Blob, fileName: string) {
