@@ -2,8 +2,8 @@
 
 ## Zenova dashboard presentation
 
-- [ ] Apply the selected light dashboard reference with compact coloured metrics, pending approvals and prominent charts; preserve all data and navigation.
-- [ ] Check desktop/mobile layout and preview errors; report any signed-in verification limitation.
+- [x] Apply the selected light dashboard reference with compact coloured metrics, pending approvals and prominent charts; preserve all data and navigation.
+- [x] Check isolated desktop/mobile layout (1280, 1206 and 390px), with no overflow or page errors; 12 data-loading tests pass and preview build is clean. Real signed-in dashboard remains unverified: no external account session is available.
 
 ## Workforce deep audit
 
