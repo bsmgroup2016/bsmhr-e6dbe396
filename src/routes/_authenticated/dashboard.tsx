@@ -519,17 +519,17 @@ function OperationsDashboard() {
 
         <section aria-label="Today's workforce" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
           {[
-            { title: "Active Employees", value: activeEmployees, icon: Users, tone: "bg-dashboard-teal", to: "/workforce", caption: `${employees.length} workers in total` },
-            { title: "Present Today", value: presentToday, icon: CalendarCheck2, tone: "bg-dashboard-blue", to: "/time-management", caption: "Attendance today" },
-            { title: "Available Workers", value: availableWorkers, icon: UserCheck, tone: "bg-dashboard-coral", to: "/workforce", caption: `${availableRate}% available` },
-            { title: "Absent Today", value: absentToday, icon: CalendarX2, tone: "bg-dashboard-rose", to: "/time-management", caption: "Recorded absences" },
-            { title: "On Leave Today", value: leaves.length, icon: Palmtree, tone: "bg-dashboard-ink", to: "/leave", caption: `${medicalLeaveCount} on medical leave` },
+            { title: "Active Employees", value: activeEmployees, icon: Users, tone: "bg-primary text-primary-foreground", to: "/workforce", caption: `${employees.length} workers in total` },
+            { title: "Present Today", value: presentToday, icon: CalendarCheck2, tone: "bg-success text-success-foreground", to: "/time-management", caption: "Attendance today" },
+            { title: "Available Workers", value: availableWorkers, icon: UserCheck, tone: "bg-info text-info-foreground", to: "/workforce", caption: `${availableRate}% available` },
+            { title: "Absent Today", value: absentToday, icon: CalendarX2, tone: "bg-destructive text-destructive-foreground", to: "/time-management", caption: "Recorded absences" },
+            { title: "On Leave Today", value: leaves.length, icon: Palmtree, tone: "bg-warning text-warning-foreground", to: "/leave", caption: `${medicalLeaveCount} on medical leave` },
           ].map((stat) => (
-            <Link key={stat.title} to={stat.to as LinkProps["to"]} className={`dashboard-stat dashboard-colour-card group rounded-lg p-4 text-dashboard-on-colour transition-shadow ${stat.tone}`}>
+            <Link key={stat.title} to={stat.to as LinkProps["to"]} className={`dashboard-stat dashboard-colour-card group rounded-lg p-4 transition-shadow ${stat.tone}`}>
               <div className="flex items-start justify-between gap-2"><span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-dashboard-on-colour/15"><stat.icon className="size-5" /></span><ArrowUpRight className="size-4 opacity-70" /></div>
-              <p className="mt-3 text-xs font-medium text-dashboard-on-colour/85">{stat.title}</p>
+              <p className="mt-3 text-xs font-medium opacity-85">{stat.title}</p>
               <p className="mt-1 text-3xl font-bold tabular-nums">{stat.value}</p>
-              <p className="mt-2 text-xs text-dashboard-on-colour/85">{stat.caption}</p>
+              <p className="mt-2 text-xs opacity-85">{stat.caption}</p>
             </Link>
           ))}
         </section>
