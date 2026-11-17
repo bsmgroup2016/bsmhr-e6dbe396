@@ -86,7 +86,8 @@ function SectionHeading({
   icon?: ReactNode;
 }) {
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="flex flex-wrap items-center gap-2.5">
+      <span className="h-5 w-1 rounded-full bg-gradient-primary" aria-hidden="true" />
       {icon}
       <h2 className="text-base font-semibold tracking-tight text-foreground">{title}</h2>
       {caption ? <span className="ml-auto text-sm text-muted-foreground">{caption}</span> : null}
