@@ -494,31 +494,63 @@ function OperationsDashboard() {
     { to: "/documents", search: undefined, icon: FileText, label: "Expiring documents", desc: "Review work permits and passes.", color: "warning" },
   ] as const;
 
+  const hour = today.getHours();
+  const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+
   return (
     <AppShell>
       <div className="w-full space-y-8">
-        <div className="flex flex-col gap-4 border-b border-border/60 pb-5 sm:flex-row sm:items-end sm:justify-between">
-          <div className="space-y-1">
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-              Dashboard
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              Workforce, compliance and operations at a glance ·{" "}
-              {today.toLocaleDateString("en-SG", {
-                weekday: "long",
-                day: "numeric",
-                month: "short",
-                year: "numeric",
-              })}
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-success/25 bg-success/10 px-3 py-1.5 text-sm font-medium text-success">
-              <UserCheck className="h-4 w-4" /> {availableWorkers} available now
-            </span>
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-warning/25 bg-warning/10 px-3 py-1.5 text-sm font-medium text-warning">
-              <AlertCircle className="h-4 w-4" /> {pendingApprovals} pending approvals
-            </span>
+        {/* Hero band */}
+        <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-primary p-6 shadow-elegant sm:p-8">
+          <div
+            className="pointer-events-none absolute -right-16 -top-24 h-64 w-64 rounded-full bg-white/10 blur-2xl"
+            aria-hidden="true"
+          />
+          <div
+            className="pointer-events-none absolute -bottom-28 right-24 h-56 w-56 rounded-full bg-white/5 blur-2xl"
+            aria-hidden="true"
+          />
+          <div className="relative flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-primary-foreground/80">
+                {today.toLocaleDateString("en-SG", {
+                  weekday: "long",
+                  day: "numeric",
+                  month: "long",
+                  year: "numeric",
+                })}
+              </p>
+              <h1 className="text-2xl font-semibold tracking-tight text-primary-foreground sm:text-3xl">
+                {greeting} — operations at a glance
+              </h1>
+              <div className="flex flex-wrap items-center gap-2 pt-1">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 text-sm font-medium text-primary-foreground ring-1 ring-white/25 backdrop-blur">
+                  <UserCheck className="h-4 w-4" /> {availableWorkers} workers available
+                </span>
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 text-sm font-medium text-primary-foreground ring-1 ring-white/25 backdrop-blur">
+                  <CalendarCheck2 className="h-4 w-4" /> {presentToday} present today
+                </span>
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 text-sm font-medium text-primary-foreground ring-1 ring-white/25 backdrop-blur">
+                  <AlertCircle className="h-4 w-4" /> {pendingApprovals} pending approvals
+                </span>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4 lg:w-[520px]">
+              {quickActions.map((action) => (
+                <Link
+                  key={action.to}
+                  to={action.to}
+                  search={action.search as never}
+                  className="group flex flex-col gap-2 rounded-xl bg-white/10 p-3.5 ring-1 ring-white/20 backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:bg-white/20"
+                >
+                  <action.icon className="h-5 w-5 text-primary-foreground/90 transition-transform duration-300 group-hover:scale-110" />
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-primary-foreground">{action.label}</p>
+                    <p className="truncate text-xs text-primary-foreground/70">{action.desc}</p>
+                  </div>
+                </Link>
+              ))}
+            </div>
           </div>
         </div>
 
