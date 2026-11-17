@@ -142,7 +142,8 @@
   --accent-teal: var(--chart-2);
   --gradient-primary: linear-gradient(var(--primary), var(--primary));
   --gradient-hero: linear-gradient(var(--primary), var(--primary));
-  --gradient-sidebar: linear-gradient(var(--sidebar), var(--sidebar));
+  --gradient-sidebar: linear-gradient(155deg, color-mix(in oklab, var(--dashboard-blue) 7%, var(--sidebar)) 0%, var(--sidebar) 42%, color-mix(in oklab, var(--dashboard-teal) 6%, var(--sidebar)) 100%);
+  --sidebar-layer: linear-gradient(125deg, transparent 0% 62%, color-mix(in oklab, var(--dashboard-blue) 3%, transparent) 62% 78%, transparent 78%);
   --gradient-success: linear-gradient(var(--success), var(--success));
   --gradient-warning: linear-gradient(var(--warning), var(--warning));
   --gradient-info: linear-gradient(var(--info), var(--info));
@@ -205,6 +206,11 @@
 .workspace-content h1 { line-height: 1.25; text-wrap: balance; }
 .workspace-content h1 + p { max-width: 72ch; margin-top: 0.375rem; text-wrap: pretty; }
 .workspace-content :is(input, textarea, select) { scroll-margin-top: 6rem; }
+
+/* Soft colour washes remain behind navigation, including the mobile drawer. */
+[data-sidebar="sidebar"] {
+  background-image: var(--sidebar-layer), var(--gradient-sidebar);
+}
 
 /* Operational page hierarchy. Workbook grids and dialog portals are excluded. */
 .workspace-content h1 {
