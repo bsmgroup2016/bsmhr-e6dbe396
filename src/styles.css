@@ -8,7 +8,7 @@
  * BSM Workforce & Operations Management System — design tokens.
  *
  * Light mode: white sidebar and surfaces with a neutral canvas.
- * Accents: refined blue, teal, and emerald for status and actions.
+ * Accents: pink and rose for actions, emerald and amber for status.
  */
 
 @theme inline {
@@ -91,7 +91,7 @@
 }
 
 /*
- * Screenshot-led light theme — white sidebar with vivid blue accents.
+ * Screenshot-led light theme — light rose sidebar with pink accents.
  * Inside the app: neutral canvas, white cards, charcoal text.
  * Roboto typography, comfortable density.
  */
@@ -105,27 +105,27 @@
   --card-foreground: var(--foreground);
   --popover: var(--card);
   --popover-foreground: var(--foreground);
-  --primary: oklch(0.49 0.27 264);
+  --primary: oklch(0.55 0.19 355);
   --primary-foreground: oklch(1 0 0);
   --secondary: oklch(0.96 0.003 260);
   --secondary-foreground: var(--foreground);
   --muted: var(--secondary);
   --muted-foreground: oklch(0.47 0.012 260);
-  --accent: oklch(0.95 0.023 264);
+  --accent: oklch(0.95 0.025 355);
   --accent-foreground: var(--primary);
   --success: oklch(0.46 0.11 158);
   --success-foreground: oklch(0.99 0.01 158);
   --warning: oklch(0.74 0.15 72);
   --warning-text: oklch(0.43 0.09 65);
   --warning-foreground: oklch(0.2 0.04 72);
-  --info: oklch(0.46 0.10 232);
-  --info-foreground: oklch(0.99 0.01 232);
+  --info: oklch(0.46 0.10 165);
+  --info-foreground: oklch(0.99 0.01 165);
   --destructive: oklch(0.52 0.19 22);
   --destructive-foreground: oklch(0.99 0.005 22);
   --border: oklch(0.91 0.004 260);
   --input: oklch(0.65 0.008 260);
   --ring: var(--primary);
-  --sidebar: var(--card);
+  --sidebar: oklch(0.985 0.008 355);
   --sidebar-foreground: oklch(0.36 0.014 260);
   --sidebar-primary: var(--primary);
   --sidebar-primary-foreground: var(--primary-foreground);
@@ -134,16 +134,16 @@
   --sidebar-border: var(--border);
   --sidebar-ring: var(--primary);
   --chart-1: var(--primary);
-  --chart-2: oklch(0.67 0.14 185);
+  --chart-2: oklch(0.62 0.14 160);
   --chart-3: oklch(0.65 0.16 158);
   --chart-4: oklch(0.73 0.17 65);
-  --chart-5: oklch(0.65 0.22 315);
+  --chart-5: oklch(0.65 0.18 350);
   --primary-glow: var(--primary);
   --accent-teal: var(--chart-2);
   --gradient-primary: linear-gradient(var(--primary), var(--primary));
   --gradient-hero: linear-gradient(var(--primary), var(--primary));
-  --gradient-sidebar: linear-gradient(155deg, color-mix(in oklab, var(--dashboard-blue) 7%, var(--sidebar)) 0%, var(--sidebar) 42%, color-mix(in oklab, var(--dashboard-teal) 6%, var(--sidebar)) 100%);
-  --sidebar-layer: linear-gradient(125deg, transparent 0% 62%, color-mix(in oklab, var(--dashboard-blue) 3%, transparent) 62% 78%, transparent 78%);
+  --gradient-sidebar: linear-gradient(155deg, color-mix(in oklab, var(--primary) 7%, var(--sidebar)) 0%, var(--sidebar) 42%, color-mix(in oklab, var(--dashboard-rose) 6%, var(--sidebar)) 100%);
+  --sidebar-layer: linear-gradient(125deg, transparent 0% 62%, color-mix(in oklab, var(--primary) 3%, transparent) 62% 78%, transparent 78%);
   --gradient-success: linear-gradient(var(--success), var(--success));
   --gradient-warning: linear-gradient(var(--warning), var(--warning));
   --gradient-info: linear-gradient(var(--info), var(--info));
@@ -152,8 +152,8 @@
   --shadow-elegant: 0 8px 24px -16px color-mix(in oklab, var(--foreground) 18%, transparent);
   --shadow-card: 0 2px 8px -4px color-mix(in oklab, var(--foreground) 16%, transparent);
   --shadow-glow: var(--shadow-card);
-  --dashboard-teal: oklch(0.42 0.08 210);
-  --dashboard-blue: oklch(0.49 0.22 263);
+  --dashboard-teal: oklch(0.42 0.09 160);
+  --dashboard-blue: var(--primary);
   --dashboard-coral: oklch(0.53 0.19 38);
   --dashboard-rose: oklch(0.49 0.2 350);
   --dashboard-ink: oklch(0.27 0.015 260);
