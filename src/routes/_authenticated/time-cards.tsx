@@ -21,7 +21,7 @@ import { matchCardWorker, uniqueCardMatch } from "@/core/time-card-matching";
 import { uploadToR2 } from "@/lib/r2";
 import { extractTimeCardData } from "@/lib/ocr";
 import { timestampedName } from "@/lib/xlsx";
-import { buildClaimSheetFromCard, getClaimSheets, getClients, getCompanies, getCurrentCompany, getEmployees, getProjects, getSites, saveGeneratedClaims } from "@/lib/store";
+import { buildClaimSheetFromCard, deleteClaimSheet, getClaimSheets, getClients, getCompanies, getCurrentCompany, getEmployees, getProjects, getSites, saveGeneratedClaims } from "@/lib/store";
 import type { TimeCard, TimeCardEntry } from "@/lib/types";
 
 export const Route = createFileRoute("/_authenticated/time-cards")({
@@ -104,7 +104,7 @@ function TimeCardsPage() {
             const counted = countedCardHours(entry);
             return { ...entry, ...splitWrittenHours(counted.normalHours, counted.otHours) };
           }).sort((a, b) => a.date.localeCompare(b.date));
-          read.push({ id: crypto.randomUUID(), fileName: page.name, preview, isPdf: page.type === "application/pdf", workerName: (group.identity.workerName ?? "").replace(/\s*\(\s*\d+\s*\)\s*$/, "").trim(), employeeCode: group.identity.employeeCode ?? "", siteName: group.identity.siteName ?? "", entries, approved: false });
+          read.push({ id: crypto.randomUUID(), fileName: page.name, preview, isPdf: page.type === "application/pdf", workerName: (group.identity.workerName ?? "").replace(/\s*\(\s*[0-9A-Z]{1,4}\s*\)\s*$/i, "").trim(), employeeCode: group.identity.employeeCode ?? "", siteName: group.identity.siteName ?? "", entries, approved: false });
         }
       } catch (e) { errors.push(`${page.name}: ${e instanceof Error ? e.message : "could not be read"}`); }
       setProgress({ done: i + 1, total: pages.length });
@@ -159,6 +159,10 @@ function TimeCardsPage() {
       }).filter(d => d.snapshot.length);
       if (!drafts.length) throw new Error("No worked hours to claim");
       const workbook = await createClaimWorkbook(drafts, employees, getCompanies(), cardMonth, lookups());
+      // Re-generating a month replaces each worker's earlier claim instead of doubling it.
+      const codeOf = (snap: { employeeCode?: string; workerName?: string }[]) => (snap.find(r => r.employeeCode)?.employeeCode || snap.find(r => r.workerName)?.workerName || "").toUpperCase();
+      const newCodes = new Set(drafts.map(d => codeOf(d.snapshot)));
+      for (const old of getClaimSheets()) if (old.periodStart.startsWith(cardMonth) && newCodes.has(codeOf(old.snapshot))) deleteClaimSheet(old.id);
       await saveGeneratedClaims(drafts.map(({ id, reference, ...claim }) => ({ ...claim, sourceCardId: id })));
       setSheets(getClaimSheets()); setMonth(cardMonth); setTab("sheets");
       setFinalOpen(false); setCards([]); setFailed([]); setProjectId("");
