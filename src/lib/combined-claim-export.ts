@@ -80,7 +80,7 @@ export async function createClaimWorkbook(sheets: ClaimSheet[], employees: Emplo
     while (used.has(name.toUpperCase())) name = `${stem.slice(0, 25)} ${suffix++}`;
     used.add(name.toUpperCase());
     let page = base;
-    if (index === 0) page.name = name;
+    if (index === 0) { used.add(base.name.toUpperCase()); /* keep the template sheet name */ }
     else { page = workbook.addWorksheet(name); page.model = { ...structuredClone(baseModel), name, id: page.id } as typeof baseModel; for (const range of (baseModel as { merges?: string[] }).merges ?? []) { try { page.mergeCells(range); } catch { /* already merged */ } } }
 
     // Fill only the three title cells; the template's styling, formulas and columns stay untouched.
@@ -89,6 +89,16 @@ export async function createClaimWorkbook(sheets: ClaimSheet[], employees: Emplo
       page.getCell("A2").value = group.siteName || null;
       const label = String(page.getCell("A3").value ?? "").trim() || "CLAIM SHEET FOR";
       page.getCell("A3").value = `${label.replace(/\s+[A-Z]{3}\s+\d{4}$/, "")} ${monthLabel(month)}`;
+    }
+
+    // Date header formulas follow the claim month (=DATE(y,m,d)); other header cells stay untouched.
+    for (const col of layout.days.values()) {
+      const cell = page.getCell(layout.headerRow, col);
+      const v = cell.value as { formula?: string } | null;
+      if (v && typeof v === "object" && typeof v.formula === "string") {
+        const f = v.formula.replace(/DATE\(\s*\d+\s*,\s*\d+\s*,/i, `DATE(${y},${m},`);
+        if (f !== v.formula) cell.value = { formula: f } as never;
+      }
     }
 
     // More workers than template slots: copy the last slot so format and formulas carry over.
@@ -109,7 +119,7 @@ export async function createClaimWorkbook(sheets: ClaimSheet[], employees: Emplo
       const { g: r, ot } = pageLayout.slots[i];
       const worker = workers[i];
       if (!worker) continue;
-      if (layout.serialCol) page.getCell(r, layout.serialCol).value = i + 1;
+      if (layout.serialCol && i >= layout.slots.length) page.getCell(r, layout.serialCol).value = i + 1;
       page.getCell(r, layout.codeCol).value = worker.code || null;
       page.getCell(r, layout.nameCol).value = worker.name || null;
       for (const [day, v] of worker.days) {
