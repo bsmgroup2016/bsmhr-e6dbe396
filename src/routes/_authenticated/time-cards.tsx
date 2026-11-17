@@ -104,7 +104,7 @@ function TimeCardsPage() {
             const counted = countedCardHours(entry);
             return { ...entry, ...splitWrittenHours(counted.normalHours, counted.otHours) };
           }).sort((a, b) => a.date.localeCompare(b.date));
-          read.push({ id: crypto.randomUUID(), fileName: page.name, preview, isPdf: page.type === "application/pdf", workerName: group.identity.workerName ?? "", employeeCode: group.identity.employeeCode ?? "", siteName: group.identity.siteName ?? "", entries, approved: false });
+          read.push({ id: crypto.randomUUID(), fileName: page.name, preview, isPdf: page.type === "application/pdf", workerName: (group.identity.workerName ?? "").replace(/\s*\(\s*\d+\s*\)\s*$/, "").trim(), employeeCode: group.identity.employeeCode ?? "", siteName: group.identity.siteName ?? "", entries, approved: false });
         }
       } catch (e) { errors.push(`${page.name}: ${e instanceof Error ? e.message : "could not be read"}`); }
       setProgress({ done: i + 1, total: pages.length });
@@ -113,6 +113,10 @@ function TimeCardsPage() {
     setFailed(errors);
     if (errors.length) toast.error(`${errors.length} file(s) could not be read`);
     if (read.length) {
+      // One project per batch: a card without a readable site takes the batch's site.
+      const known = [...cards, ...read].map(c => c.siteName.trim()).filter(Boolean);
+      const batchSite = known.sort((a, b) => known.filter(x => x === b).length - known.filter(x => x === a).length)[0] ?? "";
+      for (const card of read) if (!card.siteName.trim()) card.siteName = batchSite;
       const start = cards.length;
       setCards(items => [...items, ...read]);
       setReviewIndex(start);
