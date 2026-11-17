@@ -39,7 +39,7 @@ const pages: Record<string, CollectionKey[]> = {
   reports: ["employees", "projects", "sites", "assignments", "documents", "payroll", "attendance", "leaveRequests", "invoices", "expenses", "leads", "candidates", "incidents", "trainings", "assets", "issuances", "dormitories", "allocations", "vehicles", "trips", "inventory", "movements"],
   settings: ["branchPrefixes", "departments", "designations", "employees"],
   users: ["users"], "audit-logs": [], assistant: [],
-  "my-portal": ["documents", "employees", "leaveRequests", "payroll", "driverProfiles", "vehicles", "sites"],
+  "my-portal": ["documents", "employees", "leaveRequests", "payroll", "attendance", "driverProfiles", "vehicles", "sites"],
   "qr-punch": ["employees", "sites", "attendance"],
   alerts: ["employees", "documents", "payroll", "leaveRequests", "invoices", "approvals"],
 };

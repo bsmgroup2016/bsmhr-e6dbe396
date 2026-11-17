@@ -1,0 +1,31 @@
+{
+  "info": { "name": "BSM Worker App API", "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json" },
+  "variable": [
+    { "key": "base", "value": "https://hrbsm.xyz/api/public/v1" },
+    { "key": "authUrl", "value": "https://thrfyeyqafmdnpexgmlc.supabase.co/auth/v1" },
+    { "key": "anonKey", "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRocmZ5ZXlxYWZtZG5wZXhnbWxjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUyNTMzNTcsImV4cCI6MjEwMDgyOTM1N30.4EGhaZVMSZYI2NPo6mdzBLgKbZJjlVqJ-cdm7VqDvrQ';" },
+    { "key": "email", "value": "worker@example.com" },
+    { "key": "password", "value": "" },
+    { "key": "token", "value": "" },
+    { "key": "month", "value": "2026-11" }
+  ],
+  "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+  "item": [
+    { "name": "Sign in", "event": [{ "listen": "test", "script": { "exec": ["pm.collectionVariables.set('token', pm.response.json().access_token);"] } }],
+      "request": { "auth": { "type": "noauth" }, "method": "POST", "header": [{ "key": "apikey", "value": "{{anonKey}}" }, { "key": "Content-Type", "value": "application/json" }],
+        "url": "{{authUrl}}/token?grant_type=password", "body": { "mode": "raw", "raw": "{\"email\":\"{{email}}\",\"password\":\"{{password}}\"}" } } },
+    { "name": "Me (profile, roles)", "request": { "method": "GET", "url": "{{base}}/me" } },
+    { "name": "Home summary", "request": { "method": "GET", "url": "{{base}}/me/dashboard" } },
+    { "name": "My attendance (month)", "request": { "method": "GET", "url": { "raw": "{{base}}/attendance?from={{month}}-01&to={{month}}-31", "host": ["{{base}}"], "path": ["attendance"], "query": [{ "key": "from", "value": "{{month}}-01" }, { "key": "to", "value": "{{month}}-31" }] } } },
+    { "name": "Punch in (GPS)", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{base}}/attendance", "body": { "mode": "raw", "raw": "{\"checkIn\":\"07:00\",\"lat\":1.3521,\"lng\":103.8198,\"accuracyM\":15}" } } },
+    { "name": "My leave", "request": { "method": "GET", "url": "{{base}}/leave" } },
+    { "name": "Apply for leave", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{base}}/leave", "body": { "mode": "raw", "raw": "{\"type\":\"Annual Leave\",\"startDate\":\"2026-12-01\",\"endDate\":\"2026-12-02\",\"reason\":\"Family\"}" } } },
+    { "name": "Cancel leave", "request": { "method": "PATCH", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{base}}/leave/:id", "body": { "mode": "raw", "raw": "{\"status\":\"Cancelled\"}" } } },
+    { "name": "My payslips", "request": { "method": "GET", "url": "{{base}}/payroll" } },
+    { "name": "Payslip PDF", "request": { "method": "GET", "url": "{{base}}/payroll/:id/payslip" } },
+    { "name": "Upload file (MC/document)", "request": { "method": "POST", "url": "{{base}}/uploads", "body": { "mode": "formdata", "formdata": [{ "key": "file", "type": "file", "src": "" }, { "key": "folder", "value": "medical", "type": "text" }] } } },
+    { "name": "Signed file link", "request": { "method": "GET", "url": "{{base}}/uploads?key=" } },
+    { "name": "Notifications", "request": { "method": "GET", "url": "{{base}}/notifications" } },
+    { "name": "Register device (FCM)", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{base}}/devices", "body": { "mode": "raw", "raw": "{\"token\":\"FCM_TOKEN\",\"platform\":\"android\",\"appVersion\":\"1.0.0\"}" } } }
+  ]
+}

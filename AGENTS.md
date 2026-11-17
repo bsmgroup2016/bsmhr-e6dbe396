@@ -47,3 +47,4 @@
 - Archive cleanup may touch only explicitly approved historical tracking/chat/audit and expired operational-log rules. Never archive or delete employees, companies, profiles, user_roles, payroll_entries, attendance, contracts, claims, invoices, documents, loans, training or assets in this cleanup scope; all unlisted tables are excluded to protect live business data.
 - Age-based archive cleanup must verify uploaded files by read-back, row counts, record identity and contents before bounded exact-row deletion; dry runs do not write or delete. Archive access is admin-only, and existing table RLS/permissions must not change, because cleanup must not weaken data access or destroy unverified records.
 
+- Worker-only (employee) accounts use a sidebar-free My Portal shell with bottom tabs and are redirected from /dashboard, so the WebView app feels native; staff keep AppShell.

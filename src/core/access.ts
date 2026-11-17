@@ -78,3 +78,7 @@ export function canAccess(path: string, roles: readonly string[]): boolean {
   const allowed = key ? ROUTE_ROLES[key] : undefined;
   return allowed ? roles.some((role) => allowed.some((known) => known === role)) : false;
 }
+/** True when the account only has the worker self-service role (lands on My Portal, no office menus). */
+export function isWorkerOnly(roles: readonly string[]): boolean {
+  return roles.length > 0 && roles.every((role) => role === "employee");
+}

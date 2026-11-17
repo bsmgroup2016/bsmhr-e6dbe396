@@ -1,3 +1,5 @@
+import { Navigate } from "@tanstack/react-router";
+import { isWorkerOnly } from "@/core/access";
 import { employeeSlugById } from "@/lib/employee-slug";
 import type { ReactNode } from "react";
 import { createFileRoute, Link, type LinkProps } from "@tanstack/react-router";
@@ -123,6 +125,7 @@ function PassportIcon({ className }: { className?: string }) {
 
 function DashboardPage() {
   const { roles } = useAuth();
+  if (isWorkerOnly(roles)) return <Navigate to="/my-portal" replace />;
   if (!roles.some((role) => ["admin", "manager", "hr"].includes(role))) return <RoleDashboard />;
   return <OperationsDashboard />;
 }
