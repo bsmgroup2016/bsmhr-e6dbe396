@@ -1,10 +1,9 @@
+import { createClaimWorkbook, claimWorkbookBlob, downloadClaimBlob } from "@/lib/combined-claim-export";
 import { groupTimeCardRows, splitTimeCardFile } from "@/core/time-card-batch";
 import { countedCardHours } from "@/core/time-card-settlement";
 import { matchCardWorker, uniqueCardMatch } from "@/core/time-card-matching";
 import { uploadToR2 } from "@/lib/r2";
 import { extractTimeCardData } from "@/lib/ocr";
-import { exportCombinedClaims } from "@/lib/combined-claim-export";
-import claimFormat from "@/assets/project-claim-template.xlsx.asset.json";
 import { buildClaimSheetFromCard, deleteClaimSheet, getClaimSheets, getClients, getCompanies, getCurrentCompany, getEmployees, getProjects, getSites, saveGeneratedClaims } from "@/lib/store";
 import type { TimeCard, TimeCardEntry } from "@/lib/types";
 import type { DayEntry, FieldFlag, Worker } from "./types";
@@ -104,11 +103,15 @@ function drafts(workers: Worker[], month: string, site: string) {
   }).filter((d) => d.snapshot.length);
 }
 
-/** Fills the current blank template and downloads it. */
-export async function downloadExcel(workers: Worker[], month: string, site: string) {
+/** Fills the user's saved blank template (Template manager) only; never builds its own layout. */
+export async function buildWorkbook(workers: Worker[], month: string, site: string) {
   const list = drafts(workers, month, site);
   if (!list.length) throw new Error("No worked hours to claim");
-  await exportCombinedClaims(list as never, getEmployees(), "", getCompanies(), month, { projects: getProjects(), sites: getSites(), clients: getClients(), templateBuffer: await (await fetch(claimFormat.url)).arrayBuffer(), fileName: `claim_sheet_${month}.xlsx` });
+  return createClaimWorkbook(list as never, getEmployees(), getCompanies(), month, { projects: getProjects(), sites: getSites(), clients: getClients() });
+}
+
+export async function downloadExcel(workers: Worker[], month: string, site: string) {
+  downloadClaimBlob(await claimWorkbookBlob(await buildWorkbook(workers, month, site)), `claim_sheet_${month}.xlsx`);
 }
 
 /** Saves claims to HR records, replacing earlier claims for the same workers and month. */
