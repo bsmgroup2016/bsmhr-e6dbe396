@@ -2,6 +2,9 @@
 
 ## Zenova dashboard presentation
 
+- [ ] Match the newly supplied screenshot colours across sidebar, header and all pages; remove dark sidebar and dashboard-only pink overrides, preserving layouts and business logic.
+- [ ] Verify shared navigation colours and sidebar collapse at desktop/mobile sizes; live account read-back remains unavailable without an authorized session.
+
 - [x] Apply the selected light dashboard reference with compact coloured metrics, pending approvals and prominent charts; preserve all data and navigation.
 - [x] Check isolated desktop/mobile layout (1280, 1206 and 390px), with no overflow or page errors; 12 data-loading tests pass and preview build is clean. Real signed-in dashboard remains unverified: no external account session is available.
 
