@@ -72,8 +72,7 @@ const navGroups: { label: string; items: NavItem[] }[] = [
     items: [
       { title: "Workers (Site)", url: "/workforce", icon: Users },
       { title: "Attendance & OT", url: "/time-management", icon: CalendarClock },
-      { title: "ClaimSheet Generator", url: "/time-cards", icon: ScanLine },
-      { title: "Claim Sheet (New)", url: "/claim-generator", icon: ScanLine },
+      { title: "Timecard to ClaimSheet", url: "/claim-generator", icon: ScanLine },
       { title: "Workforce Payroll", url: "/payroll", icon: Briefcase },
       { title: "Leave Management", url: "/leave", icon: CalendarClock },
       { title: "MOM Compliance", url: "/compliance", icon: ShieldCheck },

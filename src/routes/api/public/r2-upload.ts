@@ -29,7 +29,7 @@ export const Route = createFileRoute("/api/public/r2-upload")({
           const { authenticate } = await import("@/lib/api-v1.server");
           const { canAccess } = await import("@/core/access");
           const caller = await authenticate(request);
-          if (!caller || !canAccess("/time-cards", caller.roles)) return new Response("Claim sheet access required", { status: 403 });
+          if (!caller || !canAccess("/claim-generator", caller.roles)) return new Response("Claim sheet access required", { status: 403 });
           if (!(file instanceof File) || !file.name.toLowerCase().endsWith(".xlsx")) return new Response("An .xlsx template is required", { status: 400 });
         }
         if (!(file instanceof File) || file.size === 0) {

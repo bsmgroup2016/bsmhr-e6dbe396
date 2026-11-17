@@ -427,7 +427,7 @@ export default function TimeManagementPage() {
                   Monthly detail (bulk)
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link to="/time-cards">
+                  <Link to="/claim-generator">
                     <ClipboardList className="mr-2 h-4 w-4" />
                     Generate claim sheet
                   </Link>

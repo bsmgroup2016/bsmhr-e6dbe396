@@ -16,9 +16,9 @@ import { activeClaimTemplate, loadClaimTemplate, saveClaimTemplate } from "@/lib
 export const Route = createFileRoute("/_authenticated/claim-generator")({
   head: () => ({
     meta: [
-      { title: "Claim Sheet Generator — BSM HR" },
+      { title: "Timecard to ClaimSheet — BSM HR" },
       { name: "description", content: "Turn scanned work record cards into a monthly claim sheet." },
-      { property: "og:title", content: "Claim Sheet Generator — BSM HR" },
+      { property: "og:title", content: "Timecard to ClaimSheet — BSM HR" },
       { property: "og:description", content: "Turn scanned work record cards into a monthly claim sheet." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -98,7 +98,7 @@ function ClaimGeneratorPage() {
           }} />
         </div>
       </div>
-      <h1 className="text-2xl font-semibold">Claim Sheet Generator</h1>
+      <h1 className="text-2xl font-semibold">Timecard to ClaimSheet</h1>
       <p className="mb-4 text-sm text-muted-foreground">Upload scanned work record cards, check the hours, and get the monthly claim sheet.</p>
 
       <div className="mb-4 grid grid-cols-2 gap-3 md:grid-cols-4">

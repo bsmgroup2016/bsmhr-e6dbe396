@@ -477,7 +477,7 @@ export default function PayrollPage() {
                   <Calculator className="mr-2 h-4 w-4" /> Recalculate CPF
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link to="/time-cards">
+                  <Link to="/claim-generator">
                     <Wand2 className="mr-2 h-4 w-4" /> Generate claim sheet
                   </Link>
                 </DropdownMenuItem>
