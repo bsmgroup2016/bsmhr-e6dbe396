@@ -2,6 +2,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Worker, FieldFlag } from "./types";
+import card1 from "@/assets/claim-demo/card-1.jpg.asset.json";
+import card2 from "@/assets/claim-demo/card-2.jpg.asset.json";
+import card3 from "@/assets/claim-demo/card-3.jpg.asset.json";
+import card4 from "@/assets/claim-demo/card-4.jpg.asset.json";
 import { isSunday, problemCount, rowMatches, surname, weekday, workerTotals } from "./helpers";
 import { DevNote } from "./shared";
 
@@ -12,10 +16,7 @@ const FIELDS: { key: FieldFlag["field"]; label: string; prop: keyof Worker }[] =
   { key: "address", label: "Address", prop: "address" },
 ];
 
-function cardSvg(name: string) {
-  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='600' height='800'><rect width='100%' height='100%' fill='#f4f1e8'/><text x='30' y='50' font-family='monospace' font-size='22' fill='#333'>WORK RECORD CARD</text><text x='30' y='85' font-family='monospace' font-size='16' fill='#555'>${name}</text>${Array.from({ length: 16 }, (_, i) => `<line x1='30' x2='290' y1='${130 + i * 40}' y2='${130 + i * 40}' stroke='#bbb'/><line x1='310' x2='570' y1='${130 + i * 40}' y2='${130 + i * 40}' stroke='#bbb'/>`).join("")}<line x1='300' x2='300' y1='110' y2='780' stroke='#999'/></svg>`;
-  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
-}
+const CARD_IMAGES = [card1.url, card2.url, card3.url, card4.url];
 
 export function StepReview({ workers, year, month, onEdit, onBack, onNext }: {
   workers: Worker[]; year: number; month: number;
@@ -36,13 +37,13 @@ export function StepReview({ workers, year, month, onEdit, onBack, onNext }: {
             );
           })}
         </TabsList>
-        {workers.map((w) => {
+        {workers.map((w, wi) => {
           const t = workerTotals(w);
           return (
             <TabsContent key={w.id} value={w.id}>
               <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
                 <figure className="rounded-[10px] border bg-card p-2">
-                  <img src={cardSvg(w.name)} alt={`Scanned card for ${w.name}`} className="w-full rounded" />
+                  <a href={CARD_IMAGES[wi % 4]} target="_blank" rel="noreferrer" title="Open full size"><img src={CARD_IMAGES[wi % 4]} alt={`Scanned card for ${w.name}`} className="w-full rounded" /></a>
                   <figcaption className="mt-2 text-xs text-muted-foreground">Scanned card (days 1–15 on the left, 16–31 on the right)</figcaption>
                 </figure>
                 <div className="min-w-0 space-y-3">
