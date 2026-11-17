@@ -81,44 +81,17 @@ export function DashboardCharts({ data }: { data: DashboardChartData }) {
           </BarChart>
         </ResponsiveContainer>
       </ChartCard>
-      <ChartCard title="Wage trend" caption="Gross vs paid · last 6 months" className="lg:col-span-2">
+      <ChartCard title="Payroll trend" caption="Gross vs paid · last 6 months">
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={data.wageTrend} margin={{ top: 8, right: 8, left: -12, bottom: 0 }}>
-            <defs>
-              <linearGradient id="grossFill" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={C.primary} stopOpacity={0.35} />
-                <stop offset="100%" stopColor={C.primary} stopOpacity={0.02} />
-              </linearGradient>
-              <linearGradient id="paidFill" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={C.success} stopOpacity={0.3} />
-                <stop offset="100%" stopColor={C.success} stopOpacity={0.02} />
-              </linearGradient>
-            </defs>
+          <BarChart data={data.wageTrend} margin={{ top: 8, right: 8, left: -12, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
             <XAxis dataKey="month" tickLine={false} axisLine={false} fontSize={12} />
             <YAxis tickFormatter={sgdShort} tickLine={false} axisLine={false} fontSize={12} width={48} />
-            <Tooltip
-              contentStyle={tooltipStyle}
-              formatter={(v: number) => `$${Math.round(v).toLocaleString("en-SG")}`}
-            />
+            <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => `$${Math.round(v).toLocaleString("en-SG")}`} />
             <Legend iconType="circle" wrapperStyle={{ fontSize: 13 }} />
-            <Area
-              type="monotone"
-              dataKey="gross"
-              name="Gross wages"
-              stroke={C.primary}
-              strokeWidth={2.4}
-              fill="url(#grossFill)"
-            />
-            <Area
-              type="monotone"
-              dataKey="paid"
-              name="Net paid"
-              stroke={C.success}
-              strokeWidth={2.4}
-              fill="url(#paidFill)"
-            />
-          </AreaChart>
+            <Bar dataKey="gross" name="Gross wages" fill={C.primary} radius={[3, 3, 0, 0]} />
+            <Bar dataKey="paid" name="Net paid" fill={C.info} radius={[3, 3, 0, 0]} />
+          </BarChart>
         </ResponsiveContainer>
       </ChartCard>
 
@@ -142,21 +115,6 @@ export function DashboardCharts({ data }: { data: DashboardChartData }) {
             <Tooltip contentStyle={tooltipStyle} />
             <Legend iconType="circle" wrapperStyle={{ fontSize: 13 }} />
           </PieChart>
-        </ResponsiveContainer>
-      </ChartCard>
-
-      <ChartCard title="Attendance trend" caption="Last 7 days" className="lg:col-span-2">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data.attendance} margin={{ top: 8, right: 8, left: -18, bottom: 0 }} barSize={22}>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
-            <XAxis dataKey="day" tickLine={false} axisLine={false} fontSize={12} />
-            <YAxis allowDecimals={false} tickLine={false} axisLine={false} fontSize={12} width={44} />
-            <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "var(--muted)", opacity: 0.35 }} />
-            <Legend iconType="circle" wrapperStyle={{ fontSize: 13 }} />
-            <Bar dataKey="Present" stackId="a" fill={C.success} radius={[0, 0, 0, 0]} />
-            <Bar dataKey="Leave" stackId="a" fill={C.info} />
-            <Bar dataKey="Absent" stackId="a" fill={C.warning} radius={[6, 6, 0, 0]} />
-          </BarChart>
         </ResponsiveContainer>
       </ChartCard>
 
