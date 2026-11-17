@@ -159,11 +159,11 @@ export function AppSidebar() {
     <Sidebar
       collapsible="icon"
       variant="sidebar"
-      className="[&>[data-sidebar=sidebar]]:bg-[image:var(--gradient-sidebar)] [&>[data-sidebar=sidebar]]:backdrop-blur-xl border-r border-sidebar-border"
+      className="border-r border-sidebar-border"
     >
       <SidebarHeader className="border-b border-sidebar-border">
         <div className="flex h-16 items-center gap-3 px-4">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-primary text-primary-foreground font-bold text-sm shadow-glow">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-sm">
             BSM
           </div>
           {!collapsed && (
@@ -178,7 +178,7 @@ export function AppSidebar() {
       <SidebarContent>
         {visibleGroups.map((group) => (
           <SidebarGroup key={group.label}>
-            <SidebarGroupLabel className="text-sidebar-foreground/50">{group.label}</SidebarGroupLabel>
+            <SidebarGroupLabel className="text-muted-foreground">{group.label}</SidebarGroupLabel>
             <SidebarMenu>
               {group.items.map((item) => (
                 <SidebarMenuItem key={item.title}>
@@ -201,7 +201,7 @@ export function AppSidebar() {
 
         {visibleAdminItems.length > 0 && (
           <SidebarGroup>
-            <SidebarGroupLabel className="text-sidebar-foreground/50">Administration</SidebarGroupLabel>
+            <SidebarGroupLabel className="text-muted-foreground">Administration</SidebarGroupLabel>
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton
@@ -256,7 +256,7 @@ export function AppSidebar() {
         <div className={cn("px-4 py-3", collapsed && "px-2")}>
           {!collapsed ? (
             <div className="flex items-center gap-3">
-              <div className="h-8 w-8 shrink-0 rounded-full bg-sidebar-primary/20 flex items-center justify-center text-xs font-semibold text-sidebar-primary-foreground">
+              <div className="h-8 w-8 shrink-0 rounded-full bg-sidebar-accent flex items-center justify-center text-xs font-semibold text-sidebar-accent-foreground">
                 {initials}
               </div>
               <div className="min-w-0">
@@ -266,7 +266,7 @@ export function AppSidebar() {
             </div>
           ) : (
             <div className="flex justify-center">
-              <div className="h-8 w-8 rounded-full bg-sidebar-primary/20 flex items-center justify-center text-xs font-semibold text-sidebar-primary-foreground">
+              <div className="h-8 w-8 rounded-full bg-sidebar-accent flex items-center justify-center text-xs font-semibold text-sidebar-accent-foreground">
                 {initials}
               </div>
             </div>

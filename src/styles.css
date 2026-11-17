@@ -7,7 +7,7 @@
 /*
  * BSM Workforce & Operations Management System — design tokens.
  *
- * Light mode: clean white surfaces with a dark navy sidebar.
+ * Light mode: white sidebar and surfaces with a neutral canvas.
  * Accents: refined blue, teal, and emerald for status and actions.
  */
 
@@ -85,36 +85,28 @@
 }
 
 /*
- * Midnight Indigo — light content surfaces with a deep indigo sidebar.
- * Inside the app: soft white canvas, white cards, indigo accents.
+ * Screenshot-led light theme — white sidebar with vivid blue accents.
+ * Inside the app: neutral canvas, white cards, charcoal text.
  * Roboto typography, comfortable density.
  */
 :root {
   --font-sans: "Roboto", "ui-sans-serif", "system-ui", "-apple-system", "Segoe UI", sans-serif;
-  --overlay: oklch(0.12 0.025 281 / 65%);
-  --radius: 0.875rem;
-
-  /* Surfaces */
-  --background: oklch(0.975 0.006 280);
-  --foreground: oklch(0.23 0.045 281);
+  --overlay: oklch(0.18 0.012 260 / 45%);
+  --radius: 0.75rem;
+  --background: oklch(0.975 0.002 260);
+  --foreground: oklch(0.24 0.012 260);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.23 0.045 281);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.23 0.045 281);
-
-  /* Primary: electric indigo */
-  --primary: oklch(0.53 0.225 277);
-  --primary-foreground: oklch(0.98 0.01 277);
-
-  --secondary: oklch(0.955 0.012 280);
-  --secondary-foreground: oklch(0.27 0.05 281);
-
-  --muted: oklch(0.955 0.012 280);
-  --muted-foreground: oklch(0.44 0.04 281);
-  --accent: oklch(0.935 0.035 280);
-  --accent-foreground: oklch(0.25 0.055 281);
-
-  /* Semantic status colors */
+  --card-foreground: var(--foreground);
+  --popover: var(--card);
+  --popover-foreground: var(--foreground);
+  --primary: oklch(0.49 0.27 264);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.96 0.003 260);
+  --secondary-foreground: var(--foreground);
+  --muted: var(--secondary);
+  --muted-foreground: oklch(0.47 0.012 260);
+  --accent: oklch(0.95 0.023 264);
+  --accent-foreground: var(--primary);
   --success: oklch(0.46 0.11 158);
   --success-foreground: oklch(0.99 0.01 158);
   --warning: oklch(0.74 0.15 72);
@@ -124,48 +116,35 @@
   --info-foreground: oklch(0.99 0.01 232);
   --destructive: oklch(0.52 0.19 22);
   --destructive-foreground: oklch(0.99 0.005 22);
-
-  --border: oklch(0.9 0.014 280);
-  --input: oklch(0.59 0.025 280);
-  --ring: oklch(0.53 0.225 277);
-
-  /* Sidebar: Midnight Glassmorphism */
-  --sidebar: oklch(0.08 0.04 285);
-  --sidebar-foreground: oklch(0.92 0.015 285);
-  --sidebar-primary: oklch(0.6 0.22 277);
-  --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: oklch(0.18 0.08 280 / 45%);
-  --sidebar-accent-foreground: oklch(0.98 0.01 285);
-  --sidebar-border: oklch(0.25 0.08 280 / 25%);
-  --sidebar-ring: oklch(0.6 0.22 277);
-
-  /* Charts */
-  --chart-1: oklch(0.58 0.22 277);
-  --chart-2: oklch(0.72 0.13 210);
-  --chart-3: oklch(0.72 0.16 158);
-  --chart-4: oklch(0.8 0.14 82);
-  --chart-5: oklch(0.66 0.2 340);
-}
-
-:root {
-  /* Gradient + glow system */
-  --primary-glow: oklch(0.66 0.19 288);
-  --accent-teal: oklch(0.72 0.13 205);
-
-  --gradient-primary: linear-gradient(135deg, var(--primary), oklch(0.49 0.19 292));
-  --gradient-hero: linear-gradient(120deg, oklch(0.16 0.05 281) 0%, oklch(0.28 0.11 278) 48%, oklch(0.53 0.225 277) 100%);
-  --gradient-sidebar: linear-gradient(180deg, oklch(0.08 0.04 285) 0%, oklch(0.12 0.06 280) 50%, oklch(0.16 0.08 275) 100%);
-  --gradient-success: linear-gradient(135deg, var(--success), oklch(0.43 0.10 150));
-  --gradient-warning: linear-gradient(135deg, oklch(0.72 0.15 65), oklch(0.84 0.14 92));
-  --gradient-info: linear-gradient(135deg, var(--info), oklch(0.43 0.09 205));
-  --gradient-destructive: linear-gradient(135deg, var(--destructive), oklch(0.48 0.16 40));
-  --gradient-surface: linear-gradient(160deg, oklch(1 0 0) 0%, oklch(0.972 0.014 280) 100%);
-
-  --shadow-elegant: 0 12px 32px -14px color-mix(in oklab, var(--primary) 30%, transparent);
-  --shadow-card: 0 8px 24px -16px color-mix(in oklab, var(--foreground) 16%, transparent),
-    0 1px 3px -1px color-mix(in oklab, var(--foreground) 8%, transparent);
-  --shadow-glow: 0 0 0 1px color-mix(in oklab, var(--primary) 22%, transparent),
-    0 18px 44px -22px color-mix(in oklab, var(--primary-glow) 45%, transparent);
+  --border: oklch(0.91 0.004 260);
+  --input: oklch(0.65 0.008 260);
+  --ring: var(--primary);
+  --sidebar: var(--card);
+  --sidebar-foreground: oklch(0.36 0.014 260);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: var(--accent);
+  --sidebar-accent-foreground: var(--primary);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--primary);
+  --chart-1: var(--primary);
+  --chart-2: oklch(0.67 0.14 185);
+  --chart-3: oklch(0.65 0.16 158);
+  --chart-4: oklch(0.73 0.17 65);
+  --chart-5: oklch(0.65 0.22 315);
+  --primary-glow: var(--primary);
+  --accent-teal: var(--chart-2);
+  --gradient-primary: linear-gradient(var(--primary), var(--primary));
+  --gradient-hero: linear-gradient(var(--primary), var(--primary));
+  --gradient-sidebar: linear-gradient(var(--sidebar), var(--sidebar));
+  --gradient-success: linear-gradient(var(--success), var(--success));
+  --gradient-warning: linear-gradient(var(--warning), var(--warning));
+  --gradient-info: linear-gradient(var(--info), var(--info));
+  --gradient-destructive: linear-gradient(var(--destructive), var(--destructive));
+  --gradient-surface: linear-gradient(var(--card), var(--card));
+  --shadow-elegant: 0 8px 24px -16px color-mix(in oklab, var(--foreground) 18%, transparent);
+  --shadow-card: 0 2px 8px -4px color-mix(in oklab, var(--foreground) 16%, transparent);
+  --shadow-glow: var(--shadow-card);
 }
 
 /* Optional deep variant for dark surfaces inside a light page */
@@ -311,23 +290,7 @@
   text-wrap: balance;
 }
 
-/* Dashboard-only Zenova presentation; other operational pages retain their theme. */
-.zenova-dashboard {
-  --primary: oklch(0.45 0.16 355);
-  --primary-foreground: oklch(0.99 0 0);
-  --ring: var(--primary);
-  --background: oklch(0.975 0.002 260);
-  --muted: oklch(0.96 0.003 260);
-  --accent: oklch(0.95 0.015 355);
-  --foreground: oklch(0.25 0.012 260);
-  --muted-foreground: oklch(0.48 0.012 260);
-  --border: oklch(0.9 0.004 260);
-  --chart-1: var(--primary);
-  --chart-2: var(--info);
-  --chart-3: var(--success);
-  --chart-4: var(--warning);
-  --chart-5: var(--destructive);
-}
+/* Dashboard layout shares the whole-app colour tokens. */
 .workspace-content .zenova-dashboard .grid:has(> [data-ui="summary-metric"]),
 .workspace-content .zenova-dashboard .grid:has(> a > [data-ui="summary-metric"]) {
   border-bottom: 0;

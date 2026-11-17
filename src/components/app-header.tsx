@@ -82,7 +82,7 @@ export function AppHeader() {
   }, [alerts]);
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 flex-col border-b border-border/70 bg-card/95 backdrop-blur">
+    <header className="sticky top-0 z-30 flex h-16 flex-col border-b border-border bg-card">
       <div className="flex min-w-0 flex-1 items-center gap-2 px-3 sm:px-5">
         <SidebarTrigger aria-label="Toggle sidebar" className="min-h-11 min-w-11 shrink-0">
           <SidebarIcon className="h-4 w-4" />
@@ -185,7 +185,7 @@ export function AppHeader() {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="sm" aria-label="My account" className="max-w-52 gap-2 pl-1">
-                <div className="h-7 w-7 rounded-full bg-gradient-primary flex items-center justify-center text-xs font-semibold text-primary-foreground shadow-elegant">
+                <div className="h-7 w-7 rounded-full bg-primary flex items-center justify-center text-xs font-semibold text-primary-foreground">
                   {initials}
                 </div>
                 <span className="hidden min-w-0 truncate text-xs font-medium lg:inline">{user?.email ?? "Account"}</span>
