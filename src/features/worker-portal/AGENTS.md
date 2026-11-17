@@ -1,0 +1,1 @@
+- Worker-only (employee) accounts get a sidebar-free My Portal shell with bottom tabs and are redirected from /dashboard, so the WebView app feels native; staff keep AppShell.
