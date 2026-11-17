@@ -1,11 +1,11 @@
 {
   "version": 1,
-  "asset_id": "847e0cf2-40a9-4133-a991-37ab6913fc60",
+  "asset_id": "e545ab86-cd1f-4ebc-93da-e4afa913e5d4",
   "project_id": "8a11253f-28d2-4bb4-821d-07f8588d6127",
-  "url": "/__l5e/assets-v1/847e0cf2-40a9-4133-a991-37ab6913fc60/project-claim-template.xlsx",
-  "r2_key": "a/v1/8a11253f-28d2-4bb4-821d-07f8588d6127/847e0cf2-40a9-4133-a991-37ab6913fc60/project-claim-template.xlsx",
-  "original_filename": "project-claim-template.xlsx",
-  "size": 24100,
+  "url": "/__l5e/assets-v1/e545ab86-cd1f-4ebc-93da-e4afa913e5d4/claim-sheet-blank-penta.xlsx",
+  "r2_key": "a/v1/8a11253f-28d2-4bb4-821d-07f8588d6127/e545ab86-cd1f-4ebc-93da-e4afa913e5d4/claim-sheet-blank-penta.xlsx",
+  "original_filename": "claim-sheet-blank-penta.xlsx",
+  "size": 30431,
   "content_type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-  "created_at": "2026-11-04T18:33:35Z"
+  "created_at": "2026-11-17T18:06:12Z"
 }
