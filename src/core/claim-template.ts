@@ -23,7 +23,13 @@ export function claimTemplateLayout(sheet: Worksheet) {
   if (!headerRow) throw new Error("Template needs STAFF CODE, NAME and CATEGORY column headers.");
   const days = new Map<number, number>();
   for (let c = categoryCol + 1; c <= sheet.columnCount; c++) {
-    const value = sheet.getCell(headerRow, c).value;
+    let value: unknown = sheet.getCell(headerRow, c).value;
+    // Date headers may be formulas such as =DATE(2026,10,1); use the cached result or the formula's day argument.
+    if (value && typeof value === "object" && "formula" in value) {
+      const f = value as { formula?: string; result?: unknown };
+      const fromFormula = /DATE\(\s*\d+\s*,\s*\d+\s*,\s*(\d+)\s*\)/i.exec(f.formula ?? "")?.[1];
+      value = fromFormula ? Number(fromFormula) : f.result instanceof Date ? f.result : typeof f.result === "number" && f.result <= 31 ? f.result : 0;
+    }
     const day = value instanceof Date ? value.getUTCDate() : typeof value === "number" ? value : /^\d{1,2}$/.test(String(value ?? "")) ? Number(value) : 0;
     if (day >= 1 && day <= 31) days.set(day, c);
   }

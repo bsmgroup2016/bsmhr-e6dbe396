@@ -80,6 +80,9 @@ function TimeCardsPage() {
   const allApproved = cards.length > 0 && cards.every(card => card.approved);
   const visibleSheets = useMemo(() => sheets.filter(s => s.periodStart.startsWith(month) && (!companyId || !s.companyId || s.companyId === companyId)), [sheets, month, companyId]);
 
+  // "P.C. 34" / "pc 34" -> "PC-34", matching the P-File Number format.
+  const tidyStaffCode = (code: string) => { const m = /^\s*([A-Za-z](?:[\s.]*[A-Za-z])?)[\s.\-]*(\d+)\s*$/.exec(code); return m ? `${m[1].replace(/[\s.]/g, "").toUpperCase()}-${m[2]}` : code.trim(); };
+
   async function upload(list: FileList | File[] | null) {
     const files = list ? Array.from(list) : [];
     if (!files.length || busy) return;
@@ -104,7 +107,7 @@ function TimeCardsPage() {
             const counted = countedCardHours(entry);
             return { ...entry, ...splitWrittenHours(counted.normalHours, counted.otHours) };
           }).sort((a, b) => a.date.localeCompare(b.date));
-          read.push({ id: crypto.randomUUID(), fileName: page.name, preview, isPdf: page.type === "application/pdf", workerName: (group.identity.workerName ?? "").replace(/\s*\(\s*[0-9A-Z]{1,4}\s*\)\s*$/i, "").trim(), employeeCode: group.identity.employeeCode ?? "", siteName: group.identity.siteName ?? "", entries, approved: false });
+          read.push({ id: crypto.randomUUID(), fileName: page.name, preview, isPdf: page.type === "application/pdf", workerName: (group.identity.workerName ?? "").replace(/\s*\(\s*[0-9A-Z]{1,4}\s*\)\s*$/i, "").trim(), employeeCode: tidyStaffCode(group.identity.employeeCode ?? ""), siteName: group.identity.siteName ?? "", entries, approved: false });
         }
       } catch (e) { errors.push(`${page.name}: ${e instanceof Error ? e.message : "could not be read"}`); }
       setProgress({ done: i + 1, total: pages.length });

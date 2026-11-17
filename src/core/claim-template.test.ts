@@ -210,3 +210,15 @@ for (const count of [20, 30, 50]) test(`${count} workers expand 15 slots with ex
   }
   expect(ev.cellValue(5 + count * 2, 35)).toBe(count * 19.5);
 });
+test("reads day columns written as =DATE(...) formulas", () => {
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet("TEMPLATE");
+  ws.getRow(4).values = ["S/n", "Co.", "Staff Code", "Staff Name", "Category"];
+  ws.getCell(4, 6).value = { formula: "DATE(2026,10,1)" } as ExcelJS.CellFormulaValue;
+  ws.getCell(4, 7).value = { formula: "DATE(2026,10,2)", result: 46296 } as ExcelJS.CellFormulaValue;
+  ws.getCell(5, 5).value = "G-Hrs"; ws.getCell(6, 5).value = "OT Hrs";
+  const layout = claimTemplateLayout(ws);
+  expect(layout.days.get(1)).toBe(6);
+  expect(layout.days.get(2)).toBe(7);
+  expect(layout.slots).toEqual([{ g: 5, ot: 6 }]);
+});
