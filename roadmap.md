@@ -1,5 +1,10 @@
 # Full-section UI/UX and workflow audit
 
+## Zenova dashboard presentation
+
+- [ ] Apply the selected light dashboard reference with compact coloured metrics, pending approvals and prominent charts; preserve all data and navigation.
+- [ ] Check desktop/mobile layout and preview errors; report any signed-in verification limitation.
+
 ## Workforce deep audit
 
 - [x] Audit worker create/edit/remove/import, IPA autofill, documents/downloads and shared employee data; record findings in docs/WORKFORCE-AUDIT.md.
