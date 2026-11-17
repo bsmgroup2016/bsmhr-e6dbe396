@@ -13,9 +13,25 @@ export type ApiEnvelope<T> =
 
 export const API_BASE = "/api/public/v1";
 
-async function accessToken(): Promise<string | null> {
+export async function accessToken(forceRefresh = false): Promise<string | null> {
+  if (forceRefresh) {
+    const { data } = await supabase.auth.refreshSession();
+    return data.session?.access_token ?? null;
+  }
   const { data } = await supabase.auth.getSession();
-  return data.session?.access_token ?? null;
+  const session = data.session;
+  // Refresh ahead of expiry so idle tabs don't send a stale token.
+  if (session?.expires_at && session.expires_at * 1000 - Date.now() < 60_000) return accessToken(true);
+  return session?.access_token ?? null;
+}
+
+/** fetch with the caller's token; on 401 refreshes the session once and retries. */
+export async function authedFetch(url: string, init: RequestInit = {}): Promise<Response> {
+  const send = (token: string | null) => fetch(url, { ...init, headers: { ...(init.headers as Record<string, string>), Authorization: `Bearer ${token ?? ""}` } });
+  const res = await send(await accessToken());
+  if (res.status !== 401) return res;
+  const fresh = await accessToken(true);
+  return fresh ? send(fresh) : res;
 }
 
 export async function apiFetch<T>(
@@ -32,10 +48,9 @@ export async function apiFetch<T>(
   const url = `${API_BASE}${path}${qs.toString() ? `?${qs}` : ""}`;
 
   try {
-    const res = await fetch(url, {
+    const res = await authedFetch(url, {
       method: init?.method ?? "GET",
       headers: {
-        Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
         "x-client-platform": "web",
       },

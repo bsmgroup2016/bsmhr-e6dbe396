@@ -1,3 +1,4 @@
+import { accessToken as sharedAccessToken } from "@/lib/api-client";
 /**
  * Cloudflare R2 storage client.
  *
@@ -6,7 +7,6 @@
  * keys saved in project secrets and write into the R2 bucket. Only the file
  * link is saved in Supabase.
  */
-import { supabase } from "@/integrations/supabase/client";
 
 export const R2_UPLOAD_URL = "/api/public/r2-upload";
 export const R2_DELETE_URL = "/api/public/r2-delete";
@@ -14,8 +14,7 @@ export const R2_STATUS_URL = "/api/public/r2-status";
 export const R2_SIGNED_URL = "/api/public/r2-signed";
 
 async function accessToken(): Promise<string> {
-  const { data } = await supabase.auth.getSession();
-  return data.session?.access_token ?? "";
+  return (await sharedAccessToken()) ?? "";
 }
 
 /** R2 credentials live in project secrets, so the app is always configured. */

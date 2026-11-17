@@ -1,8 +1,7 @@
 import defaultTemplate from "@/assets/project-claim-template.xlsx.asset.json";
-import { apiData } from "@/lib/api-client";
+import { apiData, authedFetch } from "@/lib/api-client";
 import { fetchR2Blob, uploadToR2, validateFile } from "@/lib/r2";
 import { selectClaimTemplate } from "@/core/claim-template";
-import { supabase } from "@/integrations/supabase/client";
 
 export interface SavedClaimTemplate { key: string; original_name: string; created_at: string }
 
@@ -13,8 +12,7 @@ export async function activeClaimTemplate(): Promise<SavedClaimTemplate | null> 
 export async function loadClaimTemplate() {
   const active = await activeClaimTemplate();
   if (active) {
-    const { data } = await supabase.auth.getSession();
-    const response = await fetch("/api/public/v1/claim-template?download=1", { headers: { Authorization: `Bearer ${data.session?.access_token ?? ""}` } });
+    const response = await authedFetch("/api/public/v1/claim-template?download=1");
     if (!response.ok) throw new Error("Could not read the saved blank template.");
     return response.arrayBuffer();
   }
