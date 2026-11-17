@@ -2,8 +2,8 @@
 
 ## Colourful full dashboard
 
-- [ ] Apply the new SmartHR-inspired dashboard: saturated metric cards, subtle layered overlays, colour-coded operational panels and richer charts; preserve records and calculations.
-- [ ] Verify chart rendering, empty states and desktop/mobile layout; run existing data regression checks.
+- [x] Apply the new SmartHR-inspired dashboard: saturated metric cards, subtle layered overlays, colour-coded operational panels and richer charts; preserve records and calculations.
+- [x] Verify isolated populated bar/area/donut charts and empty states at desktop/mobile sizes, with no overflow or page errors; 12 data regression checks pass and preview build is clean. Real signed-in account data remains unverified because no external session is available.
 
 ## Zenova dashboard presentation
 
