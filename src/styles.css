@@ -8,7 +8,7 @@
  * BSM Workforce & Operations Management System — design tokens.
  *
  * Light mode: white sidebar and surfaces with a neutral canvas.
- * Accents: pink and rose for actions, emerald and amber for status.
+ * Accents: deep navy for actions, emerald and amber for status.
  */
 
 @theme inline {
@@ -91,7 +91,7 @@
 }
 
 /*
- * Screenshot-led light theme — light rose sidebar with pink accents.
+ * Screenshot-led light theme — pale navy-tinted sidebar with deep navy accents.
  * Inside the app: neutral canvas, white cards, charcoal text.
  * Roboto typography, comfortable density.
  */
@@ -105,13 +105,13 @@
   --card-foreground: var(--foreground);
   --popover: var(--card);
   --popover-foreground: var(--foreground);
-  --primary: oklch(0.55 0.19 355);
+  --primary: oklch(0.36 0.13 262);
   --primary-foreground: oklch(1 0 0);
   --secondary: oklch(0.96 0.003 260);
   --secondary-foreground: var(--foreground);
   --muted: var(--secondary);
   --muted-foreground: oklch(0.47 0.012 260);
-  --accent: oklch(0.95 0.025 355);
+  --accent: oklch(0.95 0.022 262);
   --accent-foreground: var(--primary);
   --success: oklch(0.46 0.11 158);
   --success-foreground: oklch(0.99 0.01 158);
@@ -125,7 +125,7 @@
   --border: oklch(0.91 0.004 260);
   --input: oklch(0.65 0.008 260);
   --ring: var(--primary);
-  --sidebar: oklch(0.985 0.008 355);
+  --sidebar: oklch(0.985 0.009 262);
   --sidebar-foreground: oklch(0.36 0.014 260);
   --sidebar-primary: var(--primary);
   --sidebar-primary-foreground: var(--primary-foreground);
@@ -142,7 +142,7 @@
   --accent-teal: var(--chart-2);
   --gradient-primary: linear-gradient(var(--primary), var(--primary));
   --gradient-hero: linear-gradient(var(--primary), var(--primary));
-  --gradient-sidebar: linear-gradient(155deg, color-mix(in oklab, var(--primary) 7%, var(--sidebar)) 0%, var(--sidebar) 42%, color-mix(in oklab, var(--dashboard-rose) 6%, var(--sidebar)) 100%);
+  --gradient-sidebar: linear-gradient(155deg, color-mix(in oklab, var(--primary) 8%, var(--sidebar)) 0%, var(--sidebar) 42%, color-mix(in oklab, var(--dashboard-teal) 6%, var(--sidebar)) 100%);
   --sidebar-layer: linear-gradient(125deg, transparent 0% 62%, color-mix(in oklab, var(--primary) 3%, transparent) 62% 78%, transparent 78%);
   --gradient-success: linear-gradient(var(--success), var(--success));
   --gradient-warning: linear-gradient(var(--warning), var(--warning));

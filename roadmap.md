@@ -1,5 +1,10 @@
 # Full-section UI/UX and workflow audit
 
+## Navy brand colour
+
+- [x] Replace the pink/rose accent with deep navy across buttons, links, sidebar overlay, charts and dashboard cards; keep semantic status colours (green present/available, red absent, amber leave).
+- [x] Verify the isolated dashboard at 1206 and 390px: navy button and card inks measured, no overflow, no page errors, populated pie/bar/area charts intact.
+
 ## Colourful full dashboard
 
 - [x] Apply the new SmartHR-inspired dashboard: saturated metric cards, subtle layered overlays, colour-coded operational panels and richer charts; preserve records and calculations.
