@@ -76,7 +76,7 @@ export function StepUpload({ files, setFiles, details, setDetails, progress, fai
           </div>
           <div className="space-y-1">
             <Label>Site Name</Label>
-            <Input value={details.site} placeholder="Filled from the card" onChange={(e) => setDetails({ ...details, site: e.target.value })} />
+            <Input value={details.site} placeholder="Fills automatically after Read cards" onChange={(e) => setDetails({ ...details, site: e.target.value })} />
             <p className="text-xs text-muted-foreground">from the card</p>
           </div>
           <div className="space-y-1">
