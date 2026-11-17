@@ -133,13 +133,78 @@ export async function createClaimWorkbook(sheets: ClaimSheet[], employees: Emplo
   });
 
   workbook.calcProperties.fullCalcOnLoad = true;
+  claimTemplateSource.set(workbook, { buffer, baseName: base.name });
   return workbook;
+}
+
+/** Template each generated workbook came from, so the saved file can keep parts ExcelJS cannot round-trip. */
+const claimTemplateSource = new WeakMap<object, { buffer: ArrayBuffer; baseName: string }>();
+
+const CF_RE = /<conditionalFormatting\b[^>]*\/>|<conditionalFormatting\b[\s\S]*?<\/conditionalFormatting>/g;
+
+async function sheetXmlByName(zip: import("jszip"), name?: string) {
+  const wb = await zip.file("xl/workbook.xml")?.async("string") ?? "";
+  const rels = await zip.file("xl/_rels/workbook.xml.rels")?.async("string") ?? "";
+  const out: { name: string; index: number; path: string }[] = [];
+  [...wb.matchAll(/<sheet\b[^>]*>/g)].forEach((m, index) => {
+    const n = (m[0].match(/name="([^"]*)"/)?.[1] ?? "").replace(/&apos;/g, "'").replace(/&amp;/g, "&");
+    const rid = m[0].match(/r:id="([^"]*)"/)?.[1];
+    const rel = [...rels.matchAll(/<Relationship\b[^>]*>/g)].map(r => r[0]).find(r => r.includes(`Id="${rid}"`));
+    const target = rel?.match(/Target="([^"]*)"/)?.[1] ?? "";
+    out.push({ name: n, index, path: target.startsWith("/") ? target.slice(1) : `xl/${target.replace(/^\.\//, "")}` });
+  });
+  return name === undefined ? out : out.filter(s => s.name.toUpperCase() === name.toUpperCase());
+}
+
+/** Repairs ExcelJS output so Excel opens it without "We found a problem": restores the template's conditional
+ * formatting (ExcelJS drops rules like duplicateValues, leaving invalid empty blocks) and sheet-local filter names. */
+export async function repairClaimXlsx(out: ArrayBuffer | Uint8Array, template?: { buffer: ArrayBuffer; baseName: string }) {
+  const JSZip = (await import("jszip")).default;
+  const zip = await JSZip.loadAsync(out);
+  let templateCf: string[] | null = null;
+  if (template) {
+    try {
+      const tz = await JSZip.loadAsync(template.buffer);
+      const sheets = await sheetXmlByName(tz);
+      const pick = sheets.find(s => s.name.toUpperCase() === template.baseName.toUpperCase()) ?? sheets[0];
+      const xml = pick ? await tz.file(pick.path)?.async("string") : undefined;
+      if (xml) templateCf = xml.match(CF_RE) ?? [];
+      // Restored rules point at the template's dxf styles, so carry those over too.
+      const tStyles = await tz.file("xl/styles.xml")?.async("string");
+      const tDxfs = tStyles?.match(/<dxfs\b[^>]*\/>|<dxfs\b[\s\S]*?<\/dxfs>/)?.[0];
+      const oStyles = await zip.file("xl/styles.xml")?.async("string");
+      if (tDxfs && oStyles) zip.file("xl/styles.xml", /<dxfs\b/.test(oStyles) ? oStyles.replace(/<dxfs\b[^>]*\/>|<dxfs\b[\s\S]*?<\/dxfs>/, tDxfs) : oStyles.replace(/<tableStyles\b|<\/styleSheet>/, m => tDxfs + m));
+    } catch { templateCf = null; }
+  }
+  const sheets = await sheetXmlByName(zip);
+  for (const sheet of sheets) {
+    const file = zip.file(sheet.path);
+    if (!file) continue;
+    let xml = await file.async("string");
+    const blocks = xml.match(CF_RE);
+    if (blocks?.length) {
+      let first = true;
+      xml = xml.replace(CF_RE, () => { if (!first) return ""; first = false; return (templateCf ?? blocks.filter(b => /<cfRule\b/.test(b))).join(""); });
+    }
+    zip.file(sheet.path, xml);
+  }
+  let wb = await zip.file("xl/workbook.xml")?.async("string");
+  if (wb) {
+    wb = wb.replace(/<definedName name="_xlnm\._FilterDatabase"(?![^>]*localSheetId)([^>]*)>([^<]*)<\/definedName>/g, (all, attrs: string, ref: string) => {
+      const target = ref.replace(/&apos;/g, "'").match(/^'?(.*?)'?!/)?.[1] ?? "";
+      const sheet = sheets.find(s => s.name.toUpperCase() === target.toUpperCase());
+      return sheet ? `<definedName name="_xlnm._FilterDatabase" localSheetId="${sheet.index}" hidden="1"${attrs}>${ref}</definedName>` : "";
+    });
+    zip.file("xl/workbook.xml", wb);
+  }
+  return zip.generateAsync({ type: "uint8array", compression: "DEFLATE" });
 }
 
 export async function claimWorkbookBlob(workbook: import("exceljs").Workbook) {
   workbook.calcProperties.fullCalcOnLoad = true;
-  const out = await workbook.xlsx.writeBuffer();
-  return new Blob([new Uint8Array(out)], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+  const raw = await workbook.xlsx.writeBuffer();
+  const out = await repairClaimXlsx(raw as ArrayBuffer, claimTemplateSource.get(workbook));
+  return new Blob([out], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
 }
 
 export function downloadClaimBlob(blob: Blob, fileName: string) {
