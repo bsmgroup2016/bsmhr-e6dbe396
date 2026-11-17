@@ -1,5 +1,10 @@
 # Full-section UI/UX and workflow audit
 
+## Colourful full dashboard
+
+- [ ] Apply the new SmartHR-inspired dashboard: saturated metric cards, subtle layered overlays, colour-coded operational panels and richer charts; preserve records and calculations.
+- [ ] Verify chart rendering, empty states and desktop/mobile layout; run existing data regression checks.
+
 ## Zenova dashboard presentation
 
 - [x] Match the newly supplied screenshot colours across sidebar, header and all pages; remove dark sidebar and dashboard-only pink overrides, preserving layouts and business logic.

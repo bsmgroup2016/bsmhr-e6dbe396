@@ -63,6 +63,12 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
+  --color-dashboard-teal: var(--dashboard-teal);
+  --color-dashboard-blue: var(--dashboard-blue);
+  --color-dashboard-coral: var(--dashboard-coral);
+  --color-dashboard-rose: var(--dashboard-rose);
+  --color-dashboard-ink: var(--dashboard-ink);
+  --color-dashboard-on-colour: var(--dashboard-on-colour);
 
   --font-sans: var(--font-sans);
 }
@@ -145,6 +151,13 @@
   --shadow-elegant: 0 8px 24px -16px color-mix(in oklab, var(--foreground) 18%, transparent);
   --shadow-card: 0 2px 8px -4px color-mix(in oklab, var(--foreground) 16%, transparent);
   --shadow-glow: var(--shadow-card);
+  --dashboard-teal: oklch(0.42 0.08 210);
+  --dashboard-blue: oklch(0.49 0.22 263);
+  --dashboard-coral: oklch(0.53 0.19 38);
+  --dashboard-rose: oklch(0.49 0.2 350);
+  --dashboard-ink: oklch(0.27 0.015 260);
+  --dashboard-on-colour: oklch(1 0 0);
+  --dashboard-layer: linear-gradient(115deg, transparent 45%, oklch(1 0 0 / 12%) 45%, oklch(1 0 0 / 4%) 72%, transparent 72%);
 }
 
 /* Optional deep variant for dark surfaces inside a light page */
@@ -291,6 +304,29 @@
 }
 
 /* Dashboard layout shares the whole-app colour tokens. */
+.dashboard-colour-card {
+  position: relative;
+  overflow: hidden;
+  background-image: var(--dashboard-layer);
+  min-height: 160px;
+}
+.dashboard-colour-card::after {
+  content: "";
+  position: absolute;
+  inset: auto -12px -20px auto;
+  width: 95px;
+  height: 75px;
+  border: 16px solid color-mix(in oklab, var(--dashboard-on-colour) 9%, transparent);
+  transform: rotate(-25deg);
+  pointer-events: none;
+}
+.dashboard-colour-card:hover { box-shadow: var(--shadow-elegant); }
+.zenova-dashboard .dashboard-welcome { background: color-mix(in oklab, var(--dashboard-blue) 5%, var(--card)); }
+.zenova-dashboard [data-ui="summary-metric"]:has(.before\:bg-gradient-success) { border-color: var(--success); }
+.zenova-dashboard [data-ui="summary-metric"]:nth-child(4n+1) { border-top: 3px solid var(--dashboard-blue); }
+.zenova-dashboard a:nth-child(4n+2) > [data-ui="summary-metric"] { border-top: 3px solid var(--dashboard-teal); }
+.zenova-dashboard a:nth-child(4n+3) > [data-ui="summary-metric"] { border-top: 3px solid var(--dashboard-coral); }
+.zenova-dashboard a:nth-child(4n+4) > [data-ui="summary-metric"] { border-top: 3px solid var(--dashboard-rose); }
 .workspace-content .zenova-dashboard .grid:has(> [data-ui="summary-metric"]),
 .workspace-content .zenova-dashboard .grid:has(> a > [data-ui="summary-metric"]) {
   border-bottom: 0;
