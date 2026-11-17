@@ -1,5 +1,10 @@
 # Full-section UI/UX and workflow audit
 
+## Zenova dashboard presentation
+
+- [x] Apply the selected light dashboard reference with compact coloured metrics, pending approvals and prominent charts; preserve all data and navigation.
+- [x] Check isolated desktop/mobile layout (1280, 1206 and 390px), with no overflow or page errors; 12 data-loading tests pass and preview build is clean. Real signed-in dashboard remains unverified: no external account session is available.
+
 ## Workforce deep audit
 
 - [x] Audit worker create/edit/remove/import, IPA autofill, documents/downloads and shared employee data; record findings in docs/WORKFORCE-AUDIT.md.

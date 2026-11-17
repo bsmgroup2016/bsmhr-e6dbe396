@@ -1,6 +1,4 @@
 import {
-  Area,
-  AreaChart,
   Bar,
   BarChart,
   CartesianGrid,
@@ -15,23 +13,23 @@ import {
 } from "recharts";
 
 const C = {
-  primary: "oklch(0.53 0.225 277)",
-  success: "oklch(0.6 0.15 158)",
-  warning: "oklch(0.74 0.15 72)",
-  info: "oklch(0.6 0.14 232)",
-  destructive: "oklch(0.58 0.22 22)",
-  muted: "oklch(0.7 0.02 277)",
+  primary: "var(--chart-1)",
+  success: "var(--success)",
+  warning: "var(--warning)",
+  info: "var(--info)",
+  destructive: "var(--destructive)",
+  muted: "var(--muted-foreground)",
 };
 
 const PIE_COLORS = [C.primary, C.info, C.success, C.warning, C.destructive, C.muted];
 
 const tooltipStyle = {
-  borderRadius: 12,
+  borderRadius: 8,
   border: "1px solid var(--border)",
   background: "var(--card)",
   color: "var(--foreground)",
   fontSize: 13,
-  boxShadow: "0 8px 24px -12px rgb(0 0 0 / 0.25)",
+  boxShadow: "var(--shadow-card)",
 };
 
 function ChartCard({
@@ -46,9 +44,9 @@ function ChartCard({
   className?: string;
 }) {
   return (
-    <div className={`rounded-2xl border bg-card p-5 shadow-sm ${className ?? ""}`}>
-      <div className="mb-4 flex items-baseline justify-between gap-3">
-        <h3 className="text-base font-semibold tracking-tight text-foreground">{title}</h3>
+    <div className={`min-w-0 rounded-lg border bg-card p-5 shadow-card ${className ?? ""}`}>
+      <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
+        <h3 className="text-sm font-semibold text-foreground">{title}</h3>
         {caption ? <span className="text-sm text-muted-foreground">{caption}</span> : null}
       </div>
       <div className="h-[260px] w-full">{children}</div>
@@ -68,45 +66,32 @@ export function DashboardCharts({ data }: { data: DashboardChartData }) {
     n >= 1000 ? `${Math.round(n / 100) / 10}k` : `${Math.round(n)}`;
 
   return (
-    <div className="grid gap-5 lg:grid-cols-3">
-      <ChartCard title="Wage trend" caption="Gross vs paid · last 6 months" className="lg:col-span-2">
+    <div className="grid gap-4 lg:grid-cols-2">
+      <ChartCard title="Attendance trend" caption="Last 7 days">
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={data.wageTrend} margin={{ top: 8, right: 8, left: -12, bottom: 0 }}>
-            <defs>
-              <linearGradient id="grossFill" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={C.primary} stopOpacity={0.35} />
-                <stop offset="100%" stopColor={C.primary} stopOpacity={0.02} />
-              </linearGradient>
-              <linearGradient id="paidFill" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={C.success} stopOpacity={0.3} />
-                <stop offset="100%" stopColor={C.success} stopOpacity={0.02} />
-              </linearGradient>
-            </defs>
+          <BarChart data={data.attendance} margin={{ top: 8, right: 8, left: -18, bottom: 0 }} barSize={18}>
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
+            <XAxis dataKey="day" tickLine={false} axisLine={false} fontSize={12} />
+            <YAxis allowDecimals={false} tickLine={false} axisLine={false} fontSize={12} width={44} />
+            <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "var(--muted)" }} />
+            <Legend iconType="circle" wrapperStyle={{ fontSize: 13 }} />
+            <Bar dataKey="Present" fill={C.success} radius={[3, 3, 0, 0]} />
+            <Bar dataKey="Leave" fill={C.info} radius={[3, 3, 0, 0]} />
+            <Bar dataKey="Absent" fill={C.destructive} radius={[3, 3, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </ChartCard>
+      <ChartCard title="Payroll trend" caption="Gross vs paid · last 6 months">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={data.wageTrend} margin={{ top: 8, right: 8, left: -12, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
             <XAxis dataKey="month" tickLine={false} axisLine={false} fontSize={12} />
             <YAxis tickFormatter={sgdShort} tickLine={false} axisLine={false} fontSize={12} width={48} />
-            <Tooltip
-              contentStyle={tooltipStyle}
-              formatter={(v: number) => `$${Math.round(v).toLocaleString("en-SG")}`}
-            />
+            <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => `$${Math.round(v).toLocaleString("en-SG")}`} />
             <Legend iconType="circle" wrapperStyle={{ fontSize: 13 }} />
-            <Area
-              type="monotone"
-              dataKey="gross"
-              name="Gross wages"
-              stroke={C.primary}
-              strokeWidth={2.4}
-              fill="url(#grossFill)"
-            />
-            <Area
-              type="monotone"
-              dataKey="paid"
-              name="Net paid"
-              stroke={C.success}
-              strokeWidth={2.4}
-              fill="url(#paidFill)"
-            />
-          </AreaChart>
+            <Bar dataKey="gross" name="Gross wages" fill={C.primary} radius={[3, 3, 0, 0]} />
+            <Bar dataKey="paid" name="Net paid" fill={C.info} radius={[3, 3, 0, 0]} />
+          </BarChart>
         </ResponsiveContainer>
       </ChartCard>
 
@@ -130,21 +115,6 @@ export function DashboardCharts({ data }: { data: DashboardChartData }) {
             <Tooltip contentStyle={tooltipStyle} />
             <Legend iconType="circle" wrapperStyle={{ fontSize: 13 }} />
           </PieChart>
-        </ResponsiveContainer>
-      </ChartCard>
-
-      <ChartCard title="Attendance trend" caption="Last 7 days" className="lg:col-span-2">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data.attendance} margin={{ top: 8, right: 8, left: -18, bottom: 0 }} barSize={22}>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
-            <XAxis dataKey="day" tickLine={false} axisLine={false} fontSize={12} />
-            <YAxis allowDecimals={false} tickLine={false} axisLine={false} fontSize={12} width={44} />
-            <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "var(--muted)", opacity: 0.35 }} />
-            <Legend iconType="circle" wrapperStyle={{ fontSize: 13 }} />
-            <Bar dataKey="Present" stackId="a" fill={C.success} radius={[0, 0, 0, 0]} />
-            <Bar dataKey="Leave" stackId="a" fill={C.info} />
-            <Bar dataKey="Absent" stackId="a" fill={C.warning} radius={[6, 6, 0, 0]} />
-          </BarChart>
         </ResponsiveContainer>
       </ChartCard>
 

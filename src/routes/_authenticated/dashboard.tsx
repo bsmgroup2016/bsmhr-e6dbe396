@@ -12,6 +12,7 @@ function urgencyTone(days: number | null): SummaryBadge["tone"] {
   if (days <= 30) return "info";
   return "neutral";
 }
+import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { DashboardCharts } from "@/components/dashboard/dashboard-charts";
@@ -87,9 +88,9 @@ function SectionHeading({
 }) {
   return (
     <div className="flex flex-wrap items-center gap-2.5">
-      <span className="h-5 w-1 rounded-full bg-gradient-primary" aria-hidden="true" />
+      
       {icon}
-      <h2 className="text-base font-semibold tracking-tight text-foreground">{title}</h2>
+      <h2 className="text-sm font-semibold text-foreground">{title}</h2>
       {caption ? <span className="ml-auto text-sm text-muted-foreground">{caption}</span> : null}
     </div>
   );
@@ -186,11 +187,11 @@ function OperationsDashboard() {
       daysLeft(e.passportExpiry) >= 0 &&
       daysLeft(e.passportExpiry) <= 90,
   );
-  const passportExpiring30 = passportExpiring.filter((e) => daysLeft(e.passportExpiry!) <= 30).length;
-  const passportExpiring15 = passportExpiring.filter((e) => daysLeft(e.passportExpiry!) <= 15).length;
-  const passportExpiring7 = passportExpiring.filter((e) => daysLeft(e.passportExpiry!) <= 7).length;
+  const passportExpiring30 = passportExpiring.filter((e) => daysLeft(e.passportExpiry ?? "") <= 30).length;
+  const passportExpiring15 = passportExpiring.filter((e) => daysLeft(e.passportExpiry ?? "") <= 15).length;
+  const passportExpiring7 = passportExpiring.filter((e) => daysLeft(e.passportExpiry ?? "") <= 7).length;
   const passportSoonestDays = passportExpiring.length
-    ? Math.min(...passportExpiring.map((e) => daysLeft(e.passportExpiry!)))
+    ? Math.min(...passportExpiring.map((e) => daysLeft(e.passportExpiry ?? "")))
     : null;
 
   const leaves = getLeaveRequests().filter(
@@ -499,66 +500,51 @@ function OperationsDashboard() {
 
   return (
     <AppShell>
-      <div className="w-full space-y-8">
-        {/* Hero band */}
-        <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-primary p-6 shadow-elegant sm:p-8">
-          <div
-            className="pointer-events-none absolute -right-16 -top-24 h-64 w-64 rounded-full bg-white/10 blur-2xl"
-            aria-hidden="true"
-          />
-          <div
-            className="pointer-events-none absolute -bottom-28 right-24 h-56 w-56 rounded-full bg-white/5 blur-2xl"
-            aria-hidden="true"
-          />
-          <div className="relative flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-primary-foreground/80">
-                {today.toLocaleDateString("en-SG", {
-                  weekday: "long",
-                  day: "numeric",
-                  month: "long",
-                  year: "numeric",
-                })}
-              </p>
-              <h1 className="text-2xl font-semibold tracking-tight text-primary-foreground sm:text-3xl">
-                {greeting} — operations at a glance
-              </h1>
-              <div className="flex flex-wrap items-center gap-2 pt-1">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 text-sm font-medium text-primary-foreground ring-1 ring-white/25 backdrop-blur">
-                  <UserCheck className="h-4 w-4" /> {availableWorkers} workers available
-                </span>
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 text-sm font-medium text-primary-foreground ring-1 ring-white/25 backdrop-blur">
-                  <CalendarCheck2 className="h-4 w-4" /> {presentToday} present today
-                </span>
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 text-sm font-medium text-primary-foreground ring-1 ring-white/25 backdrop-blur">
-                  <AlertCircle className="h-4 w-4" /> {pendingApprovals} pending approvals
-                </span>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4 lg:w-[520px]">
-              {quickActions.map((action) => (
-                <Link
-                  key={action.to}
-                  to={action.to}
-                  search={action.search as never}
-                  className="group flex flex-col gap-2 rounded-xl bg-white/10 p-3.5 ring-1 ring-white/20 backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:bg-white/20"
-                >
-                  <action.icon className="h-5 w-5 text-primary-foreground/90 transition-transform duration-300 group-hover:scale-110" />
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-primary-foreground">{action.label}</p>
-                    <p className="truncate text-xs text-primary-foreground/70">{action.desc}</p>
-                  </div>
-                </Link>
-              ))}
-            </div>
+      <div className="zenova-dashboard w-full space-y-6 bg-background">
+        <header className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-semibold text-foreground">Dashboard</h1>
+            <p className="text-sm text-muted-foreground">{greeting} · {today.toLocaleDateString("en-SG", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</p>
           </div>
-        </div>
+          <Button asChild size="sm"><Link to="/workforce" search={{ new: true }}><Users />Register employee</Link></Button>
+        </header>
+
+        <section aria-label="Today's workforce" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          {[
+            { title: "Total Active Employees", value: activeEmployees, icon: Users, tone: "text-primary", to: "/workforce", caption: `${employees.length} workers in total` },
+            { title: "Today's Present", value: presentToday, icon: CalendarCheck2, tone: "text-success", to: "/time-management", caption: "Attendance today" },
+            { title: "Available Workers", value: availableWorkers, icon: UserCheck, tone: "text-info", to: "/workforce", caption: `${availableRate}% available` },
+            { title: "Today's Absent", value: absentToday, icon: CalendarX2, tone: "text-destructive", to: "/time-management", caption: "Recorded absences" },
+            { title: "On Leave Today", value: leaves.length, icon: Palmtree, tone: "text-primary", to: "/leave", caption: `${medicalLeaveCount} on medical leave` },
+          ].map((stat) => (
+            <Link key={stat.title} to={stat.to as LinkProps["to"]} className="dashboard-stat group rounded-lg border bg-card p-4 shadow-card transition-colors hover:border-primary/40">
+              <div className="flex items-start justify-between gap-2"><p className="text-xs text-muted-foreground">{stat.title}</p><stat.icon className={`h-5 w-5 shrink-0 ${stat.tone}`} /></div>
+              <p className={`mt-2 text-2xl font-bold tabular-nums ${stat.tone}`}>{stat.value}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{stat.caption}</p>
+            </Link>
+          ))}
+        </section>
+
+        <section className="space-y-3">
+          <SectionHeading title="Pending Approvals" caption={`${pendingApprovals} awaiting review`} />
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <Link to="/leave" className="dashboard-stat rounded-lg border bg-card p-4 shadow-card hover:border-primary/40"><p className="text-xs text-muted-foreground">Leave Requests</p><p className="mt-2 text-2xl font-bold text-primary">{getLeaveRequests().filter((l) => l.status === "Pending").length}</p></Link>
+            <Link to="/approvals" className="dashboard-stat rounded-lg border bg-card p-4 shadow-card hover:border-primary/40"><p className="text-xs text-muted-foreground">Pending Approvals</p><p className="mt-2 text-2xl font-bold text-primary">{pendingApprovals}</p></Link>
+            <Link to="/documents" search={{ employee: undefined }} className="dashboard-stat rounded-lg border bg-card p-4 shadow-card hover:border-primary/40"><p className="text-xs text-muted-foreground">Document Alerts</p><p className="mt-2 text-2xl font-bold text-warning">{expiringDocs}</p></Link>
+            <Link to="/projects" search={{ new: undefined }} className="dashboard-stat rounded-lg border bg-card p-4 shadow-card hover:border-primary/40"><p className="text-xs text-muted-foreground">Projects Ending Soon</p><p className="mt-2 text-2xl font-bold text-info">{endingProjects.length}</p></Link>
+          </div>
+        </section>
+
+        <DashboardCharts data={{ wageTrend, attendance: attendanceTrend, passMix, projectMix }} />
+
+        <nav aria-label="Quick actions" className="flex flex-wrap gap-2 border-y py-3">
+          {quickActions.map((action) => <Button key={action.to} asChild variant="ghost" size="sm"><Link to={action.to} search={action.search as never}><action.icon />{action.label}</Link></Button>)}
+        </nav>
 
         {/* 1. Key numbers */}
         <section className="space-y-3">
           <SectionHeading
             title="Overview"
-            caption="Click any card to open the related page"
             icon={<CheckCircle2 className="h-4 w-4 text-primary" />}
           />
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -603,7 +589,7 @@ function OperationsDashboard() {
                   key={e.id}
                   to="/workforce/$slug"
                   params={{ slug: employeeSlugById(e.id) }}
-                  className="rounded-2xl border bg-gradient-surface p-4 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-warning/40 hover:shadow-elegant"
+                  className="rounded-lg border bg-card p-4 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-warning/40 hover:shadow-elegant"
                 >
                   <p className="truncate text-sm font-medium text-foreground">{e.name}</p>
                   <p className="truncate text-sm text-muted-foreground">
@@ -712,7 +698,7 @@ function OperationsDashboard() {
                       <Link
                         key={f.id}
                         to="/clients"
-                        className="rounded-2xl border bg-gradient-surface p-4 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-warning/40 hover:shadow-elegant"
+                        className="rounded-lg border bg-card p-4 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-warning/40 hover:shadow-elegant"
                       >
                     <p className="truncate text-sm font-medium text-foreground">{f.subject}</p>
                     <p className="truncate text-sm text-muted-foreground">
@@ -735,7 +721,7 @@ function OperationsDashboard() {
             ) : null}
 
             <div className="grid gap-4 lg:grid-cols-3">
-              <div className="rounded-2xl border bg-gradient-surface p-5 shadow-sm lg:col-span-2">
+              <div className="rounded-lg border bg-card p-5 shadow-sm lg:col-span-2">
                 <div className="mb-4 flex items-center justify-between">
                   <p className="text-sm font-medium text-foreground">Lead pipeline</p>
                   <Link to="/clients" className="text-sm text-primary hover:underline">
@@ -771,7 +757,7 @@ function OperationsDashboard() {
                 )}
               </div>
 
-              <div className="rounded-2xl border bg-gradient-surface p-5 shadow-sm">
+              <div className="rounded-lg border bg-card p-5 shadow-sm">
                 <p className="mb-4 text-sm font-medium text-foreground">Recent activity</p>
                 {recentActivities.length === 0 ? (
                   <p className="text-sm text-muted-foreground">
@@ -803,23 +789,6 @@ function OperationsDashboard() {
           </section>
         ) : null}
 
-        {/* 4. Charts */}
-        <section className="space-y-3">
-          <SectionHeading
-            title="Analytics"
-            caption="Wages, attendance and workforce distribution"
-            icon={<TrendingUp className="h-4 w-4 text-primary" />}
-          />
-          <DashboardCharts
-            data={{
-              wageTrend,
-              attendance: attendanceTrend,
-              passMix,
-              projectMix,
-            }}
-          />
-        </section>
-
         {/* 5. History + system status */}
         <section className="grid gap-4 lg:grid-cols-3">
           <div className="space-y-3 lg:col-span-2">
@@ -831,7 +800,7 @@ function OperationsDashboard() {
                 description="Once you start managing assignments and attendance, recent actions will appear here."
               />
             ) : (
-              <div tabIndex={0} role="region" aria-label="Recent activity table" className="overflow-x-auto rounded-2xl border bg-card shadow-sm">
+              <div tabIndex={0} role="region" aria-label="Recent activity table" className="overflow-x-auto rounded-lg border bg-card shadow-sm">
                 <table className="w-full text-sm">
                   <thead className="bg-muted/50">
                     <tr>
@@ -858,7 +827,7 @@ function OperationsDashboard() {
 
           <div className="space-y-3">
             <SectionHeading title="Period & document alerts" />
-            <div className="space-y-3 rounded-2xl border bg-gradient-surface p-5 shadow-sm">
+            <div className="space-y-3 rounded-lg border bg-card p-5 shadow-sm">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Current calendar month</span>
                 <StatusBadge variant="primary" label={monthKey} />
