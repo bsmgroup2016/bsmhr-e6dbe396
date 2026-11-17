@@ -38,7 +38,7 @@ import {
   CheckCircle2,
   CalendarCheck2,
 } from "lucide-react";
-import { Target, PhoneCall, TrendingUp } from "lucide-react";
+import { Target, PhoneCall, TrendingUp, ArrowUpRight, Sparkles } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { canAccess } from "@/lib/permissions";
 import { RoleDashboard } from "@/components/role-dashboard";
@@ -509,18 +509,27 @@ function OperationsDashboard() {
           <Button asChild size="sm"><Link to="/workforce" search={{ new: true }}><Users />Register employee</Link></Button>
         </header>
 
+        <div className="dashboard-welcome flex flex-wrap items-center justify-between gap-4 border-l-4 border-dashboard-blue px-5 py-4">
+          <div className="flex items-center gap-3">
+            <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-dashboard-blue/10 text-dashboard-blue"><Sparkles className="size-5" /></span>
+            <div><h2 className="font-semibold text-foreground">Your workforce, in focus</h2><p className="text-sm text-muted-foreground">{pendingApprovals} pending approvals · {activeProjects} active projects · {availableWorkers} available workers</p></div>
+          </div>
+          <Button asChild variant="outline" size="sm"><Link to="/approvals">Review approvals<ArrowUpRight /></Link></Button>
+        </div>
+
         <section aria-label="Today's workforce" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
           {[
-            { title: "Total Active Employees", value: activeEmployees, icon: Users, tone: "text-primary", to: "/workforce", caption: `${employees.length} workers in total` },
-            { title: "Today's Present", value: presentToday, icon: CalendarCheck2, tone: "text-success", to: "/time-management", caption: "Attendance today" },
-            { title: "Available Workers", value: availableWorkers, icon: UserCheck, tone: "text-info", to: "/workforce", caption: `${availableRate}% available` },
-            { title: "Today's Absent", value: absentToday, icon: CalendarX2, tone: "text-destructive", to: "/time-management", caption: "Recorded absences" },
-            { title: "On Leave Today", value: leaves.length, icon: Palmtree, tone: "text-primary", to: "/leave", caption: `${medicalLeaveCount} on medical leave` },
+            { title: "Active Employees", value: activeEmployees, icon: Users, tone: "bg-dashboard-teal", to: "/workforce", caption: `${employees.length} workers in total` },
+            { title: "Present Today", value: presentToday, icon: CalendarCheck2, tone: "bg-dashboard-blue", to: "/time-management", caption: "Attendance today" },
+            { title: "Available Workers", value: availableWorkers, icon: UserCheck, tone: "bg-dashboard-coral", to: "/workforce", caption: `${availableRate}% available` },
+            { title: "Absent Today", value: absentToday, icon: CalendarX2, tone: "bg-dashboard-rose", to: "/time-management", caption: "Recorded absences" },
+            { title: "On Leave Today", value: leaves.length, icon: Palmtree, tone: "bg-dashboard-ink", to: "/leave", caption: `${medicalLeaveCount} on medical leave` },
           ].map((stat) => (
-            <Link key={stat.title} to={stat.to as LinkProps["to"]} className="dashboard-stat group rounded-lg border bg-card p-4 shadow-card transition-colors hover:border-primary/40">
-              <div className="flex items-start justify-between gap-2"><p className="text-xs text-muted-foreground">{stat.title}</p><stat.icon className={`h-5 w-5 shrink-0 ${stat.tone}`} /></div>
-              <p className={`mt-2 text-2xl font-bold tabular-nums ${stat.tone}`}>{stat.value}</p>
-              <p className="mt-1 text-xs text-muted-foreground">{stat.caption}</p>
+            <Link key={stat.title} to={stat.to as LinkProps["to"]} className={`dashboard-stat dashboard-colour-card group rounded-lg p-4 text-dashboard-on-colour transition-shadow ${stat.tone}`}>
+              <div className="flex items-start justify-between gap-2"><span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-dashboard-on-colour/15"><stat.icon className="size-5" /></span><ArrowUpRight className="size-4 opacity-70" /></div>
+              <p className="mt-3 text-xs font-medium text-dashboard-on-colour/85">{stat.title}</p>
+              <p className="mt-1 text-3xl font-bold tabular-nums">{stat.value}</p>
+              <p className="mt-2 text-xs text-dashboard-on-colour/85">{stat.caption}</p>
             </Link>
           ))}
         </section>
@@ -528,10 +537,10 @@ function OperationsDashboard() {
         <section className="space-y-3">
           <SectionHeading title="Pending Approvals" caption={`${pendingApprovals} awaiting review`} />
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Link to="/leave" className="dashboard-stat rounded-lg border bg-card p-4 shadow-card hover:border-primary/40"><p className="text-xs text-muted-foreground">Leave Requests</p><p className="mt-2 text-2xl font-bold text-primary">{getLeaveRequests().filter((l) => l.status === "Pending").length}</p></Link>
-            <Link to="/approvals" className="dashboard-stat rounded-lg border bg-card p-4 shadow-card hover:border-primary/40"><p className="text-xs text-muted-foreground">Pending Approvals</p><p className="mt-2 text-2xl font-bold text-primary">{pendingApprovals}</p></Link>
-            <Link to="/documents" search={{ employee: undefined }} className="dashboard-stat rounded-lg border bg-card p-4 shadow-card hover:border-primary/40"><p className="text-xs text-muted-foreground">Document Alerts</p><p className="mt-2 text-2xl font-bold text-warning">{expiringDocs}</p></Link>
-            <Link to="/projects" search={{ new: undefined }} className="dashboard-stat rounded-lg border bg-card p-4 shadow-card hover:border-primary/40"><p className="text-xs text-muted-foreground">Projects Ending Soon</p><p className="mt-2 text-2xl font-bold text-info">{endingProjects.length}</p></Link>
+            <Link to="/leave" className="dashboard-stat rounded-lg border border-dashboard-rose/20 bg-dashboard-rose/5 p-4 shadow-card hover:border-dashboard-rose/50"><p className="text-xs text-muted-foreground">Leave Requests</p><p className="mt-2 text-2xl font-bold text-primary">{getLeaveRequests().filter((l) => l.status === "Pending").length}</p></Link>
+            <Link to="/approvals" className="dashboard-stat rounded-lg border border-dashboard-blue/20 bg-dashboard-blue/5 p-4 shadow-card hover:border-dashboard-blue/50"><p className="text-xs text-muted-foreground">Pending Approvals</p><p className="mt-2 text-2xl font-bold text-primary">{pendingApprovals}</p></Link>
+            <Link to="/documents" search={{ employee: undefined }} className="dashboard-stat rounded-lg border border-dashboard-coral/20 bg-dashboard-coral/5 p-4 shadow-card hover:border-dashboard-coral/50"><p className="text-xs text-muted-foreground">Document Alerts</p><p className="mt-2 text-2xl font-bold text-warning">{expiringDocs}</p></Link>
+            <Link to="/projects" search={{ new: undefined }} className="dashboard-stat rounded-lg border border-dashboard-teal/20 bg-dashboard-teal/5 p-4 shadow-card hover:border-dashboard-teal/50"><p className="text-xs text-muted-foreground">Projects Ending Soon</p><p className="mt-2 text-2xl font-bold text-info">{endingProjects.length}</p></Link>
           </div>
         </section>
 
