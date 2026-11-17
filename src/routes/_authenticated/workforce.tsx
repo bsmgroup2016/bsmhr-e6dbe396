@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { employeeCompanyId, employeeImportPatch } from "@/core/employee-company";
+import { branchCompanyId, employeeCompanyId, employeeImportPatch } from "@/core/employee-company";
 import { IPA_DETAIL_FIELDS } from "@/core/ipa-detail-fields";
-import { subscribe, saveEmployeeConfirmed, saveEmployeeDocumentsConfirmed, deleteEmployeeConfirmed } from "@/lib/store";
+import { getBranchPrefixes, subscribe, saveEmployeeConfirmed, saveEmployeeDocumentsConfirmed, deleteEmployeeConfirmed } from "@/lib/store";
 import { useCreateDialog } from "@/hooks/use-create-dialog";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { activeAssignedEmployeeIds, isEmployeeAvailable } from "@/lib/availability";
@@ -559,7 +559,7 @@ export default function WorkforcePage() {
         : undefined;
       const supplied = Object.fromEntries(EMPLOYEE_IMPORT_COLUMNS.map(column => [column.key, get(column.key)]));
       const patch = employeeImportPatch(payload, supplied);
-      if (payload.branch) patch.companyId = employeeCompanyId(payload.branch, companies);
+      { const mapped = branchCompanyId(payload.branch, companies, getBranchPrefixes()); if (mapped) patch.companyId = mapped; }
       if (byCode) {
         await saveEmployeeConfirmed(patch, byCode.id);
         linkProject(byCode.id, get("projectName"), get("clientName"), joined);
@@ -568,7 +568,7 @@ export default function WorkforcePage() {
         continue;
       }
       if (code) {
-        const created = await saveEmployeeConfirmed({ ...payload, companyId: employeeCompanyId(payload.branch, companies, payload.companyId), employeeCode: code });
+        const created = await saveEmployeeConfirmed({ ...payload, companyId: employeeCompanyId(payload.branch, companies, payload.companyId, getBranchPrefixes()), employeeCode: code });
         if (created) existing.push(created);
         if (created) linkProject(created.id, get("projectName"), get("clientName"), joined);
         imported += 1;
@@ -581,7 +581,7 @@ export default function WorkforcePage() {
         linkProject(match.id, get("projectName"), get("clientName"), joined);
         updated += 1;
       } else {
-        const created = await saveEmployeeConfirmed({ ...payload, companyId: employeeCompanyId(payload.branch, companies, payload.companyId) });
+        const created = await saveEmployeeConfirmed({ ...payload, companyId: employeeCompanyId(payload.branch, companies, payload.companyId, getBranchPrefixes()) });
         if (created) existing.push(created);
         if (created) linkProject(created.id, get("projectName"), get("clientName"), joined);
       }
@@ -594,7 +594,7 @@ export default function WorkforcePage() {
 
   async function handleCreate(formData: FormData) {
     const values = employeeFromForm(formData);
-    const created = await saveEmployeeConfirmed({ ...values, site: null, companyId: employeeCompanyId(values.branch, companies, companyFilter !== "all" ? companyFilter : getCurrentCompany()) }, createdId.current);
+    const created = await saveEmployeeConfirmed({ ...values, site: null, companyId: employeeCompanyId(values.branch, companies, companyFilter !== "all" ? companyFilter : getCurrentCompany(), getBranchPrefixes()) }, createdId.current);
     createdId.current = created.id;
     await saveEmployeeDocumentsConfirmed(created.id, employeeFormDocuments(formData, getDocumentsByEmployee(created.id)));
     createdId.current = undefined;
@@ -606,7 +606,7 @@ export default function WorkforcePage() {
   async function handleEdit(formData: FormData) {
     if (!editingEmployee) return;
     const values = employeeFromForm(formData);
-    await saveEmployeeConfirmed({ ...values, companyId: employeeCompanyId(values.branch, companies, editingEmployee.companyId) }, editingEmployee.id);
+    await saveEmployeeConfirmed({ ...values, companyId: employeeCompanyId(values.branch, companies, editingEmployee.companyId, getBranchPrefixes()) }, editingEmployee.id);
     await saveEmployeeDocumentsConfirmed(editingEmployee.id, employeeFormDocuments(formData, getDocumentsByEmployee(editingEmployee.id)));
     setEditingEmployee(null);
     refresh();

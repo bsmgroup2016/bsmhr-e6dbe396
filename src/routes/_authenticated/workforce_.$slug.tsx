@@ -2,7 +2,7 @@ import { useAuth } from "@/lib/auth";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { employeeCompanyId } from "@/core/employee-company";
-import { subscribe, getCompanies, saveEmployeeConfirmed, saveEmployeeDocumentsConfirmed } from "@/lib/store";
+import { getBranchPrefixes, subscribe, getCompanies, saveEmployeeConfirmed, saveEmployeeDocumentsConfirmed } from "@/lib/store";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
   ArrowLeft, Pencil, Ban, LogOut, Archive, Upload, CalendarCheck, Wallet, Briefcase,
@@ -139,7 +139,7 @@ function EmployeeProfilePage() {
   async function saveForm(fd: FormData) {
     if (!employee) return;
     const values = employeeFromForm(fd);
-    await saveEmployeeConfirmed({ ...values, companyId: employeeCompanyId(values.branch, getCompanies(), employee.companyId) }, employee.id);
+    await saveEmployeeConfirmed({ ...values, companyId: employeeCompanyId(values.branch, getCompanies(), employee.companyId, getBranchPrefixes()) }, employee.id);
     await saveEmployeeDocumentsConfirmed(employee.id, employeeFormDocuments(fd, getDocumentsByEmployee(employee.id)));
     setEditing(false); toast.success("Employee changes saved");
   }
