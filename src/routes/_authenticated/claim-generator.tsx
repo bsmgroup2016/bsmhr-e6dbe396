@@ -3,6 +3,7 @@ import { useCallback, useRef, useState } from "react";
 import { Check, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { AppShell } from "@/components/app-shell";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { MOCK_DETAILS, TEMPLATE_FILE, mockWorkers } from "@/features/claim-demo/mock-data";
 import type { ClaimDetails, Worker } from "@/features/claim-demo/types";
@@ -42,7 +43,8 @@ function ClaimGeneratorPage() {
     setWorkers((ws) => ws.map((w) => (w.id !== wid ? w : { ...w, days: w.days.map((d) => (d.day === day ? { ...d, [key]: v } : d)) })));
 
   return (
-    <div className="claim-demo -m-4 min-h-full p-4 md:-m-6 md:p-6">
+    <AppShell>
+    <div className="claim-demo rounded-[10px] p-4 md:p-6">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <nav className="text-sm text-muted-foreground">HR Software / Projects / <span className="text-foreground">Claims</span></nav>
         <div className="flex">
@@ -87,5 +89,6 @@ function ClaimGeneratorPage() {
         {step === 3 && <StepExport workers={workers} onBack={() => setStep(2)} onRestart={() => { setWorkers(mockWorkers()); setStep(0); setReached(0); }} />}
       </div>
     </div>
+    </AppShell>
   );
 }
