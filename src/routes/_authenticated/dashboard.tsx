@@ -509,7 +509,7 @@ function OperationsDashboard() {
           <Button asChild size="sm"><Link to="/workforce" search={{ new: true }}><Users />Register employee</Link></Button>
         </header>
 
-        <section aria-label="Today's workforce" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+        <section aria-label="Today's workforce" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
           {[
             { title: "Total Active Employees", value: activeEmployees, icon: Users, tone: "text-primary", to: "/workforce", caption: `${employees.length} workers in total` },
             { title: "Today's Present", value: presentToday, icon: CalendarCheck2, tone: "text-success", to: "/time-management", caption: "Attendance today" },
@@ -527,7 +527,7 @@ function OperationsDashboard() {
 
         <section className="space-y-3">
           <SectionHeading title="Pending Approvals" caption={`${pendingApprovals} awaiting review`} />
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <Link to="/leave" className="dashboard-stat rounded-lg border bg-card p-4 shadow-card hover:border-primary/40"><p className="text-xs text-muted-foreground">Leave Requests</p><p className="mt-2 text-2xl font-bold text-primary">{getLeaveRequests().filter((l) => l.status === "Pending").length}</p></Link>
             <Link to="/approvals" className="dashboard-stat rounded-lg border bg-card p-4 shadow-card hover:border-primary/40"><p className="text-xs text-muted-foreground">Pending Approvals</p><p className="mt-2 text-2xl font-bold text-primary">{pendingApprovals}</p></Link>
             <Link to="/documents" search={{ employee: undefined }} className="dashboard-stat rounded-lg border bg-card p-4 shadow-card hover:border-primary/40"><p className="text-xs text-muted-foreground">Document Alerts</p><p className="mt-2 text-2xl font-bold text-warning">{expiringDocs}</p></Link>
