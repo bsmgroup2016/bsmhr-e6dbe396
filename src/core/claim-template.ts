@@ -12,7 +12,7 @@ export function claimTemplateLayout(sheet: Worksheet) {
   for (let r = 1; r <= Math.min(sheet.rowCount, 100); r++) {
     const cells = Array.from({ length: sheet.columnCount }, (_, i) => sheet.getCell(r, i + 1));
     const code = cells.find(c => ["STAFFCODE", "PFILENO", "PFILENUMBER"].includes(normalize(textOf(c))));
-    const name = cells.find(c => normalize(textOf(c)) === "NAME");
+    const name = cells.find(c => ["NAME", "STAFFNAME", "WORKERNAME"].includes(normalize(textOf(c))));
     const category = cells.find(c => normalize(textOf(c)) === "CATEGORY");
     if (code && name && category) {
       headerRow = r; codeCol = Number(code.col); nameCol = Number(name.col); categoryCol = Number(category.col);
@@ -24,12 +24,12 @@ export function claimTemplateLayout(sheet: Worksheet) {
   const days = new Map<number, number>();
   for (let c = categoryCol + 1; c <= sheet.columnCount; c++) {
     const value = sheet.getCell(headerRow, c).value;
-    const day = typeof value === "number" ? value : /^\d{1,2}$/.test(String(value ?? "")) ? Number(value) : 0;
+    const day = value instanceof Date ? value.getUTCDate() : typeof value === "number" ? value : /^\d{1,2}$/.test(String(value ?? "")) ? Number(value) : 0;
     if (day >= 1 && day <= 31) days.set(day, c);
   }
   const slots: { g: number; ot: number }[] = [];
   for (let r = headerRow + 1; r < sheet.rowCount; r++) {
-    if (normalize(textOf(sheet.getCell(r, categoryCol))) === "GHRS" && normalize(textOf(sheet.getCell(r + 1, categoryCol))) === "OTHOURS") slots.push({ g: r, ot: r + 1 });
+    if (normalize(textOf(sheet.getCell(r, categoryCol))) === "GHRS" && ["OTHOURS", "OTHRS"].includes(normalize(textOf(sheet.getCell(r + 1, categoryCol))))) slots.push({ g: r, ot: r + 1 });
   }
   if (!days.size || !slots.length) throw new Error("Template needs numbered day columns and paired G-HRS / OT HOURS rows.");
   return { headerRow, codeCol, nameCol, categoryCol, serialCol, days, slots };
