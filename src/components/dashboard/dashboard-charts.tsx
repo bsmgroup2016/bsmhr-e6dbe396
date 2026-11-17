@@ -129,7 +129,7 @@ export function DashboardCharts({ data }: { data: DashboardChartData }) {
           </AreaChart>
         </ResponsiveContainer>
       </ChartCard>
-      <ChartCard title="Projects by status" caption="All projects" className="xl:col-span-2">
+      <ChartCard title="Projects by status" caption="All projects" className="lg:col-span-2 xl:col-span-3">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
             data={data.projectMix}
