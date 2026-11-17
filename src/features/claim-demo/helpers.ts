@@ -1,11 +1,13 @@
 import type { DayEntry, Worker } from "./types";
 
 export const BREAK_HOURS = 1;
-const toH = (t: string) => { const [h, m] = t.split(":").map(Number); return h + m / 60; };
+const toH = (t: string) => { const c = t.replace(/[^0-9]/g, "").padStart(4, "0"); return Number(c.slice(0, -2)) + Number(c.slice(-2)) / 60; };
 
 /** True when Out − In − break equals G + OT (non-work rows always pass). */
 export function rowMatches(d: DayEntry): boolean {
   if (d.status !== "work" || !d.inTime || !d.outTime) return true;
+  const span = toH(d.outTime) - toH(d.inTime);
+  if (!Number.isFinite(span) || span <= 0) return true;
   return Math.abs(toH(d.outTime) - toH(d.inTime) - BREAK_HOURS - ((d.g ?? 0) + (d.ot ?? 0))) < 0.01;
 }
 export const mismatchCount = (w: Worker) => w.days.filter((d) => !rowMatches(d)).length;
@@ -27,6 +29,3 @@ export const surname = (name: string) => name.split(" ").slice(-1)[0];
 export const monthLabel = (ym: string) => { const [y, m] = ym.split("-").map(Number); return new Date(Date.UTC(y, m - 1, 1)).toLocaleString("en-GB", { month: "long", year: "numeric", timeZone: "UTC" }); };
 export const monthShort = (ym: string) => { const [y, m] = ym.split("-").map(Number); return `${new Date(Date.UTC(y, m - 1, 1)).toLocaleString("en-GB", { month: "short", timeZone: "UTC" }).toUpperCase()} ${y}`; };
 
-/** Plug points for later. */
-export async function readCards(_files: File[]): Promise<Worker[]> { throw new Error("Real OCR not connected"); }
-export async function exportExcel(_ws: Worker[]): Promise<Blob> { throw new Error("Excel export not connected"); }

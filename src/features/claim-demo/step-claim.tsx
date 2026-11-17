@@ -3,10 +3,10 @@ import type { ClaimDetails, Worker } from "./types";
 import { batchTotals, isSunday, monthShort, weekday, workerTotals } from "./helpers";
 import { DevNote, SummaryTiles } from "./shared";
 
-const DAYS = Array.from({ length: 31 }, (_, i) => i + 1);
 const c = "border px-1 py-1 text-center";
 
 export function StepClaim({ workers, details, year, month, onBack, onNext }: { workers: Worker[]; details: ClaimDetails; year: number; month: number; onBack: () => void; onNext: () => void }) {
+  const DAYS = Array.from({ length: workers[0]?.days.length ?? 31 }, (_, i) => i + 1);
   const sunCls = (d: number) => (isSunday(year, month, d) ? "bg-[var(--claim-sun)]" : "");
   return (
     <div>
@@ -40,7 +40,7 @@ export function StepClaim({ workers, details, year, month, onBack, onNext }: { w
                   )}
                   <td className={`${c} whitespace-nowrap`}>{k === "g" ? "G-Hrs" : "OT Hrs"}</td>
                   {w.days.map((d) => (
-                    <td key={d.day} className={`${c} font-mono ${d.status === "crossed" ? "bg-muted" : sunCls(d.day)}`}>
+                    <td key={d.day} className={`${c} font-mono ${d.status === "crossed" || d.status === "none" ? "bg-muted" : sunCls(d.day)}`}>
                       {d.status === "off" ? (k === "g" ? "OFF" : "") : d.status === "work" ? (d[k] || "") : ""}
                     </td>
                   ))}

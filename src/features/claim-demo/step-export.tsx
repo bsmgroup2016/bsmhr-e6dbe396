@@ -1,24 +1,35 @@
+import { useState } from "react";
 import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Worker } from "./types";
-import { batchTotals, mismatchCount } from "./helpers";
+import { batchTotals, isSunday, mismatchCount } from "./helpers";
 import { DevNote, SummaryTiles } from "./shared";
+import { downloadExcel, saveToRecords } from "./pipeline";
 
-export function StepExport({ workers, onBack, onRestart }: { workers: Worker[]; onBack: () => void; onRestart: () => void }) {
+export function StepExport({ workers, month, site, onBack, onRestart }: { workers: Worker[]; month: string; site: string; onBack: () => void; onRestart: () => void }) {
+  const [busy, setBusy] = useState<string | null>(null);
+  const [y, m] = month.split("-").map(Number);
+  const days = workers[0]?.days.length ?? 0;
   const mism = workers.reduce((s, w) => s + mismatchCount(w), 0);
   const unsure = workers.reduce((s, w) => s + w.flags.length, 0);
-  const crossed = workers.filter((w) => w.days.some((d) => d.status === "crossed")).length;
+  const sundays = Array.from({ length: days }, (_, i) => i + 1).filter((d) => isSunday(y, m, d));
+  const offs = [...new Set(workers.flatMap((w) => w.days.filter((d) => d.status === "off").map((d) => d.day)))];
   const checks: [boolean, string][] = [
-    [workers.length === 4 && workers.every((w) => w.days.length === 31), `${workers.length} cards read with 31 days`],
-    [true, "Sundays 4, 11, 18, 25 detected and the 25th treated as OFF"],
-    [true, `Crossed-out days 1–15 for ${crossed} workers are not counted as work days`],
+    [workers.length > 0, `${workers.length} cards read with ${days} days`],
+    [true, `Sundays ${sundays.join(", ")} detected${offs.length ? `; OFF days: ${offs.join(", ")}` : ""}`],
+    [true, "Days not worked or crossed out are not counted as work days"],
     [mism === 0, `${mism} rows where In/Out do not match G+OT`],
     [unsure === 0, `${unsure} fields the AI was unsure about`],
   ];
-  const outs = [
-    ["Download Excel (.xlsx)", "Filled into your template, formulas kept"],
-    ["PDF preview", "To send to the client"],
-    ["Save to HR records", "Can be reopened and corrected later"],
+  const run = async (key: string, fn: () => Promise<unknown>, ok: string) => {
+    setBusy(key);
+    try { await fn(); toast.success(ok); } catch (e) { toast.error(e instanceof Error ? e.message : "Something went wrong"); } finally { setBusy(null); }
+  };
+  const outs: [string, string, () => void][] = [
+    ["Download Excel (.xlsx)", "Filled into your template, formulas kept", () => run("x", () => downloadExcel(workers, month, site), "Claim sheet downloaded")],
+    ["PDF preview", "To send to the client", () => toast("PDF preview is not available yet")],
+    ["Save to HR records", "Can be reopened and corrected later", () => run("s", () => saveToRecords(workers, month, site), "Saved to HR records")],
   ];
   return (
     <div>
@@ -36,15 +47,16 @@ export function StepExport({ workers, onBack, onRestart }: { workers: Worker[]; 
         </div>
         <div className="space-y-3 rounded-[10px] border bg-card p-4">
           <h3 className="font-semibold">Output</h3>
-          {outs.map(([t, s], i) => (
-            <Button key={t} variant={i === 0 ? "default" : "outline"} className="h-auto w-full flex-col items-start py-3" onClick={() => toast(`${t}: demo only for now`)}>
-              <span>{t}</span><span className={`text-xs font-normal ${i === 0 ? "opacity-80" : "text-muted-foreground"}`}>{s}</span>
+          {outs.map(([t, s, fn], i) => (
+            <Button key={t} disabled={busy !== null} variant={i === 0 ? "default" : "outline"} className="h-auto w-full flex-col items-start py-3" onClick={fn}>
+              <span className="flex items-center gap-2">{busy === (i === 0 ? "x" : i === 2 ? "s" : "") && <Loader2 className="h-4 w-4 animate-spin" />}{t}</span>
+              <span className={`text-xs font-normal ${i === 0 ? "opacity-80" : "text-muted-foreground"}`}>{s}</span>
             </Button>
           ))}
         </div>
       </div>
       <div className="mt-4 flex justify-between"><Button variant="outline" onClick={onBack}>Back</Button><Button onClick={onRestart}>Start new month</Button></div>
-      <DevNote><p>Plug the real writer into <code>exportExcel()</code> in helpers.ts.</p></DevNote>
+      <DevNote><p>Download uses <code>downloadExcel()</code> and the current blank template; Save uses <code>saveToRecords()</code> in pipeline.ts.</p></DevNote>
     </div>
   );
 }

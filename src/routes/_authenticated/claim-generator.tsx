@@ -1,23 +1,24 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useCallback, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Check, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { AppShell } from "@/components/app-shell";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MOCK_DETAILS, TEMPLATE_FILE, mockWorkers } from "@/features/claim-demo/mock-data";
 import type { ClaimDetails, Worker } from "@/features/claim-demo/types";
 import { StepUpload } from "@/features/claim-demo/step-upload";
 import { StepReview } from "@/features/claim-demo/step-review";
 import { StepClaim } from "@/features/claim-demo/step-claim";
 import { StepExport } from "@/features/claim-demo/step-export";
+import { readCards } from "@/features/claim-demo/pipeline";
+import { activeClaimTemplate, loadClaimTemplate, saveClaimTemplate } from "@/lib/claim-template";
 
 export const Route = createFileRoute("/_authenticated/claim-generator")({
   head: () => ({
     meta: [
-      { title: "Claim Sheet Generator (Demo) — BSM HR" },
+      { title: "Claim Sheet Generator — BSM HR" },
       { name: "description", content: "Turn scanned work record cards into a monthly claim sheet." },
-      { property: "og:title", content: "Claim Sheet Generator (Demo) — BSM HR" },
+      { property: "og:title", content: "Claim Sheet Generator — BSM HR" },
       { property: "og:description", content: "Turn scanned work record cards into a monthly claim sheet." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -27,26 +28,58 @@ export const Route = createFileRoute("/_authenticated/claim-generator")({
 });
 
 const STEPS = ["Upload", "Review", "Claim sheet", "Export"];
+const DEFAULT_TEMPLATE = "Claim_Sheet_Blank.xlsx";
+const emptyDetails = (): ClaimDetails => ({ client: "", site: "", month: new Date().toISOString().slice(0, 7) });
 
 function ClaimGeneratorPage() {
   const [step, setStep] = useState(0);
   const [reached, setReached] = useState(0);
-  const [template, setTemplate] = useState(TEMPLATE_FILE);
-  const [details, setDetails] = useState<ClaimDetails>(MOCK_DETAILS);
-  const [workers, setWorkers] = useState<Worker[]>(mockWorkers);
+  const [template, setTemplate] = useState(DEFAULT_TEMPLATE);
+  const [details, setDetails] = useState<ClaimDetails>(emptyDetails);
+  const [files, setFiles] = useState<File[]>([]);
+  const [workers, setWorkers] = useState<Worker[]>([]);
+  const [failed, setFailed] = useState<string[]>([]);
+  const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const [y, m] = details.month.split("-").map(Number);
 
-  const go = useCallback((n: number) => { setStep(n); setReached((r) => Math.max(r, n)); }, []);
-  const toReview = useCallback(() => go(1), [go]);
+  useEffect(() => { activeClaimTemplate().then((t) => t && setTemplate(t.original_name)).catch(() => {}); }, []);
+
+  const go = (n: number) => { setStep(n); setReached((r) => Math.max(r, n)); };
   const edit = (wid: string, day: number, key: "g" | "ot", v: number | null) =>
     setWorkers((ws) => ws.map((w) => (w.id !== wid ? w : { ...w, days: w.days.map((d) => (d.day === day ? { ...d, [key]: v } : d)) })));
+
+  async function read() {
+    setProgress({ done: 0, total: 0 }); setFailed([]);
+    try {
+      const r = await readCards(files, (done, total) => setProgress({ done, total }));
+      setFailed(r.failed);
+      if (!r.workers.length) { toast.error("No time cards could be read"); return; }
+      workers.forEach((w) => URL.revokeObjectURL(w.preview));
+      setWorkers(r.workers);
+      setDetails((d) => ({ ...d, site: d.site || r.site, month: r.month || d.month }));
+      if (r.failed.length) toast.error(`${r.failed.length} page(s) could not be read`);
+      toast.success(`${r.workers.length} Work Record Card(s) found`);
+      go(1);
+    } catch (e) { toast.error(e instanceof Error ? e.message : "Could not read the cards"); }
+    finally { setProgress(null); }
+  }
+
+  function restart() { workers.forEach((w) => URL.revokeObjectURL(w.preview)); setWorkers([]); setFiles([]); setFailed([]); setDetails(emptyDetails()); setStep(0); setReached(0); }
+
+  async function downloadTemplate() {
+    try {
+      const buf = await loadClaimTemplate();
+      const url = URL.createObjectURL(new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
+      const a = document.createElement("a"); a.href = url; a.download = template; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 30000);
+    } catch (e) { toast.error(e instanceof Error ? e.message : "Could not download the template"); }
+  }
 
   return (
     <AppShell>
     <div className="claim-demo rounded-[10px] p-4 md:p-6">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <nav className="text-sm text-muted-foreground">HR Software / Projects / <span className="text-foreground">Claims</span></nav>
+      <div className="mb-2 flex justify-end">
         <div className="flex">
           <Button variant="outline" className="rounded-r-none" onClick={() => fileRef.current?.click()}>Change template</Button>
           <DropdownMenu>
@@ -54,13 +87,14 @@ function ClaimGeneratorPage() {
             <DropdownMenuContent align="end">
               <DropdownMenuLabel className="font-normal"><div className="text-xs text-muted-foreground">Currently using</div><div className="text-sm">{template}</div></DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => toast("Download template: demo only for now")}>Download template</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => void downloadTemplate()}>Download template</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          <input ref={fileRef} type="file" accept=".xlsx" className="hidden" onChange={(e) => {
-            const f = e.target.files?.[0];
-            if (f) { setTemplate(f.name); toast.success(`Template changed to ${f.name}`); }
-            e.target.value = "";
+          <input ref={fileRef} type="file" accept=".xlsx" className="hidden" onChange={async (e) => {
+            const f = e.target.files?.[0]; e.target.value = "";
+            if (!f) return;
+            try { const saved = await saveClaimTemplate(f); setTemplate(saved?.original_name ?? f.name); toast.success(`Template changed to ${f.name}`); }
+            catch (err) { toast.error(err instanceof Error ? err.message : "Could not change the template"); }
           }} />
         </div>
       </div>
@@ -69,7 +103,7 @@ function ClaimGeneratorPage() {
 
       <div className="mb-4 grid grid-cols-2 gap-3 md:grid-cols-4">
         {STEPS.map((s, i) => {
-          const done = i < step, active = i === step, disabled = i > reached;
+          const done = i < step, active = i === step, disabled = i > reached || progress !== null;
           return (
             <button key={s} type="button" disabled={disabled} onClick={() => setStep(i)}
               className={`flex items-center gap-3 rounded-[10px] border bg-card p-3 text-left disabled:opacity-50 ${active ? "border-2 border-primary" : ""}`}>
@@ -83,10 +117,10 @@ function ClaimGeneratorPage() {
       </div>
 
       <div className="rounded-[10px] border bg-card p-4 md:p-5">
-        {step === 0 && <StepUpload details={details} setDetails={setDetails} onDone={toReview} />}
+        {step === 0 && <StepUpload files={files} setFiles={setFiles} details={details} setDetails={setDetails} progress={progress} failed={failed} onRead={() => void read()} />}
         {step === 1 && <StepReview workers={workers} year={y} month={m} onEdit={edit} onBack={() => setStep(0)} onNext={() => go(2)} />}
         {step === 2 && <StepClaim workers={workers} details={details} year={y} month={m} onBack={() => setStep(1)} onNext={() => go(3)} />}
-        {step === 3 && <StepExport workers={workers} onBack={() => setStep(2)} onRestart={() => { setWorkers(mockWorkers()); setStep(0); setReached(0); }} />}
+        {step === 3 && <StepExport workers={workers} month={details.month} site={details.site} onBack={() => setStep(2)} onRestart={restart} />}
       </div>
     </div>
     </AppShell>

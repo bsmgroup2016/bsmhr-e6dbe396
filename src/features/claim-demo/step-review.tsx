@@ -2,10 +2,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Worker, FieldFlag } from "./types";
-import card1 from "@/assets/claim-demo/card-1.jpg.asset.json";
-import card2 from "@/assets/claim-demo/card-2.jpg.asset.json";
-import card3 from "@/assets/claim-demo/card-3.jpg.asset.json";
-import card4 from "@/assets/claim-demo/card-4.jpg.asset.json";
 import { isSunday, problemCount, rowMatches, surname, weekday, workerTotals } from "./helpers";
 import { DevNote } from "./shared";
 
@@ -16,7 +12,6 @@ const FIELDS: { key: FieldFlag["field"]; label: string; prop: keyof Worker }[] =
   { key: "address", label: "Address", prop: "address" },
 ];
 
-const CARD_IMAGES = [card1.url, card2.url, card3.url, card4.url];
 
 export function StepReview({ workers, year, month, onEdit, onBack, onNext }: {
   workers: Worker[]; year: number; month: number;
@@ -31,19 +26,19 @@ export function StepReview({ workers, year, month, onEdit, onBack, onNext }: {
             const p = problemCount(w);
             return (
               <TabsTrigger key={w.id} value={w.id} className="gap-2">
-                {surname(w.name)}
+                {surname(w.name) || w.code || "Card"}
                 <span className={`rounded-full px-1.5 text-xs ${p ? "bg-warning/20 text-warning" : "bg-success/15 text-success"}`}>{p ? `⚠ ${p}` : "✓"}</span>
               </TabsTrigger>
             );
           })}
         </TabsList>
-        {workers.map((w, wi) => {
+        {workers.map((w) => {
           const t = workerTotals(w);
           return (
             <TabsContent key={w.id} value={w.id}>
               <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
                 <figure className="rounded-[10px] border bg-card p-2">
-                  <a href={CARD_IMAGES[wi % 4]} target="_blank" rel="noreferrer" title="Open full size"><img src={CARD_IMAGES[wi % 4]} alt={`Scanned card for ${w.name}`} className="w-full rounded" /></a>
+                  {w.isPdf ? <iframe src={w.preview} title={`Scanned card for ${w.name}`} className="h-[600px] w-full rounded" /> : <a href={w.preview} target="_blank" rel="noreferrer" title="Open full size"><img src={w.preview} alt={`Scanned card for ${w.name}`} className="w-full rounded" /></a>}
                   <figcaption className="mt-2 text-xs text-muted-foreground">Scanned card (days 1–15 on the left, 16–31 on the right)</figcaption>
                 </figure>
                 <div className="min-w-0 space-y-3">
@@ -93,7 +88,7 @@ export function StepReview({ workers, year, month, onEdit, onBack, onNext }: {
                                   </td>
                                 </>
                               ) : (
-                                <td colSpan={5} className="px-2 py-1 font-sans italic">{d.status === "off" ? "OFF" : "Crossed out (not on site)"}</td>
+                                <td colSpan={5} className="px-2 py-1 font-sans italic">{d.status === "off" ? "OFF" : d.status === "crossed" ? "Crossed out (not on site)" : "Not worked"}</td>
                               )}
                             </tr>
                           );

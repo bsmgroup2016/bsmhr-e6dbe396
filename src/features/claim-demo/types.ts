@@ -1,4 +1,4 @@
-export type DayStatus = "work" | "off" | "crossed";
+export type DayStatus = "work" | "off" | "crossed" | "none";
 export interface DayEntry {
   day: number;
   status: DayStatus;
@@ -16,5 +16,9 @@ export interface Worker {
   address: string;
   flags: FieldFlag[];
   days: DayEntry[];
+  site: string;
+  preview: string;
+  isPdf: boolean;
+  fileName: string;
 }
 export interface ClaimDetails { client: string; site: string; month: string }
