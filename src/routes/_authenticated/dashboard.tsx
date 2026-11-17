@@ -530,8 +530,8 @@ function OperationsDashboard() {
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <Link to="/leave" className="dashboard-stat rounded-lg border bg-card p-4 shadow-card hover:border-primary/40"><p className="text-xs text-muted-foreground">Leave Requests</p><p className="mt-2 text-2xl font-bold text-primary">{getLeaveRequests().filter((l) => l.status === "Pending").length}</p></Link>
             <Link to="/approvals" className="dashboard-stat rounded-lg border bg-card p-4 shadow-card hover:border-primary/40"><p className="text-xs text-muted-foreground">Pending Approvals</p><p className="mt-2 text-2xl font-bold text-primary">{pendingApprovals}</p></Link>
-            <Link to="/documents" className="dashboard-stat rounded-lg border bg-card p-4 shadow-card hover:border-primary/40"><p className="text-xs text-muted-foreground">Document Alerts</p><p className="mt-2 text-2xl font-bold text-warning">{expiringDocs}</p></Link>
-            <Link to="/projects" className="dashboard-stat rounded-lg border bg-card p-4 shadow-card hover:border-primary/40"><p className="text-xs text-muted-foreground">Projects Ending Soon</p><p className="mt-2 text-2xl font-bold text-info">{endingProjects.length}</p></Link>
+            <Link to="/documents" search={{ employee: undefined }} className="dashboard-stat rounded-lg border bg-card p-4 shadow-card hover:border-primary/40"><p className="text-xs text-muted-foreground">Document Alerts</p><p className="mt-2 text-2xl font-bold text-warning">{expiringDocs}</p></Link>
+            <Link to="/projects" search={{ new: undefined }} className="dashboard-stat rounded-lg border bg-card p-4 shadow-card hover:border-primary/40"><p className="text-xs text-muted-foreground">Projects Ending Soon</p><p className="mt-2 text-2xl font-bold text-info">{endingProjects.length}</p></Link>
           </div>
         </section>
 
