@@ -603,7 +603,7 @@ function OperationsDashboard() {
                   key={e.id}
                   to="/workforce/$slug"
                   params={{ slug: employeeSlugById(e.id) }}
-                  className="rounded-xl border bg-gradient-surface p-4 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-warning/40 hover:shadow-elegant"
+                  className="rounded-2xl border bg-gradient-surface p-4 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-warning/40 hover:shadow-elegant"
                 >
                   <p className="truncate text-sm font-medium text-foreground">{e.name}</p>
                   <p className="truncate text-sm text-muted-foreground">
@@ -712,7 +712,7 @@ function OperationsDashboard() {
                       <Link
                         key={f.id}
                         to="/clients"
-                        className="rounded-xl border bg-gradient-surface p-4 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-warning/40 hover:shadow-elegant"
+                        className="rounded-2xl border bg-gradient-surface p-4 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-warning/40 hover:shadow-elegant"
                       >
                     <p className="truncate text-sm font-medium text-foreground">{f.subject}</p>
                     <p className="truncate text-sm text-muted-foreground">
@@ -735,7 +735,7 @@ function OperationsDashboard() {
             ) : null}
 
             <div className="grid gap-4 lg:grid-cols-3">
-              <div className="rounded-xl border bg-gradient-surface p-5 shadow-sm lg:col-span-2">
+              <div className="rounded-2xl border bg-gradient-surface p-5 shadow-sm lg:col-span-2">
                 <div className="mb-4 flex items-center justify-between">
                   <p className="text-sm font-medium text-foreground">Lead pipeline</p>
                   <Link to="/clients" className="text-sm text-primary hover:underline">
@@ -771,7 +771,7 @@ function OperationsDashboard() {
                 )}
               </div>
 
-              <div className="rounded-xl border bg-gradient-surface p-5 shadow-sm">
+              <div className="rounded-2xl border bg-gradient-surface p-5 shadow-sm">
                 <p className="mb-4 text-sm font-medium text-foreground">Recent activity</p>
                 {recentActivities.length === 0 ? (
                   <p className="text-sm text-muted-foreground">
@@ -831,7 +831,7 @@ function OperationsDashboard() {
                 description="Once you start managing assignments and attendance, recent actions will appear here."
               />
             ) : (
-              <div tabIndex={0} role="region" aria-label="Recent activity table" className="overflow-x-auto rounded-xl border bg-card shadow-sm">
+              <div tabIndex={0} role="region" aria-label="Recent activity table" className="overflow-x-auto rounded-2xl border bg-card shadow-sm">
                 <table className="w-full text-sm">
                   <thead className="bg-muted/50">
                     <tr>
@@ -858,7 +858,7 @@ function OperationsDashboard() {
 
           <div className="space-y-3">
             <SectionHeading title="Period & document alerts" />
-            <div className="space-y-3 rounded-xl border bg-gradient-surface p-5 shadow-sm">
+            <div className="space-y-3 rounded-2xl border bg-gradient-surface p-5 shadow-sm">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Current calendar month</span>
                 <StatusBadge variant="primary" label={monthKey} />
