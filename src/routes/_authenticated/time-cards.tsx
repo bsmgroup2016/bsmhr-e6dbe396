@@ -47,6 +47,8 @@ const monthEnd = (month: string) => {
 };
 /** Changing In/Out recounts GW/OT with the 9h duty = 8h + 1h lunch rule. */
 const retime = (e: TimeCardEntry, patch: Partial<TimeCardEntry>) => { const next = { ...e, ...patch, normalHours: undefined, otHours: undefined }; return { ...patch, ...countedCardHours(next) }; };
+/** Cards that only show one total per day (e.g. "11 hrs"): first 8 are GW, the rest is OT. */
+export const splitWrittenHours = (gw: number, ot: number) => (ot === 0 && gw > 8 ? { normalHours: 8, otHours: gw - 8 } : { normalHours: gw, otHours: ot });
 const sum = (entries: TimeCardEntry[], key: "normalHours" | "otHours") => entries.reduce((n, e) => n + (e[key] ?? 0), 0);
 
 function TimeCardsPage() {
@@ -100,7 +102,7 @@ function TimeCardsPage() {
           const entries = group.entries.map(r => {
             const entry: TimeCardEntry = { date: r.date, workerName: group.identity.workerName, employeeCode: group.identity.employeeCode, fin: group.identity.fin, siteName: group.identity.siteName, checkIn: r.checkIn, checkOut: r.checkOut, normalHours: r.normalHours, otHours: r.otHours, remarks: r.remarks, confidence: r.confidence };
             const counted = countedCardHours(entry);
-            return { ...entry, normalHours: counted.normalHours, otHours: counted.otHours };
+            return { ...entry, ...splitWrittenHours(counted.normalHours, counted.otHours) };
           }).sort((a, b) => a.date.localeCompare(b.date));
           read.push({ id: crypto.randomUUID(), fileName: page.name, preview, isPdf: page.type === "application/pdf", workerName: group.identity.workerName ?? "", employeeCode: group.identity.employeeCode ?? "", siteName: group.identity.siteName ?? "", entries, approved: false });
         }
@@ -125,7 +127,6 @@ function TimeCardsPage() {
     if (reviewIndex === null) return;
     const card = cards[reviewIndex];
     if (!card) return;
-    if (!card.siteName.trim()) { toast.error("Type the site name before approving"); return; }
     const updated = cards.map((c, i) => i === reviewIndex ? { ...c, approved: true } : c);
     setCards(updated);
     const next = updated.findIndex(c => !c.approved);
