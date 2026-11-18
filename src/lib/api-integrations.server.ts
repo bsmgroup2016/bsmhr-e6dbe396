@@ -76,14 +76,27 @@ export async function activeProviders(category: Category): Promise<ActiveProvide
     .filter((p): p is ActiveProvider => !!p);
 }
 
+/** Gemini's newest model is often overloaded (503); retry once on a steadier Gemini model. */
+export const GEMINI_BUSY_FALLBACK = "gemini-3-flash-preview";
+export async function postChat(p: ActiveProvider, body: Record<string, unknown>) {
+  const send = (model: string) =>
+    fetch(p.url, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${p.key}`, "Content-Type": "application/json", ...p.extra },
+      body: JSON.stringify({ ...body, model }),
+    });
+  const res = await send(p.model);
+  if (res.status === 503 && p.url.includes("googleapis.com") && p.model !== GEMINI_BUSY_FALLBACK) {
+    return send(GEMINI_BUSY_FALLBACK);
+  }
+  return res;
+}
+
 /** Send one tiny message to confirm a provider works. */
 export async function pingProvider(p: ActiveProvider) {
-  const res = await fetch(p.url, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${p.key}`, "Content-Type": "application/json", ...p.extra },
-    body: JSON.stringify({ model: p.model, messages: [{ role: "user", content: "Reply with OK" }] }),
-  });
+  const res = await postChat(p, { messages: [{ role: "user", content: "Reply with OK" }] });
   if (res.ok) return { success: true, error: null as string | null };
+  if (res.status === 503) return { success: false, error: "Model is busy right now (high demand) — the next one in the list will take over" };
   if (res.status === 429) return { success: false, error: "Limit reached for now (the next one in the list will take over)" };
   return { success: false, error: `Failed (${res.status}): ${(await res.text()).slice(0, 200)}` };
 }
