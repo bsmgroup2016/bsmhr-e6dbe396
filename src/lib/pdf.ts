@@ -3,6 +3,7 @@
  * jsPDF + autotable are loaded lazily so they never enter the initial bundle.
  */
 import type { ClaimSheet, Employee, Invoice, PayrollEntry, Quotation } from "./types";
+import { BSM_LOGO_URL } from "./brand";
 
 const BRAND: [number, number, number] = [37, 99, 235];
 const MUTED: [number, number, number] = [107, 114, 128];
@@ -47,6 +48,40 @@ async function loadLogo(
     console.error("Logo could not be loaded for the PDF letterhead", e);
     return null;
   }
+}
+
+let defaultLogoPromise: Promise<{ data: string; format: string; width: number; height: number } | null> | null =
+  null;
+
+/** Fetch the built-in BSM logo from the CDN for documents without a company logo. */
+function loadDefaultLogo() {
+  if (!defaultLogoPromise) {
+    defaultLogoPromise = (async () => {
+      try {
+        const res = await fetch(BSM_LOGO_URL);
+        if (!res.ok) return null;
+        const blob = await res.blob();
+        const data = await new Promise<string>((resolve, reject) => {
+          const fr = new FileReader();
+          fr.onload = () => resolve(String(fr.result));
+          fr.onerror = () => reject(new Error("read failed"));
+          fr.readAsDataURL(blob);
+        });
+        const size = await new Promise<{ width: number; height: number }>((resolve) => {
+          const img = new Image();
+          img.onload = () =>
+            resolve({ width: img.naturalWidth || 1, height: img.naturalHeight || 1 });
+          img.onerror = () => resolve({ width: 1, height: 1 });
+          img.src = data;
+        });
+        return { data, format: "PNG", ...size };
+      } catch (e) {
+        console.error("Default BSM logo could not be loaded for the PDF letterhead", e);
+        return null;
+      }
+    })();
+  }
+  return defaultLogoPromise;
 }
 
 function header(
@@ -131,7 +166,7 @@ export async function downloadInvoicePdf(
   },
 ) {
   const { doc, autoTable } = await newDoc();
-  const logo = await loadLogo(opts.company?.logoUrl);
+  const logo = (await loadLogo(opts.company?.logoUrl)) ?? (await loadDefaultLogo());
   const y = header(
     doc,
     "TAX INVOICE",
@@ -269,10 +304,14 @@ export async function downloadPayslipPdf(
   opts: { employee?: Employee; companyName?: string },
 ) {
   const { doc, autoTable } = await newDoc();
-  const y = header(doc, "PAYSLIP", { name: opts.companyName }, [
-    `Month: ${entry.month}`,
-    `Status: ${entry.status}`,
-  ]);
+  const logo = await loadDefaultLogo();
+  const y = header(
+    doc,
+    "PAYSLIP",
+    { name: opts.companyName },
+    [`Month: ${entry.month}`, `Status: ${entry.status}`],
+    logo,
+  );
   doc.setFontSize(12);
   doc.setTextColor(17, 24, 39);
   doc.text(opts.employee?.name ?? "-", 40, y + 8);
@@ -322,10 +361,14 @@ export async function downloadClaimSheetPdf(
   opts: { employeeName?: string; companyName?: string },
 ) {
   const { doc, autoTable } = await newDoc();
-  const y = header(doc, "CLAIM SHEET", { name: opts.companyName }, [
-    sheet.reference,
-    `Period: ${sheet.periodStart} to ${sheet.periodEnd}`,
-  ]);
+  const logo = await loadDefaultLogo();
+  const y = header(
+    doc,
+    "CLAIM SHEET",
+    { name: opts.companyName },
+    [sheet.reference, `Period: ${sheet.periodStart} to ${sheet.periodEnd}`],
+    logo,
+  );
   doc.setFontSize(12);
   doc.setTextColor(17, 24, 39);
   doc.text(opts.employeeName ?? "-", 40, y + 8);
@@ -375,7 +418,7 @@ export async function downloadQuotationPdf(
   },
 ) {
   const { doc, autoTable } = await newDoc();
-  const logo = await loadLogo(opts.company?.logoUrl);
+  const logo = (await loadLogo(opts.company?.logoUrl)) ?? (await loadDefaultLogo());
   const y = header(
     doc,
     "QUOTATION",

@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
+import { BSM_LOGO_URL } from "@/lib/brand";
 
 export const Route = createFileRoute("/reset-password")({
   head: () => ({
@@ -67,9 +68,11 @@ function ResetPasswordPage() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-background via-background to-muted/40 p-4">
       <div className="mb-6 flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-primary text-primary-foreground font-bold shadow-elegant">
-          BSM
-        </div>
+        <img
+          src={BSM_LOGO_URL}
+          alt="BSM Engineering logo"
+          className="h-10 w-10 rounded-lg object-cover shadow-elegant"
+        />
         <div>
           <h1 className="text-lg font-semibold tracking-tight">BSM Engineering</h1>
           <p className="text-xs text-muted-foreground">Workforce &amp; Operations Management</p>

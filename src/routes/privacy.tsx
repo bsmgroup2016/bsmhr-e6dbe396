@@ -1,5 +1,6 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { ShieldCheck } from "lucide-react";
+import { BSM_LOGO_URL } from "@/lib/brand";
 
 export const Route = createFileRoute("/privacy")({
   head: () => ({
@@ -37,9 +38,11 @@ function PrivacyPage() {
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card">
         <div className="mx-auto flex max-w-3xl items-center gap-3 px-5 py-4">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-sm font-bold text-primary-foreground">
-            BSM
-          </div>
+          <img
+            src={BSM_LOGO_URL}
+            alt="BSM Engineering logo"
+            className="h-10 w-10 rounded-xl object-cover"
+          />
           <div>
             <p className="text-sm font-semibold text-foreground">BSM Engineering</p>
             <p className="text-xs text-muted-foreground">Workforce & Operations Management</p>

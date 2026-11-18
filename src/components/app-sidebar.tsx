@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
+import { BSM_LOGO_URL } from "@/lib/brand";
 import {
   BadgeDollarSign,
   BedDouble,
@@ -163,9 +164,11 @@ export function AppSidebar() {
     >
       <SidebarHeader className="border-b border-sidebar-border">
         <div className="flex h-16 items-center gap-3 px-4">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-sm">
-            BSM
-          </div>
+          <img
+            src={BSM_LOGO_URL}
+            alt="BSM Engineering logo"
+            className="h-8 w-8 shrink-0 rounded-lg object-cover"
+          />
           {!collapsed && (
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold text-sidebar-foreground">BSM Engineering</p>

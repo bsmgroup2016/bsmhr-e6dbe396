@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertCircle, Building2, KeyRound, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { BSM_LOGO_URL } from "@/lib/brand";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export const Route = createFileRoute("/auth")({
@@ -41,7 +42,7 @@ function AuthPage() {
         <section className="wa-hero relative hidden flex-col justify-between overflow-hidden p-10 text-primary-foreground lg:flex">
           <div aria-hidden className="pointer-events-none absolute -right-20 -top-20 h-72 w-72 rounded-full bg-brand-lime/30 blur-3xl" />
           <div className="relative flex items-center gap-3">
-            <div className="wa-glass flex h-12 w-12 items-center justify-center rounded-2xl font-bold">BSM</div>
+            <img src={BSM_LOGO_URL} alt="BSM Engineering logo" className="h-12 w-12 rounded-2xl object-cover shadow-md" />
             <div><p className="text-lg font-semibold">BSM Engineering</p><p className="text-xs opacity-80">Workforce & Operations Management</p></div>
           </div>
           <div className="relative space-y-4">
@@ -55,7 +56,7 @@ function AuthPage() {
         </section>
         <section className="flex flex-col items-center justify-center p-5 sm:p-10">
           <div className="mb-6 flex items-center gap-3 lg:hidden">
-            <div className="wa-avatar flex h-11 w-11 items-center justify-center rounded-2xl font-bold shadow-md">BSM</div>
+            <img src={BSM_LOGO_URL} alt="BSM Engineering logo" className="h-11 w-11 rounded-2xl object-cover shadow-md" />
             <div><h1 className="text-lg font-semibold tracking-tight">BSM Engineering</h1><p className="text-xs text-muted-foreground">Workforce & Operations Management</p></div>
           </div>
           <AuthCard />
