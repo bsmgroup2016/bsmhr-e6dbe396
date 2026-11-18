@@ -24,6 +24,7 @@ import { Route as AuthenticatedAuditLogsRouteImport } from './routes/_authentica
 import { Route as AuthenticatedAvailableWorkersRouteImport } from './routes/_authenticated/available-workers'
 import { Route as AuthenticatedBillingRouteImport } from './routes/_authenticated/billing'
 import { Route as AuthenticatedClaimGeneratorRouteImport } from './routes/_authenticated/claim-generator'
+import { Route as AuthenticatedClaimWorkflowRouteImport } from './routes/_authenticated/claim-workflow'
 import { Route as AuthenticatedClientsRouteImport } from './routes/_authenticated/clients'
 import { Route as AuthenticatedCompaniesRouteImport } from './routes/_authenticated/companies'
 import { Route as AuthenticatedComplianceRouteImport } from './routes/_authenticated/compliance'
@@ -181,6 +182,12 @@ const AuthenticatedClaimGeneratorRoute =
   AuthenticatedClaimGeneratorRouteImport.update({
     id: '/claim-generator',
     path: '/claim-generator',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedClaimWorkflowRoute =
+  AuthenticatedClaimWorkflowRouteImport.update({
+    id: '/claim-workflow',
+    path: '/claim-workflow',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedClientsRoute = AuthenticatedClientsRouteImport.update({
@@ -622,6 +629,7 @@ export interface FileRoutesByFullPath {
   '/available-workers': typeof AuthenticatedAvailableWorkersRoute
   '/billing': typeof AuthenticatedBillingRoute
   '/claim-generator': typeof AuthenticatedClaimGeneratorRoute
+  '/claim-workflow': typeof AuthenticatedClaimWorkflowRoute
   '/clients': typeof AuthenticatedClientsRoute
   '/companies': typeof AuthenticatedCompaniesRoute
   '/compliance': typeof AuthenticatedComplianceRoute
@@ -718,6 +726,7 @@ export interface FileRoutesByTo {
   '/available-workers': typeof AuthenticatedAvailableWorkersRoute
   '/billing': typeof AuthenticatedBillingRoute
   '/claim-generator': typeof AuthenticatedClaimGeneratorRoute
+  '/claim-workflow': typeof AuthenticatedClaimWorkflowRoute
   '/clients': typeof AuthenticatedClientsRoute
   '/companies': typeof AuthenticatedCompaniesRoute
   '/compliance': typeof AuthenticatedComplianceRoute
@@ -817,6 +826,7 @@ export interface FileRoutesById {
   '/_authenticated/available-workers': typeof AuthenticatedAvailableWorkersRoute
   '/_authenticated/billing': typeof AuthenticatedBillingRoute
   '/_authenticated/claim-generator': typeof AuthenticatedClaimGeneratorRoute
+  '/_authenticated/claim-workflow': typeof AuthenticatedClaimWorkflowRoute
   '/_authenticated/clients': typeof AuthenticatedClientsRoute
   '/_authenticated/companies': typeof AuthenticatedCompaniesRoute
   '/_authenticated/compliance': typeof AuthenticatedComplianceRoute
@@ -917,6 +927,7 @@ export interface FileRouteTypes {
     | '/available-workers'
     | '/billing'
     | '/claim-generator'
+    | '/claim-workflow'
     | '/clients'
     | '/companies'
     | '/compliance'
@@ -1013,6 +1024,7 @@ export interface FileRouteTypes {
     | '/available-workers'
     | '/billing'
     | '/claim-generator'
+    | '/claim-workflow'
     | '/clients'
     | '/companies'
     | '/compliance'
@@ -1111,6 +1123,7 @@ export interface FileRouteTypes {
     | '/_authenticated/available-workers'
     | '/_authenticated/billing'
     | '/_authenticated/claim-generator'
+    | '/_authenticated/claim-workflow'
     | '/_authenticated/clients'
     | '/_authenticated/companies'
     | '/_authenticated/compliance'
@@ -1345,6 +1358,13 @@ declare module '@tanstack/react-router' {
       path: '/claim-generator'
       fullPath: '/claim-generator'
       preLoaderRoute: typeof AuthenticatedClaimGeneratorRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/claim-workflow': {
+      id: '/_authenticated/claim-workflow'
+      path: '/claim-workflow'
+      fullPath: '/claim-workflow'
+      preLoaderRoute: typeof AuthenticatedClaimWorkflowRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/clients': {
@@ -1927,6 +1947,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAvailableWorkersRoute: typeof AuthenticatedAvailableWorkersRoute
   AuthenticatedBillingRoute: typeof AuthenticatedBillingRoute
   AuthenticatedClaimGeneratorRoute: typeof AuthenticatedClaimGeneratorRoute
+  AuthenticatedClaimWorkflowRoute: typeof AuthenticatedClaimWorkflowRoute
   AuthenticatedClientsRoute: typeof AuthenticatedClientsRoute
   AuthenticatedCompaniesRoute: typeof AuthenticatedCompaniesRoute
   AuthenticatedComplianceRoute: typeof AuthenticatedComplianceRoute
@@ -1978,6 +1999,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAvailableWorkersRoute: AuthenticatedAvailableWorkersRoute,
   AuthenticatedBillingRoute: AuthenticatedBillingRoute,
   AuthenticatedClaimGeneratorRoute: AuthenticatedClaimGeneratorRoute,
+  AuthenticatedClaimWorkflowRoute: AuthenticatedClaimWorkflowRoute,
   AuthenticatedClientsRoute: AuthenticatedClientsRoute,
   AuthenticatedCompaniesRoute: AuthenticatedCompaniesRoute,
   AuthenticatedComplianceRoute: AuthenticatedComplianceRoute,
