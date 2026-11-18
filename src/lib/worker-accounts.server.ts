@@ -22,8 +22,35 @@ async function rows<T>(path: string, init?: RequestInit): Promise<T[]> {
 }
 
 export function temporaryWorkerPassword(): string {
-  const bytes = crypto.getRandomValues(new Uint8Array(24));
-  return `W!${Array.from(bytes, value => value.toString(16).padStart(2, "0")).join("")}a9`;
+  const groups = ["ABCDEFGHJKLMNPQRSTUVWXYZ", "abcdefghijkmnpqrstuvwxyz", "23456789", "!@#$"];
+  const alphabet = groups.join("");
+  const randomIndex = (length: number) => {
+    const limit = 256 - (256 % length);
+    let value: number;
+    do { value = crypto.getRandomValues(new Uint8Array(1))[0]; } while (value >= limit);
+    return value % length;
+  };
+  const characters = groups.map(group => group[randomIndex(group.length)]);
+  while (characters.length < 8) characters.push(alphabet[randomIndex(alphabet.length)]);
+  for (let index = characters.length - 1; index > 0; index--) {
+    const target = randomIndex(index + 1);
+    [characters[index], characters[target]] = [characters[target], characters[index]];
+  }
+  return characters.join("");
+}
+
+async function availableUsername(worker: Pick<Worker, "id" | "name">, ownUserId?: string): Promise<string> {
+  for (let suffix = 1; suffix <= 1000; suffix++) {
+    const username = workerUsername(worker.name, suffix);
+    const email = workerLoginEmail(username);
+    const matches = await rows<{ id: string }>(`profiles?select=id&or=(username.eq.${encodeURIComponent(username)},email.eq.${encodeURIComponent(email)})&limit=2`);
+    if (!matches.length || matches.every(profile => profile.id === ownUserId)) return username;
+    if (!ownUserId && matches.length === 1) {
+      const account = await (await request(`auth/v1/admin/users/${matches[0].id}`)).json() as { user_metadata?: { worker_employee_id?: string } };
+      if (account.user_metadata?.worker_employee_id === worker.id) return username;
+    }
+  }
+  throw new Error("Could not allocate a unique worker login name");
 }
 
 /** Caller must already have passed role and employee-row access checks. */
@@ -31,7 +58,7 @@ export async function ensureWorkerAccount(employeeId: string) {
   const [worker] = await rows<Worker>(`employees?select=id,name,email,phone,user_id&id=eq.${employeeId}&limit=1`);
   if (!worker) throw new Error("Worker not found");
   if (worker.user_id) return { employeeId, userId: worker.user_id, created: false };
-  const username = workerUsername(worker.name, worker.id);
+  const username = await availableUsername(worker);
   // A dedicated login alias avoids silently taking over an existing office/email account.
   const email = workerLoginEmail(username);
   const password = temporaryWorkerPassword();
@@ -69,6 +96,11 @@ export async function resetWorkerPassword(employeeId: string) {
   const [profile] = await rows<{ username: string; email: string }>(`profiles?select=username,email&id=eq.${worker.user_id}&limit=1`);
   if (!profile) throw new Error("Worker account not found");
   const password = temporaryWorkerPassword();
-  await request(`auth/v1/admin/users/${worker.user_id}`, { method: "PUT", body: JSON.stringify({ password }) });
-  return { name: worker.name, username: profile.username || profile.email, password };
+  // Shorten only app-generated aliases; do not replace manually assigned real-email logins.
+  const generated = profile.email.endsWith("@workers.hrbsm.xyz");
+  const username = generated ? await availableUsername(worker, worker.user_id) : profile.username || profile.email;
+  const email = generated ? workerLoginEmail(username) : profile.email;
+  await request(`auth/v1/admin/users/${worker.user_id}`, { method: "PUT", body: JSON.stringify({ password, ...(generated ? { email, email_confirm: true } : {}) }) });
+  if (generated) await rows(`profiles?id=eq.${worker.user_id}`, { method: "PATCH", body: JSON.stringify({ username, email }) });
+  return { name: worker.name, username, password };
 }

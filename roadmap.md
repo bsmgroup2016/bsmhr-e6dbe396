@@ -2,6 +2,8 @@
 
 ## User account lists
 
+- [x] Shorten worker login IDs to names with collision suffixes, generate exactly 8-character passwords, and convert old generated IDs when admin sets a new password; focused tests cover length, names, collisions and old-ID conversion. Real external-account read-back remains blocked below.
+
 - [x] Replace confusing pending badges with per-worker Create login & password controls; controlled desktop/mobile checks verified creation action and private credential dialog, with 17 tests passing. Real external-account login remains blocked below.
 
 - [x] Show existing workers without logins, add admin-controlled account backfill and name-based login identifiers, and auto-create accounts after confirmed worker saves. Passwords are unique, not shared defaults.
