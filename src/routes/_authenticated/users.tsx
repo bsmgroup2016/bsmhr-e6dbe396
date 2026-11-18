@@ -14,6 +14,7 @@ import {
   Power,
   Search,
   Shield,
+  Smartphone,
   Trash2,
   User as UserIcon,
 } from "lucide-react";
@@ -24,6 +25,7 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -65,6 +67,7 @@ import { useAuth } from "@/lib/auth";
 import { ROLE_LABELS, type AppAuthRole } from "@/lib/permissions";
 import { createUser, deleteUsers, updateUser, setUserRole } from "@/lib/user-admin";
 import { uploadToR2 } from "@/lib/r2";
+import { accountGroup, displayRole, type AccountGroup } from "@/features/user-directory/groups";
 
 const roles: AppAuthRole[] = [
   "admin",
@@ -87,6 +90,7 @@ interface SystemUser {
   avatarKey: string | null;
   isActive: boolean;
   role: AppAuthRole | null;
+  roles: AppAuthRole[];
   createdAt: string;
   lastLoginAt: string | null;
   lastLoginIp: string | null;
@@ -133,6 +137,7 @@ export default function UsersPage() {
   const [savingId, setSavingId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<AppAuthRole | "all">("all");
+  const [group, setGroup] = useState<AccountGroup>("staff");
   const [perPage, setPerPage] = useState("10");
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<string[]>([]);
@@ -156,8 +161,11 @@ export default function UsersPage() {
       setLoading(false);
       return;
     }
-    const roleMap = new Map<string, AppAuthRole>();
-    (roleRows ?? []).forEach((r) => roleMap.set(r.user_id as string, r.role as AppAuthRole));
+    const roleMap = new Map<string, AppAuthRole[]>();
+    (roleRows ?? []).forEach((r) => {
+      const id = r.user_id as string;
+      roleMap.set(id, [...(roleMap.get(id) ?? []), r.role as AppAuthRole]);
+    });
     setUsers(
       (profiles ?? []).map((p) => ({
         id: p.id as string,
@@ -167,7 +175,8 @@ export default function UsersPage() {
         username: (p.username as string) ?? "",
         avatarKey: (p.avatar_key as string) ?? null,
         isActive: p.is_active !== false,
-        role: roleMap.get(p.id as string) ?? null,
+        role: displayRole(roleMap.get(p.id as string) ?? []),
+        roles: roleMap.get(p.id as string) ?? [],
         createdAt: (p.created_at as string) ?? "",
         lastLoginAt: (p.last_login_at as string) ?? null,
         lastLoginIp: (p.last_login_ip as string) ?? null,
@@ -185,7 +194,8 @@ export default function UsersPage() {
     setSavingId(u.id);
     try {
       await setUserRole(u.id, role);
-      setUsers((prev) => prev.map((x) => x.id === u.id ? { ...x, role: role === "none" ? null : role } : x));
+      setUsers((prev) => prev.map((x) => x.id === u.id ? { ...x, role: role === "none" ? null : role, roles: role === "none" ? [] : [role] } : x));
+      setSelected((prev) => prev.filter((id) => id !== u.id));
       toast.success(role === "none" ? "Role removed — welcome-only access" : `Role updated to ${role.replace("_", " ")}`);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Could not update role");
@@ -223,13 +233,14 @@ export default function UsersPage() {
     }
   }
 
-  const filtered = users.filter((u) => {
+  const groupUsers = users.filter((u) => accountGroup(u.roles) === group);
+  const filtered = groupUsers.filter((u) => {
     const q = search.toLowerCase();
     const matchesQuery =
       u.fullName.toLowerCase().includes(q) ||
       u.email.toLowerCase().includes(q) ||
       u.phone.toLowerCase().includes(q);
-    return matchesQuery && (roleFilter === "all" || u.role === roleFilter);
+    return matchesQuery && (roleFilter === "all" || u.roles.includes(roleFilter));
   });
 
   const pageSize = Number(perPage);
@@ -247,32 +258,51 @@ export default function UsersPage() {
   const selectableIds = paged.filter((u) => u.id !== currentUser?.id).map((u) => u.id);
   const allSelected = selectableIds.length > 0 && selectableIds.every((id) => selected.includes(id));
 
-  const activeCount = users.filter((u) => u.isActive).length;
-  const adminCount = users.filter((u) => u.role === "admin").length;
-  const unassigned = users.filter((u) => !u.role).length;
+  const activeCount = groupUsers.filter((u) => u.isActive).length;
+  const staffCount = users.filter((u) => accountGroup(u.roles) === "staff").length;
+  const workerCount = users.filter((u) => accountGroup(u.roles) === "workers").length;
+  const unassigned = users.filter((u) => accountGroup(u.roles) === "unassigned").length;
+  const groupTitle = group === "workers" ? "Worker App Accounts" : group === "staff" ? "Admin & Staff Accounts" : "Unassigned Accounts";
+  const availableFilters = group === "workers" ? ["employee" as const] : group === "staff" ? roles.filter((r) => r !== "employee") : [];
+
+  function switchGroup(value: string) {
+    if (value !== "staff" && value !== "workers" && value !== "unassigned") return;
+    setGroup(value);
+    setRoleFilter("all");
+    setSearch("");
+    setSelected([]);
+    setPage(1);
+  }
 
   return (
     <AppShell>
       <div className="w-full space-y-6">
         <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+            <h1 className="text-2xl font-semibold text-foreground">
               Users & Permissions
             </h1>
-            <p className="text-sm text-muted-foreground">
-              Accounts registered in the system. Assign a role to control what each user can open.
-            </p>
           </div>
           <Button size="sm" variant="outline" className="mt-2 sm:mt-0" onClick={() => void load()}>
             Refresh
           </Button>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <SummaryCard title="Total users" value={users.length.toString()} icon={<UserIcon className="h-5 w-5" />} variant="primary" caption="System accounts" />
+        <Tabs value={group} onValueChange={switchGroup} className="space-y-4">
+          <TabsList aria-label="Account lists" className="w-full sm:w-auto">
+            <TabsTrigger value="staff" className="flex-1 sm:flex-none"><Shield className="h-4 w-4 shrink-0" />Admin & Staff <span className="text-xs tabular-nums">({staffCount})</span></TabsTrigger>
+            <TabsTrigger value="workers" className="flex-1 sm:flex-none"><Smartphone className="h-4 w-4 shrink-0" />Worker App <span className="text-xs tabular-nums">({workerCount})</span></TabsTrigger>
+            <TabsTrigger value="unassigned" className="flex-1 sm:flex-none"><UserIcon className="h-4 w-4 shrink-0" />Unassigned <span className="text-xs tabular-nums">({unassigned})</span></TabsTrigger>
+          </TabsList>
+          <TabsContent key={group} value={group} className="space-y-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold text-foreground">{groupTitle}</h2>
+          {group === "workers" && <span className="flex items-center gap-1.5 text-sm text-muted-foreground"><Smartphone className="h-4 w-4" />Worker Portal</span>}
+        </div>
+        <div className="grid gap-4 sm:grid-cols-3">
+          <SummaryCard title="Accounts" value={groupUsers.length.toString()} icon={<UserIcon className="h-5 w-5" />} variant="primary" caption={group === "workers" ? "Worker app logins" : group === "staff" ? "Office & client logins" : "Awaiting assignment"} />
           <SummaryCard title="Active" value={activeCount.toString()} icon={<CheckCircle2 className="h-5 w-5" />} variant="success" caption="Can log in" />
-          <SummaryCard title="Admins" value={adminCount.toString()} icon={<Shield className="h-5 w-5" />} variant="warning" caption="Full access" />
-          <SummaryCard title="No role" value={unassigned.toString()} icon={<Shield className="h-5 w-5" />} variant="info" caption="Awaiting assignment" />
+          <SummaryCard title="Inactive" value={(groupUsers.length - activeCount).toString()} icon={<Power className="h-5 w-5" />} variant="warning" caption="Disabled accounts" />
         </div>
 
         <div className="rounded-xl border bg-card shadow-sm">
@@ -280,7 +310,7 @@ export default function UsersPage() {
             <div className="flex flex-wrap items-center gap-2">
               <Button size="sm" className="gap-1.5" onClick={() => setAddOpen(true)}>
                 <Plus className="h-4 w-4" />
-                Add User
+                {group === "workers" ? "Add Worker Account" : "Add User"}
               </Button>
               <Button
                 size="sm"
@@ -307,24 +337,25 @@ export default function UsersPage() {
               <span className="text-sm text-muted-foreground">records per page</span>
             </div>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-              <Select value={roleFilter} onValueChange={(v) => setRoleFilter(v as AppAuthRole | "all")}>
+              {group === "staff" && <Select value={roleFilter} onValueChange={(v) => setRoleFilter(v as AppAuthRole | "all")}>
                 <SelectTrigger className="h-9 w-44">
                   <SelectValue placeholder="Role" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All roles</SelectItem>
-                  {roles.map((r) => (
+                  {availableFilters.map((r) => (
                     <SelectItem key={r} value={r} className="capitalize">
-                      {r.replace("_", " ")}
+                      {ROLE_LABELS[r]}
                     </SelectItem>
                   ))}
                 </SelectContent>
-              </Select>
+              </Select>}
               <div className="relative w-full sm:w-72">
                 <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   type="search"
-                  placeholder="Search…"
+                  placeholder={group === "workers" ? "Search worker accounts…" : "Search accounts…"}
+                  aria-label="Search accounts"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   className="h-9 pl-9"
@@ -346,8 +377,8 @@ export default function UsersPage() {
                       }
                     />
                   </TableHead>
-                  <TableHead className="min-w-[240px]">User</TableHead>
-                  <TableHead className="min-w-[220px]">Contact</TableHead>
+                  <TableHead className="min-w-[240px]">{group === "workers" ? "Worker" : "User"}</TableHead>
+                  <TableHead className="min-w-[220px]">Login email / Phone</TableHead>
                   <TableHead className="min-w-[230px]">Login info</TableHead>
                   <TableHead className="w-56">Role</TableHead>
                   <TableHead className="w-28">Status</TableHead>
@@ -367,8 +398,8 @@ export default function UsersPage() {
                       <EmptyState
                         className="border-0 bg-transparent"
                         icon={<UserIcon className="h-5 w-5" />}
-                        title="No users found"
-                        description="Users appear here after they register an account."
+                        title={search || roleFilter !== "all" ? "No matching accounts" : group === "workers" ? "No worker app accounts" : "No accounts"}
+                        description={search || roleFilter !== "all" ? "" : group === "workers" ? "No accounts have the Employee role." : ""}
                       />
                     </TableCell>
                   </TableRow>
@@ -540,9 +571,13 @@ export default function UsersPage() {
             </div>
           </div>
         </div>
+          </TabsContent>
+        </Tabs>
       </div>
 
       <AddUserDialog
+        key={group}
+        group={group}
         open={addOpen}
         onOpenChange={setAddOpen}
         onCreated={() => void load()}
@@ -584,10 +619,12 @@ export default function UsersPage() {
 }
 
 function AddUserDialog({
+  group,
   open,
   onOpenChange,
   onCreated,
 }: {
+  group: AccountGroup;
   open: boolean;
   onOpenChange: (v: boolean) => void;
   onCreated: () => void;
@@ -596,7 +633,7 @@ function AddUserDialog({
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState<string>("none");
+  const [role, setRole] = useState<string>(group === "workers" ? "employee" : "none");
   const [saving, setSaving] = useState(false);
 
   async function submit() {
@@ -612,7 +649,7 @@ function AddUserDialog({
       setEmail("");
       setPhone("");
       setPassword("");
-      setRole("none");
+      setRole(group === "workers" ? "employee" : "none");
       onOpenChange(false);
       onCreated();
     } catch (e) {
@@ -626,8 +663,8 @@ function AddUserDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Add user</DialogTitle>
-          <DialogDescription>Create a login account and assign a role.</DialogDescription>
+          <DialogTitle>{group === "workers" ? "Add worker app account" : "Add user"}</DialogTitle>
+          <DialogDescription>{group === "workers" ? "Worker Portal login" : "New login account"}</DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
           <div className="space-y-1.5">

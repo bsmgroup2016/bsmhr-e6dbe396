@@ -1,5 +1,10 @@
 # Full-section UI/UX and workflow audit
 
+## User account lists
+
+- [x] Separate Admin & Staff, Worker App and Unassigned account tabs; preserve existing login and permissions.
+- [x] Verify controlled populated tab separation, Employee creation default and desktop/mobile layout; 11 grouping/access tests pass and preview build is clean. Real signed-in account creation/login remains unverified because no authorized external account session is available.
+
 ## Navy brand colour
 
 - [x] Replace the pink/rose accent with deep navy across buttons, links, sidebar overlay, charts and dashboard cards; keep semantic status colours (green present/available, red absent, amber leave).
