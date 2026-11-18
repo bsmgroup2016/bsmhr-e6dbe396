@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { CalendarCheck, CalendarPlus, Clock, Download, FileText, Home, IdCard, Loader2, LogIn, LogOut, UserRound, Wallet } from "lucide-react";
+import { CalendarCheck, CalendarPlus, Clock, Download, FileText, Home, IdCard, Loader2, LogIn, LogOut, UserRound, Wallet, MapPin } from "lucide-react";
 import { apiFetch } from "@/lib/api-client";
 import { toast } from "sonner";
 
@@ -99,15 +99,15 @@ function PortalShell({ worker, employee, tab, setTab, children }: { worker: bool
   if (!worker) return <AppShell>{children}</AppShell>;
   return (
     <div className="worker-app min-h-svh bg-background text-foreground">
-      <header className="sticky top-0 z-30 flex items-center gap-3 rounded-b-3xl bg-primary px-4 pb-4 pt-[max(0.9rem,env(safe-area-inset-top))] text-primary-foreground shadow-md lg:rounded-none lg:border-b lg:bg-card/95 lg:px-8 lg:pb-3 lg:text-foreground lg:shadow-none lg:backdrop-blur">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary-foreground/20 text-lg font-semibold lg:h-10 lg:w-10 lg:bg-primary/15 lg:text-base lg:text-primary">
+      <header className="sticky top-0 z-30 flex items-center gap-3 bg-background/95 px-5 pb-3 pt-[max(1rem,env(safe-area-inset-top))] backdrop-blur lg:border-b lg:bg-card/95 lg:px-8">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary/15 text-base font-semibold text-primary ring-2 ring-card shadow-sm lg:h-10 lg:w-10">
           {(employee?.name ?? "?").slice(0, 1)}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold">{employee?.name ?? "My Portal"}</p>
-          <p className="truncate text-xs opacity-80 lg:text-muted-foreground lg:opacity-100">{employee ? `${employee.employeeCode} · ${employee.trade}` : "BSM Workforce"}</p>
+          <p className="truncate text-lg font-medium lg:text-sm lg:font-semibold"><span className="lg:hidden">Hello, </span>{employee?.name?.split(" ")[0] ?? "My Portal"}<span className="hidden lg:inline">{employee?.name?.split(" ").slice(1).join(" ") ? ` ${employee?.name?.split(" ").slice(1).join(" ")}` : ""}</span></p>
+          <p className="truncate text-xs text-muted-foreground">{employee ? `${employee.employeeCode} · ${employee.trade}` : "BSM Workforce"}</p>
         </div>
-        <Button size="icon" variant="ghost" className="rounded-full hover:bg-primary-foreground/15 hover:text-primary-foreground lg:hover:bg-muted lg:hover:text-foreground" aria-label="Sign out" onClick={() => void signOut().then(() => window.location.replace("/auth"))}>
+        <Button size="icon" variant="ghost" className="rounded-full text-primary" aria-label="Sign out" onClick={() => void signOut().then(() => window.location.replace("/auth"))}>
           <LogOut className="h-5 w-5" />
         </Button>
       </header>
@@ -125,16 +125,16 @@ function PortalShell({ worker, employee, tab, setTab, children }: { worker: bool
             </nav>
           </aside>
         )}
-        <main className="min-w-0 flex-1 px-4 pb-[calc(6.5rem+env(safe-area-inset-bottom))] pt-5 lg:px-8 lg:pb-10 lg:pt-6">{children}</main>
+        <main className="min-w-0 flex-1 px-4 pb-[calc(5.5rem+env(safe-area-inset-bottom))] pt-1 lg:px-8 lg:pb-10 lg:pt-6">{children}</main>
       </div>
       {employee && (
-        <nav className="lg:hidden fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-30 rounded-2xl border bg-card/95 shadow-lg backdrop-blur" aria-label="Portal">
-          <div className="mx-auto grid max-w-3xl grid-cols-5 p-1.5">
+        <nav className="lg:hidden fixed inset-x-0 bottom-0 z-30 border-t bg-card pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_16px_-8px_rgb(0_0_0/0.12)]" aria-label="Portal">
+          <div className="mx-auto grid max-w-3xl grid-cols-5">
             {TABS.map(({ id, label, icon: Icon }) => (
               <button key={id} type="button" onClick={() => { setTab(id); window.scrollTo({ top: 0 }); }}
-                className={`flex min-h-[56px] flex-col items-center justify-center gap-0.5 rounded-xl text-[10.5px] font-medium transition-colors active:scale-95 ${tab === id ? "bg-primary/12 text-primary" : "text-muted-foreground"}`}
+                className={`relative flex min-h-[62px] flex-col items-center justify-center gap-1 text-[11px] transition-colors active:bg-muted ${tab === id ? "font-semibold text-foreground before:absolute before:inset-x-4 before:top-0 before:h-[3px] before:rounded-b before:bg-primary" : "font-medium text-muted-foreground"}`}
                 aria-current={tab === id ? "page" : undefined}>
-                <Icon className={`h-5 w-5 ${tab === id ? "stroke-[2.4]" : ""}`} /><span className="max-w-full truncate px-0.5">{label}</span>
+                <Icon className="h-[22px] w-[22px] text-primary" /><span className="max-w-full truncate px-0.5">{label}</span>
               </button>
             ))}
           </div>
@@ -196,29 +196,62 @@ function PunchCard({ checkIn, checkOut, status, onDone }: { checkIn?: string; ch
   };
 
   const state = checkOut ? "Day complete" : checkIn ? "On duty" : "Not checked in";
+  const mins = (t?: string) => { if (!t) return null; const [h, m] = t.split(":").map(Number); return h * 60 + m; };
+  const startM = mins(checkIn);
+  const endM = checkOut ? mins(checkOut) : now ? now.getHours() * 60 + now.getMinutes() : null;
+  const worked = startM !== null && endM !== null ? Math.max(0, endM - startM) : 0;
+  const pct = Math.min(100, Math.round((worked / 540) * 100));
+  const label = status && status !== "Present" ? status : state;
+  const mobile = (
+    <div className="overflow-hidden rounded-3xl bg-primary p-5 text-primary-foreground shadow-lg lg:hidden">
+      <div className="flex items-center justify-between">
+        <p className="text-xl font-medium">Attendance</p>
+        <span className="rounded-full bg-primary-foreground/15 px-3 py-1 text-xs font-medium">{label}</span>
+      </div>
+      <div className="mt-4 rounded-2xl bg-brand-deep p-4">
+        <div className="flex items-center gap-3">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-card text-primary"><Clock className="h-6 w-6" /></div>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm opacity-90">{now ? now.toLocaleDateString("en-SG", { weekday: "long", day: "numeric", month: "short" }) : ""}</p>
+            <p className="text-xs opacity-70">Duty 9h incl. 1h lunch</p>
+          </div>
+          <div className="text-right">
+            <p className="text-xs opacity-80">{checkIn ? "Worked" : "Time now"}</p>
+            <p className="text-2xl font-semibold tabular-nums">{checkIn ? `${String(Math.floor(worked / 60)).padStart(2, "0")}h:${String(worked % 60).padStart(2, "0")}m` : now ? now.toLocaleTimeString("en-SG", { hour: "2-digit", minute: "2-digit" }) : "--:--"}</p>
+          </div>
+        </div>
+        <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-primary-foreground/20"><div className="h-full rounded-full bg-primary-foreground transition-all" style={{ width: `${pct}%` }} /></div>
+        <div className="mt-2 flex justify-between text-sm tabular-nums">
+          <span>In {checkIn ?? "--:--"}</span><span>Out {checkOut ?? "--:--"}</span>
+        </div>
+      </div>
+      <div className="mt-4 flex gap-3">
+        {checkOut ? (
+          <div className="flex h-12 flex-1 items-center justify-center rounded-xl border-2 border-primary-foreground/70 font-semibold">Day complete</div>
+        ) : (
+          <button type="button" disabled={!!busy} onClick={() => void punch(checkIn ? "out" : "in")}
+            className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-brand-lime text-base font-semibold text-brand-lime-foreground shadow-sm transition active:scale-[0.98] disabled:opacity-60">
+            {busy ? <Loader2 className="h-5 w-5 animate-spin" /> : checkIn ? <LogOut className="h-5 w-5" /> : <LogIn className="h-5 w-5" />}{checkIn ? "Check out" : "Check in"}
+          </button>
+        )}
+      </div>
+      <p className="mt-3 flex items-center gap-1.5 text-xs opacity-80"><MapPin className="h-3.5 w-3.5 shrink-0" />Location is recorded with each punch</p>
+    </div>
+  );
   return (
-    <Card className="p-5 lg:p-6">
+    <>
+    {mobile}
+    <Card className="hidden p-5 lg:block lg:p-6">
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
         <div className="min-w-0">
           <p className="text-xs uppercase tracking-wide text-muted-foreground">Today's attendance</p>
           <p className="mt-1 text-4xl font-bold tabular-nums tracking-tight lg:text-4xl">{now ? now.toLocaleTimeString("en-SG", { hour: "2-digit", minute: "2-digit", second: "2-digit" }) : "--:--:--"}</p>
           <p className="text-sm text-muted-foreground">{now ? now.toLocaleDateString("en-SG", { weekday: "long", day: "numeric", month: "long", year: "numeric" }) : ""}</p>
-          <div className="mt-4 grid grid-cols-3 gap-2 text-sm lg:flex lg:flex-wrap lg:gap-6">
-            <div className="rounded-xl bg-muted/60 p-2.5 lg:bg-transparent lg:p-0"><p className="text-xs text-muted-foreground">Status</p><p className="font-medium">{status && status !== "Present" ? status : state}</p></div>
-            <div className="rounded-xl bg-muted/60 p-2.5 lg:bg-transparent lg:p-0"><p className="text-xs text-muted-foreground">Check in</p><p className="font-medium tabular-nums">{checkIn ?? "—"}</p></div>
-            <div className="rounded-xl bg-muted/60 p-2.5 lg:bg-transparent lg:p-0"><p className="text-xs text-muted-foreground">Check out</p><p className="font-medium tabular-nums">{checkOut ?? "—"}</p></div>
+          <div className="mt-4 flex gap-6 text-sm lg:flex lg:flex-wrap lg:gap-6">
+            <div className=""><p className="text-xs text-muted-foreground">Status</p><p className="font-medium">{status && status !== "Present" ? status : state}</p></div>
+            <div className=""><p className="text-xs text-muted-foreground">Check in</p><p className="font-medium tabular-nums">{checkIn ?? "—"}</p></div>
+            <div className=""><p className="text-xs text-muted-foreground">Check out</p><p className="font-medium tabular-nums">{checkOut ?? "—"}</p></div>
           </div>
-        </div>
-        {/* Mobile: one big action that follows the day's state */}
-        <div className="lg:hidden">
-          {checkOut ? (
-            <div className="flex h-16 items-center justify-center rounded-2xl bg-muted text-base font-semibold text-muted-foreground">Day complete — see you tomorrow</div>
-          ) : (
-            <Button size="lg" variant={checkIn ? "secondary" : "default"} className="h-16 w-full gap-2 rounded-2xl text-lg font-semibold shadow-md active:scale-[0.98]" disabled={!!busy} onClick={() => void punch(checkIn ? "out" : "in")}>
-              {busy ? <Loader2 className="h-6 w-6 animate-spin" /> : checkIn ? <LogOut className="h-6 w-6" /> : <LogIn className="h-6 w-6" />}{checkIn ? "Check out" : "Check in"}
-            </Button>
-          )}
-          <p className="mt-2 flex items-center justify-center gap-1.5 text-xs text-muted-foreground"><Clock className="h-3.5 w-3.5 shrink-0" />Your location is recorded with each punch.</p>
         </div>
         <div className="hidden grid-cols-2 gap-3 lg:grid lg:w-80">
           <Button size="lg" className="h-14 gap-2 text-base" disabled={!!busy || !!checkIn} onClick={() => void punch("in")}>
@@ -231,6 +264,7 @@ function PunchCard({ checkIn, checkOut, status, onDone }: { checkIn?: string; ch
         </div>
       </div>
     </Card>
+    </>
   );
 }
 
@@ -617,7 +651,7 @@ function MyPortalPage() {
           <TabsList className={worker ? "hidden" : "flex w-full justify-start overflow-x-auto"}>
             {TABS.map((t) => <TabsTrigger key={t.id} value={t.id}>{t.label}</TabsTrigger>)}
           </TabsList>
-          {worker && <h1 className="mb-3 text-xl font-semibold lg:mb-5 lg:text-2xl">{TABS.find((t) => t.id === tab)?.label}</h1>}
+          {worker && <h1 className={`mb-3 text-xl font-semibold lg:mb-5 lg:text-2xl ${tab === "home" ? "hidden lg:block" : ""}`}>{TABS.find((t) => t.id === tab)?.label}</h1>}
           {TABS.map((t) => <TabsContent key={t.id} value={t.id} className={worker ? "mt-0" : "mt-4"}>{views[t.id]}</TabsContent>)}
         </Tabs>
       </div>

@@ -12,6 +12,9 @@
  */
 
 @theme inline {
+  --color-brand-lime: var(--brand-lime);
+  --color-brand-lime-foreground: var(--brand-lime-foreground);
+  --color-brand-deep: var(--brand-deep);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -505,4 +508,28 @@ iframe[src*="lovable.dev/badge"] {
   --claim-pill: oklch(0.3 0.05 240);
   --claim-pill-ink: oklch(0.85 0.08 240);
   --primary: oklch(0.65 0.09 197);
+}
+
+/* Worker app: professional light teal theme (scoped, always light) */
+:root { --brand-lime: oklch(0.82 0.19 128); --brand-lime-foreground: oklch(0.25 0.06 140); --brand-deep: oklch(0.42 0.08 215); }
+.worker-app {
+  color-scheme: light;
+  --background: oklch(0.975 0.004 220);
+  --foreground: oklch(0.22 0.02 230);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.22 0.02 230);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.22 0.02 230);
+  --primary: oklch(0.52 0.09 210);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.95 0.015 210);
+  --secondary-foreground: oklch(0.32 0.06 215);
+  --muted: oklch(0.955 0.008 220);
+  --muted-foreground: oklch(0.52 0.02 230);
+  --accent: oklch(0.94 0.03 200);
+  --accent-foreground: oklch(0.3 0.06 215);
+  --border: oklch(0.91 0.008 220);
+  --input: oklch(0.9 0.008 220);
+  --ring: oklch(0.52 0.09 210);
+  --brand-deep: oklch(0.43 0.08 215);
 }
