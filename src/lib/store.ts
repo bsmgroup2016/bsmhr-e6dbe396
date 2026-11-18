@@ -1602,11 +1602,21 @@ export function deleteDormitory(id: string): boolean {
 export function addAllocation(x: Omit<BedAllocation, "id" | "createdAt" | "updatedAt">): BedAllocation {
   const s = getState();
   const now = new Date().toISOString();
+  // Prevent duplicate active allocation: if employee already has an Occupied bed, vacate previous one
+  if (x.status === "Occupied") {
+    const existingActive = s.allocations.find((a) => a.employeeId === x.employeeId && a.status === "Occupied");
+    if (existingActive) {
+      updateAllocation(existingActive.id, {
+        status: "Vacated",
+        checkOutDate: x.checkInDate || now.slice(0, 10),
+      });
+    }
+  }
   const row: BedAllocation = { ...x, id: newId(), createdAt: now, updatedAt: now };
-  setState({ ...s, allocations: [row, ...s.allocations] });
+  setState({ ...getState(), allocations: [row, ...getState().allocations] });
   void supabase.from("bed_allocations").insert({ id: row.id, ...toAllocation(row) })
     .then(({ error }) => fail("bed_allocations", error));
-  const dorm = s.dormitories.find((d) => d.id === row.dormitoryId);
+  const dorm = getState().dormitories.find((d) => d.id === row.dormitoryId);
   if (dorm) updateEmployee(row.employeeId, { dormitory: `${dorm.name} · ${row.roomNo}` });
   addAuditLog("CREATE", "BedAllocation", row.id, `Allocated room ${row.roomNo}`);
   return row;
@@ -2144,6 +2154,38 @@ export function deleteCourse(id: string): boolean {
   return true;
 }
 
+function syncTrainingToCertification(t: TrainingRecord) {
+  if (t.status !== "Completed") return;
+  const s = getState();
+  const course = s.courses.find((c) => c.id === t.courseId);
+  const courseName = course?.name ?? "Course Certificate";
+  const existingCert = s.certifications.find(
+    (c) => c.employeeId === t.employeeId && c.courseName.toLowerCase() === courseName.toLowerCase()
+  );
+  if (existingCert) {
+    updateCertification(existingCert.id, {
+      certificateNumber: t.certificateNumber ?? existingCert.certificateNumber,
+      issueDate: t.completionDate ?? existingCert.issueDate,
+      expiryDate: t.expiryDate ?? existingCert.expiryDate,
+      issuingAuthority: course?.provider ?? existingCert.issuingAuthority,
+    });
+  } else {
+    addCertification({
+      employeeId: t.employeeId,
+      courseName,
+      certificateNumber: t.certificateNumber,
+      issueDate: t.completionDate,
+      expiryDate: t.expiryDate,
+      issuingAuthority: course?.provider,
+    });
+  }
+  if (courseName.toLowerCase().includes("csoc") || courseName.toLowerCase().includes("safety")) {
+    if (t.expiryDate) {
+      updateEmployee(t.employeeId, { safetyCourseExpiry: t.expiryDate });
+    }
+  }
+}
+
 /** Add a training record; expiry auto-derived from course validity when absent. */
 export function addTraining(x: Omit<TrainingRecord, "id" | "createdAt" | "updatedAt">): TrainingRecord {
   const s = getState();
@@ -2161,6 +2203,7 @@ export function addTraining(x: Omit<TrainingRecord, "id" | "createdAt" | "update
   setState({ ...s, trainings: [row, ...s.trainings] });
   void supabase.from("training_records").insert({ id: row.id, ...toTraining(row) })
     .then(({ error }) => fail("training_records", error));
+  syncTrainingToCertification(row);
   addAuditLog("CREATE", "TrainingRecord", row.id, "Added training record");
   return row;
 }
@@ -2173,6 +2216,7 @@ export function updateTraining(id: string, updates: Partial<TrainingRecord>): Tr
   setState({ ...s, trainings: s.trainings.map((t) => (t.id === id ? updated : t)) });
   void supabase.from("training_records").update(toTraining(updated)).eq("id", id)
     .then(({ error }) => fail("training_records", error));
+  syncTrainingToCertification(updated);
   addAuditLog("UPDATE", "TrainingRecord", id, "Updated training record");
   return updated;
 }
@@ -2502,7 +2546,9 @@ export const paymentModes: PaymentReceipt["paymentMode"][] = [
 export function addExpense(x: Omit<Expense, "id" | "createdAt" | "updatedAt">): Expense {
   const s = getState();
   const now = new Date().toISOString();
-  const row: Expense = { ...x, id: newId(), createdAt: now, updatedAt: now };
+  const amount = Math.max(0, x.amount);
+  const gstAmount = Math.max(0, x.gstAmount || 0);
+  const row: Expense = { ...x, amount, gstAmount, id: newId(), createdAt: now, updatedAt: now };
   setState({ ...s, expenses: [row, ...s.expenses] });
   void supabase.from("expenses").insert({ id: row.id, ...toExpense(row) })
     .then(({ error }) => fail("expenses", error));
@@ -2798,7 +2844,8 @@ export function deleteInventoryItem(id: string): boolean {
 export function addStockMovement(x: Omit<StockMovement, "id" | "createdAt" | "updatedAt">): StockMovement {
   const s = getState();
   const now = new Date().toISOString();
-  const row: StockMovement = { ...x, id: newId(), createdAt: now, updatedAt: now };
+  const quantity = Math.max(1, Math.abs(x.quantity || 1));
+  const row: StockMovement = { ...x, quantity, id: newId(), createdAt: now, updatedAt: now };
   setState({ ...s, movements: [row, ...s.movements] });
   void supabase.from("stock_movements").insert({ id: row.id, ...toMovement(row) })
     .then(({ error }) => fail("stock_movements", error));
@@ -2874,7 +2921,7 @@ export function deletePurchaseOrder(id: string): boolean {
 /** Mark a PO received and push the quantity into stock as an inbound movement. */
 export function receivePurchaseOrder(id: string, receivedDate = new Date().toISOString().slice(0, 10)) {
   const po = getState().purchaseOrders.find((p) => p.id === id);
-  if (!po) return undefined;
+  if (!po || po.status === "Received") return po;
   const updated = updatePurchaseOrder(id, { status: "Received", receivedDate });
   if (po.itemId && po.quantity > 0) {
     addStockMovement({

@@ -151,7 +151,11 @@ function OperationsDashboard() {
   const deployedEmployees = employees.filter((e) => e.status === "Deployed").length;
   const activeSites = sites.filter((s) => s.status === "Active").length;
   const activeProjects = projects.filter((p) => p.status === "Active").length;
-  const pendingApprovals = approvals.filter((a) => a.status === "Pending").length;
+  const pendingLeavesCount = getLeaveRequests().filter(
+    (l) => (!companyId || employees.some((e) => e.id === l.employeeId)) && l.status === "Pending",
+  ).length;
+  const pendingCentralApprovals = approvals.filter((a) => a.status === "Pending").length;
+  const pendingApprovals = Math.max(pendingCentralApprovals, pendingLeavesCount);
   const expiringDocs = documents.filter((d) => d.status === "Expiring Soon" || d.status === "Expired").length;
 
   const today = new Date();

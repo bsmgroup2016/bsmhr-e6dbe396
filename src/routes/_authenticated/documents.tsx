@@ -230,20 +230,23 @@ export default function DocumentsPage() {
   }
 
   function handleRenew(doc: EmployeeDocument) {
-    updateDocument(doc.id, { status: "Superseded" });
     setRenewSource(doc);
   }
 
   function handleRenewSubmit(formData: FormData) {
     if (!renewSource) return;
     const data = readDocForm(formData);
-    addDocument({
+    const newDoc = addDocument({
       ...data,
       status: mapComplianceToDocStatus(data.status),
       version: (renewSource.version ?? 1) + 1,
       replacesId: renewSource.id,
       verified: false,
     } as any);
+    // Mark previous version superseded only after new renewal record is saved
+    if (newDoc) {
+      updateDocument(renewSource.id, { status: "Superseded" });
+    }
     setRenewSource(null);
     refresh();
   }

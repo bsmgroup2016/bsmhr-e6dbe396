@@ -395,7 +395,7 @@ export default function OperationsPage() {
                     <div className="mt-4 pt-4 border-t flex items-center justify-between">
                       <span className="text-sm font-medium">Gross Margin</span>
                       <span className="text-lg font-bold text-primary">
-                        {Math.round(((dailyChargeOut - dailyCost) / dailyChargeOut) * 100)}%
+                        {dailyChargeOut > 0 ? `${Math.round(((dailyChargeOut - dailyCost) / dailyChargeOut) * 100)}%` : "0%"}
                       </span>
                     </div>
                   </div>

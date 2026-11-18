@@ -262,7 +262,7 @@ export default function ReportsPage() {
                 <div className="h-64">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
-                      <Pie data={statusData} dataKey="count" nameKey="status" cx="50%" cy="50%" outerRadius={80} label>
+                      <Pie data={statusData} dataKey="count" nameKey="status" cx="50%" cy="50%" outerRadius={80} label isAnimationActive={false}>
                         {statusData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                       </Pie>
                       <Tooltip />
@@ -346,7 +346,7 @@ export default function ReportsPage() {
                 <div className="h-64">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
-                      <Pie data={passData} dataKey="count" nameKey="passType" cx="50%" cy="50%" outerRadius={80} label>
+                      <Pie data={passData} dataKey="count" nameKey="passType" cx="50%" cy="50%" outerRadius={80} label isAnimationActive={false}>
                         {passData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                       </Pie>
                       <Tooltip />
@@ -446,7 +446,7 @@ export default function ReportsPage() {
                 <div className="h-64">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
-                      <Pie data={expenseData} dataKey="amount" nameKey="category" cx="50%" cy="50%" outerRadius={80} label>
+                      <Pie data={expenseData} dataKey="amount" nameKey="category" cx="50%" cy="50%" outerRadius={80} label isAnimationActive={false}>
                         {expenseData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                       </Pie>
                       <Tooltip />
@@ -504,7 +504,7 @@ export default function ReportsPage() {
                 <div className="h-64">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
-                      <Pie data={[{ name: "Valid", value: trainingData.valid }, { name: "Expiring", value: trainingData.expiringSoon }, { name: "Expired", value: trainingData.expired }]} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>
+                      <Pie data={[{ name: "Valid", value: trainingData.valid }, { name: "Expiring", value: trainingData.expiringSoon }, { name: "Expired", value: trainingData.expired }]} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label isAnimationActive={false}>
                         <Cell fill="#10b981" /><Cell fill="#f59e0b" /><Cell fill="#ef4444" />
                       </Pie>
                       <Tooltip />

@@ -275,15 +275,19 @@ export default function PayrollPage() {
     toast.success(`CPF e-Submission file created (${rows.length} workers)`);
   }
 
-  /** IRAS AIS / IR8A annual return for the year of the selected month. */
+  /** IRAS AIS / IR8A annual return for the year of the selected month (scoped to selected company). */
   async function exportIrasAis() {
     const year = month.slice(0, 4);
-    const rows = ir8aRows(payroll, employees, year);
+    const scopedEmployees = companyFilter === "all" ? employees : employees.filter((e) => e.companyId === companyFilter);
+    const scopedEmpIds = new Set(scopedEmployees.map((e) => e.id));
+    const scopedPayroll = payroll.filter((p) => scopedEmpIds.has(p.employeeId));
+    const rows = ir8aRows(scopedPayroll, scopedEmployees, year);
     if (!rows.length) {
-      toast.error(`No payroll records for ${year}`);
+      toast.error(`No payroll records for ${year}${companyFilter !== "all" ? " under selected company" : ""}`);
       return;
     }
-    await exportCsv(rows, timestampedName(`iras_ais_ir8a_${year}`, "csv"));
+    const compTag = companyFilter !== "all" ? `_${companyFilter}` : "";
+    await exportCsv(rows, timestampedName(`iras_ais_ir8a_${year}${compTag}`, "csv"));
     toast.success(`IRAS AIS (IR8A) file created for ${rows.length} employees`);
   }
 

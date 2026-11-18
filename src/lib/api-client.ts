@@ -14,13 +14,16 @@ export type ApiEnvelope<T> =
 export const API_BASE = "/api/public/v1";
 
 /** Gateway failures may be HTML; never treat them as saved application data. */
-export async function readApiResponse<T>(response: Response): Promise<ApiEnvelope<T>> {
+export async function readApiResponse<T>(response: Response, method = "GET"): Promise<ApiEnvelope<T>> {
+  const isMutation = ["POST", "PUT", "PATCH", "DELETE"].includes(method.toUpperCase());
   const failure: ApiEnvelope<T> = {
     ok: false,
     error: {
       code: response.status >= 500 ? "service_unavailable" : "invalid_response",
       message: response.status >= 500
-        ? "The server is temporarily unavailable. Your save could not be confirmed. Refresh to check the latest record before trying again."
+        ? (isMutation
+            ? "The server is temporarily unavailable. Your change could not be confirmed. Refresh to check the latest record before trying again."
+            : "The server is temporarily unavailable. Could not load data. Please refresh and try again.")
         : "The server returned an unexpected response. Please refresh and try again.",
     },
   };
@@ -72,15 +75,16 @@ export async function apiFetch<T>(
   const url = `${API_BASE}${path}${qs.toString() ? `?${qs}` : ""}`;
 
   try {
+    const method = init?.method ?? "GET";
     const res = await authedFetch(url, {
-      method: init?.method ?? "GET",
+      method,
       headers: {
         "Content-Type": "application/json",
         "x-client-platform": "web",
       },
       body: init?.body ? JSON.stringify(init.body) : undefined,
     });
-    const envelope = await readApiResponse<T>(res);
+    const envelope = await readApiResponse<T>(res, method);
     if (res.ok && envelope.ok && init?.method && ["POST", "PATCH", "DELETE"].includes(init.method.toUpperCase()) && typeof window !== "undefined") {
       const table = path.startsWith("/attendance") ? "attendance" : path.startsWith("/employees") ? "employees" : path.startsWith("/leave") ? "leave_requests" : null;
       if (table) window.dispatchEvent(new CustomEvent("bsm:data-write", { detail: table }));
