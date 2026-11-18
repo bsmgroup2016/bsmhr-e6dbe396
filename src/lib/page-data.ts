@@ -25,7 +25,7 @@ const pages: Record<string, CollectionKey[]> = {
   billing: ["clients", "projects", "invoices", "rateAgreements", "contracts", "receipts", "expenses", "attendance", "employees", "sites", "assignments"],
   contracts: ["clients", "rateAgreements", "contracts", "projects", "attendance", "employees", "sites", "assignments", "invoices"],
   quotations: ["clients", "projects", "quotations", "contracts", "rateAgreements"],
-  finance: ["expenses", "receipts", "invoices", "clients", "projects", "employees"],
+  finance: ["expenses", "receipts", "invoices", "clients", "projects", "employees", "payroll", "dormitories", "allocations", "fuelLogs", "attendance", "sites"],
   crm: ["leads", "activities", "clients"],
   accommodation: ["dormitories", "allocations", "employees"],
   transport: ["vehicles", "trips", "employees", "sites", "fuelLogs", "driverProfiles", "driverIncidents"],

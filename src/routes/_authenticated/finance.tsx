@@ -20,7 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   getExpenses, getReceipts, getInvoices, getClients, getProjects, getCurrentCompany,
   addExpense, deleteExpense, markExpensePaid, addReceipt, deleteReceipt,
-  financeSummary, financeTrend, expenseCategories, paymentModes,
+  financeSummary, financeTrend, getProjectProfitability, expenseCategories, paymentModes,
 } from "@/lib/store";
 import { exportRows, timestampedName } from "@/lib/xlsx";
 import type { Expense, PaymentReceipt } from "@/lib/types";
@@ -107,6 +107,7 @@ export default function FinancePage() {
   const summary = financeSummary(month, companyId || undefined);
   const trend = financeTrend(6, companyId || undefined);
   const maxTrend = Math.max(1, ...trend.map((t) => Math.max(t.revenue, t.cost)));
+  const projectProfit = useMemo(() => getProjectProfitability(month, companyId || undefined), [month, companyId]);
 
   const q = search.trim().toLowerCase();
   const filteredExpenses = scopedExpenses.filter(
@@ -245,11 +246,171 @@ export default function FinancePage() {
           </div>
         </div>
 
-        <Tabs defaultValue="expenses" className="space-y-4">
+        <Tabs defaultValue="pl" className="space-y-4">
           <TabsList>
+            <TabsTrigger value="pl">P&amp;L Statement</TabsTrigger>
+            <TabsTrigger value="projects">Project Profitability</TabsTrigger>
             <TabsTrigger value="expenses">Expenses</TabsTrigger>
             <TabsTrigger value="receipts">Collections</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="pl" className="space-y-4">
+            <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+              <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between border-b pb-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground">Monthly Profit &amp; Loss Statement</h3>
+                  <p className="text-xs text-muted-foreground">Period: {month} • Real-time integrated ledger (Invoices, Payroll, Housing, &amp; Operating Expenses)</p>
+                </div>
+                <div className="text-right">
+                  <span className="text-xs text-muted-foreground">Net Operating Profit</span>
+                  <div className={`text-xl font-bold ${summary.profit >= 0 ? "text-emerald-600" : "text-destructive"}`}>
+                    {sgd(summary.profit)} <span className="text-xs font-normal text-muted-foreground">({summary.margin}%)</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6 space-y-6">
+                {/* 1. Revenue */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between font-semibold text-sm text-foreground bg-muted/40 px-3 py-2 rounded-lg">
+                    <span>1. Operating Revenue</span>
+                    <span className="font-bold text-foreground">{sgd(summary.revenue)}</span>
+                  </div>
+                  <div className="pl-4 pr-3 text-sm space-y-2">
+                    <div className="flex justify-between text-muted-foreground">
+                      <span>Billed Invoices ({summary.invoiceCount} invoices issued)</span>
+                      <span className="font-medium text-foreground">{sgd(summary.revenue)}</span>
+                    </div>
+                    <div className="flex justify-between text-xs text-muted-foreground/80 pl-2">
+                      <span>• Cash Collected (Recorded Receipts)</span>
+                      <span className="text-emerald-600 font-medium">{sgd(summary.collected)}</span>
+                    </div>
+                    <div className="flex justify-between text-xs text-muted-foreground/80 pl-2">
+                      <span>• Outstanding Accounts Receivable (AR)</span>
+                      <span className="text-amber-600 font-medium">{sgd(summary.outstanding)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 2. Direct Delivery & Manpower Cost (COGS) */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between font-semibold text-sm text-foreground bg-muted/40 px-3 py-2 rounded-lg">
+                    <span>2. Direct Delivery &amp; Labor Costs (COGS)</span>
+                    <span className="font-bold text-destructive">
+                      {sgd(summary.laborCost + summary.levyCost + summary.dormitoryCost + summary.transportCost)}
+                    </span>
+                  </div>
+                  <div className="pl-4 pr-3 text-sm space-y-2">
+                    <div className="flex justify-between text-muted-foreground">
+                      <span>Worker Salaries &amp; Overtime (incl. Employer CPF &amp; SDL)</span>
+                      <span className="font-medium text-foreground">{sgd(summary.laborCost)}</span>
+                    </div>
+                    <div className="flex justify-between text-muted-foreground">
+                      <span>Foreign Worker Levy (MOM Levy payments)</span>
+                      <span className="font-medium text-foreground">{sgd(summary.levyCost)}</span>
+                    </div>
+                    <div className="flex justify-between text-muted-foreground">
+                      <span>Dormitory &amp; Worker Housing Rents</span>
+                      <span className="font-medium text-foreground">{sgd(summary.dormitoryCost)}</span>
+                    </div>
+                    <div className="flex justify-between text-muted-foreground">
+                      <span>Fleet Transport &amp; Fuel Expenses</span>
+                      <span className="font-medium text-foreground">{sgd(summary.transportCost)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3. Operating & Administrative Expenses */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between font-semibold text-sm text-foreground bg-muted/40 px-3 py-2 rounded-lg">
+                    <span>3. Operating &amp; Administrative Expenses</span>
+                    <span className="font-bold text-destructive">{sgd(summary.otherCost)}</span>
+                  </div>
+                  <div className="pl-4 pr-3 text-sm space-y-2">
+                    {summary.byCategory
+                      .filter((c) => !["Salary", "Levy", "Dormitory", "Transport"].includes(c.category))
+                      .map((cat) => (
+                        <div key={cat.category} className="flex justify-between text-muted-foreground">
+                          <span>{cat.category}</span>
+                          <span className="font-medium text-foreground">{sgd(cat.amount)}</span>
+                        </div>
+                      ))}
+                    {summary.otherCost === 0 && (
+                      <p className="text-xs text-muted-foreground italic">No additional administrative overhead recorded for this month.</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Net Profit Summary */}
+                <div className="border-t pt-4">
+                  <div className="flex items-center justify-between text-base font-bold text-foreground px-4 py-3 bg-primary/10 rounded-lg">
+                    <span>Net Operating Profit / (Loss)</span>
+                    <span className={summary.profit >= 0 ? "text-emerald-600 text-lg" : "text-destructive text-lg"}>
+                      {sgd(summary.profit)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="projects" className="space-y-4">
+            <div className="rounded-xl border border-border bg-card p-5 shadow-sm space-y-4">
+              <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h3 className="font-semibold text-foreground">Project-wise Profitability &amp; Cost Center</h3>
+                  <p className="text-xs text-muted-foreground">Live breakdown of billed revenue, site labor costs from attendance, direct expenses and profit margin per project.</p>
+                </div>
+              </div>
+
+              {projectProfit.length === 0 ? (
+                <EmptyState title="No project data found" description="Projects with billed invoices or attendance on their sites will appear here." />
+              ) : (
+                <div className="overflow-x-auto rounded-lg border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Project / Client</TableHead>
+                        <TableHead className="text-right">Revenue</TableHead>
+                        <TableHead className="text-right">Site Labor Cost</TableHead>
+                        <TableHead className="text-right">Direct Expenses</TableHead>
+                        <TableHead className="text-right">Total Cost</TableHead>
+                        <TableHead className="text-right">Net Profit</TableHead>
+                        <TableHead className="text-right">Margin</TableHead>
+                        <TableHead className="text-center">Hours / Workers</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {projectProfit.map((pp) => (
+                        <TableRow key={pp.projectId}>
+                          <TableCell>
+                            <div className="font-medium text-foreground">{pp.projectName}</div>
+                            <div className="text-xs text-muted-foreground">{pp.clientName}</div>
+                          </TableCell>
+                          <TableCell className="text-right font-medium text-foreground">{sgd(pp.revenue)}</TableCell>
+                          <TableCell className="text-right text-muted-foreground">{sgd(pp.laborCost)}</TableCell>
+                          <TableCell className="text-right text-muted-foreground">{sgd(pp.directCost)}</TableCell>
+                          <TableCell className="text-right font-medium text-foreground">{sgd(pp.totalCost)}</TableCell>
+                          <TableCell className={`text-right font-semibold ${pp.profit >= 0 ? "text-emerald-600" : "text-destructive"}`}>
+                            {sgd(pp.profit)}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <StatusBadge
+                              variant={pp.margin >= 20 ? "success" : pp.margin > 0 ? "warning" : "destructive"}
+                              label={`${pp.margin}%`}
+                            />
+                          </TableCell>
+                          <TableCell className="text-center text-xs text-muted-foreground">
+                            {pp.hoursWorked.toFixed(0)} hrs / {pp.workerCount} workers
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </div>
+          </TabsContent>
 
           <TabsContent value="expenses" className="space-y-4">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">

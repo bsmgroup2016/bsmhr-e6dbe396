@@ -13,7 +13,7 @@ import type {
 import type { TrainingCourse, TrainingRecord, SafetyIncident } from "@/lib/types";
 import type { JobRequisition, Candidate } from "@/lib/types";
 import type { Lead, CrmActivity } from "@/lib/types";
-import type { Expense, PaymentReceipt } from "@/lib/types";
+import type { Expense, PaymentReceipt, ProjectProfitability } from "@/lib/types";
 import type { InventoryItem, StockMovement, PurchaseOrder } from "@/lib/types";
 import type { BranchPrefix, EmployeeCertification, TimeCard, ClaimSheet } from "@/lib/types";
 import type { ClientContract } from "@/lib/types";
@@ -2591,7 +2591,6 @@ export function financeSummary(month: string, companyId?: string) {
   const receipts = scope(s.receipts).filter((r) => inMonth(r.receivedOn, month));
 
   const revenue = invoices.reduce((sum, i) => sum + (i.subtotal || 0), 0);
-  const cost = expenses.reduce((sum, e) => sum + (e.amount || 0), 0);
   const collected = receipts.reduce((sum, r) => sum + (r.amount || 0), 0);
   const outstanding = scope(s.invoices)
     .filter((i) => i.status !== "Paid" && i.status !== "Cancelled")
@@ -2600,21 +2599,146 @@ export function financeSummary(month: string, companyId?: string) {
     .filter((e) => e.status === "Pending" || e.status === "Approved")
     .reduce((sum, e) => sum + (e.amount || 0), 0);
 
+  // Group manual expenses by category
+  const manualExpensesByCategory = new Map<string, number>();
+  for (const e of expenses) {
+    manualExpensesByCategory.set(e.category, (manualExpensesByCategory.get(e.category) || 0) + (e.amount || 0));
+  }
+
+  // Interconnection 1: Manpower & Labor Cost from payroll entries
+  const companyEmployees = new Set(
+    s.employees.filter((emp) => !companyId || !emp.companyId || emp.companyId === companyId).map((e) => e.id)
+  );
+  const monthPayrolls = s.payroll.filter(
+    (p) => p.month === month && p.status !== "Rejected" && companyEmployees.has(p.employeeId)
+  );
+  const payrollSalaryCost = monthPayrolls.reduce(
+    (sum, p) => sum + (p.basicSalary || 0) + (p.overtimePay || 0) + (p.allowances || 0) + (p.bonus || 0) + (p.cpfEmployer || 0) + (p.sdl || 0),
+    0
+  );
+  const payrollLevyCost = monthPayrolls.reduce((sum, p) => sum + (p.levyAmount || 0), 0);
+
+  // Prevent double-counting: use manual if recorded, otherwise auto-fill from payroll
+  const manualSalary = manualExpensesByCategory.get("Salary") || 0;
+  const effectiveSalaryCost = manualSalary > 0 ? manualSalary : payrollSalaryCost;
+
+  const manualLevy = manualExpensesByCategory.get("Levy") || 0;
+  const effectiveLevyCost = manualLevy > 0 ? manualLevy : payrollLevyCost;
+
+  // Interconnection 2: Dormitory / Housing Cost from active bed allocations
+  const monthAllocations = s.allocations.filter((a) => {
+    if (a.status !== "Occupied") return false;
+    if (companyId) {
+      const emp = s.employees.find((e) => e.id === a.employeeId);
+      if (emp && emp.companyId && emp.companyId !== companyId) return false;
+    }
+    return true;
+  });
+  const allocationsDormCost = monthAllocations.reduce((sum, a) => sum + (a.monthlyRent || 0), 0);
+  const manualDorm = manualExpensesByCategory.get("Dormitory") || 0;
+  const effectiveDormCost = manualDorm > 0 ? manualDorm : allocationsDormCost;
+
+  // Interconnection 3: Fleet / Transport Fuel Expenses from fuel logs
+  const monthFuelLogs = scope(s.fuelLogs).filter((f) => inMonth(f.date, month));
+  const fuelCost = monthFuelLogs.reduce((sum, f) => sum + (f.amount || 0), 0);
+  const manualTransport = manualExpensesByCategory.get("Transport") || 0;
+  const effectiveTransportCost = manualTransport > 0 ? manualTransport + fuelCost : fuelCost;
+
+  // Compile unified expense categories
   const byCategory = expenseCategories
-    .map((category) => ({
-      category,
-      amount: expenses.filter((e) => e.category === category).reduce((sum, e) => sum + (e.amount || 0), 0),
-    }))
+    .map((category) => {
+      let amount = manualExpensesByCategory.get(category) || 0;
+      if (category === "Salary" && effectiveSalaryCost > 0) amount = effectiveSalaryCost;
+      if (category === "Levy" && effectiveLevyCost > 0) amount = effectiveLevyCost;
+      if (category === "Dormitory" && effectiveDormCost > 0) amount = effectiveDormCost;
+      if (category === "Transport" && effectiveTransportCost > 0) amount = effectiveTransportCost;
+      return { category, amount };
+    })
     .filter((r) => r.amount > 0)
     .sort((a, b) => b.amount - a.amount);
 
+  const cost = byCategory.reduce((sum, r) => sum + r.amount, 0);
   const profit = revenue - cost;
+
   return {
-    revenue, cost, profit, collected, outstanding, unpaidExpenses, byCategory,
+    revenue,
+    cost,
+    profit,
+    collected,
+    outstanding,
+    unpaidExpenses,
+    byCategory,
     margin: revenue > 0 ? Math.round((profit / revenue) * 100) : 0,
     invoiceCount: invoices.length,
-    expenseCount: expenses.length,
+    expenseCount: expenses.length + (monthPayrolls.length > 0 ? monthPayrolls.length : 0),
+    laborCost: effectiveSalaryCost,
+    levyCost: effectiveLevyCost,
+    dormitoryCost: effectiveDormCost,
+    transportCost: effectiveTransportCost,
+    otherCost: Math.max(0, cost - (effectiveSalaryCost + effectiveLevyCost + effectiveDormCost + effectiveTransportCost)),
   };
+}
+
+/** Project profitability: Revenue vs Labor vs Direct Expenses per project */
+export function getProjectProfitability(month?: string, companyId?: string): ProjectProfitability[] {
+  const s = getState();
+  const projects = s.projects.filter((p) => !companyId || !p.companyId || p.companyId === companyId);
+  const clients = s.clients;
+  const sites = s.sites;
+
+  return projects.map((p) => {
+    const client = clients.find((c) => c.id === p.clientId);
+    const projectSites = sites.filter((site) => site.projectId === p.id);
+    const siteIds = new Set(projectSites.map((site) => site.id));
+
+    // Revenue from invoices for this project
+    const projectInvoices = s.invoices.filter(
+      (inv) => inv.projectId === p.id && (!month || inMonth(inv.issueDate, month)) && inv.status !== "Cancelled"
+    );
+    const revenue = projectInvoices.reduce((sum, inv) => sum + (inv.subtotal || 0), 0);
+
+    // Direct expenses booked against this project
+    const projectExpenses = s.expenses.filter(
+      (exp) => exp.projectId === p.id && (!month || inMonth(exp.expenseDate, month)) && exp.status !== "Rejected"
+    );
+    const directCost = projectExpenses.reduce((sum, exp) => sum + (exp.amount || 0), 0);
+
+    // Labor cost from attendance records on this project's sites
+    const projectAttendance = s.attendance.filter(
+      (att) => siteIds.has(att.siteId) && (!month || inMonth(att.date, month))
+    );
+
+    let laborCost = 0;
+    let totalHours = 0;
+    const workers = new Set<string>();
+
+    for (const att of projectAttendance) {
+      workers.add(att.employeeId);
+      const emp = s.employees.find((e) => e.id === att.employeeId);
+      const normalRate = emp?.basicSalary ? emp.basicSalary / 8 : 12;
+      const otRate = emp?.otRate || normalRate * 1.5;
+      laborCost += (att.hoursWorked || 0) * normalRate + (att.overtimeHours || 0) * otRate;
+      totalHours += (att.hoursWorked || 0) + (att.overtimeHours || 0);
+    }
+
+    const totalCost = directCost + laborCost;
+    const profit = revenue - totalCost;
+    const margin = revenue > 0 ? Math.round((profit / revenue) * 100) : 0;
+
+    return {
+      projectId: p.id,
+      projectName: p.name,
+      clientName: client?.name ?? "—",
+      revenue,
+      laborCost,
+      directCost,
+      totalCost,
+      profit,
+      margin,
+      workerCount: workers.size,
+      hoursWorked: totalHours,
+    };
+  }).sort((a, b) => b.revenue - a.revenue);
 }
 
 /** Last N months of revenue vs cost, oldest first. */

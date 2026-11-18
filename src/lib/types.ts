@@ -1082,6 +1082,20 @@ export type ExpenseCategory =
 export type ExpenseStatus = "Pending" | "Approved" | "Paid" | "Rejected";
 export type PaymentMode = "Bank Transfer" | "GIRO" | "Cheque" | "Cash" | "PayNow" | "Other";
 
+export interface ProjectProfitability {
+  projectId: string;
+  projectName: string;
+  clientName: string;
+  revenue: number;
+  laborCost: number;
+  directCost: number;
+  totalCost: number;
+  profit: number;
+  margin: number;
+  workerCount: number;
+  hoursWorked: number;
+}
+
 export interface Expense {
   id: string;
   companyId?: string;
