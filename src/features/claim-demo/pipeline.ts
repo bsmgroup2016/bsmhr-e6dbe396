@@ -4,7 +4,7 @@ import { countedCardHours } from "@/core/time-card-settlement";
 import { matchCardWorker, uniqueCardMatch } from "@/core/time-card-matching";
 import { uploadToR2 } from "@/lib/r2";
 import { extractTimeCardData } from "@/lib/ocr";
-import { buildClaimSheetFromCard, deleteClaimSheet, getClaimSheets, getClients, getCompanies, getCurrentCompany, getEmployees, getProjects, getSites, saveGeneratedClaims } from "@/lib/store";
+import { buildClaimSheetFromCard, deleteClaimSheet, getClaimSheets, getClients, getCompanies, getCurrentCompany, getEmployees, getProjects, getSites, saveGeneratedClaims, upsertAttendance } from "@/lib/store";
 import type { TimeCard, TimeCardEntry } from "@/lib/types";
 import type { DayEntry, FieldFlag, Worker } from "./types";
 
@@ -114,13 +114,45 @@ export async function downloadExcel(workers: Worker[], month: string, site: stri
   downloadClaimBlob(await claimWorkbookBlob(await buildWorkbook(workers, month, site)), `claim_sheet_${month}.xlsx`);
 }
 
-/** Saves claims to HR records, replacing earlier claims for the same workers and month. */
+/** Saves claims to HR records, safely replacing earlier claims and syncing confirmed entries to Attendance. */
 export async function saveToRecords(workers: Worker[], month: string, site: string) {
   const list = drafts(workers, month, site);
   if (!list.length) throw new Error("No worked hours to claim");
-  const codeOf = (snap: { employeeCode?: string; workerName?: string }[]) => (snap.find((r) => r.employeeCode)?.employeeCode || snap.find((r) => r.workerName)?.workerName || "").toUpperCase();
-  const codes = new Set(list.map((d) => codeOf(d.snapshot)));
-  for (const old of getClaimSheets()) if (old.periodStart.startsWith(month) && codes.has(codeOf(old.snapshot))) deleteClaimSheet(old.id);
+  
+  // 1. Save new generated claims first (await save so we don't delete on failure)
   await saveGeneratedClaims(list.map(({ id, ...c }) => ({ ...c, sourceCardId: id })));
+
+  // 2. Safely clean up old replaced claims after successful save
+  const codeOf = (snap: { employeeCode?: string; workerName?: string }[]) =>
+    (snap.find((r) => r.employeeCode)?.employeeCode || snap.find((r) => r.workerName)?.workerName || "").toUpperCase();
+  const codes = new Set(list.map((d) => codeOf(d.snapshot)));
+  const savedSourceIds = new Set(list.map((d) => d.id));
+  for (const old of getClaimSheets()) {
+    if (old.periodStart.startsWith(month) && codes.has(codeOf(old.snapshot)) && !savedSourceIds.has(old.id)) {
+      deleteClaimSheet(old.id);
+    }
+  }
+
+  // 3. Sync confirmed daily hours into Attendance table
+  const cards = workers.map((w) => toTimeCard(w, month, site));
+  for (const card of cards) {
+    if (!card.employeeId) continue;
+    for (const entry of card.entries) {
+      if ((entry.normalHours || 0) + (entry.otHours || 0) > 0) {
+        upsertAttendance({
+          employeeId: card.employeeId,
+          date: entry.date,
+          siteId: entry.siteId,
+          status: "Present",
+          checkIn: entry.checkIn,
+          checkOut: entry.checkOut,
+          hoursWorked: entry.normalHours,
+          overtimeHours: entry.otHours,
+          notes: `TimeCard Claim (${entry.siteName || site})`,
+        });
+      }
+    }
+  }
+
   return list.length;
 }

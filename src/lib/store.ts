@@ -1218,6 +1218,10 @@ export function buildInvoiceLines(
       .filter((a) => siteIds.has(a.siteId) && a.status !== "Rejected" && a.startDate <= periodEnd)
       .map((a) => a.employeeId),
   );
+  // Also include any worker who recorded attendance on these project sites during the period
+  s.attendance
+    .filter((a) => a.siteId && siteIds.has(a.siteId) && a.date >= periodStart && a.date <= periodEnd)
+    .forEach((a) => empIds.add(a.employeeId));
 
   const lines: InvoiceLine[] = [];
   for (const empId of empIds) {
@@ -1235,7 +1239,7 @@ export function buildInvoiceLines(
     const rate = findRate(clientId, emp.trade, projectId, periodEnd);
     const unit = rate?.unit ?? "Hourly";
     const normalRate = rate?.normalRate ?? 0;
-    const otRate = rate?.otRate ?? 0;
+    const otRate = rate?.otRate || Math.round(normalRate * 1.5 * 100) / 100;
     const quantity = unit === "Hourly" ? hours : unit === "Daily" ? days : 1;
     const amount = Math.round((quantity * normalRate + otHours * otRate) * 100) / 100;
 

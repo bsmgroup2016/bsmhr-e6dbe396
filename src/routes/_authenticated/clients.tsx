@@ -59,7 +59,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { getClients, getProjects, addClient, updateClient, deleteClient } from "@/lib/store";
+import { getClients, getProjects, getContracts, getInvoices, addClient, updateClient, deleteClient } from "@/lib/store";
 import type { Client, ClientStatus } from "@/lib/types";
 
 const statuses: ClientStatus[] = ["Active", "Inactive", "Prospect"];
@@ -104,7 +104,21 @@ export default function ClientsPage() {
 
   const activeCount = clients.filter((c) => c.status === "Active").length;
   const prospectCount = clients.filter((c) => c.status === "Prospect").length;
-  const totalContractValue = projects.reduce((sum, p) => sum + p.requiredWorkers * 2500, 0);
+
+  const contracts = getContracts();
+  const invoices = getInvoices();
+  const activeContracts = contracts.filter((c) => c.status === "Active");
+  const contractValue = activeContracts.reduce((sum, c) => {
+    if (c.fixedAmount > 0) {
+      const multiplier = c.billingCycle === "Weekly" ? 52 : c.billingCycle === "Fortnightly" ? 26 : 12;
+      return sum + c.fixedAmount * multiplier;
+    }
+    return sum;
+  }, 0);
+  const totalBilled = invoices.filter((i) => i.status !== "Cancelled").reduce((sum, i) => sum + (i.total || 0), 0);
+  const revenueDisplay = contractValue > 0 ? contractValue : totalBilled;
+  const revenueLabel = contractValue > 0 ? "Active contract value" : "Total billed revenue";
+  const revenueCaption = contractValue > 0 ? `${activeContracts.length} signed active contracts` : "Actual billed invoices";
 
   function refresh() {
     setClients(getClients());
@@ -197,7 +211,7 @@ export default function ClientsPage() {
           <SummaryCard title="Total clients" value={clients.length.toString()} icon={<Building2 className="h-5 w-5" />} variant="primary" caption="All clients" />
           <SummaryCard title="Active clients" value={activeCount.toString()} icon={<Building2 className="h-5 w-5" />} variant="success" caption="Marked Active" />
           <SummaryCard title="Prospects" value={prospectCount.toString()} icon={<Building2 className="h-5 w-5" />} variant="warning" caption="Potential clients" />
-          <SummaryCard title="Illustrative manpower value" value={`$${(totalContractValue / 1000).toFixed(0)}k`} icon={<Building2 className="h-5 w-5" />} variant="info" caption="Required workers × $2,500; not signed contracts" />
+          <SummaryCard title={revenueLabel} value={`$${(revenueDisplay / 1000).toFixed(0)}k`} icon={<Building2 className="h-5 w-5" />} variant="info" caption={revenueCaption} />
         </div>
 
         <div className="space-y-4">
