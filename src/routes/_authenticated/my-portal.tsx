@@ -1,6 +1,7 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { CalendarCheck, CalendarPlus, Download, FileText, Home, IdCard, LogOut, UserRound, Wallet } from "lucide-react";
+import { CalendarCheck, CalendarPlus, Clock, Download, FileText, Home, IdCard, Loader2, LogIn, LogOut, UserRound, Wallet } from "lucide-react";
+import { apiFetch } from "@/lib/api-client";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/app-shell";
@@ -42,6 +43,7 @@ import {
   getEmployees,
   getLeaveByEmployee,
   getPayrollByEmployee,
+  invalidateStoreTable,
 } from "@/lib/store";
 import type { Employee, LeaveType } from "@/lib/types";
 
@@ -95,7 +97,7 @@ function PortalShell({ worker, employee, tab, setTab, children }: { worker: bool
   if (!worker) return <AppShell>{children}</AppShell>;
   return (
     <div className="worker-app min-h-svh bg-background text-foreground">
-      <header className="sticky top-0 z-30 flex items-center gap-3 border-b bg-card/95 px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur">
+      <header className="sticky top-0 z-30 flex items-center gap-3 border-b bg-card/95 px-4 lg:px-8 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/15 font-semibold text-primary">
           {(employee?.name ?? "?").slice(0, 1)}
         </div>
@@ -107,9 +109,24 @@ function PortalShell({ worker, employee, tab, setTab, children }: { worker: bool
           <LogOut className="h-5 w-5" />
         </Button>
       </header>
-      <main className="mx-auto max-w-3xl px-4 pb-[calc(5.5rem+env(safe-area-inset-bottom))] pt-4">{children}</main>
+      <div className="mx-auto flex max-w-7xl">
+        {employee && (
+          <aside className="sticky top-[65px] hidden h-[calc(100svh-65px)] w-60 shrink-0 border-r px-3 py-6 lg:block" aria-label="Portal menu">
+            <nav className="space-y-1">
+              {TABS.map(({ id, label, icon: Icon }) => (
+                <button key={id} type="button" onClick={() => { setTab(id); window.scrollTo({ top: 0 }); }}
+                  className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${tab === id ? "bg-primary/15 text-primary" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
+                  aria-current={tab === id ? "page" : undefined}>
+                  <Icon className="h-5 w-5 shrink-0" />{label}
+                </button>
+              ))}
+            </nav>
+          </aside>
+        )}
+        <main className="min-w-0 flex-1 px-4 pb-[calc(5.5rem+env(safe-area-inset-bottom))] pt-4 lg:px-8 lg:pb-10 lg:pt-6">{children}</main>
+      </div>
       {employee && (
-        <nav className="fixed inset-x-0 bottom-0 z-30 border-t bg-card/95 pb-[env(safe-area-inset-bottom)] backdrop-blur" aria-label="Portal">
+        <nav className="lg:hidden fixed inset-x-0 bottom-0 z-30 border-t bg-card/95 pb-[env(safe-area-inset-bottom)] backdrop-blur" aria-label="Portal">
           <div className="mx-auto grid max-w-3xl grid-cols-5">
             {TABS.map(({ id, label, icon: Icon }) => (
               <button key={id} type="button" onClick={() => { setTab(id); window.scrollTo({ top: 0 }); }}
@@ -127,6 +144,81 @@ function PortalShell({ worker, employee, tab, setTab, children }: { worker: bool
 
 function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
   return <div className={`rounded-xl border bg-card p-4 shadow-sm ${className}`}>{children}</div>;
+}
+
+function localDate(d = new Date()) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+function localTime(d = new Date()) {
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+function getPosition(): Promise<{ lat: number; lng: number; accuracyM: number } | undefined> {
+  if (typeof navigator === "undefined" || !navigator.geolocation) return Promise.resolve(undefined);
+  return new Promise((resolve) => {
+    navigator.geolocation.getCurrentPosition(
+      (p) => resolve({ lat: p.coords.latitude, lng: p.coords.longitude, accuracyM: Math.round(p.coords.accuracy) }),
+      () => resolve(undefined),
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 },
+    );
+  });
+}
+
+/** Check in / check out for today, shown first on the worker home. */
+function PunchCard({ checkIn, checkOut, status, onDone }: { checkIn?: string; checkOut?: string; status?: string; onDone: (kind: "in" | "out", time: string) => void }) {
+  const [now, setNow] = useState<Date | null>(null);
+  const [busy, setBusy] = useState<"in" | "out" | null>(null);
+  useEffect(() => {
+    setNow(new Date());
+    const t = window.setInterval(() => setNow(new Date()), 1000);
+    return () => window.clearInterval(t);
+  }, []);
+
+  const punch = async (kind: "in" | "out") => {
+    setBusy(kind);
+    try {
+      const at = new Date();
+      const time = localTime(at);
+      const pos = await getPosition();
+      const res = await apiFetch("/attendance", {
+        method: "POST",
+        body: { date: localDate(at), punchedAt: at.toISOString(), ...(kind === "in" ? { checkIn: time } : { checkOut: time }), ...(pos ?? {}) },
+      });
+      if (!res.ok) return void toast.error(res.error?.message ?? "Could not save attendance");
+      toast.success(kind === "in" ? `Checked in at ${time}` : `Checked out at ${time}`);
+      onDone(kind, time);
+    } catch {
+      toast.error("Could not save attendance. Check your connection and try again.");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const state = checkOut ? "Day complete" : checkIn ? "On duty" : "Not checked in";
+  return (
+    <Card className="p-5 lg:p-6">
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+        <div className="min-w-0">
+          <p className="text-xs uppercase tracking-wide text-muted-foreground">Today's attendance</p>
+          <p className="mt-1 text-3xl font-semibold tabular-nums lg:text-4xl">{now ? now.toLocaleTimeString("en-SG", { hour: "2-digit", minute: "2-digit", second: "2-digit" }) : "--:--:--"}</p>
+          <p className="text-sm text-muted-foreground">{now ? now.toLocaleDateString("en-SG", { weekday: "long", day: "numeric", month: "long", year: "numeric" }) : ""}</p>
+          <div className="mt-4 flex flex-wrap gap-6 text-sm">
+            <div><p className="text-xs text-muted-foreground">Status</p><p className="font-medium">{status && status !== "Present" ? status : state}</p></div>
+            <div><p className="text-xs text-muted-foreground">Check in</p><p className="font-medium tabular-nums">{checkIn ?? "—"}</p></div>
+            <div><p className="text-xs text-muted-foreground">Check out</p><p className="font-medium tabular-nums">{checkOut ?? "—"}</p></div>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-3 lg:w-80">
+          <Button size="lg" className="h-14 gap-2 text-base" disabled={!!busy || !!checkIn} onClick={() => void punch("in")}>
+            {busy === "in" ? <Loader2 className="h-5 w-5 animate-spin" /> : <LogIn className="h-5 w-5" />}Check in
+          </Button>
+          <Button size="lg" variant="secondary" className="h-14 gap-2 text-base" disabled={!!busy || !checkIn || !!checkOut} onClick={() => void punch("out")}>
+            {busy === "out" ? <Loader2 className="h-5 w-5 animate-spin" /> : <LogOut className="h-5 w-5" />}Check out
+          </Button>
+          <p className="col-span-2 flex items-center gap-1.5 text-xs text-muted-foreground"><Clock className="h-3.5 w-3.5 shrink-0" />Your location is recorded with each punch.</p>
+        </div>
+      </div>
+    </Card>
+  );
 }
 
 function Field({ label, value }: { label: string; value?: string | number | null }) {
@@ -150,6 +242,7 @@ function MyPortalPage() {
     [email, user?.id, refresh],
   );
 
+  const [punched, setPunched] = useState<{ date: string; in?: string; out?: string }>({ date: "" });
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(false);
   const [type, setType] = useState<LeaveType>("Annual Leave");
@@ -174,8 +267,11 @@ function MyPortalPage() {
     );
   }
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = localDate();
   const todayAtt = attendanceAll.find((a) => a.date === today);
+  const local = punched.date === today ? punched : { date: today };
+  const todayIn = todayAtt?.checkIn ?? local.in;
+  const todayOut = todayAtt?.checkOut ?? local.out;
   const passDays = daysUntil(employee.workPermitExpiryDate || employee.passExpiry);
   const approvedLeaveDays = leaves.filter((l) => l.status === "Approved").reduce((sum, l) => sum + l.days, 0);
   const lastPayslip = payslips[0];
@@ -227,27 +323,62 @@ function MyPortalPage() {
   );
 
   const home = (
-    <div className="space-y-4">
-      <Card>
-        <p className="text-xs text-muted-foreground">Today · {today}</p>
-        <p className="mt-1 text-lg font-semibold">{todayAtt ? todayAtt.status : "No attendance yet"}</p>
-        {todayAtt && <p className="text-sm text-muted-foreground">In {todayAtt.checkIn ?? "-"} · Out {todayAtt.checkOut ?? "-"} · {todayAtt.hoursWorked}h + {todayAtt.overtimeHours}h OT</p>}
-      </Card>
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+    <div className="space-y-4 lg:space-y-6">
+      <PunchCard checkIn={todayIn} checkOut={todayOut} status={todayAtt?.status}
+        onDone={(kind, time) => {
+          setPunched((p) => ({ ...(p.date === today ? p : { date: today }), [kind]: time }));
+          invalidateStoreTable("attendance");
+          setRefresh((n) => n + 1);
+        }} />
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
         <SummaryCard title="Work permit" value={passDays === null ? "—" : `${passDays} days`} icon={<IdCard className="h-5 w-5" />} caption={`expires ${employee.workPermitExpiryDate || employee.passExpiry || "-"}`} />
         <SummaryCard title="This month" value={`${att.daysWorked} days`} icon={<CalendarCheck className="h-5 w-5" />} caption={`${att.normalHours}h + ${att.otHours}h OT`} />
         <SummaryCard title="Leave taken" value={`${approvedLeaveDays} days`} icon={<CalendarPlus className="h-5 w-5" />} caption={`${leaves.filter((l) => l.status === "Pending").length} pending`} />
         <SummaryCard title="Latest net pay" value={lastPayslip ? `$${lastPayslip.netPay.toLocaleString()}` : "—"} icon={<Wallet className="h-5 w-5" />} caption={lastPayslip ? lastPayslip.month : "No payslip yet"} />
       </div>
-      {expiring.length > 0 && (
-        <Card className="border-destructive/40">
-          <p className="text-sm font-semibold">Documents to renew</p>
-          <ul className="mt-2 space-y-1 text-sm">
-            {expiring.map((d) => <li key={d.name} className="flex justify-between"><span>{d.name}</span><span className="text-destructive">{d.days < 0 ? "Expired" : `${d.days} days`}</span></li>)}
-          </ul>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card>
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <p className="text-sm font-semibold">Recent attendance</p>
+            <Button size="sm" variant="ghost" onClick={() => setTab("attendance")}>View all</Button>
+          </div>
+          {att.rows.length === 0 ? <p className="text-sm text-muted-foreground">No attendance this month yet.</p> : (
+            <ul className="divide-y">
+              {[...att.rows].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5).map((a) => (
+                <li key={a.id} className="flex items-center justify-between gap-3 py-2 text-sm">
+                  <span className="min-w-0 truncate">{new Date(a.date).toLocaleDateString("en-SG", { weekday: "short", day: "numeric", month: "short" })}</span>
+                  <span className="shrink-0 tabular-nums text-muted-foreground">{a.checkIn ?? "-"} → {a.checkOut ?? "-"}</span>
+                  <StatusBadge label={a.status} />
+                </li>
+              ))}
+            </ul>
+          )}
         </Card>
-      )}
-      {leaveDialog}
+        <Card>
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <p className="text-sm font-semibold">Leave</p>
+            {leaveDialog}
+          </div>
+          {expiring.length > 0 && (
+            <div className="mb-3 rounded-lg border border-destructive/40 p-3">
+              <p className="text-sm font-semibold">Documents to renew</p>
+              <ul className="mt-2 space-y-1 text-sm">
+                {expiring.map((d) => <li key={d.name} className="flex justify-between"><span>{d.name}</span><span className="text-destructive">{d.days < 0 ? "Expired" : `${d.days} days`}</span></li>)}
+              </ul>
+            </div>
+          )}
+          {leaves.length === 0 ? <p className="text-sm text-muted-foreground">No leave requests yet.</p> : (
+            <ul className="divide-y">
+              {leaves.slice(0, 4).map((l) => (
+                <li key={l.id} className="flex items-center justify-between gap-3 py-2 text-sm">
+                  <span className="min-w-0 truncate">{l.type} · {l.startDate}</span>
+                  <StatusBadge label={l.status} />
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+      </div>
     </div>
   );
 
@@ -376,7 +507,7 @@ function MyPortalPage() {
           <TabsList className={worker ? "hidden" : "flex w-full justify-start overflow-x-auto"}>
             {TABS.map((t) => <TabsTrigger key={t.id} value={t.id}>{t.label}</TabsTrigger>)}
           </TabsList>
-          {worker && <h1 className="mb-3 text-xl font-semibold">{TABS.find((t) => t.id === tab)?.label}</h1>}
+          {worker && <h1 className="mb-3 text-xl font-semibold lg:mb-5 lg:text-2xl">{TABS.find((t) => t.id === tab)?.label}</h1>}
           {TABS.map((t) => <TabsContent key={t.id} value={t.id} className={worker ? "mt-0" : "mt-4"}>{views[t.id]}</TabsContent>)}
         </Tabs>
       </div>
