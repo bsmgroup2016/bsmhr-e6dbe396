@@ -11,6 +11,8 @@ import { TABLE_COLUMNS, UNAVAILABLE_TABLES } from "@/core/data-tables";
 import { fromAttendance } from "@/lib/db";
 import { sbRest, sbSelect, serviceRest, type AuthContext } from "@/lib/api-v1.server";
 import { verifyPunch, type PunchVerdict } from "@/lib/punch-verification";
+import { punchTransition } from "@/core/portal-punch";
+import { spanFromTimes, splitDutyHours } from "@/core/work-hours";
 
 export interface PunchEvent {
   clientEventId?: string;
@@ -170,17 +172,29 @@ export async function applyPunch(
   const rest = async (path: string, init?: RequestInit & { prefer?: string }) =>
     (selfPunch ? await serviceRest(path, init) : null) ?? sbRest(ctx, path, init);
   if (selfPunch) {
+    if (Boolean(event.checkIn) === Boolean(event.checkOut))
+      return { clientEventId, status: "rejected", message: "Send exactly one check-in or check-out time" };
     for (const [key, value] of [["checkIn", event.checkIn], ["checkOut", event.checkOut]] as const)
-      if (value && !/^\d{2}:\d{2}(:\d{2})?$/.test(value))
+      if (value && !/^(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?$/.test(value))
         return { clientEventId, status: "rejected", message: `${key} must be HH:MM` };
   }
 
   // 2. Upsert the day's attendance row.
   const lookup = await rest(
-    `attendance?select=id&employee_id=eq.${encodeURIComponent(employeeId)}&date=eq.${date}&limit=1`,
+    `attendance?select=${TABLE_COLUMNS.attendance}&employee_id=eq.${encodeURIComponent(employeeId)}&date=eq.${date}&limit=1`,
   );
   if (!lookup.ok) return { clientEventId, status: "error", message: await upstreamMessage(lookup, "Unable to read today's attendance") };
-  const existing = (await lookup.json()) as { id: string }[];
+  const existing = (await lookup.json()) as Record<string, unknown>[];
+  const row = existing[0];
+  if (selfPunch) {
+    const transition = punchTransition(row, isCheckOut);
+    if (transition === "missing_check_in")
+      return { clientEventId, status: "rejected", message: "Check in before checking out" };
+    if (transition === "duplicate")
+      return { clientEventId, status: "duplicate", attendance: row ? fromAttendance(row) : null, verdict };
+    if (isCheckOut && String(event.checkOut) < String(row?.["check_in"]).slice(0, 5))
+      return { clientEventId, status: "rejected", message: "Check-out must not be earlier than check-in. Contact HR for an overnight shift." };
+  }
   const payload: Record<string, unknown> = {
     employee_id: employeeId,
     date,
@@ -194,6 +208,14 @@ export async function applyPunch(
   }
   if (isCheckOut) {
     payload["check_out"] = event.checkOut || timeOf(event.punchedAt);
+    if (selfPunch) {
+      const span = spanFromTimes(String(row?.["check_in"]), String(payload["check_out"]));
+      if (span !== null) {
+        const hours = splitDutyHours(span);
+        payload["hours_worked"] = hours.normalHours;
+        payload["overtime_hours"] = hours.otHours;
+      }
+    }
     if (event.lat != null) payload["check_out_lat"] = event.lat;
     if (event.lng != null) payload["check_out_lng"] = event.lng;
     if (event.address) payload["check_out_address"] = event.address;
@@ -219,9 +241,8 @@ export async function applyPunch(
     }
   }
 
-  const row = existing[0];
   const res = row
-    ? await rest(`attendance?id=eq.${encodeURIComponent(row.id)}&employee_id=eq.${encodeURIComponent(employeeId)}`, {
+    ? await rest(`attendance?id=eq.${encodeURIComponent(String(row["id"]))}&employee_id=eq.${encodeURIComponent(employeeId)}${selfPunch ? `&${isCheckOut ? "check_out=is.null&check_in=not.is.null" : "check_in=is.null"}` : ""}`, {
         method: "PATCH",
         prefer: "return=representation",
         body: JSON.stringify(payload),
@@ -234,6 +255,17 @@ export async function applyPunch(
   if (!res.ok) return { clientEventId, status: "error", message: await upstreamMessage(res, "Unable to save attendance") };
   const saved = (await res.json()) as Record<string, unknown>[];
   const savedRow = saved[0];
+  if (!savedRow?.["id"])
+    return { clientEventId, status: "error", message: "Attendance changed or the save could not be confirmed. Refresh before trying again." };
+  if (selfPunch) {
+    const confirmed = await rest(`attendance?select=${TABLE_COLUMNS.attendance}&id=eq.${encodeURIComponent(String(savedRow["id"]))}&employee_id=eq.${encodeURIComponent(employeeId)}&limit=1`);
+    if (!confirmed.ok) return { clientEventId, status: "error", message: "Attendance save could not be verified. Refresh before trying again." };
+    const rows = await confirmed.json() as Record<string, unknown>[];
+    const field = isCheckOut ? "check_out" : "check_in";
+    if (!rows[0] || String(rows[0][field]).slice(0, 5) !== String(payload[field]).slice(0, 5))
+      return { clientEventId, status: "error", message: "Attendance save could not be verified. Refresh before trying again." };
+    return { clientEventId, status: "saved", attendance: fromAttendance(rows[0]), verdict };
+  }
 
   // 3. Link the event to the attendance row so a later replay returns it.
   if (clientEventId && savedRow?.["id"]) {

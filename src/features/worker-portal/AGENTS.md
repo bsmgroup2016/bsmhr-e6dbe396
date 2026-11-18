@@ -1,1 +1,2 @@
 - Worker-only (employee) accounts get a sidebar-free My Portal shell with bottom tabs and are redirected from /dashboard, so the WebView app feels native; staff keep AppShell.
+- Today's punch state comes from an identity/day-scoped live attendance query, refreshed on resume/reconnect; controls wait for confirmation so reopening cannot reset a saved check-in.

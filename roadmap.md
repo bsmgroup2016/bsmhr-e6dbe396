@@ -1,5 +1,10 @@
 # Full-section UI/UX and workflow audit
 
+## Worker punch and returning-session reliability
+
+- [x] Fix stale portal punch state, safe repeated punches, confirmed attendance read-back and auth refresh callback locking; 265 regression tests pass, signed-out portal redirects to /auth and attendance GET/POST return 401 with no browser page errors.
+- [ ] Verify a real worker session through check-in, browser restart, checkout and read-back. Blocker: external account service has no authorized test browser session.
+
 ## Workforce section review — 18 November 2026
 
 - [x] Review all eight Workforce menu sections, trace their connected actions and identify current defects without changing business records or application behaviour; recorded prioritized findings in docs/WORKFORCE-SECTIONS-REVIEW-2026-11-18.md.

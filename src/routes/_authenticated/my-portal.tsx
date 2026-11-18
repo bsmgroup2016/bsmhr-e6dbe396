@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { singaporeDate, singaporeTime } from "@/core/portal-punch";
 import { createFileRoute } from "@tanstack/react-router";
 import { CalendarCheck, CalendarPlus, Clock, Download, FileText, Home, IdCard, Loader2, LogIn, LogOut, UserRound, Wallet, MapPin } from "lucide-react";
 import { apiFetch } from "@/lib/api-client";
@@ -46,8 +48,9 @@ import {
   getLeaveByEmployee,
   getPayrollByEmployee,
   invalidateStoreTable,
+  subscribe,
 } from "@/lib/store";
-import type { Employee, LeaveType } from "@/lib/types";
+import type { Attendance, Employee, LeaveType } from "@/lib/types";
 
 const leaveTypes: LeaveType[] = [
   "Annual Leave",
@@ -149,10 +152,10 @@ function Card({ children, className = "" }: { children: ReactNode; className?: s
 }
 
 function localDate(d = new Date()) {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  return singaporeDate(d);
 }
 function localTime(d = new Date()) {
-  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+  return singaporeTime(d);
 }
 function getPosition(): Promise<{ lat: number; lng: number; accuracyM: number } | undefined> {
   if (typeof navigator === "undefined" || !navigator.geolocation) return Promise.resolve(undefined);
@@ -166,7 +169,7 @@ function getPosition(): Promise<{ lat: number; lng: number; accuracyM: number } 
 }
 
 /** Check in / check out for today, shown first on the worker home. */
-function PunchCard({ checkIn, checkOut, status, onDone }: { checkIn?: string; checkOut?: string; status?: string; onDone: (kind: "in" | "out", time: string) => void }) {
+function PunchCard({ checkIn, checkOut, status, unavailable, onDone }: { checkIn?: string; checkOut?: string; status?: string; unavailable: boolean; onDone: (row: Attendance) => void }) {
   const [now, setNow] = useState<Date | null>(null);
   const [busy, setBusy] = useState<"in" | "out" | null>(null);
   useEffect(() => {
@@ -176,18 +179,21 @@ function PunchCard({ checkIn, checkOut, status, onDone }: { checkIn?: string; ch
   }, []);
 
   const punch = async (kind: "in" | "out") => {
+    if (busy || unavailable) return;
     setBusy(kind);
     try {
       const at = new Date();
       const time = localTime(at);
       const pos = await getPosition();
-      const res = await apiFetch("/attendance", {
+      const res = await apiFetch<Attendance | null>("/attendance", {
         method: "POST",
         body: { date: localDate(at), punchedAt: at.toISOString(), ...(kind === "in" ? { checkIn: time } : { checkOut: time }), ...(pos ?? {}) },
       });
       if (!res.ok) return void toast.error(res.error?.message ?? "Could not save attendance");
-      toast.success(kind === "in" ? `Checked in at ${time}` : `Checked out at ${time}`);
-      onDone(kind, time);
+      const savedTime = kind === "in" ? res.data?.checkIn : res.data?.checkOut;
+      if (!res.data?.id || !savedTime) return void toast.error("Save could not be confirmed. Refresh before trying again.");
+      toast.success(kind === "in" ? `Checked in at ${savedTime}` : `Checked out at ${savedTime}`);
+      onDone(res.data);
     } catch {
       toast.error("Could not save attendance. Check your connection and try again.");
     } finally {
@@ -198,7 +204,7 @@ function PunchCard({ checkIn, checkOut, status, onDone }: { checkIn?: string; ch
   const state = checkOut ? "Day complete" : checkIn ? "On duty" : "Not checked in";
   const mins = (t?: string) => { if (!t) return null; const [h, m] = t.split(":").map(Number); return h * 60 + m; };
   const startM = mins(checkIn);
-  const endM = checkOut ? mins(checkOut) : now ? now.getHours() * 60 + now.getMinutes() : null;
+  const endM = checkOut ? mins(checkOut) : now ? mins(localTime(now)) : null;
   const worked = startM !== null && endM !== null ? Math.max(0, endM - startM) : 0;
   const pct = Math.min(100, Math.round((worked / 540) * 100));
   const label = status && status !== "Present" ? status : state;
@@ -230,13 +236,13 @@ function PunchCard({ checkIn, checkOut, status, onDone }: { checkIn?: string; ch
         {checkOut ? (
           <div className="flex h-12 flex-1 items-center justify-center rounded-xl border-2 border-primary-foreground/70 font-semibold">Day complete</div>
         ) : (
-          <button type="button" disabled={!!busy} onClick={() => void punch(checkIn ? "out" : "in")}
+          <Button type="button" disabled={!!busy || unavailable} onClick={() => void punch(checkIn ? "out" : "in")}
             className="flex h-12 flex-1 items-center justify-center gap-2 wa-pink-btn rounded-xl text-base font-semibold text-brand-lime-foreground shadow-sm transition active:scale-[0.98] disabled:opacity-60">
             {busy ? <Loader2 className="h-5 w-5 animate-spin" /> : checkIn ? <LogOut className="h-5 w-5" /> : <LogIn className="h-5 w-5" />}{checkIn ? "Check out" : "Check in"}
-          </button>
+          </Button>
         )}
       </div>
-      <p className="mt-3 flex items-center gap-1.5 text-xs opacity-80"><MapPin className="h-3.5 w-3.5 shrink-0" />Location is recorded with each punch</p>
+      <p className="mt-3 flex items-center gap-1.5 text-xs opacity-80"><MapPin className="h-3.5 w-3.5 shrink-0" />{unavailable ? "Confirming today's attendance…" : "Location is recorded when permission is granted"}</p>
     </div>
   );
   return (
@@ -255,13 +261,13 @@ function PunchCard({ checkIn, checkOut, status, onDone }: { checkIn?: string; ch
           </div>
         </div>
         <div className="hidden grid-cols-2 gap-3 lg:grid lg:w-80">
-          <Button size="lg" className="h-14 gap-2 text-base" disabled={!!busy || !!checkIn} onClick={() => void punch("in")}>
+          <Button size="lg" className="h-14 gap-2 text-base" disabled={!!busy || unavailable || !!checkIn} onClick={() => void punch("in")}>
             {busy === "in" ? <Loader2 className="h-5 w-5 animate-spin" /> : <LogIn className="h-5 w-5" />}Check in
           </Button>
-          <Button size="lg" variant="secondary" className="h-14 gap-2 text-base" disabled={!!busy || !checkIn || !!checkOut} onClick={() => void punch("out")}>
+          <Button size="lg" variant="secondary" className="h-14 gap-2 text-base" disabled={!!busy || unavailable || !checkIn || !!checkOut} onClick={() => void punch("out")}>
             {busy === "out" ? <Loader2 className="h-5 w-5 animate-spin" /> : <LogOut className="h-5 w-5" />}Check out
           </Button>
-          <p className="col-span-2 flex items-center gap-1.5 text-xs text-muted-foreground"><Clock className="h-3.5 w-3.5 shrink-0" />Your location is recorded with each punch.</p>
+          <p className="col-span-2 flex items-center gap-1.5 text-xs text-muted-foreground"><Clock className="h-3.5 w-3.5 shrink-0" />{unavailable ? "Confirming today's attendance…" : "Location is recorded when permission is granted."}</p>
         </div>
       </div>
     </Card>
@@ -290,7 +296,24 @@ function MyPortalPage() {
     [email, user?.id, refresh],
   );
 
-  const [punched, setPunched] = useState<{ date: string; in?: string; out?: string }>({ date: "" });
+  const [today, setToday] = useState(localDate);
+  useEffect(() => subscribe(() => setRefresh(n => n + 1)), []);
+  useEffect(() => {
+    const timer = window.setInterval(() => setToday(localDate()), 1000);
+    return () => window.clearInterval(timer);
+  }, []);
+  const todayQuery = useQuery({
+    queryKey: ["portal-punch", user?.id, employee?.id, today],
+    enabled: Boolean(employee && user),
+    staleTime: 0,
+    refetchOnWindowFocus: "always",
+    refetchOnReconnect: "always",
+    queryFn: async () => {
+      const res = await apiFetch<Attendance[]>("/attendance", { query: { employeeId: employee?.id, from: today, to: today, limit: 1 } });
+      if (!res.ok) throw new Error(res.error.message);
+      return res.data[0] ?? null;
+    },
+  });
   const [attView, setAttView] = useState<"daily" | "weekly" | "monthly">("monthly");
   const [attDay, setAttDay] = useState(() => localDate());
   const [leaveYear, setLeaveYear] = useState(() => new Date().getFullYear());
@@ -322,11 +345,9 @@ function MyPortalPage() {
     );
   }
 
-  const today = localDate();
-  const todayAtt = attendanceAll.find((a) => a.date === today);
-  const local = punched.date === today ? punched : { date: today };
-  const todayIn = todayAtt?.checkIn ?? local.in;
-  const todayOut = todayAtt?.checkOut ?? local.out;
+  const todayAtt = todayQuery.data;
+  const todayIn = todayAtt?.checkIn;
+  const todayOut = todayAtt?.checkOut;
   const passDays = daysUntil(employee.workPermitExpiryDate || employee.passExpiry);
   const approvedLeaveDays = leaves.filter((l) => l.status === "Approved").reduce((sum, l) => sum + l.days, 0);
   const lastPayslip = payslips[0];
@@ -379,9 +400,10 @@ function MyPortalPage() {
 
   const home = (
     <div className="space-y-4 lg:space-y-6">
-      <PunchCard checkIn={todayIn} checkOut={todayOut} status={todayAtt?.status}
-        onDone={(kind, time) => {
-          setPunched((p) => ({ ...(p.date === today ? p : { date: today }), [kind]: time }));
+      {todayQuery.isError && <div role="alert" className="flex items-center justify-between gap-3 text-sm text-destructive"><span>Could not confirm today's attendance. Check your connection.</span><Button variant="outline" onClick={() => void todayQuery.refetch()}>Retry</Button></div>}
+      <PunchCard checkIn={todayIn} checkOut={todayOut} status={todayAtt?.status} unavailable={todayQuery.isFetching || todayQuery.isPending || todayQuery.isError}
+        onDone={() => {
+          void todayQuery.refetch();
           invalidateStoreTable("attendance");
           setRefresh((n) => n + 1);
         }} />

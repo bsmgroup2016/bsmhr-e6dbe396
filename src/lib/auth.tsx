@@ -76,7 +76,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     });
 
-    const { data: listener } = supabase.auth.onAuthStateChange(async (event, newSession) => {
+    const { data: listener } = supabase.auth.onAuthStateChange((event, newSession) => {
       if (!mounted) return;
       setSession(newSession);
       setUser(newSession?.user ?? null);
@@ -84,7 +84,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (event === "SIGNED_IN" && newSession.access_token) {
           void import("@/lib/user-admin").then((m) => m.recordLogin());
         }
-        await fetchRoles(newSession.user.id);
+        // Auth callbacks run under the client's session lock. Defer queries
+        // so refresh/sign-in cannot deadlock requests waiting for that lock.
+        if (event === "SIGNED_IN" || event === "USER_UPDATED") {
+          window.setTimeout(() => { if (mounted) void fetchRoles(newSession.user.id); }, 0);
+        }
       } else {
         clearSessionStore();
         setRoles([]);

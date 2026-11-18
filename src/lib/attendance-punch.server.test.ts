@@ -7,10 +7,12 @@ const ctx: AuthContext = { userId: "worker-user", email: null, token: "test-toke
 test("direct portal check-in saves supported times/GPS without the absent event table", async () => {
   const original = globalThis.fetch;
   const calls: { url: string; method: string; body?: Record<string, unknown> }[] = [];
+  let stored: Record<string, unknown>[] = [];
   globalThis.fetch = (async (input: string | URL | Request, init?: RequestInit) => {
     const body = init?.body ? JSON.parse(String(init.body)) : undefined;
     calls.push({ url: String(input), method: init?.method ?? "GET", body });
-    return Response.json(body ? [{ id: "attendance-1", ...body }] : []);
+    if (body) stored = [{ id: "attendance-1", ...body }];
+    return Response.json(stored);
   }) as typeof fetch;
   try {
     const result = await applyPunch(ctx, { date: "2026-11-18", checkIn: "07:00", lat: 1.35, lng: 103.82 }, "worker-1", "single");
@@ -24,16 +26,18 @@ test("direct portal check-in saves supported times/GPS without the absent event 
 test("direct portal check-out updates the same attendance row and keeps check-in", async () => {
   const original = globalThis.fetch;
   let payload: Record<string, unknown> = {};
+  let stored: Record<string, unknown>[] = [{ id: "attendance-1", check_in: "07:00", check_out: null }];
   globalThis.fetch = (async (_input: string | URL | Request, init?: RequestInit) => {
-    if (!init?.method) return Response.json([{ id: "attendance-1" }]);
+    if (!init?.method) return Response.json(stored);
     expect(init.method).toBe("PATCH");
     payload = JSON.parse(String(init.body));
-    return Response.json([{ id: "attendance-1", check_in: "07:00", ...payload }]);
+    stored = [{ id: "attendance-1", check_in: "07:00", ...payload }];
+    return Response.json(stored);
   }) as typeof fetch;
   try {
     const result = await applyPunch(ctx, { date: "2026-11-18", checkOut: "20:00" }, "worker-1", "single");
     expect(result.status).toBe("saved");
-    expect(payload).toEqual({ employee_id: "worker-1", date: "2026-11-18", status: "Present", check_out: "20:00" });
+    expect(payload).toEqual({ employee_id: "worker-1", date: "2026-11-18", status: "Present", check_out: "20:00", hours_worked: 8, overtime_hours: 4 });
     expect(result.attendance).toMatchObject({ checkIn: "07:00", checkOut: "20:00" });
   } finally { globalThis.fetch = original; }
 });
@@ -68,10 +72,12 @@ test("a worker's own check-in is written with the server key and ignores status/
   const originalKey = process.env["SB_SERVICE_ROLE_KEY"];
   process.env["SB_SERVICE_ROLE_KEY"] = "service-test";
   const calls: { auth: string; method: string; body?: Record<string, unknown> }[] = [];
+  let stored: Record<string, unknown>[] = [];
   globalThis.fetch = (async (_input: string | URL | Request, init?: RequestInit) => {
     const body = init?.body ? JSON.parse(String(init.body)) : undefined;
     calls.push({ auth: String((init?.headers as Record<string, string>)?.["Authorization"]), method: init?.method ?? "GET", body });
-    return Response.json(body ? [{ id: "attendance-1", ...body }] : []);
+    if (body) stored = [{ id: "attendance-1", ...body }];
+    return Response.json(stored);
   }) as typeof fetch;
   try {
     const result = await applyPunch(ctx, { date: "2026-11-18", checkIn: "07:00", status: "Leave", hoursWorked: 12, overtimeHours: 5 }, "worker-1", "single");
@@ -82,6 +88,54 @@ test("a worker's own check-in is written with the server key and ignores status/
     globalThis.fetch = original;
     if (originalKey === undefined) delete process.env["SB_SERVICE_ROLE_KEY"]; else process.env["SB_SERVICE_ROLE_KEY"] = originalKey;
   }
+});
+
+test("repeated worker check-in preserves the saved original time without writing", async () => {
+  const original = globalThis.fetch;
+  let writes = 0;
+  globalThis.fetch = (async (_input: unknown, init?: RequestInit) => {
+    if (init?.method) writes++;
+    return Response.json([{ id: "attendance-1", check_in: "07:00", check_out: null }]);
+  }) as typeof fetch;
+  try {
+    const result = await applyPunch(ctx, { date: "2026-11-18", checkIn: "09:00" }, "worker-1", "single");
+    expect(result.status).toBe("duplicate");
+    expect(result.attendance).toMatchObject({ checkIn: "07:00" });
+    expect(writes).toBe(0);
+  } finally { globalThis.fetch = original; }
+});
+
+test("worker cannot check out without a saved check-in", async () => {
+  const original = globalThis.fetch;
+  let writes = 0;
+  globalThis.fetch = (async (_input: unknown, init?: RequestInit) => {
+    if (init?.method) writes++;
+    return Response.json([]);
+  }) as typeof fetch;
+  try {
+    expect((await applyPunch(ctx, { date: "2026-11-18", checkOut: "20:00" }, "worker-1", "single")).status).toBe("rejected");
+    expect(writes).toBe(0);
+  } finally { globalThis.fetch = original; }
+});
+
+test("empty write response never confirms a worker punch", async () => {
+  const original = globalThis.fetch;
+  globalThis.fetch = (async () => Response.json([])) as unknown as typeof fetch;
+  try {
+    expect((await applyPunch(ctx, { date: "2026-11-18", checkIn: "07:00" }, "worker-1", "single")).status).toBe("error");
+  } finally { globalThis.fetch = original; }
+});
+
+test("worker punch fails if written time cannot be read back", async () => {
+  const original = globalThis.fetch;
+  globalThis.fetch = (async (_input: unknown, init?: RequestInit) => Response.json(init?.method ? [{ id: "attendance-1", check_in: "07:00" }] : [])) as typeof fetch;
+  try {
+    expect((await applyPunch(ctx, { date: "2026-11-18", checkIn: "07:00" }, "worker-1", "single")).status).toBe("error");
+  } finally { globalThis.fetch = original; }
+});
+
+test("worker time must be a valid clock time", async () => {
+  expect((await applyPunch(ctx, { date: "2026-11-18", checkIn: "25:70" }, "worker-1", "single")).status).toBe("rejected");
 });
 
 test("a worker cannot punch for another employee with the server key", async () => {
