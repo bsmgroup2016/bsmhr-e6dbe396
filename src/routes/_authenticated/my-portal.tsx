@@ -8,6 +8,8 @@ import { AppShell } from "@/components/app-shell";
 import { useAuth } from "@/lib/auth";
 import { isWorkerOnly } from "@/core/access";
 import { monthAttendance } from "@/features/worker-portal/attendance";
+import { leaveSummary, payslipsInRange, rangeAttendance, weekRange } from "@/features/worker-portal/summaries";
+import { leaveBalances } from "@/lib/sg-leave";
 import { downloadPayslipPdf } from "@/lib/pdf";
 import { openR2File } from "@/lib/r2";
 import { SelfProfileForm } from "@/components/self-profile-form";
@@ -243,6 +245,13 @@ function MyPortalPage() {
   );
 
   const [punched, setPunched] = useState<{ date: string; in?: string; out?: string }>({ date: "" });
+  const [attView, setAttView] = useState<"daily" | "weekly" | "monthly">("monthly");
+  const [attDay, setAttDay] = useState(() => localDate());
+  const [leaveYear, setLeaveYear] = useState(() => new Date().getFullYear());
+  const [leaveMonth, setLeaveMonth] = useState(0);
+  const [payFrom, setPayFrom] = useState("");
+  const [payTo, setPayTo] = useState("");
+  const [paySel, setPaySel] = useState("");
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(false);
   const [type, setType] = useState<LeaveType>("Annual Leave");
@@ -382,74 +391,164 @@ function MyPortalPage() {
     </div>
   );
 
+  const attRange = attView === "daily" ? { from: attDay, to: attDay } : attView === "weekly" ? weekRange(attDay) : { from: `${month}-01`, to: `${month}-31` };
+  const attSum = rangeAttendance(attendanceAll, attRange.from, attRange.to);
+  const stat = (label: string, value: string | number, tone = "") => (
+    <Card className="p-3 lg:p-4"><p className="text-xs text-muted-foreground">{label}</p><p className={`mt-1 text-xl font-semibold tabular-nums lg:text-2xl ${tone}`}>{value}</p></Card>
+  );
+  const fmtDay = (d: string) => new Date(`${d}T00:00:00`).toLocaleDateString("en-SG", { weekday: "short", day: "numeric", month: "short", year: "numeric" });
+
   const attendance = (
     <div className="space-y-4">
-      <div className="flex items-center gap-3">
-        <Label htmlFor="att-month" className="shrink-0">Month</Label>
-        <Input id="att-month" type="month" className="h-11" value={month} onChange={(e) => setMonth(e.target.value || thisMonth())} />
-      </div>
-      <div className="grid grid-cols-3 gap-3 text-center">
-        <Card><p className="text-xl font-semibold">{att.daysWorked}</p><p className="text-xs text-muted-foreground">Days worked</p></Card>
-        <Card><p className="text-xl font-semibold">{att.normalHours}</p><p className="text-xs text-muted-foreground">Normal hrs</p></Card>
-        <Card><p className="text-xl font-semibold">{att.otHours}</p><p className="text-xs text-muted-foreground">OT hrs</p></Card>
-      </div>
-      {att.rows.length === 0 ? <EmptyState icon={<CalendarCheck className="h-5 w-5" />} title="No attendance" description="No attendance recorded for this month." /> : (
-        <div className="space-y-2">
-          {att.rows.map((a) => (
-            <Card key={a.id} className="flex items-center justify-between gap-3 p-3">
-              <div>
-                <p className="text-sm font-semibold">{new Date(a.date).toLocaleDateString("en-SG", { weekday: "short", day: "numeric", month: "short" })}</p>
-                <p className="text-xs text-muted-foreground">In {a.checkIn ?? "-"} · Out {a.checkOut ?? "-"}</p>
-              </div>
-              <div className="text-right">
-                <StatusBadge label={a.status} />
-                <p className="mt-1 text-xs text-muted-foreground">{a.hoursWorked}h + {a.overtimeHours}h OT</p>
-              </div>
-            </Card>
+      <Card className="grid gap-3 p-3 sm:flex sm:flex-wrap sm:items-end">
+        <div className="grid grid-cols-3 rounded-lg border p-1">
+          {(["daily", "weekly", "monthly"] as const).map((v) => (
+            <button key={v} type="button" onClick={() => setAttView(v)} className={`rounded-md px-4 py-2 text-sm font-medium capitalize ${attView === v ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}>{v}</button>
           ))}
         </div>
+        {attView === "monthly" ? (
+          <div className="grid gap-1"><Label htmlFor="att-month" className="text-xs">Month</Label><Input id="att-month" type="month" className="h-10 sm:w-48" value={month} onChange={(e) => setMonth(e.target.value || thisMonth())} /></div>
+        ) : (
+          <div className="grid gap-1"><Label htmlFor="att-day" className="text-xs">{attView === "weekly" ? "Any day in the week" : "Date"}</Label><Input id="att-day" type="date" className="h-10 sm:w-48" value={attDay} onChange={(e) => setAttDay(e.target.value || today)} /></div>
+        )}
+        <p className="text-sm text-muted-foreground sm:ml-auto">{attRange.from === attRange.to ? fmtDay(attRange.from) : `${fmtDay(attRange.from)} – ${fmtDay(attRange.to).replace(/^\w+, /, "")}`}</p>
+      </Card>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+        {stat("Days worked", attSum.daysWorked)}
+        {stat("Normal hours", attSum.normalHours)}
+        {stat("OT hours", attSum.otHours, "text-primary")}
+        {stat("Absent", attSum.absent, attSum.absent ? "text-destructive" : "")}
+        {stat("Leave / MC", attSum.leave)}
+      </div>
+      {attSum.rows.length === 0 ? <EmptyState icon={<CalendarCheck className="h-5 w-5" />} title="No attendance" description="No attendance recorded for this period." /> : (
+        <Card className="overflow-x-auto p-0">
+          <table className="w-full min-w-[560px] text-sm">
+            <thead className="border-b bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
+              <tr><th className="px-4 py-3">Date</th><th className="px-4 py-3">Check in</th><th className="px-4 py-3">Check out</th><th className="px-4 py-3 text-right">Hours</th><th className="px-4 py-3 text-right">OT</th><th className="px-4 py-3">Status</th></tr>
+            </thead>
+            <tbody className="divide-y">
+              {attSum.rows.map((a) => (
+                <tr key={a.id}><td className="px-4 py-3 font-medium">{fmtDay(a.date)}</td><td className="px-4 py-3 tabular-nums">{a.checkIn ?? "-"}</td><td className="px-4 py-3 tabular-nums">{a.checkOut ?? "-"}</td><td className="px-4 py-3 text-right tabular-nums">{a.hoursWorked}</td><td className="px-4 py-3 text-right tabular-nums">{a.overtimeHours}</td><td className="px-4 py-3"><StatusBadge label={a.status} /></td></tr>
+              ))}
+            </tbody>
+          </table>
+        </Card>
       )}
     </div>
   );
 
+  const years = Array.from(new Set([new Date().getFullYear(), ...leaves.map((l) => Number(l.startDate.slice(0, 4)))])).filter(Boolean).sort((x, y) => y - x);
+  const lv = leaveSummary(leaves, leaveYear, leaveMonth || undefined);
+  const balances = leaveBalances(employee, leaves);
   const leave = (
     <div className="space-y-4">
-      {leaveDialog}
-      {leaves.length === 0 ? <EmptyState icon={<CalendarPlus className="h-5 w-5" />} title="No leave requests" description="Requests you submit will appear here." /> : (
-        <div className="space-y-2">
-          {leaves.map((l) => (
-            <Card key={l.id} className="flex items-center justify-between gap-3 p-3">
-              <div>
-                <p className="text-sm font-semibold">{l.type}</p>
-                <p className="text-xs text-muted-foreground">{l.startDate} → {l.endDate} · {l.days} day(s)</p>
-              </div>
-              <StatusBadge label={l.status} />
-            </Card>
-          ))}
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
+        <p className="text-sm text-muted-foreground">Balances are for {new Date().getFullYear()}, under the Employment Act.</p>
+        {leaveDialog}
+      </div>
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {balances.filter((b) => b.entitled > 0 || b.taken > 0).map((b) => (
+          <Card key={b.type} className="p-4">
+            <p className="text-xs text-muted-foreground">{b.type}</p>
+            <p className="mt-1 text-2xl font-semibold tabular-nums">{b.balance}<span className="text-sm font-normal text-muted-foreground"> / {b.entitled} days left</span></p>
+            <div className="mt-2 h-1.5 rounded-full bg-muted"><div className="h-1.5 rounded-full bg-primary" style={{ width: `${b.entitled ? Math.min(100, (b.taken / b.entitled) * 100) : 0}%` }} /></div>
+            <p className="mt-1 text-xs text-muted-foreground">{b.taken} taken{b.eligible ? "" : " · not yet eligible"}</p>
+          </Card>
+        ))}
+      </div>
+      <Card className="flex flex-wrap items-end gap-3 p-3">
+        <div className="grid gap-1"><Label className="text-xs">Year</Label>
+          <Select value={String(leaveYear)} onValueChange={(v) => setLeaveYear(Number(v))}><SelectTrigger className="h-10 w-28"><SelectValue /></SelectTrigger><SelectContent>{years.map((y) => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}</SelectContent></Select>
         </div>
+        <div className="grid gap-1"><Label className="text-xs">Month</Label>
+          <Select value={String(leaveMonth)} onValueChange={(v) => setLeaveMonth(Number(v))}><SelectTrigger className="h-10 w-40"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="0">Whole year</SelectItem>{Array.from({ length: 12 }, (_, i) => <SelectItem key={i + 1} value={String(i + 1)}>{new Date(2000, i, 1).toLocaleString("en-SG", { month: "long" })}</SelectItem>)}</SelectContent></Select>
+        </div>
+      </Card>
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+        {stat("Requested", lv.requested)}
+        {stat("Approved", lv.approved, "text-primary")}
+        {stat("Pending", lv.pending)}
+        {stat("Rejected", lv.rejected, lv.rejected ? "text-destructive" : "")}
+        {stat("Approved days", lv.approvedDays)}
+      </div>
+      {lv.rows.length === 0 ? <EmptyState icon={<CalendarPlus className="h-5 w-5" />} title="No leave requests" description="No requests in this period." /> : (
+        <Card className="overflow-x-auto p-0">
+          <table className="w-full min-w-[560px] text-sm">
+            <thead className="border-b bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
+              <tr><th className="px-4 py-3">Type</th><th className="px-4 py-3">From</th><th className="px-4 py-3">To</th><th className="px-4 py-3 text-right">Days</th><th className="px-4 py-3">Reason</th><th className="px-4 py-3">Status</th></tr>
+            </thead>
+            <tbody className="divide-y">
+              {lv.rows.map((l) => (
+                <tr key={l.id}><td className="px-4 py-3 font-medium">{l.type}</td><td className="px-4 py-3">{l.startDate}</td><td className="px-4 py-3">{l.endDate}</td><td className="px-4 py-3 text-right tabular-nums">{l.days}</td><td className="max-w-[16rem] truncate px-4 py-3 text-muted-foreground">{l.remarks || l.reason || "-"}</td><td className="px-4 py-3"><StatusBadge label={l.status} /></td></tr>
+              ))}
+            </tbody>
+          </table>
+        </Card>
       )}
     </div>
   );
 
+  const money = (n: number) => `$${n.toLocaleString("en-SG", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const ps = payslipsInRange(payslips, payFrom, payTo);
+  const selected = ps.rows.find((p) => p.id === paySel) ?? ps.rows[0];
+  const line = (label: string, v?: number, neg = false) => v ? <div className="flex justify-between gap-3 py-1.5 text-sm"><span className="text-muted-foreground">{label}</span><span className="tabular-nums">{neg ? "-" : ""}{money(v)}</span></div> : null;
   const payslipView = payslips.length === 0 ? <EmptyState icon={<Wallet className="h-5 w-5" />} title="No payslips" description="Your payslips will appear here once payroll is processed." /> : (
-    <div className="space-y-3">
-      {payslips.map((p) => (
-        <Card key={p.id}>
-          <div className="flex items-center justify-between">
-            <p className="font-semibold">{p.month}</p>
-            <StatusBadge label={p.status} />
-          </div>
-          <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
-            <span className="text-muted-foreground">Basic</span><span className="text-right">${p.basicSalary.toLocaleString()}</span>
-            <span className="text-muted-foreground">Overtime</span><span className="text-right">${p.overtimePay.toLocaleString()}</span>
-            <span className="text-muted-foreground">Deductions</span><span className="text-right">-${(p.deductions + p.cpfEmployee).toLocaleString()}</span>
-            <span className="font-semibold">Net pay</span><span className="text-right font-semibold">${p.netPay.toLocaleString()}</span>
-          </div>
-          <Button variant="outline" className="mt-3 h-10 w-full gap-2" onClick={() => void downloadPayslipPdf(p, { employee }).catch(() => toast.error("Could not create payslip PDF"))}>
-            <Download className="h-4 w-4" />Download payslip
-          </Button>
-        </Card>
-      ))}
+    <div className="space-y-4">
+      <Card className="flex flex-wrap items-end gap-3 p-3">
+        <div className="grid gap-1"><Label htmlFor="pay-from" className="text-xs">From month</Label><Input id="pay-from" type="month" className="h-10 w-44" value={payFrom} onChange={(e) => setPayFrom(e.target.value)} /></div>
+        <div className="grid gap-1"><Label htmlFor="pay-to" className="text-xs">To month</Label><Input id="pay-to" type="month" className="h-10 w-44" value={payTo} onChange={(e) => setPayTo(e.target.value)} /></div>
+        <Button variant="ghost" className="h-10" onClick={() => { setPayFrom(""); setPayTo(""); }}>All time</Button>
+      </Card>
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {stat("Months paid", ps.months)}
+        {stat("Total gross", money(ps.gross))}
+        {stat("Total deductions", money(ps.deductions))}
+        {stat("Total net pay", money(ps.net), "text-primary")}
+      </div>
+      {ps.rows.length === 0 ? <EmptyState icon={<Wallet className="h-5 w-5" />} title="No payslips in this range" description="Choose a different month range." /> : (
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
+          <Card className="p-0">
+            <ul className="divide-y">
+              {ps.rows.map((p) => (
+                <li key={p.id}>
+                  <button type="button" onClick={() => setPaySel(p.id)} className={`flex w-full items-center justify-between gap-3 px-4 py-3 text-left ${selected?.id === p.id ? "bg-primary/10" : "hover:bg-muted/50"}`}>
+                    <div className="min-w-0"><p className="font-medium">{new Date(`${p.month}-01T00:00:00`).toLocaleDateString("en-SG", { month: "long", year: "numeric" })}</p><p className="text-xs text-muted-foreground">{p.status}</p></div>
+                    <span className="shrink-0 font-semibold tabular-nums">{money(p.netPay)}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </Card>
+          {selected && (
+            <Card className="p-5 lg:sticky lg:top-24 lg:self-start">
+              <div className="mb-3 flex items-start justify-between gap-3">
+                <div><p className="text-xs uppercase tracking-wide text-muted-foreground">Payslip</p><p className="text-lg font-semibold">{new Date(`${selected.month}-01T00:00:00`).toLocaleDateString("en-SG", { month: "long", year: "numeric" })}</p></div>
+                <StatusBadge label={selected.status} />
+              </div>
+              <p className="mt-2 text-xs font-semibold uppercase text-muted-foreground">Earnings</p>
+              <div className="divide-y">
+                {line("Basic salary", selected.basicSalary)}
+                {line(`Overtime${selected.overtimeHours ? ` (${selected.overtimeHours}h)` : ""}`, selected.overtimePay)}
+                {line("Allowances", selected.allowances)}
+              </div>
+              <p className="mt-3 text-xs font-semibold uppercase text-muted-foreground">Deductions</p>
+              <div className="divide-y">
+                {line("CPF (employee)", selected.cpfEmployee, true)}
+                {line("Accommodation", selected.accommodationDeduction, true)}
+                {line("Loan repayment", selected.loanRepayment, true)}
+                {line(selected.shgFund && selected.shgFund !== "None" ? `${selected.shgFund} fund` : "Self-help fund", selected.shgAmount, true)}
+                {line("Other deductions", selected.otherDeductions, true)}
+                {!selected.accommodationDeduction && !selected.loanRepayment && !selected.otherDeductions ? line("Deductions", selected.deductions, true) : null}
+              </div>
+              <div className="mt-3 flex justify-between border-t pt-3 text-base font-semibold"><span>Net pay</span><span className="tabular-nums text-primary">{money(selected.netPay)}</span></div>
+              {selected.paidAt && <p className="mt-1 text-xs text-muted-foreground">Paid on {selected.paidAt.slice(0, 10)}</p>}
+              <Button variant="outline" className="mt-4 h-10 w-full gap-2" onClick={() => void downloadPayslipPdf(selected, { employee }).catch(() => toast.error("Could not create payslip PDF"))}>
+                <Download className="h-4 w-4" />Download payslip
+              </Button>
+            </Card>
+          )}
+        </div>
+      )}
     </div>
   );
 
