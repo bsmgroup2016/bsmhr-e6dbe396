@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { verifyUser } from "@/lib/r2.server";
 import { AUTH_ROLES } from "@/core/access";
+import { userLoginUpdate } from "@/core/user-login-update";
 
 const SUPABASE_URL = "https://thrfyeyqafmdnpexgmlc.supabase.co";
 
@@ -140,20 +141,19 @@ export const Route = createFileRoute("/api/public/user-admin")({
           if (body.action === "update") {
             // Worker logins authenticate with the generated alias email, so a username
             // change must rename that email too; editing only the profile would break sign-in.
-            let email = body.email;
-            if (!email && body.username) {
-              const [profile] = await rest<{ email: string | null }>(`profiles?select=email&id=eq.${body.id}&limit=1`);
-              if (profile?.email?.endsWith("@workers.hrbsm.xyz")) {
-                const next = body.username.trim().toLowerCase();
-                if (!/^[a-z0-9][a-z0-9._-]{1,58}[a-z0-9]$/.test(next)) {
-                  return Response.json({ error: "Username may use only small letters, numbers, dot, dash and underscore" }, { status: 400 });
-                }
-                email = `${next}@workers.hrbsm.xyz`;
-                if (email !== profile.email) {
-                  const taken = await rest<{ id: string }>(`profiles?select=id&email=eq.${encodeURIComponent(email)}&id=neq.${body.id}&limit=1`);
-                  if (taken.length) return Response.json({ error: "This username is already in use" }, { status: 409 });
-                }
-              }
+            const accountResponse = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${body.id}`, { headers: serviceHeaders() });
+            if (!accountResponse.ok) return Response.json({ error: "Could not read the login account. No changes saved." }, { status: 409 });
+            const account = await accountResponse.json() as { email?: string };
+            let login: ReturnType<typeof userLoginUpdate>;
+            try {
+              login = userLoginUpdate(account.email ?? "", body);
+            } catch (e) {
+              return Response.json({ error: e instanceof Error ? e.message : "Invalid username" }, { status: 400 });
+            }
+            const { email, username } = login;
+            if (email && email !== account.email) {
+              const taken = await rest<{ id: string }>(`profiles?select=id&email=eq.${encodeURIComponent(email)}&id=neq.${body.id}&limit=1`);
+              if (taken.length) return Response.json({ error: "This username is already in use" }, { status: 409 });
             }
             if (email || body.password) {
               const res = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${body.id}`, {
@@ -171,13 +171,22 @@ export const Route = createFileRoute("/api/public/user-admin")({
               body: JSON.stringify({
                 full_name: body.fullName ?? null,
                 phone: body.phone ?? null,
-                username: body.username ?? null,
+                ...(username === undefined ? {} : { username }),
                 ...(email ? { email } : {}),
                 ...(body.isActive === undefined ? {} : { is_active: body.isActive }),
                 ...(body.avatarKey === undefined ? {} : { avatar_key: body.avatarKey }),
               }),
             });
-            return Response.json({ ok: true });
+            const [saved] = await rest<{ email: string | null; username: string | null }>(`profiles?select=email,username&id=eq.${body.id}&limit=1`);
+            if (!saved || (email && saved.email !== email) || (username !== undefined && saved.username !== username)) {
+              return Response.json({ error: "Login changed but profile could not be verified. Save again to finish syncing." }, { status: 409 });
+            }
+            if (email) {
+              const check = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${body.id}`, { headers: serviceHeaders() });
+              const verified = check.ok ? await check.json() as { email?: string } : null;
+              if (verified?.email !== email) return Response.json({ error: "The login ID change could not be verified. Save again before using the new ID." }, { status: 409 });
+            }
+            return Response.json({ ok: true, loginId: saved.email?.endsWith("@workers.hrbsm.xyz") ? saved.email.split("@")[0] : saved.email });
           }
 
           // delete

@@ -894,7 +894,7 @@ function EditUserDialog({
     }
     setSaving(true);
     try {
-      await updateUser({
+      const result = await updateUser({
         id: user.id,
         fullName: `${firstName.trim()} ${lastName.trim()}`.trim(),
         phone,
@@ -904,7 +904,7 @@ function EditUserDialog({
         isActive,
         avatarKey,
       });
-      toast.success("User updated");
+      toast.success(result.loginId ? `User updated · Login ID: ${result.loginId}` : "User updated");
       onOpenChange(false);
       onSaved();
     } catch (e) {
@@ -965,11 +965,12 @@ function EditUserDialog({
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="eu-email">Email</Label>
+              <Label htmlFor="eu-email">{user?.email.endsWith("@workers.hrbsm.xyz") ? "Login email" : "Email"}</Label>
               <Input
                 id="eu-email"
                 type="email"
-                value={email}
+                value={user?.email.endsWith("@workers.hrbsm.xyz") ? `${username.trim().toLowerCase()}@workers.hrbsm.xyz` : email}
+                readOnly={user?.email.endsWith("@workers.hrbsm.xyz")}
                 onChange={(e) => setEmail(e.target.value)}
               />
             </div>

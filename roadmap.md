@@ -2,6 +2,8 @@
 
 ## User account lists
 
+- [x] Make worker Username edits authoritative over alias-email fields, require account/profile read-back and show the saved login ID; 12 focused tests pass, preview build is clean and unauthenticated updates return 401. Real worker sign-in remains blocked by unavailable external account session below.
+
 - [x] Shorten worker login IDs to names with collision suffixes, generate exactly 8-character passwords, and convert old generated IDs when admin sets a new password; focused tests cover length, names, collisions and old-ID conversion. Real external-account read-back remains blocked below.
 
 - [x] Replace confusing pending badges with per-worker Create login & password controls; controlled desktop/mobile checks verified creation action and private credential dialog, with 17 tests passing. Real external-account login remains blocked below.
