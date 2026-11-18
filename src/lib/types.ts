@@ -550,6 +550,7 @@ export interface PayrollEntry {
   overtimePay: number;
   allowances: number;
   deductions: number;
+  bonus?: number;
   /** Employment Act s.27 deduction breakdown. */
   accommodationDeduction?: number;
   loanRepayment?: number;

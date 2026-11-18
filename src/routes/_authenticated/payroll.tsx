@@ -218,6 +218,7 @@ export default function PayrollPage() {
       FIN: emp?.fin ?? "",
       "Basic Salary": entry.basicSalary,
       "Overtime Pay": entry.overtimePay,
+      Bonus: entry.bonus ?? 0,
       Allowances: entry.allowances,
       Deductions: entry.deductions,
       "CPF Employee": entry.cpfEmployee,
@@ -296,9 +297,10 @@ export default function PayrollPage() {
     filtered.forEach((p) => {
       const emp = employees.find((e) => e.id === p.employeeId);
       if (!emp) return;
-      const gross = p.basicSalary + p.overtimePay + p.allowances;
+      const gross = p.basicSalary + p.overtimePay + p.allowances + (p.bonus ?? 0);
       const stat = computeStatutory(emp, gross);
       updatePayroll(p.id, {
+        bonus: p.bonus ?? 0,
         cpfEmployee: stat.cpfEmployee,
         cpfEmployer: stat.cpfEmployer,
         sdl: stat.sdl,
@@ -425,6 +427,7 @@ export default function PayrollPage() {
       overtimeHours,
       allowances,
       deductions,
+      bonus,
       cpfEmployee,
       cpfEmployer: Number(formData.get("cpfEmployer") || 0) || stat.cpfEmployer,
       levies,

@@ -203,7 +203,7 @@ export const fromAttendance = (r: Row): Attendance => ({
 
 export const fromPayroll = (r: Row): PayrollEntry => ({
   id: r.id, employeeId: r.employee_id, month: r.month, basicSalary: Number(r.basic_salary ?? 0),
-  overtimePay: Number(r.overtime_pay ?? 0), allowances: Number(r.allowances ?? 0),
+  overtimePay: Number(r.overtime_pay ?? 0), allowances: Number(r.allowances ?? 0), bonus: Number(r.bonus ?? 0),
   deductions: Number(r.deductions ?? 0), cpfEmployee: Number(r.cpf_employee ?? 0),
   accommodationDeduction: Number(r.accommodation_deduction ?? 0),
   loanRepayment: Number(r.loan_repayment ?? 0),
@@ -368,7 +368,7 @@ export const toAttendance = (a: Partial<Attendance>): Row => ({
 
 export const toPayroll = (p: Partial<PayrollEntry>): Row => ({
   employee_id: p.employeeId, month: p.month, basic_salary: p.basicSalary ?? 0,
-  overtime_pay: p.overtimePay ?? 0, allowances: p.allowances ?? 0, deductions: p.deductions ?? 0,
+  overtime_pay: p.overtimePay ?? 0, allowances: p.allowances ?? 0, deductions: p.deductions ?? 0, bonus: p.bonus ?? 0,
   accommodation_deduction: p.accommodationDeduction ?? 0,
   loan_repayment: p.loanRepayment ?? 0,
   other_deductions: p.otherDeductions ?? 0,

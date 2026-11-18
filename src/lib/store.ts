@@ -47,6 +47,7 @@ import { toDepartment, toDesignation } from "@/lib/db";
 import type { Department, Designation } from "@/lib/types";
 import type { DriverProfile, DriverIncident, FuelLog } from "@/lib/types";
 import { toDriverProfile, toDriverIncident, toFuelLog } from "@/lib/db";
+import { notifyLeaveDecision } from "@/lib/notify";
 
 export interface AppState {
   employees: Employee[];
@@ -735,7 +736,7 @@ export function computeCpf(employee: Employee, grossWage: number) {
 
 export { computeStatutory };
 
-/** Auto-build payroll drafts for a month from employee salary + attendance OT. */
+/** Auto-build payroll drafts for a month from employee salary + attendance OT + unpaid leave deductions + loan deductions + approved medical claims. */
 export function generatePayrollForMonth(month: string, companyId?: string): { created: number; skipped: number } {
   const s = getState();
   const staff = s.employees.filter(
@@ -752,17 +753,86 @@ export function generatePayrollForMonth(month: string, companyId?: string): { cr
     const rows = s.attendance.filter((a) => a.employeeId === emp.id && a.date.startsWith(month));
     const otHours = rows.reduce((sum, a) => sum + (a.overtimeHours || 0), 0);
     const basicSalary = emp.basicSalary || 0;
-    const hourlyRate = basicSalary / 26 / 8;
+    const dailyRate = basicSalary / 26;
+    const hourlyRate = dailyRate / 8;
     const overtimePay = Math.round(otHours * hourlyRate * 1.5);
-    const gross = basicSalary + overtimePay;
+
+    // 1. Unpaid leave deduction
+    const unpaidLeaves = s.leaveRequests.filter(
+      (l) => l.employeeId === emp.id && l.status === "Approved" && l.type === "Unpaid Leave" &&
+        l.startDate <= `${month}-31` && l.endDate >= `${month}-01`,
+    );
+    let unpaidDays = 0;
+    const [y, m] = month.split("-").map(Number);
+    const lastDay = new Date(Date.UTC(y, m, 0)).getUTCDate();
+    const monthStart = `${month}-01`;
+    const monthEnd = `${month}-${String(lastDay).padStart(2, "0")}`;
+
+    for (const l of unpaidLeaves) {
+      const cur = new Date(l.startDate < monthStart ? monthStart : l.startDate);
+      const until = new Date(l.endDate > monthEnd ? monthEnd : l.endDate);
+      for (let d = new Date(cur); d <= until; d.setDate(d.getDate() + 1)) {
+        if (d.getUTCDay() !== 0) unpaidDays += 1; // exclude Sundays
+      }
+    }
+    const absentDays = rows.filter((a) => a.status === "Absent").length;
+    const totalUnpaidDays = unpaidDays + absentDays;
+    const unpaidDeduction = round2(totalUnpaidDays * dailyRate);
+
+    // 2. Active Employee Loans Deduction
+    let loanRepaymentDeduction = 0;
+    const activeLoans = s.loans.filter(
+      (l) => l.employeeId === emp.id && l.status === "Active" && (!l.firstDeductionMonth || l.firstDeductionMonth <= month),
+    );
+    for (const loan of activeLoans) {
+      const alreadyPaid = s.loanRepayments
+        .filter((r) => r.loanId === loan.id)
+        .reduce((sum, r) => sum + (r.amount || 0), 0);
+      const remainingBalance = Math.max(0, loan.principal - alreadyPaid);
+      if (remainingBalance > 0) {
+        const installment = Math.min(loan.monthlyInstallment, remainingBalance);
+        loanRepaymentDeduction += installment;
+        addLoanRepayment({
+          loanId: loan.id,
+          employeeId: emp.id,
+          month,
+          amount: installment,
+          source: "Payroll Deduction",
+          paidOn: new Date().toISOString().slice(0, 10),
+          remarks: `Auto-deducted from ${month} payroll`,
+        });
+      }
+    }
+
+    // 3. Approved Medical Claims Reimbursement (added to Allowances)
+    let medicalReimbursement = 0;
+    const approvedClaims = s.medicalClaims.filter(
+      (c) => c.employeeId === emp.id && c.status === "Approved" && !c.settledOn,
+    );
+    for (const claim of approvedClaims) {
+      const claimAmount = claim.employeePaid > 0 ? claim.employeePaid : Math.max(0, claim.totalAmount - (claim.insurerPaid || 0));
+      medicalReimbursement += claimAmount;
+      updateMedicalClaim(claim.id, {
+        settledOn: new Date().toISOString().slice(0, 10),
+      });
+    }
+
+    const totalAllowances = round2(medicalReimbursement);
+    const totalDeductions = round2(unpaidDeduction + loanRepaymentDeduction);
+
+    const gross = round2(Math.max(0, basicSalary + overtimePay + totalAllowances - unpaidDeduction));
     const stat = computeStatutory(emp, gross);
+
     addPayroll({
       employeeId: emp.id,
       month,
       basicSalary,
       overtimePay,
-      allowances: 0,
-      deductions: 0,
+      overtimeHours: otHours,
+      allowances: totalAllowances,
+      deductions: totalDeductions,
+      loanRepayment: loanRepaymentDeduction,
+      otherDeductions: unpaidDeduction,
       cpfEmployee: stat.cpfEmployee,
       cpfEmployer: stat.cpfEmployer,
       levies: stat.levy,
@@ -770,7 +840,7 @@ export function generatePayrollForMonth(month: string, companyId?: string): { cr
       shgFund: stat.shgFund,
       shgAmount: stat.shgAmount,
       employerCost: stat.employerCost,
-      netPay: round2(gross - stat.cpfEmployee - stat.shgAmount),
+      netPay: round2(Math.max(0, gross - totalDeductions - stat.cpfEmployee - stat.shgAmount)),
       status: "Draft",
     });
     created += 1;
@@ -808,6 +878,17 @@ export function addLeaveRequest(
   void supabase.from("leave_requests").insert({ id: row.id, ...toLeave(row) })
     .then(({ error }) => fail("leave_requests", error));
   const emp = s.employees.find((e) => e.id === row.employeeId);
+  const structuredPayload = JSON.stringify({
+    leaveRequestId: row.id,
+    employeeId: row.employeeId,
+    employeeName: emp?.name ?? "Employee",
+    employeeCode: emp?.employeeCode ?? row.employeeId,
+    type: row.type,
+    startDate: row.startDate,
+    endDate: row.endDate,
+    days: row.days,
+    reason: row.reason ?? "-",
+  });
   addApproval({
     type: "Leave",
     title: `${row.type} — ${emp?.name ?? "Employee"} (${row.days} day${row.days === 1 ? "" : "s"})`,
@@ -815,7 +896,7 @@ export function addLeaveRequest(
     requestedByName: s.currentUser?.name ?? "System",
     requestedAt: now,
     status: "Pending",
-    payload: `Employee: ${emp?.employeeCode ?? row.employeeId}\nType: ${row.type}\nFrom: ${row.startDate}\nTo: ${row.endDate}\nReason: ${row.reason ?? "-"}`,
+    payload: structuredPayload,
   });
   addAuditLog("CREATE", "Leave", row.id, `Leave request ${row.type} for ${emp?.name ?? "employee"}`);
   return row;
@@ -830,43 +911,163 @@ export function updateLeaveRequest(id: string, updates: Partial<LeaveRequest>): 
   void supabase.from("leave_requests").update(toLeave(updated)).eq("id", id)
     .then(({ error }) => fail("leave_requests", error));
   addAuditLog("UPDATE", "Leave", id, `Leave request set to ${updated.status}`);
+
+  // If status changed away from Approved to Rejected or Cancelled, clean up synthetic attendance
+  if (existing.status === "Approved" && (updates.status === "Rejected" || updates.status === "Cancelled")) {
+    const leaveAtt = s.attendance.filter(
+      (a) => a.employeeId === existing.employeeId &&
+        a.date >= existing.startDate &&
+        a.date <= existing.endDate &&
+        (a.status === "On Leave" || a.status === "MC") &&
+        (a.hoursWorked || 0) === 0,
+    );
+    for (const att of leaveAtt) {
+      deleteAttendance(att.id);
+    }
+  }
+
+  // Sync corresponding Approval
+  if (updates.status) {
+    const matchingApp = s.approvals.find(
+      (a) => a.type === "Leave" && (a.payload.includes(id) || (a.status === "Pending" && a.payload.includes(existing.employeeId) && a.payload.includes(existing.startDate))),
+    );
+    if (matchingApp && matchingApp.status !== updates.status) {
+      updateApproval(matchingApp.id, {
+        status: updates.status === "Approved" ? "Approved" : updates.status === "Rejected" ? "Rejected" : "Cancelled",
+        decidedAt: new Date().toISOString(),
+      });
+    }
+  }
+
   return updated;
 }
 
 export function deleteLeaveRequest(id: string): boolean {
   const s = getState();
-  if (!s.leaveRequests.some((l) => l.id === id)) return false;
+  const existing = s.leaveRequests.find((l) => l.id === id);
+  if (!existing) return false;
+
+  // Clean up synthetic attendance if was approved
+  if (existing.status === "Approved") {
+    const leaveAtt = s.attendance.filter(
+      (a) => a.employeeId === existing.employeeId &&
+        a.date >= existing.startDate &&
+        a.date <= existing.endDate &&
+        (a.status === "On Leave" || a.status === "MC") &&
+        (a.hoursWorked || 0) === 0,
+    );
+    for (const att of leaveAtt) {
+      deleteAttendance(att.id);
+    }
+  }
+
+  // Cancel associated pending approval
+  const matchingApp = s.approvals.find(
+    (a) => a.type === "Leave" && (a.payload.includes(id) || (a.status === "Pending" && a.payload.includes(existing.employeeId) && a.payload.includes(existing.startDate))),
+  );
+  if (matchingApp && matchingApp.status === "Pending") {
+    updateApproval(matchingApp.id, { status: "Cancelled", decidedAt: new Date().toISOString() });
+  }
+
   setState({ ...s, leaveRequests: s.leaveRequests.filter((l) => l.id !== id) });
   void supabase.from("leave_requests").delete().eq("id", id).then(({ error }) => fail("leave_requests", error));
   addAuditLog("DELETE", "Leave", id, "Deleted leave request");
   return true;
 }
 
-/** Approve leave and push the days into attendance as On Leave / MC. */
+/** Approve leave and push the days into attendance as On Leave / MC, preserving any worked days. */
 export function approveLeaveRequest(id: string): LeaveRequest | undefined {
   const s = getState();
   const leave = s.leaveRequests.find((l) => l.id === id);
   if (!leave) return undefined;
   const user = s.currentUser;
+  const now = new Date().toISOString();
   const updated = updateLeaveRequest(id, {
     status: "Approved",
     approvedBy: user?.id,
-    approvedAt: new Date().toISOString(),
+    approvedAt: now,
   });
+
   const attendanceStatus =
     leave.type === "Medical Leave" || leave.type === "Hospitalisation Leave" ? "MC" : "On Leave";
   const start = new Date(leave.startDate);
   const end = new Date(leave.endDate);
   for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-    upsertAttendance({
-      employeeId: leave.employeeId,
-      date: d.toISOString().slice(0, 10),
-      status: attendanceStatus,
-      hoursWorked: 0,
-      overtimeHours: 0,
-      notes: `${leave.type}${leave.reason ? ` — ${leave.reason}` : ""}`,
-    });
+    const dateStr = d.toISOString().slice(0, 10);
+    const existing = s.attendance.find((a) => a.employeeId === leave.employeeId && a.date === dateStr);
+    if (existing && ((existing.hoursWorked || 0) > 0 || existing.status === "Present")) {
+      // Work was recorded for this day; preserve hours and annotate with leave status
+      upsertAttendance({
+        id: existing.id,
+        employeeId: leave.employeeId,
+        date: dateStr,
+        status: existing.status,
+        hoursWorked: existing.hoursWorked,
+        overtimeHours: existing.overtimeHours,
+        notes: `${existing.notes || ""}; Approved ${leave.type} (Hours worked preserved)`.replace(/^;\s*/, ""),
+      });
+    } else {
+      upsertAttendance({
+        id: existing?.id,
+        employeeId: leave.employeeId,
+        date: dateStr,
+        status: attendanceStatus,
+        hoursWorked: 0,
+        overtimeHours: 0,
+        notes: `${leave.type}${leave.reason ? ` — ${leave.reason}` : ""}`,
+      });
+    }
   }
+  return updated;
+}
+
+/** Coordinate central approvals page decisions with underlying business records (Leave, etc.). */
+export function syncApprovalDecision(
+  approvalId: string,
+  status: ApprovalStatus,
+  options?: { approverId?: string; approverName?: string; notes?: string },
+): Approval | undefined {
+  const s = getState();
+  const app = s.approvals.find((a) => a.id === approvalId);
+  if (!app) return undefined;
+
+  const now = new Date().toISOString();
+  const updated = updateApproval(approvalId, {
+    status,
+    approverId: options?.approverId,
+    approverName: options?.approverName,
+    approverNotes: options?.notes,
+    decidedAt: now,
+  });
+
+  if (app.type === "Leave") {
+    let leaveId = "";
+    try {
+      const parsed = JSON.parse(app.payload);
+      if (parsed.leaveRequestId) leaveId = parsed.leaveRequestId;
+    } catch {
+      const m = /leaveRequestId[:"'\s]+([a-zA-Z0-9-]+)/.exec(app.payload);
+      if (m) leaveId = m[1];
+    }
+
+    if (!leaveId) {
+      const found = s.leaveRequests.find(
+        (l) => app.payload.includes(l.startDate) && (app.payload.includes(l.employeeId) || app.title.includes(l.type)),
+      );
+      if (found) leaveId = found.id;
+    }
+
+    if (leaveId) {
+      if (status === "Approved") {
+        approveLeaveRequest(leaveId);
+        void notifyLeaveDecision(leaveId, "Approved");
+      } else if (status === "Rejected") {
+        updateLeaveRequest(leaveId, { status: "Rejected" });
+        void notifyLeaveDecision(leaveId, "Rejected");
+      }
+    }
+  }
+
   return updated;
 }
 

@@ -42,7 +42,7 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { getApprovals, getUsers, getCurrentUser, updateApproval } from "@/lib/store";
+import { getApprovals, getUsers, getCurrentUser, updateApproval, syncApprovalDecision } from "@/lib/store";
 import type { Approval, ApprovalStatus, ApprovalType } from "@/lib/types";
 
 const approvalTypes: ApprovalType[] = ["Assignment", "Leave", "Payroll", "Overtime", "Transfer", "Termination", "Document", "Other"];
@@ -83,14 +83,26 @@ export default function ApprovalsPage() {
     setApprovals(getApprovals());
   }
 
+  function formatPayload(raw?: string): string {
+    if (!raw) return "—";
+    try {
+      const data = JSON.parse(raw);
+      if (typeof data === "object" && data !== null) {
+        return Object.entries(data)
+          .filter(([k]) => k !== "leaveRequestId")
+          .map(([k, v]) => `${k.charAt(0).toUpperCase() + k.slice(1).replace(/([A-Z])/g, " $1")}: ${v}`)
+          .join("\n");
+      }
+    } catch {}
+    return raw;
+  }
+
   function decide(status: ApprovalStatus) {
     if (!selected) return;
-    updateApproval(selected.id, {
-      status,
+    syncApprovalDecision(selected.id, status, {
       approverId: currentUser?.id,
       approverName: currentUser?.name,
-      approverNotes: notes,
-      decidedAt: new Date().toISOString(),
+      notes,
     });
     setSelected(null);
     setNotes("");
@@ -222,7 +234,7 @@ export default function ApprovalsPage() {
             <div className="space-y-3">
               <div className="rounded-lg border bg-muted/50 p-3">
                 <p className="text-sm font-medium text-muted-foreground">Payload</p>
-                <p className="mt-1 text-sm whitespace-pre-wrap">{selected?.payload}</p>
+                <p className="mt-1 text-sm whitespace-pre-wrap">{formatPayload(selected?.payload)}</p>
               </div>
               {selected?.status !== "Pending" && (
                 <div className="rounded-lg border bg-muted/50 p-3">
