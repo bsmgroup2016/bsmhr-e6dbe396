@@ -1,4 +1,4 @@
-import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
@@ -59,6 +59,13 @@ function AuthPage() {
             <div><h1 className="text-lg font-semibold tracking-tight">BSM Engineering</h1><p className="text-xs text-muted-foreground">Workforce & Operations Management</p></div>
           </div>
           <AuthCard />
+          <p className="mt-4 text-center text-xs text-muted-foreground">
+            By signing in you agree to our{" "}
+            <Link to="/privacy" className="font-medium text-primary underline-offset-4 hover:underline">
+              Privacy Policy
+            </Link>
+            . Location is recorded only at check-in/check-out.
+          </p>
         </section>
       </div>
     </div>
