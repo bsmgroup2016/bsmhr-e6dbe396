@@ -1,5 +1,12 @@
 # Full-section UI/UX and workflow audit
 
+## Worker attendance submission error
+
+- [x] Investigate the reported pre-handler 502: current direct requests reach the handler; daemon logs contain no underlying transform error.
+- [x] Remove the absent event-table/proof-column dependency from direct portal punches only; retain QR/offline safeguards and existing authorization.
+- [x] Verify 22 focused punch/data regressions; running endpoint reaches authentication rather than a pre-handler 502.
+- [ ] Verify real signed-in worker check-in/check-out and UI read-back. Blocker: no authorized external-account browser session is available.
+
 ## User account lists
 
 - [x] Make worker Username edits authoritative over alias-email fields, require account/profile read-back and show the saved login ID; 12 focused tests pass, preview build is clean and unauthenticated updates return 401. Real worker sign-in remains blocked by unavailable external account session below.

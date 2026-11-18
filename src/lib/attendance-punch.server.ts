@@ -1,4 +1,4 @@
-import { UNAVAILABLE_TABLES } from "@/core/data-tables";
+import { TABLE_COLUMNS, UNAVAILABLE_TABLES } from "@/core/data-tables";
 /**
  * Shared punch application used by both the single punch endpoint and the
  * offline batch sync endpoint.
@@ -53,8 +53,12 @@ export async function applyPunch(
   employeeId: string,
   source = "mobile",
 ): Promise<PunchOutcome> {
-  if (UNAVAILABLE_TABLES.has("attendance_events")) return { clientEventId: event.clientEventId?.trim() || null, status: "error", message: "QR/mobile attendance punches are unavailable: attendance_events is not present in the connected database. Use manual attendance instead." };
   const clientEventId = event.clientEventId?.trim() || null;
+  // Direct portal punches use the existing daily attendance row. Queued/QR
+  // punches still require the event table for their replay/proof contract.
+  const directPunch = source === "single" && !clientEventId && !event.siteId && !event.selfieKey;
+  if (UNAVAILABLE_TABLES.has("attendance_events") && !directPunch)
+    return { clientEventId, status: "error", message: "QR/mobile attendance punches are unavailable: attendance_events is not present in the connected database. Use manual attendance instead." };
   const date =
     event.date ??
     (event.punchedAt && !Number.isNaN(Date.parse(event.punchedAt))
@@ -187,6 +191,15 @@ export async function applyPunch(
     if (event.selfieKey) payload["check_in_selfie_key"] = event.selfieKey;
     payload["check_in_verification"] = verdict.verification;
     if (verdict.distanceM != null) payload["check_in_distance_m"] = verdict.distanceM;
+  }
+
+  // The connected schema supports times/GPS, but not the optional QR proof
+  // columns. Never send those absent columns with a direct portal punch.
+  if (directPunch) {
+    const columns = new Set(TABLE_COLUMNS.attendance.split(","));
+    for (const column of Object.keys(payload)) {
+      if (!columns.has(column)) delete payload[column];
+    }
   }
 
   const row = existing[0];
