@@ -18,7 +18,7 @@ export const ASSISTANT_TABLES = [
   "leads", "crm_activities", "time_cards", "claim_sheets", "departments", "designations", "audit_logs",
 ] as const;
 
-import { activeProviders } from "./api-integrations.server";
+import { activeProviders, postChat } from "./api-integrations.server";
 
 /** Chatbot providers come from Settings → API Integration (fallback order, on/off, keys). */
 async function providers() {
@@ -216,11 +216,7 @@ export async function runAssistant(messages: ChatMsg[], auth: string, anon: stri
     try {
       const convo: Record<string, unknown>[] = [{ role: "system", content: `${SYSTEM} Today is ${today}.${trained}` }, ...messages];
       for (let step = 0; step < 8; step++) {
-        const res = await fetch(p.url, {
-          method: "POST",
-          headers: { Authorization: `Bearer ${p.key}`, "Content-Type": "application/json", ...p.extra },
-          body: JSON.stringify({ model: p.model, messages: convo, tools, tool_choice: "auto" }),
-        });
+        const res = await postChat(p, { messages: convo, tools, tool_choice: "auto" });
         if (!res.ok) throw new Error(`${p.name} ${res.status}: ${(await res.text()).slice(0, 200)}`);
         const json = (await res.json()) as { choices?: { message?: { content?: string; tool_calls?: { id: string; function: { name: string; arguments: string } }[] } }[] };
         const msg = json.choices?.[0]?.message;
