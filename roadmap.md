@@ -2,6 +2,8 @@
 
 ## User account lists
 
+- [x] Replace confusing pending badges with per-worker Create login & password controls; controlled desktop/mobile checks verified creation action and private credential dialog, with 17 tests passing. Real external-account login remains blocked below.
+
 - [x] Show existing workers without logins, add admin-controlled account backfill and name-based login identifiers, and auto-create accounts after confirmed worker saves. Passwords are unique, not shared defaults.
 - [x] Verify account retry/link rules, existing-account preservation, login identifiers and desktop/mobile controls with 17 passing tests and a controlled populated browser check; unauthenticated provisioning returns 401.
 - [ ] Verify real signed-in account creation and worker login. Blocker: external account service has no authorized browser session; existing worker backfill awaits the admin's Create missing logins action.

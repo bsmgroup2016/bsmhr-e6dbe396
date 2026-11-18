@@ -312,6 +312,22 @@ export default function UsersPage() {
     finally { setSavingId(null); }
   }
 
+  async function createWorkerLogin(employeeId: string) {
+    setSavingId(employeeId);
+    try {
+      const response = await ensureWorkerAccounts([employeeId]);
+      if (!response.results[0]?.ok) throw new Error("Could not create this worker login. Please retry.");
+      // Newly created accounts have no shared default; admin receives a unique password here.
+      setCredentials(await resetWorkerPassword(employeeId));
+      toast.success("Worker login created");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not create worker login");
+    } finally {
+      await load();
+      setSavingId(null);
+    }
+  }
+
   function switchGroup(value: string) {
     if (value !== "staff" && value !== "workers" && value !== "unassigned") return;
     setGroup(value);
@@ -354,15 +370,18 @@ export default function UsersPage() {
 
         {group === "workers" && missingWorkers.length > 0 && <section className="space-y-3 border-y py-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <h3 className="font-semibold">Workers without login ({missingWorkers.length})</h3>
+            <h3 className="font-semibold">Set up worker logins ({missingWorkers.length})</h3>
             <Button size="sm" disabled={provisioning} onClick={() => void createMissingAccounts()}>
-              {provisioning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}Create missing logins
+              {provisioning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}Create all logins
             </Button>
           </div>
           <div className="max-h-56 overflow-auto divide-y">
-            {missingWorkers.map(worker => <div key={worker.id} className="flex items-center justify-between gap-3 py-2 text-sm">
+            {missingWorkers.map(worker => <div key={worker.id} className="flex flex-wrap items-center justify-between gap-3 py-2 text-sm">
               <span className="min-w-0 break-words">{worker.name} <span className="text-muted-foreground">· {worker.employee_code}</span></span>
-              <StatusBadge variant="warning" label="Login pending" />
+              <Button size="sm" variant="outline" disabled={provisioning || savingId !== null}
+                aria-label={`Create login and password for ${worker.name}`} onClick={() => void createWorkerLogin(worker.id)}>
+                {savingId === worker.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />}Create login & password
+              </Button>
             </div>)}
           </div>
         </section>}
