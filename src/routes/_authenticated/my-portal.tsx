@@ -99,15 +99,15 @@ function PortalShell({ worker, employee, tab, setTab, children }: { worker: bool
   if (!worker) return <AppShell>{children}</AppShell>;
   return (
     <div className="worker-app min-h-svh bg-background text-foreground">
-      <header className="sticky top-0 z-30 flex items-center gap-3 border-b bg-card/95 px-4 lg:px-8 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/15 font-semibold text-primary">
+      <header className="sticky top-0 z-30 flex items-center gap-3 rounded-b-3xl bg-primary px-4 pb-4 pt-[max(0.9rem,env(safe-area-inset-top))] text-primary-foreground shadow-md lg:rounded-none lg:border-b lg:bg-card/95 lg:px-8 lg:pb-3 lg:text-foreground lg:shadow-none lg:backdrop-blur">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary-foreground/20 text-lg font-semibold lg:h-10 lg:w-10 lg:bg-primary/15 lg:text-base lg:text-primary">
           {(employee?.name ?? "?").slice(0, 1)}
         </div>
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-semibold">{employee?.name ?? "My Portal"}</p>
-          <p className="truncate text-xs text-muted-foreground">{employee ? `${employee.employeeCode} · ${employee.trade}` : "BSM Workforce"}</p>
+          <p className="truncate text-xs opacity-80 lg:text-muted-foreground lg:opacity-100">{employee ? `${employee.employeeCode} · ${employee.trade}` : "BSM Workforce"}</p>
         </div>
-        <Button size="icon" variant="ghost" aria-label="Sign out" onClick={() => void signOut().then(() => window.location.replace("/auth"))}>
+        <Button size="icon" variant="ghost" className="rounded-full hover:bg-primary-foreground/15 hover:text-primary-foreground lg:hover:bg-muted lg:hover:text-foreground" aria-label="Sign out" onClick={() => void signOut().then(() => window.location.replace("/auth"))}>
           <LogOut className="h-5 w-5" />
         </Button>
       </header>
@@ -125,16 +125,16 @@ function PortalShell({ worker, employee, tab, setTab, children }: { worker: bool
             </nav>
           </aside>
         )}
-        <main className="min-w-0 flex-1 px-4 pb-[calc(5.5rem+env(safe-area-inset-bottom))] pt-4 lg:px-8 lg:pb-10 lg:pt-6">{children}</main>
+        <main className="min-w-0 flex-1 px-4 pb-[calc(6.5rem+env(safe-area-inset-bottom))] pt-5 lg:px-8 lg:pb-10 lg:pt-6">{children}</main>
       </div>
       {employee && (
-        <nav className="lg:hidden fixed inset-x-0 bottom-0 z-30 border-t bg-card/95 pb-[env(safe-area-inset-bottom)] backdrop-blur" aria-label="Portal">
-          <div className="mx-auto grid max-w-3xl grid-cols-5">
+        <nav className="lg:hidden fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-30 rounded-2xl border bg-card/95 shadow-lg backdrop-blur" aria-label="Portal">
+          <div className="mx-auto grid max-w-3xl grid-cols-5 p-1.5">
             {TABS.map(({ id, label, icon: Icon }) => (
               <button key={id} type="button" onClick={() => { setTab(id); window.scrollTo({ top: 0 }); }}
-                className={`flex min-h-[60px] flex-col items-center justify-center gap-1 text-[11px] font-medium ${tab === id ? "text-primary" : "text-muted-foreground"}`}
+                className={`flex min-h-[56px] flex-col items-center justify-center gap-0.5 rounded-xl text-[10.5px] font-medium transition-colors active:scale-95 ${tab === id ? "bg-primary/12 text-primary" : "text-muted-foreground"}`}
                 aria-current={tab === id ? "page" : undefined}>
-                <Icon className="h-5 w-5" />{label}
+                <Icon className={`h-5 w-5 ${tab === id ? "stroke-[2.4]" : ""}`} /><span className="max-w-full truncate px-0.5">{label}</span>
               </button>
             ))}
           </div>
@@ -145,7 +145,7 @@ function PortalShell({ worker, employee, tab, setTab, children }: { worker: bool
 }
 
 function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return <div className={`rounded-xl border bg-card p-4 shadow-sm ${className}`}>{children}</div>;
+  return <div className={`rounded-2xl border bg-card p-4 shadow-sm ${className}`}>{children}</div>;
 }
 
 function localDate(d = new Date()) {
@@ -201,15 +201,26 @@ function PunchCard({ checkIn, checkOut, status, onDone }: { checkIn?: string; ch
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
         <div className="min-w-0">
           <p className="text-xs uppercase tracking-wide text-muted-foreground">Today's attendance</p>
-          <p className="mt-1 text-3xl font-semibold tabular-nums lg:text-4xl">{now ? now.toLocaleTimeString("en-SG", { hour: "2-digit", minute: "2-digit", second: "2-digit" }) : "--:--:--"}</p>
+          <p className="mt-1 text-4xl font-bold tabular-nums tracking-tight lg:text-4xl">{now ? now.toLocaleTimeString("en-SG", { hour: "2-digit", minute: "2-digit", second: "2-digit" }) : "--:--:--"}</p>
           <p className="text-sm text-muted-foreground">{now ? now.toLocaleDateString("en-SG", { weekday: "long", day: "numeric", month: "long", year: "numeric" }) : ""}</p>
-          <div className="mt-4 flex flex-wrap gap-6 text-sm">
-            <div><p className="text-xs text-muted-foreground">Status</p><p className="font-medium">{status && status !== "Present" ? status : state}</p></div>
-            <div><p className="text-xs text-muted-foreground">Check in</p><p className="font-medium tabular-nums">{checkIn ?? "—"}</p></div>
-            <div><p className="text-xs text-muted-foreground">Check out</p><p className="font-medium tabular-nums">{checkOut ?? "—"}</p></div>
+          <div className="mt-4 grid grid-cols-3 gap-2 text-sm lg:flex lg:flex-wrap lg:gap-6">
+            <div className="rounded-xl bg-muted/60 p-2.5 lg:bg-transparent lg:p-0"><p className="text-xs text-muted-foreground">Status</p><p className="font-medium">{status && status !== "Present" ? status : state}</p></div>
+            <div className="rounded-xl bg-muted/60 p-2.5 lg:bg-transparent lg:p-0"><p className="text-xs text-muted-foreground">Check in</p><p className="font-medium tabular-nums">{checkIn ?? "—"}</p></div>
+            <div className="rounded-xl bg-muted/60 p-2.5 lg:bg-transparent lg:p-0"><p className="text-xs text-muted-foreground">Check out</p><p className="font-medium tabular-nums">{checkOut ?? "—"}</p></div>
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-3 lg:w-80">
+        {/* Mobile: one big action that follows the day's state */}
+        <div className="lg:hidden">
+          {checkOut ? (
+            <div className="flex h-16 items-center justify-center rounded-2xl bg-muted text-base font-semibold text-muted-foreground">Day complete — see you tomorrow</div>
+          ) : (
+            <Button size="lg" variant={checkIn ? "secondary" : "default"} className="h-16 w-full gap-2 rounded-2xl text-lg font-semibold shadow-md active:scale-[0.98]" disabled={!!busy} onClick={() => void punch(checkIn ? "out" : "in")}>
+              {busy ? <Loader2 className="h-6 w-6 animate-spin" /> : checkIn ? <LogOut className="h-6 w-6" /> : <LogIn className="h-6 w-6" />}{checkIn ? "Check out" : "Check in"}
+            </Button>
+          )}
+          <p className="mt-2 flex items-center justify-center gap-1.5 text-xs text-muted-foreground"><Clock className="h-3.5 w-3.5 shrink-0" />Your location is recorded with each punch.</p>
+        </div>
+        <div className="hidden grid-cols-2 gap-3 lg:grid lg:w-80">
           <Button size="lg" className="h-14 gap-2 text-base" disabled={!!busy || !!checkIn} onClick={() => void punch("in")}>
             {busy === "in" ? <Loader2 className="h-5 w-5 animate-spin" /> : <LogIn className="h-5 w-5" />}Check in
           </Button>
@@ -340,10 +351,10 @@ function MyPortalPage() {
           setRefresh((n) => n + 1);
         }} />
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
-        <SummaryCard title="Work permit" value={passDays === null ? "—" : `${passDays} days`} icon={<IdCard className="h-5 w-5" />} caption={`expires ${employee.workPermitExpiryDate || employee.passExpiry || "-"}`} />
-        <SummaryCard title="This month" value={`${att.daysWorked} days`} icon={<CalendarCheck className="h-5 w-5" />} caption={`${att.normalHours}h + ${att.otHours}h OT`} />
-        <SummaryCard title="Leave taken" value={`${approvedLeaveDays} days`} icon={<CalendarPlus className="h-5 w-5" />} caption={`${leaves.filter((l) => l.status === "Pending").length} pending`} />
-        <SummaryCard title="Latest net pay" value={lastPayslip ? `$${lastPayslip.netPay.toLocaleString()}` : "—"} icon={<Wallet className="h-5 w-5" />} caption={lastPayslip ? lastPayslip.month : "No payslip yet"} />
+        <SummaryCard compact title="Work permit" value={passDays === null ? "—" : `${passDays} days`} icon={<IdCard className="h-5 w-5" />} caption={`expires ${employee.workPermitExpiryDate || employee.passExpiry || "-"}`} />
+        <SummaryCard compact title="This month" value={`${att.daysWorked} days`} icon={<CalendarCheck className="h-5 w-5" />} caption={`${att.normalHours}h + ${att.otHours}h OT`} />
+        <SummaryCard compact title="Leave taken" value={`${approvedLeaveDays} days`} icon={<CalendarPlus className="h-5 w-5" />} caption={`${leaves.filter((l) => l.status === "Pending").length} pending`} />
+        <SummaryCard compact title="Latest net pay" value={lastPayslip ? `$${lastPayslip.netPay.toLocaleString()}` : "—"} icon={<Wallet className="h-5 w-5" />} caption={lastPayslip ? lastPayslip.month : "No payslip yet"} />
       </div>
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
