@@ -1,5 +1,12 @@
 # Full-section UI/UX and workflow audit
 
+## IPA side-by-side verification and duplicate warnings
+
+- [x] Show original IPA pages beside extracted particulars and the editable form; require review confirmation and preserve missing/additional readings without invented confidence.
+- [x] Check FIN, passport and P-File against fresh paginated caller-visible employee records before saving; require explicit identity-match acknowledgement and retain the existing unique P-File rule.
+- [x] Validate isolated desktop/mobile image and two-page PDF rendering, page navigation and review confirmation with no overflow or page errors; focused matching/mapping/read-failure tests pass.
+- [ ] Verify real signed-in IPA upload, source access, duplicate acknowledgement and employee save/read-back. Blocker: no authorized external-account browser session is available.
+
 ## Worker punch and returning-session reliability
 
 - [x] Fix stale portal punch state, safe repeated punches, confirmed attendance read-back and auth refresh callback locking; 265 regression tests pass, signed-out portal redirects to /auth and attendance GET/POST return 401 with no browser page errors.

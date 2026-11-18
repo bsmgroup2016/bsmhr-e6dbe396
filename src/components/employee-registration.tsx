@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { FileText, UserRoundPen, Loader2, RotateCcw } from "lucide-react";
 import { EmployeeForm } from "@/components/employee-form";
+import { IpaReview } from "@/components/ipa-review";
+import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FileUpload } from "@/components/file-upload";
 import { Button } from "@/components/ui/button";
@@ -25,12 +27,14 @@ export function EmployeeRegistration({ onSubmit, existingEmployeeId }: { onSubmi
   const [pFile, setPFile] = useState("");
   const [prefix, setPrefix] = useState("");
   const [confirmed, setConfirmed] = useState<{ code: string; branch: string } | null>(null);
+  const [reviewed, setReviewed] = useState(false);
 
   async function readIpa(fileUrl: string) {
     setUrl(fileUrl);
     setReading(true);
     setError("");
     setExtracted(null);
+    setReviewed(false);
     try {
       const result = await extractIpaData(fileUrl);
       if (!result.ok) { setError(result.reason); return; }
@@ -83,6 +87,9 @@ export function EmployeeRegistration({ onSubmit, existingEmployeeId }: { onSubmi
             {extracted.employerName && <span className="mt-1 block">Employer on IPA: {extracted.employerName}</span>}
             {matches.length !== 1 && <span className="mt-1 block">Confirm the branch / company.</span>}
           </AlertDescription></Alert>
+          <div className="grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
+          <IpaReview key={url} url={url} extracted={extracted} reviewed={reviewed} onReviewed={setReviewed} />
+          <div className="min-w-0" onChangeCapture={event => { if (!(event.target as HTMLElement).hasAttribute("data-duplicate-confirm")) setReviewed(false); }}>
           {!confirmed ? (() => {
             const options = prefixesForCompany(company);
             const chosen = options.includes(prefix) ? prefix : options[0];
@@ -107,7 +114,11 @@ export function EmployeeRegistration({ onSubmit, existingEmployeeId }: { onSubmi
               </div>
               <Button type="button" disabled={!company || taken} onClick={() => { setConfirmed({ code: typed || auto, branch: company }); setRevision((v) => v + 1); }}>Continue</Button>
             </div>;
-          })() : <EmployeeForm key={revision} existingEmployeeId={existingEmployeeId} initialValues={{ ...ipaEmployeeDefaults(extracted, url, confirmed.branch), branch: confirmed.branch, employeeCode: confirmed.code }} onSubmit={onSubmit} />}
+          })() : <EmployeeForm key={revision} existingEmployeeId={existingEmployeeId} initialValues={{ ...ipaEmployeeDefaults(extracted, url, confirmed.branch), branch: confirmed.branch, employeeCode: confirmed.code }} onSubmit={data => {
+            if (!reviewed) { toast.error("Check the original IPA and confirm the details before saving."); return; }
+            return onSubmit(data);
+          }} />}
+          </div></div>
         </>}
       </TabsContent>
       <TabsContent forceMount value="manual" className="mt-5 data-[state=inactive]:hidden">
