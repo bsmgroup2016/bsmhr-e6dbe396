@@ -448,7 +448,7 @@ function MyPortalPage() {
       <Card className="grid gap-3 p-3 sm:flex sm:flex-wrap sm:items-end">
         <div className="grid grid-cols-3 rounded-lg border p-1">
           {(["daily", "weekly", "monthly"] as const).map((v) => (
-            <button key={v} type="button" onClick={() => setAttView(v)} className={`rounded-md px-4 py-2 text-sm font-medium capitalize ${attView === v ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}>{v}</button>
+            <button key={v} type="button" onClick={() => setAttView(v)} className={`rounded-md px-2 py-2 text-sm sm:px-4 font-medium capitalize ${attView === v ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}>{v}</button>
           ))}
         </div>
         {attView === "monthly" ? (
@@ -466,7 +466,20 @@ function MyPortalPage() {
         {stat("Leave / MC", attSum.leave)}
       </div>
       {attSum.rows.length === 0 ? <EmptyState icon={<CalendarCheck className="h-5 w-5" />} title="No attendance" description="No attendance recorded for this period." /> : (
-        <Card className="overflow-x-auto p-0">
+        <>
+        <ul className="space-y-2 lg:hidden">
+          {attSum.rows.map((a) => (
+            <li key={a.id} className="rounded-2xl border bg-card p-3 shadow-sm">
+              <div className="flex items-center justify-between gap-3"><p className="min-w-0 truncate text-sm font-semibold">{fmtDay(a.date)}</p><StatusBadge label={a.status} /></div>
+              <div className="mt-2 grid grid-cols-4 gap-2 text-center text-xs">
+                {([["In", a.checkIn ?? "-"], ["Out", a.checkOut ?? "-"], ["Hours", a.hoursWorked], ["OT", a.overtimeHours]] as const).map(([l, v]) => (
+                  <div key={l} className="rounded-lg bg-muted/60 py-1.5"><p className="text-muted-foreground">{l}</p><p className="text-sm font-medium tabular-nums">{v}</p></div>
+                ))}
+              </div>
+            </li>
+          ))}
+        </ul>
+        <Card className="hidden overflow-x-auto p-0 lg:block">
           <table className="w-full min-w-[560px] text-sm">
             <thead className="border-b bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
               <tr><th className="px-4 py-3">Date</th><th className="px-4 py-3">Check in</th><th className="px-4 py-3">Check out</th><th className="px-4 py-3 text-right">Hours</th><th className="px-4 py-3 text-right">OT</th><th className="px-4 py-3">Status</th></tr>
@@ -478,6 +491,7 @@ function MyPortalPage() {
             </tbody>
           </table>
         </Card>
+        </>
       )}
     </div>
   );
@@ -501,12 +515,12 @@ function MyPortalPage() {
           </Card>
         ))}
       </div>
-      <Card className="flex flex-wrap items-end gap-3 p-3">
+      <Card className="grid grid-cols-2 items-end gap-3 p-3 sm:flex sm:flex-wrap">
         <div className="grid gap-1"><Label className="text-xs">Year</Label>
-          <Select value={String(leaveYear)} onValueChange={(v) => setLeaveYear(Number(v))}><SelectTrigger className="h-10 w-28"><SelectValue /></SelectTrigger><SelectContent>{years.map((y) => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}</SelectContent></Select>
+          <Select value={String(leaveYear)} onValueChange={(v) => setLeaveYear(Number(v))}><SelectTrigger className="h-10 w-full sm:w-28"><SelectValue /></SelectTrigger><SelectContent>{years.map((y) => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}</SelectContent></Select>
         </div>
         <div className="grid gap-1"><Label className="text-xs">Month</Label>
-          <Select value={String(leaveMonth)} onValueChange={(v) => setLeaveMonth(Number(v))}><SelectTrigger className="h-10 w-40"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="0">Whole year</SelectItem>{Array.from({ length: 12 }, (_, i) => <SelectItem key={i + 1} value={String(i + 1)}>{new Date(2000, i, 1).toLocaleString("en-SG", { month: "long" })}</SelectItem>)}</SelectContent></Select>
+          <Select value={String(leaveMonth)} onValueChange={(v) => setLeaveMonth(Number(v))}><SelectTrigger className="h-10 w-full sm:w-40"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="0">Whole year</SelectItem>{Array.from({ length: 12 }, (_, i) => <SelectItem key={i + 1} value={String(i + 1)}>{new Date(2000, i, 1).toLocaleString("en-SG", { month: "long" })}</SelectItem>)}</SelectContent></Select>
         </div>
       </Card>
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
@@ -517,7 +531,17 @@ function MyPortalPage() {
         {stat("Approved days", lv.approvedDays)}
       </div>
       {lv.rows.length === 0 ? <EmptyState icon={<CalendarPlus className="h-5 w-5" />} title="No leave requests" description="No requests in this period." /> : (
-        <Card className="overflow-x-auto p-0">
+        <>
+        <ul className="space-y-2 lg:hidden">
+          {lv.rows.map((l) => (
+            <li key={l.id} className="rounded-2xl border bg-card p-3 shadow-sm">
+              <div className="flex items-center justify-between gap-3"><p className="min-w-0 truncate text-sm font-semibold">{l.type}</p><StatusBadge label={l.status} /></div>
+              <p className="mt-1 text-sm tabular-nums text-muted-foreground">{l.startDate}{l.endDate && l.endDate !== l.startDate ? ` → ${l.endDate}` : ""} · {l.days} day{l.days === 1 ? "" : "s"}</p>
+              {(l.remarks || l.reason) && <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{l.remarks || l.reason}</p>}
+            </li>
+          ))}
+        </ul>
+        <Card className="hidden overflow-x-auto p-0 lg:block">
           <table className="w-full min-w-[560px] text-sm">
             <thead className="border-b bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
               <tr><th className="px-4 py-3">Type</th><th className="px-4 py-3">From</th><th className="px-4 py-3">To</th><th className="px-4 py-3 text-right">Days</th><th className="px-4 py-3">Reason</th><th className="px-4 py-3">Status</th></tr>
@@ -529,6 +553,7 @@ function MyPortalPage() {
             </tbody>
           </table>
         </Card>
+        </>
       )}
     </div>
   );
@@ -539,10 +564,10 @@ function MyPortalPage() {
   const line = (label: string, v?: number, neg = false) => v ? <div className="flex justify-between gap-3 py-1.5 text-sm"><span className="text-muted-foreground">{label}</span><span className="tabular-nums">{neg ? "-" : ""}{money(v)}</span></div> : null;
   const payslipView = payslips.length === 0 ? <EmptyState icon={<Wallet className="h-5 w-5" />} title="No payslips" description="Your payslips will appear here once payroll is processed." /> : (
     <div className="space-y-4">
-      <Card className="flex flex-wrap items-end gap-3 p-3">
-        <div className="grid gap-1"><Label htmlFor="pay-from" className="text-xs">From month</Label><Input id="pay-from" type="month" className="h-10 w-44" value={payFrom} onChange={(e) => setPayFrom(e.target.value)} /></div>
-        <div className="grid gap-1"><Label htmlFor="pay-to" className="text-xs">To month</Label><Input id="pay-to" type="month" className="h-10 w-44" value={payTo} onChange={(e) => setPayTo(e.target.value)} /></div>
-        <Button variant="ghost" className="h-10" onClick={() => { setPayFrom(""); setPayTo(""); }}>All time</Button>
+      <Card className="grid grid-cols-2 items-end gap-3 p-3 sm:flex sm:flex-wrap">
+        <div className="grid gap-1"><Label htmlFor="pay-from" className="text-xs">From month</Label><Input id="pay-from" type="month" className="h-10 w-full sm:w-44" value={payFrom} onChange={(e) => setPayFrom(e.target.value)} /></div>
+        <div className="grid gap-1"><Label htmlFor="pay-to" className="text-xs">To month</Label><Input id="pay-to" type="month" className="h-10 w-full sm:w-44" value={payTo} onChange={(e) => setPayTo(e.target.value)} /></div>
+        <Button variant="outline" className="col-span-2 h-10 sm:col-auto" onClick={() => { setPayFrom(""); setPayTo(""); }}>All time</Button>
       </Card>
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {stat("Months paid", ps.months)}
@@ -556,7 +581,7 @@ function MyPortalPage() {
             <ul className="divide-y">
               {ps.rows.map((p) => (
                 <li key={p.id}>
-                  <button type="button" onClick={() => setPaySel(p.id)} className={`flex w-full items-center justify-between gap-3 px-4 py-3 text-left ${selected?.id === p.id ? "bg-primary/10" : "hover:bg-muted/50"}`}>
+                  <button type="button" onClick={() => { setPaySel(p.id); if (window.innerWidth < 1024) window.setTimeout(() => document.getElementById("payslip-detail")?.scrollIntoView({ behavior: "smooth", block: "start" }), 50); }} className={`flex w-full items-center justify-between gap-3 px-4 py-3 text-left ${selected?.id === p.id ? "bg-primary/10" : "hover:bg-muted/50"}`}>
                     <div className="min-w-0"><p className="font-medium">{new Date(`${p.month}-01T00:00:00`).toLocaleDateString("en-SG", { month: "long", year: "numeric" })}</p><p className="text-xs text-muted-foreground">{p.status}</p></div>
                     <span className="shrink-0 font-semibold tabular-nums">{money(p.netPay)}</span>
                   </button>
@@ -565,7 +590,7 @@ function MyPortalPage() {
             </ul>
           </Card>
           {selected && (
-            <Card className="p-5 lg:sticky lg:top-24 lg:self-start">
+            <div id="payslip-detail" className="scroll-mt-20 lg:sticky lg:top-24 lg:self-start"><Card className="p-5">
               <div className="mb-3 flex items-start justify-between gap-3">
                 <div><p className="text-xs uppercase tracking-wide text-muted-foreground">Payslip</p><p className="text-lg font-semibold">{new Date(`${selected.month}-01T00:00:00`).toLocaleDateString("en-SG", { month: "long", year: "numeric" })}</p></div>
                 <StatusBadge label={selected.status} />
@@ -590,7 +615,7 @@ function MyPortalPage() {
               <Button variant="outline" className="mt-4 h-10 w-full gap-2" onClick={() => void downloadPayslipPdf(selected, { employee }).catch(() => toast.error("Could not create payslip PDF"))}>
                 <Download className="h-4 w-4" />Download payslip
               </Button>
-            </Card>
+            </Card></div>
           )}
         </div>
       )}
