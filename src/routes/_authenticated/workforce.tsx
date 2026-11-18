@@ -636,7 +636,7 @@ export default function WorkforcePage() {
                 Register employee
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-h-[90vh] w-[calc(100%-2rem)] overflow-y-auto sm:max-w-3xl">
+            <DialogContent className="max-h-[90vh] w-[calc(100%-2rem)] overflow-y-auto sm:max-w-3xl lg:max-w-6xl">
               <DialogHeader>
                 <DialogTitle>Register new employee</DialogTitle>
                 <DialogDescription>A unique P-File number will be generated automatically.</DialogDescription>

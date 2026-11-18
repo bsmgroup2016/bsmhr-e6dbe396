@@ -32,6 +32,9 @@ import { documentEmployeeFields, type EmployeeDocumentKind } from "@/core/employ
 import { isOfficeStaff } from "@/lib/workforce-split";
 import { employeeDocumentSection, storedFormDocumentUrls } from "@/core/employee-form-documents";
 import { EmployeeSavedDocuments } from "@/components/employee-saved-documents";
+import { checkEmployeeDuplicates } from "@/lib/employee-duplicate-check";
+import type { DuplicateEmployee } from "@/core/employee-duplicates";
+import { DuplicateCompareDialog } from "@/components/duplicate-compare";
 import type {
   DeploymentStatus,
   Employee,
@@ -251,6 +254,13 @@ export function EmployeeForm({
   const [ipaUrl, setIpaUrl] = useState(values?.ipaDocumentUrl ?? "");
   const [scanning, setScanning] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [duplicates, setDuplicates] = useState<DuplicateEmployee[]>([]);
+  const [duplicateAcknowledged, setDuplicateAcknowledged] = useState(false);
+  const [duplicateError, setDuplicateError] = useState("");
+  const duplicateRef = useRef<HTMLDivElement>(null);
+  const [compareMatch, setCompareMatch] = useState<DuplicateEmployee | null>(null);
+  const [compareValues, setCompareValues] = useState<Record<string, string>>({});
+  const openCompare = (match: DuplicateEmployee) => { const values: Record<string, string> = {}; if (formRef.current) new FormData(formRef.current).forEach((v, k) => { if (typeof v === "string") values[k] = v; }); setCompareValues(values); setCompareMatch(match); };
   const formRef = useRef<HTMLFormElement>(null);
   const [documentReading, setDocumentReading] = useState(0);
   const [documentRefs, setDocumentRefs] = useState<Partial<Record<EmployeeDocumentKind, string>>>({ particular: values?.pFileUrl, passport: storedDocs.passportUpload, workpermit: storedDocs.workPermitUpload, csoc: storedDocs.csocUpload });
@@ -361,6 +371,7 @@ export function EmployeeForm({
   return (
     <form
       ref={formRef}
+      onChangeCapture={event => { if ((event.target as HTMLElement).hasAttribute("data-duplicate-confirm")) return; setDuplicateAcknowledged(false); setDuplicates([]); setDuplicateError(""); }}
       onInvalidCapture={(e) => {
         const el = e.target as HTMLElement;
         const panel = el.closest("[data-tab-panel]") as HTMLElement | null;
@@ -374,13 +385,30 @@ export function EmployeeForm({
           setTimeout(() => el.focus?.(), 50);
         }
       }}
-      onSubmit={(e) => {
+      onSubmit={async (e) => {
         e.preventDefault();
         if (documentReading > 0 || scanning) return;
-    if (saving || taken) return;
-    const data = new FormData(e.currentTarget);
-    setSaving(true);
-    Promise.resolve().then(() => onSubmit(data)).catch(error => toast.error(error instanceof Error ? error.message : "Could not save employee")).finally(() => setSaving(false));
+        if (saving || taken) return;
+        const data = new FormData(e.currentTarget);
+        setSaving(true);
+        setDuplicateError("");
+        try {
+          if (!readOnly) {
+            const matches = await checkEmployeeDuplicates({ fin: String(data.get("fin") ?? ""), passportNumber: String(data.get("passportNumber") ?? ""), employeeCode: String(data.get("employeeCode") ?? "") }, employee?.id ?? existingEmployeeId);
+            const sameMatches = JSON.stringify(matches) === JSON.stringify(duplicates);
+            setDuplicates(matches);
+            if (matches.some(match => match.fields.includes("employeeCode")) || (matches.length > 0 && (!duplicateAcknowledged || !sameMatches))) {
+              setDuplicateAcknowledged(false);
+              requestAnimationFrame(() => duplicateRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }));
+              return;
+            }
+          }
+          await onSubmit(data);
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "Could not save employee";
+          setDuplicateError(message);
+          toast.error(message);
+        } finally { setSaving(false); }
       }}
       className="space-y-4"
     >
@@ -796,9 +824,17 @@ export function EmployeeForm({
       </Tabs>
       </fieldset>
 
+      {(duplicates.length > 0 || duplicateError) && <div ref={duplicateRef} className="space-y-3" role="alert">
+        <Alert variant="destructive"><AlertTriangle className="h-4 w-4" /><AlertDescription>
+          {duplicateError || <><p className="font-semibold">Possible duplicate worker</p><ul className="mt-2 space-y-2">{duplicates.map((match, index) => <li key={match.employee.id ?? index} className="break-words">{match.employee.name} · {match.employee.employeeCode} — matches {match.fields.map(field => field === "fin" ? "FIN" : field === "passportNumber" ? "Passport number" : "P-File number").join(", ")} <button type="button" className="ml-1 underline font-medium" onClick={() => openCompare(match)}>Compare side by side</button></li>)}</ul></>}
+        </AlertDescription></Alert>
+        {duplicates.length > 0 && !duplicates.some(match => match.fields.includes("employeeCode")) && <label className="flex items-start gap-2 text-sm"><input type="checkbox" data-duplicate-confirm className="mt-1 accent-primary" checked={duplicateAcknowledged} onChange={event => setDuplicateAcknowledged(event.target.checked)} />I have verified these matches and intend to save this worker separately.</label>}
+        {duplicates.some(match => match.fields.includes("employeeCode")) && <p className="text-sm text-destructive">Choose a different P-File number before saving.</p>}
+      </div>}
+      <DuplicateCompareDialog match={compareMatch} formValues={compareValues} onClose={() => setCompareMatch(null)} />
       <div className={readOnly && tab !== "documents" ? "hidden" : "flex justify-end pt-2"}>
         {documentReading > 0 && <span role="status" className="mr-3 text-sm text-muted-foreground">Reading document…</span>}
-        <Button type="submit" disabled={documentReading > 0 || scanning || saving || taken}>{saving ? "Saving…" : submitLabel ?? (readOnly ? "Save documents" : employee ? "Save changes" : "Register employee")}</Button>
+        <Button type="submit" disabled={documentReading > 0 || scanning || saving || taken}>{saving ? "Checking / Saving…" : submitLabel ?? (readOnly ? "Save documents" : employee ? "Save changes" : "Register employee")}</Button>
       </div>
     </form>
   );
