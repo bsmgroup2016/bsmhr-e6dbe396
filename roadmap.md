@@ -1,5 +1,10 @@
 # Full-section UI/UX and workflow audit
 
+## Workforce section review — 18 November 2026
+
+- [x] Review all eight Workforce menu sections, trace their connected actions and identify current defects without changing business records or application behaviour; recorded prioritized findings in docs/WORKFORCE-SECTIONS-REVIEW-2026-11-18.md.
+- [x] Run existing regression tests and check live route access: 272 tests passed; all eight routes redirected to sign-in with no browser page errors. Authenticated save/OCR/download checks remain explicitly unverified; no authorized external-account browser session is available.
+
 ## Updated Antigravity Android handoff
 
 - [x] Replace the old Android prompt with current worker login, blue–sky UI, attendance/leave/payslip/profile flows, secure WebView requirements and APK/AAB deliverables; distinguish unavailable push/offline-event features and outdated API examples.
