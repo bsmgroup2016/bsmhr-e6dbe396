@@ -59,7 +59,9 @@ export async function readCards(files: File[], onProgress: (done: number, total:
     try {
       const previewing = previewUrl(page);
       const up = await uploadToR2(page, "time-cards");
-      const ocr = await extractTimeCardData(up.url);
+      let ocr = await extractTimeCardData(up.url);
+      // With 50 cards the AI may briefly rate-limit: wait once and retry instead of failing the page.
+      if (!ocr.ok && /rate limit/i.test(ocr.reason)) { await new Promise((r) => setTimeout(r, 5000)); ocr = await extractTimeCardData(up.url); }
       if (!ocr.ok) throw new Error(ocr.reason);
       const groups = groupTimeCardRows(ocr.data);
       if (!groups.length) throw new Error("no dates could be read");

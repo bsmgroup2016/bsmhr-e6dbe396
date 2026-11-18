@@ -448,7 +448,7 @@ function EmployeeProfilePage() {
                   <h3 className="font-semibold text-foreground">PPE &amp; Equipment Custody</h3>
                 </div>
                 <Button size="sm" variant="outline" asChild>
-                  <Link to="/assets">Issue new asset</Link>
+                  <Link to="/assets" search={{ offset: 0, from: "", to: "", status: "all", category: "all", search: "" }}>Issue new asset</Link>
                 </Button>
               </div>
               <div className="mt-4 grid gap-4 grid-cols-3 text-center">
@@ -554,7 +554,7 @@ function EmployeeProfilePage() {
                         inc.date,
                         inc.incidentType,
                         veh?.plateNo ?? "—",
-                        inc.remarks ?? "—",
+                        inc.description || "—",
                       ];
                     })}
                     empty="No driver incidents recorded."

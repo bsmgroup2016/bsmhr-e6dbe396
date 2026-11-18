@@ -2067,7 +2067,7 @@ export function returnIssuance(
       if (matchingItem) {
         addStockMovement({
           itemId: matchingItem.id,
-          movementType: condition === "Damaged" || status === "Damaged" ? "Damaged" : "Return",
+          movementType: status === "Damaged" ? "Damaged" : "Return",
           quantity: issuance.quantity,
           movementDate: date,
           employeeId: issuance.employeeId,
@@ -2164,19 +2164,17 @@ function syncTrainingToCertification(t: TrainingRecord) {
   );
   if (existingCert) {
     updateCertification(existingCert.id, {
-      certificateNumber: t.certificateNumber ?? existingCert.certificateNumber,
       issueDate: t.completionDate ?? existingCert.issueDate,
       expiryDate: t.expiryDate ?? existingCert.expiryDate,
-      issuingAuthority: course?.provider ?? existingCert.issuingAuthority,
+      issuingBody: course?.provider ?? existingCert.issuingBody,
     });
   } else {
     addCertification({
       employeeId: t.employeeId,
       courseName,
-      certificateNumber: t.certificateNumber,
       issueDate: t.completionDate,
       expiryDate: t.expiryDate,
-      issuingAuthority: course?.provider,
+      issuingBody: course?.provider,
     });
   }
   if (courseName.toLowerCase().includes("csoc") || courseName.toLowerCase().includes("safety")) {
@@ -2661,7 +2659,7 @@ export function financeSummary(month: string, companyId?: string) {
     (sum, p) => sum + (p.basicSalary || 0) + (p.overtimePay || 0) + (p.allowances || 0) + (p.bonus || 0) + (p.cpfEmployer || 0) + (p.sdl || 0),
     0
   );
-  const payrollLevyCost = monthPayrolls.reduce((sum, p) => sum + (p.levyAmount || 0), 0);
+  const payrollLevyCost = monthPayrolls.reduce((sum, p) => sum + (p.levies || 0), 0);
 
   // Prevent double-counting: use manual if recorded, otherwise auto-fill from payroll
   const manualSalary = manualExpensesByCategory.get("Salary") || 0;
@@ -2684,7 +2682,7 @@ export function financeSummary(month: string, companyId?: string) {
   const effectiveDormCost = manualDorm > 0 ? manualDorm : allocationsDormCost;
 
   // Interconnection 3: Fleet / Transport Fuel Expenses from fuel logs
-  const monthFuelLogs = scope(s.fuelLogs).filter((f) => inMonth(f.date, month));
+  const monthFuelLogs = s.fuelLogs.filter((f) => inMonth(f.date, month));
   const fuelCost = monthFuelLogs.reduce((sum, f) => sum + (f.amount || 0), 0);
   const manualTransport = manualExpensesByCategory.get("Transport") || 0;
   const effectiveTransportCost = manualTransport > 0 ? manualTransport + fuelCost : fuelCost;
@@ -2725,9 +2723,10 @@ export function financeSummary(month: string, companyId?: string) {
 }
 
 /** Project profitability: Revenue vs Labor vs Direct Expenses per project */
-export function getProjectProfitability(month?: string, companyId?: string): ProjectProfitability[] {
+export function getProjectProfitability(month?: string, _companyId?: string): ProjectProfitability[] {
   const s = getState();
-  const projects = s.projects.filter((p) => !companyId || !p.companyId || p.companyId === companyId);
+  // Projects carry no company, so they cannot be company-filtered.
+  const projects = s.projects;
   const clients = s.clients;
   const sites = s.sites;
 
@@ -2750,7 +2749,7 @@ export function getProjectProfitability(month?: string, companyId?: string): Pro
 
     // Labor cost from attendance records on this project's sites
     const projectAttendance = s.attendance.filter(
-      (att) => siteIds.has(att.siteId) && (!month || inMonth(att.date, month))
+      (att) => !!att.siteId && siteIds.has(att.siteId) && (!month || inMonth(att.date, month))
     );
 
     let laborCost = 0;
