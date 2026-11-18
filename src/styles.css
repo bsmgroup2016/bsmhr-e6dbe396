@@ -510,26 +510,38 @@ iframe[src*="lovable.dev/badge"] {
   --primary: oklch(0.65 0.09 197);
 }
 
-/* Worker app: professional light teal theme (scoped, always light) */
-:root { --brand-lime: oklch(0.82 0.19 128); --brand-lime-foreground: oklch(0.25 0.06 140); --brand-deep: oklch(0.42 0.08 215); }
+/* Worker app: premium navy + blush pink theme (scoped, always light) */
+:root { --brand-lime: oklch(0.86 0.07 10); --brand-lime-foreground: oklch(0.25 0.08 265); --brand-deep: oklch(0.3 0.09 268); }
 .worker-app {
   color-scheme: light;
-  --background: oklch(0.975 0.004 220);
-  --foreground: oklch(0.22 0.02 230);
+  --background: oklch(0.975 0.012 15);
+  --foreground: oklch(0.24 0.06 268);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.22 0.02 230);
+  --card-foreground: oklch(0.24 0.06 268);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.22 0.02 230);
-  --primary: oklch(0.52 0.09 210);
-  --primary-foreground: oklch(0.99 0 0);
-  --secondary: oklch(0.95 0.015 210);
-  --secondary-foreground: oklch(0.32 0.06 215);
-  --muted: oklch(0.955 0.008 220);
-  --muted-foreground: oklch(0.52 0.02 230);
-  --accent: oklch(0.94 0.03 200);
-  --accent-foreground: oklch(0.3 0.06 215);
-  --border: oklch(0.91 0.008 220);
-  --input: oklch(0.9 0.008 220);
-  --ring: oklch(0.52 0.09 210);
-  --brand-deep: oklch(0.43 0.08 215);
+  --popover-foreground: oklch(0.24 0.06 268);
+  --primary: oklch(0.32 0.11 268);
+  --primary-foreground: oklch(0.99 0.005 15);
+  --secondary: oklch(0.95 0.03 10);
+  --secondary-foreground: oklch(0.32 0.11 268);
+  --muted: oklch(0.96 0.015 12);
+  --muted-foreground: oklch(0.5 0.04 270);
+  --accent: oklch(0.93 0.045 8);
+  --accent-foreground: oklch(0.32 0.11 268);
+  --border: oklch(0.92 0.02 12);
+  --input: oklch(0.9 0.02 12);
+  --ring: oklch(0.6 0.12 5);
+  --brand-deep: oklch(1 0 0 / 0.1);
+  --wa-pink: oklch(0.78 0.11 5);
+  --wa-hero: linear-gradient(140deg, oklch(0.24 0.09 268) 0%, oklch(0.36 0.12 275) 55%, oklch(0.6 0.14 355) 125%);
+  --wa-pink-btn: linear-gradient(120deg, oklch(0.9 0.06 10), oklch(0.8 0.11 5));
+  --wa-page: radial-gradient(120% 60% at 100% 0%, oklch(0.93 0.05 8) 0%, transparent 60%), radial-gradient(90% 50% at 0% 100%, oklch(0.94 0.03 270) 0%, transparent 60%), oklch(0.975 0.012 15);
+  --wa-shadow: 0 18px 40px -18px oklch(0.3 0.1 268 / 0.55);
+  background: var(--wa-page);
+  background-attachment: fixed;
 }
+.worker-app .wa-hero { background: var(--wa-hero); box-shadow: var(--wa-shadow); }
+.worker-app .wa-pink-btn { background: var(--wa-pink-btn); box-shadow: 0 8px 20px -10px oklch(0.6 0.14 5 / 0.8); }
+.worker-app .wa-avatar { background: var(--wa-hero); color: var(--primary-foreground); }
+.worker-app .wa-glass { background: oklch(1 0 0 / 0.1); border: 1px solid oklch(1 0 0 / 0.14); backdrop-filter: blur(8px); }
+.worker-app [data-ui="summary-metric"] { border-color: var(--border); box-shadow: 0 6px 18px -12px oklch(0.3 0.1 268 / 0.35); }

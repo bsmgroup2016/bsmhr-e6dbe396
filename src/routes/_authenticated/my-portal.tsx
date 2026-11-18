@@ -98,9 +98,9 @@ function PortalShell({ worker, employee, tab, setTab, children }: { worker: bool
   const { signOut } = useAuth();
   if (!worker) return <AppShell>{children}</AppShell>;
   return (
-    <div className="worker-app min-h-svh bg-background text-foreground">
-      <header className="sticky top-0 z-30 flex items-center gap-3 bg-background/95 px-5 pb-3 pt-[max(1rem,env(safe-area-inset-top))] backdrop-blur lg:border-b lg:bg-card/95 lg:px-8">
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary/15 text-base font-semibold text-primary ring-2 ring-card shadow-sm lg:h-10 lg:w-10">
+    <div className="worker-app min-h-svh text-foreground">
+      <header className="sticky top-0 z-30 flex items-center gap-3 bg-transparent px-5 pb-3 backdrop-blur-md pt-[max(1rem,env(safe-area-inset-top))] backdrop-blur lg:border-b lg:bg-card/95 lg:px-8">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center wa-avatar rounded-full text-base font-semibold ring-2 ring-card shadow-md lg:h-10 lg:w-10">
           {(employee?.name ?? "?").slice(0, 1)}
         </div>
         <div className="min-w-0 flex-1">
@@ -132,7 +132,7 @@ function PortalShell({ worker, employee, tab, setTab, children }: { worker: bool
           <div className="mx-auto grid max-w-3xl grid-cols-5">
             {TABS.map(({ id, label, icon: Icon }) => (
               <button key={id} type="button" onClick={() => { setTab(id); window.scrollTo({ top: 0 }); }}
-                className={`relative flex min-h-[62px] flex-col items-center justify-center gap-1 text-[11px] transition-colors active:bg-muted ${tab === id ? "font-semibold text-foreground before:absolute before:inset-x-4 before:top-0 before:h-[3px] before:rounded-b before:bg-primary" : "font-medium text-muted-foreground"}`}
+                className={`relative flex min-h-[62px] flex-col items-center justify-center gap-1 text-[11px] transition-colors active:bg-muted ${tab === id ? "font-semibold text-foreground before:absolute before:inset-x-4 before:top-0 before:h-[3px] before:rounded-b before:bg-gradient-to-r before:from-primary before:to-[var(--wa-pink)]" : "font-medium text-muted-foreground"}`}
                 aria-current={tab === id ? "page" : undefined}>
                 <Icon className="h-[22px] w-[22px] text-primary" /><span className="max-w-full truncate px-0.5">{label}</span>
               </button>
@@ -203,14 +203,15 @@ function PunchCard({ checkIn, checkOut, status, onDone }: { checkIn?: string; ch
   const pct = Math.min(100, Math.round((worked / 540) * 100));
   const label = status && status !== "Present" ? status : state;
   const mobile = (
-    <div className="overflow-hidden rounded-3xl bg-primary p-5 text-primary-foreground shadow-lg lg:hidden">
-      <div className="flex items-center justify-between">
-        <p className="text-xl font-medium">Attendance</p>
+    <div className="wa-hero relative overflow-hidden rounded-3xl p-5 text-primary-foreground lg:hidden">
+      <div aria-hidden className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-brand-lime/25 blur-3xl" />
+      <div className="relative flex items-center justify-between">
+        <p className="text-xl font-semibold tracking-tight">Attendance</p>
         <span className="rounded-full bg-primary-foreground/15 px-3 py-1 text-xs font-medium">{label}</span>
       </div>
-      <div className="mt-4 rounded-2xl bg-brand-deep p-4">
+      <div className="wa-glass mt-4 rounded-2xl p-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-card text-primary"><Clock className="h-6 w-6" /></div>
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-card text-primary shadow-md"><Clock className="h-6 w-6" /></div>
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm opacity-90">{now ? now.toLocaleDateString("en-SG", { weekday: "long", day: "numeric", month: "short" }) : ""}</p>
             <p className="text-xs opacity-70">Duty 9h incl. 1h lunch</p>
@@ -220,7 +221,7 @@ function PunchCard({ checkIn, checkOut, status, onDone }: { checkIn?: string; ch
             <p className="text-2xl font-semibold tabular-nums">{checkIn ? `${String(Math.floor(worked / 60)).padStart(2, "0")}h:${String(worked % 60).padStart(2, "0")}m` : now ? now.toLocaleTimeString("en-SG", { hour: "2-digit", minute: "2-digit" }) : "--:--"}</p>
           </div>
         </div>
-        <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-primary-foreground/20"><div className="h-full rounded-full bg-primary-foreground transition-all" style={{ width: `${pct}%` }} /></div>
+        <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-primary-foreground/20"><div className="h-full rounded-full bg-gradient-to-r from-primary-foreground to-brand-lime transition-all" style={{ width: `${pct}%` }} /></div>
         <div className="mt-2 flex justify-between text-sm tabular-nums">
           <span>In {checkIn ?? "--:--"}</span><span>Out {checkOut ?? "--:--"}</span>
         </div>
@@ -230,7 +231,7 @@ function PunchCard({ checkIn, checkOut, status, onDone }: { checkIn?: string; ch
           <div className="flex h-12 flex-1 items-center justify-center rounded-xl border-2 border-primary-foreground/70 font-semibold">Day complete</div>
         ) : (
           <button type="button" disabled={!!busy} onClick={() => void punch(checkIn ? "out" : "in")}
-            className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-brand-lime text-base font-semibold text-brand-lime-foreground shadow-sm transition active:scale-[0.98] disabled:opacity-60">
+            className="flex h-12 flex-1 items-center justify-center gap-2 wa-pink-btn rounded-xl text-base font-semibold text-brand-lime-foreground shadow-sm transition active:scale-[0.98] disabled:opacity-60">
             {busy ? <Loader2 className="h-5 w-5 animate-spin" /> : checkIn ? <LogOut className="h-5 w-5" /> : <LogIn className="h-5 w-5" />}{checkIn ? "Check out" : "Check in"}
           </button>
         )}
