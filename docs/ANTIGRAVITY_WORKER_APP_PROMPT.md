@@ -18,11 +18,11 @@ You are building the **BSM Worker** Android app (APK + AAB) for construction wor
 - Min Android 8 (API 26), target latest.
 
 ## Behaviour
-1. Splash screen (dark navy #0f1424, app logo centred) → loads `https://hrbsm.xyz/my-portal`.
+1. Splash screen (blue → sky gradient, #1e3a8a to #38bdf8, white BSM logo centred) → loads `https://hrbsm.xyz/my-portal`.
 2. If not signed in the site redirects to `/auth`; the worker signs in once. Keep the session: `domStorageEnabled`, `sharedCookiesEnabled`, `thirdPartyCookiesEnabled`, never clear cache on launch.
 3. Only allow navigation inside `hrbsm.xyz` (and `www.hrbsm.xyz`). Open any other link (WhatsApp, tel:, mailto:, maps, external sites) with `Linking.openURL`.
 4. Android back button: go back inside the WebView if possible, otherwise ask "Exit BSM Worker?" before closing.
-5. Pull-to-refresh enabled. Safe-area aware, status bar light content on navy.
+5. Pull-to-refresh enabled. Safe-area aware, status bar light content on royal blue (#1e40af); Android navigation bar white.
 6. Offline: when there is no internet, show a native full-screen "You are offline" page with a Retry button (do not show the browser error page). Reload automatically when connection returns (`@react-native-community/netinfo`).
 7. Loading: thin progress bar at top while pages load.
 8. Permissions (ask at the moment they are needed, with clear English reasons):
@@ -35,6 +35,15 @@ You are building the **BSM Worker** Android app (APK + AAB) for construction wor
 11. Disable zoom, text selection long-press menu stays enabled; user agent append ` BSMWorkerApp/1.0` so the site can detect the app.
 12. App update: check Play Store in-app updates if available (optional).
 
+## What the worker sees (already built in the web app — just wrap it)
+- **Login (`/auth`)**: blue→sky gradient design. Worker types a **Login ID** (name only, e.g. `rahmanhasibur`; spaces are converted to dots) and an **8-character password** given by admin. Admin creates/resets these in Users → Worker App. No self sign-up for workers.
+- **Home**: "Hello, <name>", big attendance card (date, hours worked, 9h duty progress bar), one big **Check in / Check out** button (sends time + GPS), summary cards (work permit, this month, leave taken, latest net pay), recent attendance and leave.
+- **Attendance**: Daily / Weekly / Monthly filter; days worked, normal hours, OT hours, absent, leave/MC; one card per day (In, Out, Hours, OT, status). Rule: 9h duty incl. 1h lunch = 8 counted hours; time after 9h is OT.
+- **Leave**: balance per leave type, Year/Month filter, requested/approved/pending/rejected counts, request cards, "Apply for leave" button.
+- **Payslips**: From/To month filter + All time, totals (gross, deductions, net), tap a month for full breakdown and **Download payslip PDF**.
+- **Profile**: personal and permit details.
+- Theme: royal blue + sky blue gradients on a light bluish-white background, white bottom tab bar. The native splash, offline screen and progress bar must use the same colours.
+
 ## API (only for push registration and testing — the UI stays in the WebView)
 - Base: `https://hrbsm.xyz/api/public/v1`
 - Auth: Supabase email/password → `POST https://thrfyeyqafmdnpexgmlc.supabase.co/auth/v1/token?grant_type=password` with header `apikey: <anon key from docs/worker-api.postman_collection.json>`; send `Authorization: Bearer <access_token>` to every API call.
@@ -45,6 +54,8 @@ You are building the **BSM Worker** Android app (APK + AAB) for construction wor
 1. A new folder `mobile/` (or separate repo) with the Expo project, `app.json`/`app.config.ts`, `eas.json` (preview = APK, production = AAB), icons (adaptive icon) and splash.
 2. `mobile/README.md`: how to run (`npx expo start`), build APK/AAB, set up Firebase (`google-services.json`), and sign the release.
 3. Test checklist and confirm each passes on a real Android phone:
+   - Sign in with a Login ID (e.g. `rahmanhasibur`) + 8-char password.
+   - Check in then Check out on Home → times appear and Day complete shows.
    - Sign in once, close the app, reopen → still signed in on My Portal.
    - Bottom tabs work: Home, Attendance, Leave, Payslips, Profile.
    - Apply for leave → appears as Pending.
