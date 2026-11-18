@@ -116,6 +116,7 @@ const navGroups: { label: string; items: NavItem[] }[] = [
   {
     label: "Inventory & Assets",
     items: [
+      { title: "Stock & Inventory", url: "/inventory", icon: Package },
       { title: "PPE Management", url: "/assets", icon: Boxes },
       { title: "Accommodation (Dorm)", url: "/accommodation", icon: BedDouble },
     ],

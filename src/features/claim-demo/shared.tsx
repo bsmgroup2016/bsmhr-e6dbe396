@@ -3,6 +3,7 @@ import { ChevronDown } from "lucide-react";
 
 export function DevNote({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
+  if (import.meta.env.PROD) return null;
   return (
     <div className="mt-4 rounded-[10px] border border-dashed bg-muted/40 text-sm">
       <button type="button" onClick={() => setOpen(!open)} className="flex w-full items-center justify-between px-3 py-2 text-muted-foreground">

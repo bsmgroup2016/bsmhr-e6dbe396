@@ -42,6 +42,8 @@ async function previewUrl(page: File): Promise<string> {
   } catch { return URL.createObjectURL(page); }
 }
 
+const READ_CONCURRENCY = 3;
+
 export type ReadResult = { workers: Worker[]; failed: string[]; month: string; site: string };
 
 /** Splits PDFs per page, stores each page, reads it with OCR and returns one Worker per card. */
@@ -52,14 +54,16 @@ export async function readCards(files: File[], onProgress: (done: number, total:
   onProgress(0, pages.length);
   const workers: Worker[] = [];
   let i = 0;
-  for (const page of pages) {
+  // Pages are independent: read several at once (each is upload + 2 AI reads), not one by one.
+  const readPage = async (page: File) => {
     try {
+      const previewing = previewUrl(page);
       const up = await uploadToR2(page, "time-cards");
       const ocr = await extractTimeCardData(up.url);
       if (!ocr.ok) throw new Error(ocr.reason);
       const groups = groupTimeCardRows(ocr.data);
       if (!groups.length) throw new Error("no dates could be read");
-      const preview = await previewUrl(page);
+      const preview = await previewing;
       for (const g of groups) {
         const entries = [...g.entries].sort((a, b) => a.date.localeCompare(b.date)) as TimeCardEntry[];
         const month = entries[0].date.slice(0, 7);
@@ -74,7 +78,11 @@ export async function readCards(files: File[], onProgress: (done: number, total:
       }
     } catch (e) { failed.push(`${page.name}: ${e instanceof Error ? e.message : "could not be read"}`); }
     onProgress(++i, pages.length);
-  }
+  };
+  const queue = [...pages];
+  await Promise.all(Array.from({ length: Math.min(READ_CONCURRENCY, queue.length) }, async () => {
+    for (let page = queue.shift(); page; page = queue.shift()) await readPage(page);
+  }));
   const months = workers.map((w) => (w as Worker & { month?: string }).month!).filter(Boolean);
   const sites = workers.map((w) => w.site.trim()).filter(Boolean);
   const most = (xs: string[]) => [...xs].sort((a, b) => xs.filter((x) => x === b).length - xs.filter((x) => x === a).length)[0] ?? "";
@@ -125,10 +133,12 @@ export async function saveToRecords(workers: Worker[], month: string, site: stri
   // 2. Safely clean up old replaced claims after successful save
   const codeOf = (snap: { employeeCode?: string; workerName?: string }[]) =>
     (snap.find((r) => r.employeeCode)?.employeeCode || snap.find((r) => r.workerName)?.workerName || "").toUpperCase();
-  const codes = new Set(list.map((d) => codeOf(d.snapshot)));
+  const codes = new Set(list.map((d) => codeOf(d.snapshot)).filter(Boolean));
   const savedSourceIds = new Set(list.map((d) => d.id));
   for (const old of getClaimSheets()) {
-    if (old.periodStart.startsWith(month) && codes.has(codeOf(old.snapshot)) && !savedSourceIds.has(old.id)) {
+    const oldCode = codeOf(old.snapshot);
+    // A blank code must never match: it would delete unrelated claims.
+    if (oldCode && old.periodStart.startsWith(month) && codes.has(oldCode) && !savedSourceIds.has(old.id)) {
       deleteClaimSheet(old.id);
     }
   }

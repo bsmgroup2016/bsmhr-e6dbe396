@@ -60,7 +60,13 @@ export async function readTimeCard(ref: string) {
   if (openai.status === "rejected") console.error("timecard openai read failed", openai.reason);
   if (g) return mergeCardReads(g, o, { primary: "gemini", audit: "openai" });
   if (o) return mergeCardReads(o, null, { primary: "openai" });
-  // Neither pinned provider worked: use any configured OCR provider in order.
+  // Re-asking the same providers that just failed only doubles the wait.
+  const ran = [gemini, openai].filter((r) => !(r.status === "rejected" && /not enabled/.test(String(r.reason?.message ?? r.reason))));
+  if (ran.length) {
+    const failure = ran.find((r): r is PromiseRejectedResult => r.status === "rejected");
+    throw failure?.reason instanceof Error ? failure.reason : new Error("Nothing readable was found on this time card");
+  }
+  // Neither pinned provider is enabled: use any other configured OCR provider.
   const any = parseCardReads(await askAiJson({ instruction: TIME_CARD_READ_INSTRUCTION, dataUrl }));
   return mergeCardReads(any, null, { primary: "fallback" });
 }

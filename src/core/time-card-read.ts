@@ -106,11 +106,18 @@ export function mergeCardReads(primary: CardRead[], audit: CardRead[] | null, na
     const site = pick(card.siteName, other?.siteName, (x, y) => norm(x) === norm(y));
     const year = pick(card.year, other?.year, (x, y) => x === y);
     const month = pick(card.month, other?.month, (x, y) => x === y);
-    const y = year.value, m = month.value;
-    if (!y || !m) continue;
-    const periodDoubt = !!other && (!year.agree || !month.agree);
+    let y = year.value, m = month.value;
+    // An unreadable month must not silently drop a worker: borrow it only when every other card agrees.
+    const borrowed = !y || !m;
+    if (borrowed) {
+      const periods = new Set(primary.filter(c => c.year && c.month).map(c => `${c.year}-${c.month}`));
+      const [by, bm] = periods.size === 1 ? [...periods][0].split("-").map(Number) : [];
+      if (!by) continue;
+      y = by; m = bm;
+    }
+    const periodDoubt = borrowed || (!!other && (!year.agree || !month.agree));
     const headerConflicts = other ? (["siteName", "workerName", "employeeCode", "fin"] as const).filter(field => norm(card[field]) !== norm(other[field])) : [];
-    const max = new Date(Date.UTC(y, m, 0)).getUTCDate();
+    const max = new Date(Date.UTC(y!, m!, 0)).getUTCDate();
     const identity = {
       workerName: card.workerName ?? other?.workerName,
       employeeCode: card.employeeCode ?? other?.employeeCode,

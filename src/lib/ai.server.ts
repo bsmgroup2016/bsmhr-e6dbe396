@@ -94,6 +94,8 @@ function extractJson(text: string): unknown {
   return JSON.parse(match[0]) as unknown;
 }
 
+const AI_TIMEOUT_MS = 120_000;
+
 /** Ask Gemini / OpenAI for a JSON answer, falling back on failure. */
 export async function askAiJson(req: AiRequest): Promise<unknown> {
   let list = await configured();
@@ -114,6 +116,8 @@ export async function askAiJson(req: AiRequest): Promise<unknown> {
         method: "POST",
         headers: { Authorization: `Bearer ${provider.apiKey}`, "Content-Type": "application/json", ...provider.extra },
         body: JSON.stringify(buildBody(provider, req)),
+        // A hung provider must not stall the whole batch.
+        signal: AbortSignal.timeout(AI_TIMEOUT_MS),
       });
       if (!res.ok) {
         const detail = (await res.text()).slice(0, 400);

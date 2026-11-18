@@ -182,7 +182,7 @@ function CompaniesPage() {
                 <div className="flex items-center gap-2"><MapPin className="h-3.5 w-3.5" /> {c.address}</div>
                 <div className="flex items-center gap-2"><Phone className="h-3.5 w-3.5" /> {c.phone}</div>
                 <div className="flex items-center gap-2"><Mail className="h-3.5 w-3.5" /> {c.email}</div>
-                <div className="flex items-center gap-2"><Users className="h-3.5 w-3.5" /> {headcount(c.id)} employees</div>
+                <div className="flex items-center gap-2"><Users className="h-3.5 w-3.5" /> {headcount(c.id)} {headcount(c.id) === 1 ? "employee" : "employees"}</div>
                 <div className="flex items-center gap-2"><Wallet className="h-3.5 w-3.5" /> {money(monthlyWage(c.id))} / month</div>
                 <div className="flex items-center gap-2"><CalendarClock className="h-3.5 w-3.5" /> {money(monthlyWage(c.id) * 12)} / year</div>
               </dl>
