@@ -33,8 +33,8 @@ const pages: Record<string, CollectionKey[]> = {
   "driver-compliance": ["employees", "vehicles", "driverProfiles", "driverIncidents", "fuelLogs"],
   "driver-dispatch": ["employees", "vehicles", "sites", "driverProfiles"],
   "driver-duty": ["trips", "vehicles", "employees", "sites", "driverProfiles"],
-  assets: ["assets", "employees", "sites"],
-  inventory: ["inventory", "movements", "purchaseOrders", "sites", "employees"],
+  assets: ["assets", "issuances", "employees", "sites"],
+  inventory: ["inventory", "movements", "purchaseOrders", "sites", "employees", "assets"],
   training: ["courses", "trainings", "incidents", "employees", "sites"],
   recruitment: ["requisitions", "candidates", "clients", "sites", "employees", "branchPrefixes"],
   reports: ["employees", "projects", "sites", "assignments", "documents", "payroll", "attendance", "leaveRequests", "invoices", "expenses", "leads", "candidates", "incidents", "trainings", "assets", "issuances", "dormitories", "allocations", "vehicles", "trips", "inventory", "movements"],
@@ -47,6 +47,6 @@ const pages: Record<string, CollectionKey[]> = {
 
 export function pageCollections(pathname: string): CollectionKey[] {
   const parts = pathname.split("/").filter(Boolean);
-  if (parts[0] === "workforce" && parts.length > 1) return ["companies", "employees", "assignments", "attendance", "payroll", "documents", "auditLogs", "sites", "projects", "clients", "certifications", "branchPrefixes", "timeCards", "claimSheets", "medicalClaims", "loans", "loanRepayments", "departments", "designations"];
+  if (parts[0] === "workforce" && parts.length > 1) return ["companies", "employees", "assignments", "attendance", "payroll", "documents", "auditLogs", "sites", "projects", "clients", "certifications", "branchPrefixes", "timeCards", "claimSheets", "medicalClaims", "loans", "loanRepayments", "departments", "designations", "dormitories", "allocations", "assets", "issuances", "driverProfiles", "vehicles", "driverIncidents"];
   return [...new Set<CollectionKey>(["companies", ...(pages[parts[0] ?? "dashboard"] ?? [])])];
 }

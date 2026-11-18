@@ -7,7 +7,7 @@ import type {
   Attendance, PayrollEntry, Approval, AuditLog, User, AppBranch, Company,
   LeaveRequest, RateAgreement, Invoice, InvoiceLine,
   Dormitory, BedAllocation, Vehicle, Trip,
-  Asset, AssetIssuance,
+  Asset, AssetIssuance, AssetCategory,
   DormitoryInvoice, DormitoryInspection, DormitoryMovement,
 } from "@/lib/types";
 import type { TrainingCourse, TrainingRecord, SafetyIncident } from "@/lib/types";
@@ -2000,6 +2000,25 @@ export function issueAsset(x: Omit<AssetIssuance, "id" | "createdAt" | "updatedA
   if (asset && asset.status === "Available" && assetAvailableQty(asset.id) <= 0) {
     updateAsset(asset.id, { status: "Issued" });
   }
+
+  // Interconnection: Sync asset/PPE issuance with inventory stock movement
+  const matchingItem = s.inventory.find((i) =>
+    (asset?.assetCode && i.sku && i.sku.toLowerCase() === asset.assetCode.toLowerCase()) ||
+    (asset?.name && i.name.toLowerCase() === asset.name.toLowerCase())
+  );
+  if (matchingItem) {
+    addStockMovement({
+      itemId: matchingItem.id,
+      movementType: "Out",
+      quantity: row.quantity,
+      movementDate: row.issueDate || now.slice(0, 10),
+      employeeId: row.employeeId,
+      siteId: row.siteId,
+      referenceNo: row.receiptNo || `PPE-${row.id.slice(0, 8)}`,
+      remarks: `PPE issuance to worker (${asset?.name ?? "Asset"})`,
+    });
+  }
+
   addAuditLog("CREATE", "AssetIssuance", row.id, `Issued ${row.quantity} x ${asset?.name ?? "asset"}`);
   return row;
 }
@@ -2029,6 +2048,25 @@ export function returnIssuance(
     const asset = getState().assets.find((a) => a.id === issuance.assetId);
     if (asset && asset.status === "Issued" && assetAvailableQty(asset.id) > 0) {
       updateAsset(asset.id, { status: "Available" });
+    }
+    // Interconnection: Sync returned asset/PPE to inventory movements
+    if (asset) {
+      const matchingItem = getState().inventory.find((i) =>
+        (asset.assetCode && i.sku && i.sku.toLowerCase() === asset.assetCode.toLowerCase()) ||
+        (asset.name && i.name.toLowerCase() === asset.name.toLowerCase())
+      );
+      if (matchingItem) {
+        addStockMovement({
+          itemId: matchingItem.id,
+          movementType: condition === "Damaged" || status === "Damaged" ? "Damaged" : "Return",
+          quantity: issuance.quantity,
+          movementDate: date,
+          employeeId: issuance.employeeId,
+          siteId: issuance.siteId,
+          referenceNo: issuance.receiptNo || `RET-${issuance.id.slice(0, 8)}`,
+          remarks: `Returned by worker: condition ${condition ?? "Returned"}`,
+        });
+      }
     }
   }
   return result;
@@ -2721,6 +2759,34 @@ export function receivePurchaseOrder(id: string, receivedDate = new Date().toISO
       movementDate: receivedDate, poId: po.id, referenceNo: po.poNo,
       remarks: `Received from ${po.supplier}`,
     });
+
+    // Interconnection: If received item is categorized as PPE or Tool, sync to Assets table
+    const item = getState().inventory.find((i) => i.id === po.itemId);
+    if (item && (item.category === "PPE" || item.category === "Tool")) {
+      const s = getState();
+      const existingAsset = s.assets.find((a) =>
+        (item.sku && a.assetCode && a.assetCode.toLowerCase() === item.sku.toLowerCase()) ||
+        (item.name && a.name.toLowerCase() === item.name.toLowerCase())
+      );
+      if (existingAsset) {
+        updateAsset(existingAsset.id, {
+          quantity: existingAsset.quantity + po.quantity,
+          unitCost: po.unitCost || existingAsset.unitCost,
+        });
+      } else {
+        addAsset({
+          companyId: po.companyId || item.companyId,
+          assetCode: item.sku || `AST-${po.poNo}`,
+          name: item.name,
+          category: item.category as AssetCategory,
+          quantity: po.quantity,
+          unitCost: po.unitCost || item.unitCost,
+          status: "Available",
+          location: item.location,
+          remarks: `Auto-stocked from PO ${po.poNo}`,
+        });
+      }
+    }
   }
   return updated;
 }

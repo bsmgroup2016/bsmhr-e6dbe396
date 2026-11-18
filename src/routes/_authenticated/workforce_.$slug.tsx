@@ -6,7 +6,7 @@ import { getBranchPrefixes, subscribe, getCompanies, saveEmployeeConfirmed, save
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
   ArrowLeft, Pencil, Ban, LogOut, Archive, Upload, CalendarCheck, Wallet, Briefcase,
-  FileText, Download, Trash2,
+  FileText, Download, Trash2, Home, Shield, Truck, Package,
 } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
@@ -27,6 +27,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import {
   getEmployees, updateEmployee, getAssignmentsByEmployee, getAttendanceByEmployee,
   getPayrollByEmployee, getDocumentsByEmployee, getAuditLogs, getSites, getProjects, getClients,
+  getDormitories, getAllocations, getAssets, getIssuances, getDriverProfile, getVehicles, getDriverIncidents,
 } from "@/lib/store";
 import type { Employee } from "@/lib/types";
 import { findEmployeeByParam } from "@/lib/employee-slug";
@@ -123,6 +124,20 @@ function EmployeeProfilePage() {
   const projects = getProjects();
   const clients = getClients();
 
+  const dormitories = getDormitories();
+  const workerAllocations = getAllocations().filter((a) => a.employeeId === employee.id);
+  const activeAllocation = workerAllocations.find((a) => a.status === "Occupied") ?? workerAllocations[0];
+  const activeDormitory = dormitories.find((d) => d.id === activeAllocation?.dormitoryId);
+
+  const assets = getAssets();
+  const workerIssuances = getIssuances().filter((i) => i.employeeId === employee.id);
+
+  const driverProfile = getDriverProfile(employee.id);
+  const vehicles = getVehicles();
+  const assignedVehicle = vehicles.find((v) => v.id === driverProfile?.assignedVehicleId || v.driverEmployeeId === employee.id);
+  const driverIncidents = getDriverIncidents().filter((i) => i.employeeId === employee.id);
+  const isDriver = !!driverProfile || (employee.trade?.toLowerCase().includes("driver") ?? false) || !!assignedVehicle;
+
   const active = assignments.find((a) => a.status === "Active" || a.status === "Approved");
   const activeSite = sites.find((s) => s.id === active?.siteId);
   const activeProject = projects.find((p) => p.id === active?.projectId);
@@ -176,6 +191,12 @@ function EmployeeProfilePage() {
                   <StatusBadge variant={statusVariant(employee.status)} dot label={employee.status} />
                   {!staff ? (
                     <StatusBadge variant="outline" label={employee.deploymentStatus ?? "Available"} />
+                  ) : null}
+                  {activeDormitory ? (
+                    <StatusBadge variant="outline" label={`Dorm: ${activeDormitory.name}${activeAllocation?.roomNo ? ` (Rm ${activeAllocation.roomNo})` : ""}`} />
+                  ) : null}
+                  {isDriver ? (
+                    <StatusBadge variant="info" label={assignedVehicle ? `Driver (${assignedVehicle.plateNo})` : "Driver"} />
                   ) : null}
                   <ExpiryBadge date={employee.passExpiry} label="Pass" />
                   <ExpiryBadge date={employee.passportExpiry} label="Passport" />
@@ -269,6 +290,11 @@ function EmployeeProfilePage() {
             <TabsTrigger value="documents">Documents</TabsTrigger>
             {!staff ? <TabsTrigger value="attendance">Attendance</TabsTrigger> : null}
             <TabsTrigger value="payroll">Payroll</TabsTrigger>
+            <TabsTrigger value="accommodation">Accommodation</TabsTrigger>
+            <TabsTrigger value="assets">PPE &amp; Assets</TabsTrigger>
+            {isDriver ? <TabsTrigger value="driver">Fleet &amp; Driver</TabsTrigger> : null}
+            <TabsTrigger value="assignments">Assignments</TabsTrigger>
+            <TabsTrigger value="activity">Activity</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="mt-4">
@@ -356,6 +382,188 @@ function EmployeeProfilePage() {
             />
           </TabsContent>
 
+          <TabsContent value="accommodation" className="mt-4 space-y-4">
+            <div className="rounded-xl border bg-card p-5 shadow-sm">
+              <div className="flex items-center justify-between pb-3 border-b">
+                <div className="flex items-center gap-2">
+                  <Home className="h-5 w-5 text-primary" />
+                  <h3 className="font-semibold text-foreground">Current Housing / Dormitory</h3>
+                </div>
+                <Button size="sm" variant="outline" asChild>
+                  <Link to="/accommodation">Manage accommodation</Link>
+                </Button>
+              </div>
+              {activeDormitory && activeAllocation ? (
+                <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  <Item label="Dormitory Name" value={activeDormitory.name} />
+                  <Item label="Room Number" value={activeAllocation.roomNo} />
+                  <Item label="Bed Number" value={activeAllocation.bedNo ?? "—"} />
+                  <Item label="Monthly Rent" value={`$${activeAllocation.monthlyRent}`} />
+                  <Item label="Allocation Status" value={activeAllocation.status} />
+                  <Item label="Check-in Date" value={activeAllocation.checkInDate} />
+                  <Item label="Check-out Date" value={activeAllocation.checkOutDate ?? "Active"} />
+                  <Item label="Operator" value={activeDormitory.operator ?? "—"} />
+                  <Item label="Operator Contact" value={activeDormitory.contactPerson ? `${activeDormitory.contactPerson} (${activeDormitory.contactPhone ?? "—"})` : "—"} />
+                  <div className="sm:col-span-2 lg:col-span-3">
+                    <Label className="text-xs text-muted-foreground">Address</Label>
+                    <p className="text-sm font-medium text-foreground">{activeDormitory.address || employee.dormitoryAddress || "—"}</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="py-6 text-center text-sm text-muted-foreground">
+                  No active dormitory room allocated for this worker.
+                  {employee.dormitoryAddress ? (
+                    <p className="mt-1 text-xs">Registered address: {employee.dormitoryAddress}</p>
+                  ) : null}
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <h4 className="text-sm font-semibold text-foreground">Allocation History</h4>
+              <SimpleTable
+                headers={["Dormitory", "Room", "Bed", "Check-in", "Check-out", "Rent", "Status"]}
+                rows={workerAllocations.map((a) => {
+                  const dorm = dormitories.find((d) => d.id === a.dormitoryId);
+                  return [
+                    dorm?.name ?? "Dormitory",
+                    a.roomNo,
+                    a.bedNo ?? "—",
+                    a.checkInDate,
+                    a.checkOutDate ?? "Present",
+                    `$${a.monthlyRent}`,
+                    a.status,
+                  ];
+                })}
+                empty="No accommodation history found for this worker."
+              />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="assets" className="mt-4 space-y-4">
+            <div className="rounded-xl border bg-card p-5 shadow-sm">
+              <div className="flex items-center justify-between pb-3 border-b">
+                <div className="flex items-center gap-2">
+                  <Package className="h-5 w-5 text-primary" />
+                  <h3 className="font-semibold text-foreground">PPE &amp; Equipment Custody</h3>
+                </div>
+                <Button size="sm" variant="outline" asChild>
+                  <Link to="/assets">Issue new asset</Link>
+                </Button>
+              </div>
+              <div className="mt-4 grid gap-4 grid-cols-3 text-center">
+                <div className="rounded-lg bg-muted/40 p-3">
+                  <div className="text-2xl font-bold text-foreground">
+                    {workerIssuances.reduce((acc, i) => acc + i.quantity, 0)}
+                  </div>
+                  <div className="text-xs text-muted-foreground">Total items received</div>
+                </div>
+                <div className="rounded-lg bg-muted/40 p-3">
+                  <div className="text-2xl font-bold text-primary">
+                    {workerIssuances.filter((i) => i.status === "Issued").reduce((acc, i) => acc + i.quantity, 0)}
+                  </div>
+                  <div className="text-xs text-muted-foreground">Currently holding</div>
+                </div>
+                <div className="rounded-lg bg-muted/40 p-3">
+                  <div className="text-2xl font-bold text-muted-foreground">
+                    {workerIssuances.filter((i) => i.status === "Returned").reduce((acc, i) => acc + i.quantity, 0)}
+                  </div>
+                  <div className="text-xs text-muted-foreground">Returned</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <h4 className="text-sm font-semibold text-foreground">Issued Equipment &amp; PPE Records</h4>
+              <SimpleTable
+                headers={["Asset / PPE", "Category", "Qty", "Issue Date", "Due Date", "Return Date", "Condition", "Status"]}
+                rows={workerIssuances.map((i) => {
+                  const ast = assets.find((a) => a.id === i.assetId);
+                  return [
+                    ast?.name ?? "Asset",
+                    ast?.category ?? "PPE",
+                    i.quantity,
+                    i.issueDate,
+                    i.dueDate ?? "—",
+                    i.returnDate ?? "—",
+                    i.conditionIn ? `${i.conditionOut} → ${i.conditionIn}` : i.conditionOut,
+                    i.status,
+                  ];
+                })}
+                empty="No PPE or assets have been issued to this worker yet."
+              />
+            </div>
+          </TabsContent>
+
+          {isDriver ? (
+            <TabsContent value="driver" className="mt-4 space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="rounded-xl border bg-card p-5 shadow-sm space-y-3">
+                  <div className="flex items-center gap-2 pb-2 border-b">
+                    <Shield className="h-5 w-5 text-primary" />
+                    <h3 className="font-semibold text-foreground">Driver Credentials</h3>
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <Item label="Licence Classes" value={driverProfile?.licenceClasses ?? "Class 3 / 4"} />
+                    <Item label="Licence Number" value={driverProfile?.licenceNo ?? "—"} />
+                    <Item label="Licence Expiry" value={driverProfile?.licenceExpiry ?? "—"} />
+                    <Item label="Demerit Points" value={driverProfile?.demeritPoints ?? 0} />
+                    <Item label="Vocational Licence" value={driverProfile?.vocationalLicenceType ? `${driverProfile.vocationalLicenceType} (${driverProfile.vocationalLicenceNo ?? ""})` : "—"} />
+                    <Item label="Medical Checkup Due" value={driverProfile?.medicalCheckupDue ?? "—"} />
+                    <Item label="Status" value={driverProfile?.status ?? "Active"} />
+                    <Item label="Experience" value={driverProfile?.yearsExperience ? `${driverProfile.yearsExperience} yrs` : "—"} />
+                  </div>
+                </div>
+
+                <div className="rounded-xl border bg-card p-5 shadow-sm space-y-3">
+                  <div className="flex items-center justify-between pb-2 border-b">
+                    <div className="flex items-center gap-2">
+                      <Truck className="h-5 w-5 text-primary" />
+                      <h3 className="font-semibold text-foreground">Assigned Vehicle</h3>
+                    </div>
+                    <Button size="sm" variant="outline" asChild>
+                      <Link to="/transport">Fleet</Link>
+                    </Button>
+                  </div>
+                  {assignedVehicle ? (
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <Item label="Plate Number" value={assignedVehicle.plateNo} />
+                      <Item label="Vehicle Type" value={assignedVehicle.type} />
+                      <Item label="Make & Model" value={assignedVehicle.makeModel ?? "—"} />
+                      <Item label="Capacity" value={assignedVehicle.capacity ? `${assignedVehicle.capacity} seats` : "—"} />
+                      <Item label="Road Tax Expiry" value={assignedVehicle.roadTaxExpiry ?? "—"} />
+                      <Item label="Inspection Due" value={assignedVehicle.inspectionDue ?? "—"} />
+                      <Item label="Vehicle Status" value={assignedVehicle.status} />
+                    </div>
+                  ) : (
+                    <div className="py-6 text-center text-sm text-muted-foreground">
+                      No vehicle currently assigned to this driver.
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {driverIncidents.length > 0 ? (
+                <div className="space-y-2">
+                  <h4 className="text-sm font-semibold text-foreground">Traffic &amp; Vehicle Incidents</h4>
+                  <SimpleTable
+                    headers={["Date", "Incident Type", "Vehicle", "Remarks"]}
+                    rows={driverIncidents.map((inc) => {
+                      const veh = vehicles.find((v) => v.id === inc.vehicleId);
+                      return [
+                        inc.date,
+                        inc.incidentType,
+                        veh?.plateNo ?? "—",
+                        inc.remarks ?? "—",
+                      ];
+                    })}
+                    empty="No driver incidents recorded."
+                  />
+                </div>
+              ) : null}
+            </TabsContent>
+          ) : null}
+
 
 
           <TabsContent value="notes" className="mt-4">
@@ -403,7 +611,7 @@ function SimpleTable({
   empty,
 }: {
   headers: string[];
-  rows: (string | number)[][];
+  rows: (string | number | React.ReactNode)[][];
   empty: string;
 }) {
   // eslint-disable-next-line no-empty
