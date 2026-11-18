@@ -530,7 +530,7 @@ export default function UsersPage() {
                         <div className="space-y-1">
                           <div className="flex items-center gap-2 text-sm">
                             <Mail className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                            <span className="break-all">{group === "workers" ? u.username || u.email || "—" : u.email || "—"}</span>
+                            <span className="break-all">{group === "workers" ? (u.email?.endsWith("@workers.hrbsm.xyz") ? u.email.split("@")[0] : u.username || u.email || "—") : u.email || "—"}</span>
                           </div>
                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <Phone className="h-3.5 w-3.5 shrink-0" />
@@ -849,7 +849,7 @@ function EditUserDialog({
     const parts = name.trim().split(/\s+/).filter(Boolean);
     setFirstName(parts[0] ?? "");
     setLastName(parts.slice(1).join(" "));
-    setUsername(user.username || (user.email ? user.email.split("@")[0] : ""));
+    setUsername(user.email?.endsWith("@workers.hrbsm.xyz") ? user.email.split("@")[0] : user.username || (user.email ? user.email.split("@")[0] : ""));
     setEmail(user.email);
     setPhone(user.phone);
     setPassword("");
