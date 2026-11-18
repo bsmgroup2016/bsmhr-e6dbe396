@@ -11,5 +11,7 @@ export function workerLoginEmail(username: string): string {
 
 export function loginEmail(identifier: string): string {
   const value = identifier.trim().toLowerCase();
-  return value.includes("@") ? value : workerLoginEmail(value);
+  if (value.includes("@")) return value;
+  // Accept "Md Sayed" or "md. sayed" as the login ID md.sayed.
+  return workerLoginEmail(value.replace(/[\s.]+/g, ".").replace(/^\.|\.$/g, ""));
 }
