@@ -347,7 +347,7 @@ function MyPortalPage() {
   const leaveDialog = (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="h-11 w-full gap-2 sm:w-auto"><CalendarPlus className="h-4 w-4" />Apply for leave</Button>
+        <Button className="h-10 shrink-0 gap-2 rounded-full px-4"><CalendarPlus className="h-4 w-4" />Apply for leave</Button>
       </DialogTrigger>
       <DialogContent className="max-w-md">
         <DialogHeader>
