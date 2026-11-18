@@ -10,6 +10,7 @@
  */
 
 import { activeProviders } from "./api-integrations.server";
+import { askClaude, isClaudeUrl } from "./claude.server";
 
 /** "gemini" / "openai" for the built-in pair; any other provider uses its label. */
 export type AiProviderName = string;
@@ -27,7 +28,7 @@ interface ProviderConfig {
 async function configured(): Promise<ProviderConfig[]> {
   const list = await activeProviders("ocr");
   return list.map((p) => ({
-    name: p.url.includes("googleapis.com") ? "gemini" : p.url.includes("api.openai.com") ? "openai" : p.name,
+    name: p.url.includes("googleapis.com") ? "gemini" : p.url.includes("api.openai.com") ? "openai" : isClaudeUrl(p.url) ? "claude" : p.name,
     label: p.name,
     url: p.url,
     apiKey: p.key,
@@ -60,8 +61,13 @@ export interface AiRequest {
   strict?: boolean;
 }
 
+const promptOf = (req: AiRequest) => (req.context ? `${req.instruction}\n\n${req.context}` : req.instruction);
+const DEFAULT_SYSTEM =
+  "You read scanned Singapore HR documents and return strict JSON only. " +
+  "Never invent values: omit any field you cannot read. Dates must be YYYY-MM-DD.";
+
 function buildBody(provider: ProviderConfig, req: AiRequest) {
-  const prompt = req.context ? `${req.instruction}\n\n${req.context}` : req.instruction;
+  const prompt = promptOf(req);
   const userContent = req.dataUrl
     ? [
         { type: "text", text: prompt },
@@ -78,10 +84,7 @@ function buildBody(provider: ProviderConfig, req: AiRequest) {
     messages: [
       {
         role: "system",
-        content:
-          req.system ??
-          "You read scanned Singapore HR documents and return strict JSON only. " +
-            "Never invent values: omit any field you cannot read. Dates must be YYYY-MM-DD.",
+        content: req.system ?? DEFAULT_SYSTEM,
       },
       { role: "user", content: userContent },
     ],
@@ -112,6 +115,12 @@ export async function askAiJson(req: AiRequest): Promise<unknown> {
   let lastError: Error | null = null;
   for (const provider of list) {
     try {
+      if (provider.name === "claude") {
+        return extractJson(await askClaude({
+          apiKey: provider.apiKey, model: provider.model, system: req.system ?? DEFAULT_SYSTEM,
+          prompt: promptOf(req), dataUrl: req.dataUrl, timeoutMs: AI_TIMEOUT_MS,
+        }));
+      }
       const res = await fetch(provider.url, {
         method: "POST",
         headers: { Authorization: `Bearer ${provider.apiKey}`, "Content-Type": "application/json", ...provider.extra },

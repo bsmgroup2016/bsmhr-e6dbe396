@@ -58,7 +58,17 @@ export async function readTimeCard(ref: string) {
   const o = openai.status === "fulfilled" && openai.value.length ? openai.value : null;
   if (gemini.status === "rejected") console.error("timecard gemini read failed", gemini.reason);
   if (openai.status === "rejected") console.error("timecard openai read failed", openai.reason);
-  if (g) return mergeCardReads(g, o, { primary: "gemini", audit: "openai" });
+  if (g) {
+    const names = { primary: "gemini", audit: "openai", third: "claude" };
+    const rows = mergeCardReads(g, o, names);
+    // Claude only reads cards the two readers disagree on, and only once a Claude key is configured.
+    if (!o || !rows.some((r) => r.verifiedBy === "conflict" || r.confidence <= 0.4)) return rows;
+    const c = await read("claude").catch((e) => {
+      if (!/not enabled/.test(String(e?.message ?? e))) console.error("timecard claude tie-break failed", e);
+      return [];
+    });
+    return c.length ? mergeCardReads(g, o, names, c) : rows;
+  }
   if (o) return mergeCardReads(o, null, { primary: "openai" });
   // Re-asking the same providers that just failed only doubles the wait.
   const ran = [gemini, openai].filter((r) => !(r.status === "rejected" && /not enabled/.test(String(r.reason?.message ?? r.reason))));

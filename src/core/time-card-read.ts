@@ -97,12 +97,14 @@ function matchAudit(card: CardRead, primary: CardRead[], audit: CardRead[]) {
 }
 
 /** Merge two independent readings; agreement = high confidence, disagreement = flagged. */
-export function mergeCardReads(primary: CardRead[], audit: CardRead[] | null, names: { primary: string; audit?: string } = { primary: "gemini", audit: "openai" }): ReadRow[] {
+export function mergeCardReads(primary: CardRead[], audit: CardRead[] | null, names: { primary: string; audit?: string; third?: string } = { primary: "gemini", audit: "openai" }, third?: CardRead[] | null): ReadRow[] {
   const rows: ReadRow[] = [];
   const matched = new Set<CardRead>();
   for (const card of primary) {
     const other = audit ? matchAudit(card, primary, audit) : undefined;
     if (other) matched.add(other);
+    // Optional tie-breaker: a third independent read settles days the first two disagree on.
+    const judge = other && third?.length ? matchAudit(card, primary, third) : undefined;
     const site = pick(card.siteName, other?.siteName, (x, y) => norm(x) === norm(y));
     const year = pick(card.year, other?.year, (x, y) => x === y);
     const month = pick(card.month, other?.month, (x, y) => x === y);
@@ -128,17 +130,26 @@ export function mergeCardReads(primary: CardRead[], audit: CardRead[] | null, na
       const p = card.days.find(d => d.day === day);
       const a = other?.days.find(d => d.day === day);
       if (!worked(p) && !worked(a)) continue;
-      const base = worked(p) ? p! : a!;
+      let base = worked(p) ? p! : a!;
+      const t = judge?.days.find(d => d.day === day);
+      const tName = names.third ?? "third";
       let confidence: number; let verifiedBy: string; let remarks: string | undefined; let suggestion: ReadRow["suggestion"];
       if (!other) { confidence = 0.8; verifiedBy = names.primary; }
       else if (worked(p) && worked(a) && sameDay(p!, a!)) { confidence = 0.97; verifiedBy = `${names.primary}+${names.audit}`; }
-      else if (worked(p) && worked(a)) {
+      else if (worked(p) && worked(a) && worked(t) && sameDay(t!, p!)) {
+        confidence = 0.95; verifiedBy = `${names.primary}+${tName}`; remarks = `Second reader: ${describe(a!)}`;
+      } else if (worked(p) && worked(a) && worked(t) && sameDay(t!, a!)) {
+        base = a!; confidence = 0.95; verifiedBy = `${names.audit}+${tName}`; remarks = `First reader: ${describe(p!)}`;
+      } else if (worked(p) && worked(a)) {
         confidence = 0.45; verifiedBy = "conflict";
         suggestion = { checkIn: a!.start, checkOut: a!.end };
-        remarks = `Second reader: ${describe(a!)}`;
+        remarks = [`Second reader: ${describe(a!)}`, judge && (worked(t) ? `Third reader: ${describe(t!)}` : "Third reader saw this day as off")].filter(Boolean).join(" · ");
+      } else if (worked(t) && sameDay(t!, base)) {
+        confidence = 0.9; verifiedBy = `${worked(p) ? names.primary : names.audit}+${tName}`;
+        remarks = worked(p) ? "Second reader saw this day as off" : "First reader saw this day as off";
       } else {
         confidence = 0.4; verifiedBy = worked(p) ? names.primary : names.audit ?? "audit";
-        remarks = worked(p) ? "Second reader saw this day as off" : "Only the second reader saw work on this day";
+        remarks = [worked(p) ? "Second reader saw this day as off" : "Only the second reader saw work on this day", judge && (worked(t) ? `Third reader: ${describe(t!)}` : "Third reader saw this day as off")].filter(Boolean).join(" · ");
       }
       // The written hours must agree with the start/end times under the 9h duty rule.
       const span = spanFromTimes(base.start, base.end);

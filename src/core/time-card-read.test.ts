@@ -20,6 +20,28 @@ describe("whole-card time card reading", () => {
     expect(rows[0]).toMatchObject({ checkIn: "08:00", checkOut: "20:00", normalHours: 8, otHours: 3, confidence: 0.97 });
   });
 
+  it("a third reader settles a disagreement by siding with the reader it matches", () => {
+    const names = { primary: "gemini", audit: "openai", third: "claude" };
+    const g = parseCardReads(card(fullMonth())), o = parseCardReads(card(fullMonth({ 21: { end: "2200", ot: 5 }, 22: { end: "2100", ot: 4 } })));
+    const c = parseCardReads(card(fullMonth({ 22: { end: "2100", ot: 4 } })));
+    const rows = mergeCardReads(g, o, names, c);
+    expect(rows.find(r => r.date === "2026-10-21")).toMatchObject({ checkOut: "20:00", otHours: 3, confidence: 0.95, verifiedBy: "gemini+claude" });
+    expect(rows.find(r => r.date === "2026-10-22")).toMatchObject({ checkOut: "21:00", otHours: 4, confidence: 0.95, verifiedBy: "openai+claude" });
+    expect(rows.find(r => r.date === "2026-10-01")).toMatchObject({ confidence: 0.97, verifiedBy: "gemini+openai" });
+  });
+
+  it("a third reader that agrees with neither keeps the day flagged for review", () => {
+    const rows = mergeCardReads(parseCardReads(card(fullMonth())), parseCardReads(card(fullMonth({ 21: { end: "2200", ot: 5 } }))), { primary: "gemini", audit: "openai", third: "claude" }, parseCardReads(card(fullMonth({ 21: { end: "2300", ot: 6 } }))));
+    const day21 = rows.find(r => r.date === "2026-10-21")!;
+    expect(day21).toMatchObject({ verifiedBy: "conflict", checkOut: "20:00" });
+    expect(day21.remarks).toContain("Third reader: 08:00–23:00");
+  });
+
+  it("a third reader confirms a day only one of the first two saw as worked", () => {
+    const rows = mergeCardReads(parseCardReads(card(fullMonth())), parseCardReads(card(fullMonth({ 21: { off: true, start: undefined, end: undefined, normal: undefined, ot: undefined } }))), { primary: "gemini", audit: "openai", third: "claude" }, parseCardReads(card(fullMonth())));
+    expect(rows.find(r => r.date === "2026-10-21")).toMatchObject({ confidence: 0.9, verifiedBy: "gemini+claude" });
+  });
+
   it("flags a day the two readers disagree on and keeps the other reading as a suggestion", () => {
     const rows = mergeCardReads(parseCardReads(card(fullMonth())), parseCardReads(card(fullMonth({ 21: { end: "2200", ot: 5 } }))));
     const day21 = rows.find(r => r.date === "2026-10-21")!;

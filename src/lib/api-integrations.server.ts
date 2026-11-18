@@ -1,4 +1,5 @@
 /** Server-only: editable API integrations (OCR + chatbot) stored in the database. */
+import { isClaudeUrl, pingClaude } from "./claude.server";
 const SUPABASE_URL = "https://thrfyeyqafmdnpexgmlc.supabase.co";
 
 export type Category = "ocr" | "chatbot";
@@ -70,7 +71,8 @@ export function toProvider(r: IntegrationRow): ActiveProvider | null {
 export async function activeProviders(category: Category): Promise<ActiveProvider[]> {
   const rows = await listIntegrations();
   return rows
-    .filter((r) => r.category === category && r.enabled)
+    // Claude is wired for document reading only; the chatbot speaks the OpenAI-style API.
+    .filter((r) => r.category === category && r.enabled && !(category === "chatbot" && isClaudeUrl(r.url)))
     .sort((a, b) => a.priority - b.priority)
     .map(toProvider)
     .filter((p): p is ActiveProvider => !!p);
@@ -94,6 +96,7 @@ export async function postChat(p: ActiveProvider, body: Record<string, unknown>)
 
 /** Send one tiny message to confirm a provider works. */
 export async function pingProvider(p: ActiveProvider) {
+  if (isClaudeUrl(p.url)) return pingClaude(p.key, p.model);
   const res = await postChat(p, { messages: [{ role: "user", content: "Reply with OK" }] });
   if (res.ok) return { success: true, error: null as string | null };
   if (res.status === 503) return { success: false, error: "Model is busy right now (high demand) — the next one in the list will take over" };
