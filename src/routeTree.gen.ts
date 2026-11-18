@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedAccommodationRouteImport } from './routes/_authenticated/accommodation'
@@ -117,6 +118,11 @@ const AdminRoute = AdminRouteImport.update({
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
@@ -605,6 +611,7 @@ export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
+  '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/accommodation': typeof AuthenticatedAccommodationRoute
   '/alerts': typeof AuthenticatedAlertsRoute
@@ -700,6 +707,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
+  '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/accommodation': typeof AuthenticatedAccommodationRoute
   '/alerts': typeof AuthenticatedAlertsRoute
@@ -798,6 +806,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
+  '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/_authenticated/accommodation': typeof AuthenticatedAccommodationRoute
   '/_authenticated/alerts': typeof AuthenticatedAlertsRoute
@@ -897,6 +906,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/auth'
+    | '/privacy'
     | '/reset-password'
     | '/accommodation'
     | '/alerts'
@@ -992,6 +1002,7 @@ export interface FileRouteTypes {
   to:
     | '/admin'
     | '/auth'
+    | '/privacy'
     | '/reset-password'
     | '/accommodation'
     | '/alerts'
@@ -1089,6 +1100,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/admin'
     | '/auth'
+    | '/privacy'
     | '/reset-password'
     | '/_authenticated/accommodation'
     | '/_authenticated/alerts'
@@ -1187,6 +1199,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AdminRoute: typeof AdminRoute
   AuthRoute: typeof AuthRoute
+  PrivacyRoute: typeof PrivacyRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   ApiArchiveDownloadRoute: typeof ApiArchiveDownloadRoute
   ApiPublicAiAlertsRoute: typeof ApiPublicAiAlertsRoute
@@ -1248,6 +1261,13 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reset-password': {
@@ -2078,6 +2098,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AdminRoute: AdminRoute,
   AuthRoute: AuthRoute,
+  PrivacyRoute: PrivacyRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   ApiArchiveDownloadRoute: ApiArchiveDownloadRoute,
   ApiPublicAiAlertsRoute: ApiPublicAiAlertsRoute,
