@@ -71,7 +71,7 @@ function ResetPasswordPage() {
         <img
           src={BSM_LOGO_URL}
           alt="BSM Engineering logo"
-          className="h-10 w-10 rounded-lg object-cover shadow-elegant"
+          className="h-10 w-10 rounded-lg bg-white object-contain p-1 shadow-elegant"
         />
         <div>
           <h1 className="text-lg font-semibold tracking-tight">BSM Engineering</h1>

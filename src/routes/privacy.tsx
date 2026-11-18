@@ -41,7 +41,7 @@ function PrivacyPage() {
           <img
             src={BSM_LOGO_URL}
             alt="BSM Engineering logo"
-            className="h-10 w-10 rounded-xl object-cover"
+            className="h-10 w-10 rounded-xl bg-white object-contain p-1"
           />
           <div>
             <p className="text-sm font-semibold text-foreground">BSM Engineering</p>

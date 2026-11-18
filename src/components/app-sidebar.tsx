@@ -167,7 +167,7 @@ export function AppSidebar() {
           <img
             src={BSM_LOGO_URL}
             alt="BSM Engineering logo"
-            className="h-8 w-8 shrink-0 rounded-lg object-cover"
+            className="h-8 w-8 shrink-0 rounded-lg bg-white object-contain p-0.5"
           />
           {!collapsed && (
             <div className="min-w-0">
