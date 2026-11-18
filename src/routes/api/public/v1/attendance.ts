@@ -70,8 +70,10 @@ export const Route = createFileRoute("/api/public/v1/attendance")({
         const outcome = await applyPunch(ctx, body, employeeId, "single");
         if (outcome.status === "rejected")
           return fail(422, "punch_rejected", outcome.message ?? "Punch rejected");
+        // 500, not 502: the preview gateway replaces 502 bodies with its own
+        // page, which hid the real reason from the app.
         if (outcome.status === "error")
-          return fail(502, "upstream_error", outcome.message ?? "Unable to save attendance");
+          return fail(500, "upstream_error", outcome.message ?? "Unable to save attendance");
         return ok(outcome.attendance ?? null, {
           duplicate: outcome.status === "duplicate",
           verification: outcome.verdict?.verification ?? "unverified",

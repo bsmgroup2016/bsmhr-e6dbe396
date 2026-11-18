@@ -9,7 +9,7 @@ import { TABLE_COLUMNS, UNAVAILABLE_TABLES } from "@/core/data-tables";
  * punch after regaining signal never creates a second attendance row.
  */
 import { fromAttendance } from "@/lib/db";
-import { sbRest, sbSelect, type AuthContext } from "@/lib/api-v1.server";
+import { sbRest, sbSelect, serviceRest, type AuthContext } from "@/lib/api-v1.server";
 import { verifyPunch, type PunchVerdict } from "@/lib/punch-verification";
 
 export interface PunchEvent {
@@ -161,20 +161,37 @@ export async function applyPunch(
     }
   }
 
+  // A worker's own portal punch: the connected database does not let the
+  // employee role write attendance, so the server writes this one row with
+  // the service key after the caller's token resolved to this employee.
+  // Only the punch time/GPS is accepted; status/hours stay staff-controlled.
+  const selfPunch =
+    directPunch && employeeId === ctx.employeeId && !isStaffCtx(ctx);
+  const rest = async (path: string, init?: RequestInit & { prefer?: string }) =>
+    (selfPunch ? await serviceRest(path, init) : null) ?? sbRest(ctx, path, init);
+  if (selfPunch) {
+    for (const [key, value] of [["checkIn", event.checkIn], ["checkOut", event.checkOut]] as const)
+      if (value && !/^\d{2}:\d{2}(:\d{2})?$/.test(value))
+        return { clientEventId, status: "rejected", message: `${key} must be HH:MM` };
+  }
+
   // 2. Upsert the day's attendance row.
-  const existing = await sbSelect<{ id: string }>(
-    ctx,
+  const lookup = await rest(
     `attendance?select=id&employee_id=eq.${encodeURIComponent(employeeId)}&date=eq.${date}&limit=1`,
   );
+  if (!lookup.ok) return { clientEventId, status: "error", message: await upstreamMessage(lookup, "Unable to read today's attendance") };
+  const existing = (await lookup.json()) as { id: string }[];
   const payload: Record<string, unknown> = {
     employee_id: employeeId,
     date,
-    status: event.status ?? "Present",
+    status: selfPunch ? "Present" : event.status ?? "Present",
   };
-  if (event.notes !== undefined) payload["notes"] = event.notes ?? null;
-  if (event.siteId) payload["site_id"] = event.siteId;
-  if (event.hoursWorked != null) payload["hours_worked"] = event.hoursWorked;
-  if (event.overtimeHours != null) payload["overtime_hours"] = event.overtimeHours;
+  if (!selfPunch) {
+    if (event.notes !== undefined) payload["notes"] = event.notes ?? null;
+    if (event.siteId) payload["site_id"] = event.siteId;
+    if (event.hoursWorked != null) payload["hours_worked"] = event.hoursWorked;
+    if (event.overtimeHours != null) payload["overtime_hours"] = event.overtimeHours;
+  }
   if (isCheckOut) {
     payload["check_out"] = event.checkOut || timeOf(event.punchedAt);
     if (event.lat != null) payload["check_out_lat"] = event.lat;
@@ -204,17 +221,17 @@ export async function applyPunch(
 
   const row = existing[0];
   const res = row
-    ? await sbRest(ctx, `attendance?id=eq.${row.id}`, {
+    ? await rest(`attendance?id=eq.${encodeURIComponent(row.id)}&employee_id=eq.${encodeURIComponent(employeeId)}`, {
         method: "PATCH",
         prefer: "return=representation",
         body: JSON.stringify(payload),
       })
-    : await sbRest(ctx, `attendance`, {
+    : await rest(`attendance`, {
         method: "POST",
         prefer: "return=representation",
         body: JSON.stringify(payload),
       });
-  if (!res.ok) return { clientEventId, status: "error", message: "Unable to save attendance" };
+  if (!res.ok) return { clientEventId, status: "error", message: await upstreamMessage(res, "Unable to save attendance") };
   const saved = (await res.json()) as Record<string, unknown>[];
   const savedRow = saved[0];
 
@@ -237,4 +254,20 @@ export async function applyPunch(
     attendance: savedRow ? fromAttendance(savedRow) : null,
     verdict,
   };
+}
+
+const STAFF_ROLES = ["admin", "hr", "manager", "supervisor"];
+function isStaffCtx(ctx: AuthContext) {
+  return (ctx.roles ?? []).some((role) => STAFF_ROLES.includes(role));
+}
+
+/** Readable reason from a failed database response, logged for diagnosis. */
+async function upstreamMessage(res: Response, fallback: string) {
+  const text = await res.text().catch(() => "");
+  console.error(`[attendance] ${fallback}: ${res.status} ${text.slice(0, 300)}`);
+  try {
+    const detail = (JSON.parse(text) as { message?: string }).message;
+    if (detail) return `${fallback}: ${detail}`;
+  } catch { /* not JSON */ }
+  return fallback;
 }

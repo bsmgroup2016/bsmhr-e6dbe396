@@ -63,3 +63,42 @@ test("failed direct attendance writes never report success", async () => {
     expect((await applyPunch(ctx, { date: "2026-11-18", checkIn: "07:00" }, "worker-1", "single")).status).toBe("error");
   } finally { globalThis.fetch = original; }
 });
+test("a worker's own check-in is written with the server key and ignores status/hours from the device", async () => {
+  const original = globalThis.fetch;
+  const originalKey = process.env["SB_SERVICE_ROLE_KEY"];
+  process.env["SB_SERVICE_ROLE_KEY"] = "service-test";
+  const calls: { auth: string; method: string; body?: Record<string, unknown> }[] = [];
+  globalThis.fetch = (async (_input: string | URL | Request, init?: RequestInit) => {
+    const body = init?.body ? JSON.parse(String(init.body)) : undefined;
+    calls.push({ auth: String((init?.headers as Record<string, string>)?.["Authorization"]), method: init?.method ?? "GET", body });
+    return Response.json(body ? [{ id: "attendance-1", ...body }] : []);
+  }) as typeof fetch;
+  try {
+    const result = await applyPunch(ctx, { date: "2026-11-18", checkIn: "07:00", status: "Leave", hoursWorked: 12, overtimeHours: 5 }, "worker-1", "single");
+    expect(result.status).toBe("saved");
+    expect(calls.every(call => call.auth === "Bearer service-test")).toBe(true);
+    expect(calls.find(call => call.method === "POST")?.body).toEqual({ employee_id: "worker-1", date: "2026-11-18", status: "Present", check_in: "07:00" });
+  } finally {
+    globalThis.fetch = original;
+    if (originalKey === undefined) delete process.env["SB_SERVICE_ROLE_KEY"]; else process.env["SB_SERVICE_ROLE_KEY"] = originalKey;
+  }
+});
+
+test("a worker cannot punch for another employee with the server key", async () => {
+  const original = globalThis.fetch;
+  const originalKey = process.env["SB_SERVICE_ROLE_KEY"];
+  process.env["SB_SERVICE_ROLE_KEY"] = "service-test";
+  const auths: string[] = [];
+  globalThis.fetch = (async (_input: string | URL | Request, init?: RequestInit) => {
+    auths.push(String((init?.headers as Record<string, string>)?.["Authorization"]));
+    return Response.json([]);
+  }) as typeof fetch;
+  try {
+    await applyPunch(ctx, { date: "2026-11-18", checkIn: "07:00" }, "someone-else", "single");
+    expect(auths.length).toBeGreaterThan(0);
+    expect(auths.every(auth => auth === "Bearer test-token")).toBe(true);
+  } finally {
+    globalThis.fetch = original;
+    if (originalKey === undefined) delete process.env["SB_SERVICE_ROLE_KEY"]; else process.env["SB_SERVICE_ROLE_KEY"] = originalKey;
+  }
+});

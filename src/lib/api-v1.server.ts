@@ -10,7 +10,9 @@ import { UNAVAILABLE_TABLES } from "@/core/data-tables";
  *
  * Auth model: the caller sends `Authorization: Bearer <supabase access token>`.
  * We forward that token to Supabase REST so Row Level Security applies as
- * the signed-in user. No service-role key is ever used here.
+ * the signed-in user. The only exception is `serviceRest`, used after the
+ * caller has been verified for a narrowly scoped self-write (a worker's own
+ * check-in/check-out row) that the connected RLS does not grant to workers.
  */
 
 const SUPABASE_URL = "https://thrfyeyqafmdnpexgmlc.supabase.co";
@@ -185,6 +187,26 @@ export async function sbRest(
   const headers: Record<string, string> = {
     apikey: SUPABASE_ANON,
     Authorization: `Bearer ${ctx.token}`,
+    "Content-Type": "application/json",
+  };
+  if (init?.prefer) headers["Prefer"] = init.prefer;
+  return fetch(`${SUPABASE_URL}/rest/v1/${path}`, { ...init, headers });
+}
+
+/**
+ * Service-role REST call. Only for writes the server has already scoped to
+ * the verified caller (e.g. the worker's own attendance row). Returns null
+ * when the service key is not configured so callers can fall back.
+ */
+export async function serviceRest(
+  path: string,
+  init?: RequestInit & { prefer?: string },
+): Promise<Response | null> {
+  const key = process.env["SB_SERVICE_ROLE_KEY"];
+  if (!key) return null;
+  const headers: Record<string, string> = {
+    apikey: key,
+    Authorization: `Bearer ${key}`,
     "Content-Type": "application/json",
   };
   if (init?.prefer) headers["Prefer"] = init.prefer;
