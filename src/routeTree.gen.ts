@@ -82,6 +82,7 @@ import { Route as ApiPublicRunAutomationsRouteImport } from './routes/api/public
 import { Route as ApiPublicSendAlertsRouteImport } from './routes/api/public/send-alerts'
 import { Route as ApiPublicSmtpServersRouteImport } from './routes/api/public/smtp-servers'
 import { Route as ApiPublicUserAdminRouteImport } from './routes/api/public/user-admin'
+import { Route as ApiPublicWorkerAccountsRouteImport } from './routes/api/public/worker-accounts'
 import { Route as ApiPublicV1AttendanceRouteImport } from './routes/api/public/v1/attendance'
 import { Route as ApiPublicV1ClaimTemplateRouteImport } from './routes/api/public/v1/claim-template'
 import { Route as ApiPublicV1ClientsRouteImport } from './routes/api/public/v1/clients'
@@ -484,6 +485,11 @@ const ApiPublicUserAdminRoute = ApiPublicUserAdminRouteImport.update({
   path: '/api/public/user-admin',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicWorkerAccountsRoute = ApiPublicWorkerAccountsRouteImport.update({
+  id: '/api/public/worker-accounts',
+  path: '/api/public/worker-accounts',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicV1AttendanceRoute = ApiPublicV1AttendanceRouteImport.update({
   id: '/api/public/v1/attendance',
   path: '/api/public/v1/attendance',
@@ -668,6 +674,7 @@ export interface FileRoutesByFullPath {
   '/api/public/send-alerts': typeof ApiPublicSendAlertsRoute
   '/api/public/smtp-servers': typeof ApiPublicSmtpServersRoute
   '/api/public/user-admin': typeof ApiPublicUserAdminRoute
+  '/api/public/worker-accounts': typeof ApiPublicWorkerAccountsRoute
   '/api/public/v1/attendance': typeof ApiPublicV1AttendanceRouteWithChildren
   '/api/public/v1/claim-template': typeof ApiPublicV1ClaimTemplateRoute
   '/api/public/v1/clients': typeof ApiPublicV1ClientsRoute
@@ -763,6 +770,7 @@ export interface FileRoutesByTo {
   '/api/public/send-alerts': typeof ApiPublicSendAlertsRoute
   '/api/public/smtp-servers': typeof ApiPublicSmtpServersRoute
   '/api/public/user-admin': typeof ApiPublicUserAdminRoute
+  '/api/public/worker-accounts': typeof ApiPublicWorkerAccountsRoute
   '/api/public/v1/attendance': typeof ApiPublicV1AttendanceRouteWithChildren
   '/api/public/v1/claim-template': typeof ApiPublicV1ClaimTemplateRoute
   '/api/public/v1/clients': typeof ApiPublicV1ClientsRoute
@@ -860,6 +868,7 @@ export interface FileRoutesById {
   '/api/public/send-alerts': typeof ApiPublicSendAlertsRoute
   '/api/public/smtp-servers': typeof ApiPublicSmtpServersRoute
   '/api/public/user-admin': typeof ApiPublicUserAdminRoute
+  '/api/public/worker-accounts': typeof ApiPublicWorkerAccountsRoute
   '/api/public/v1/attendance': typeof ApiPublicV1AttendanceRouteWithChildren
   '/api/public/v1/claim-template': typeof ApiPublicV1ClaimTemplateRoute
   '/api/public/v1/clients': typeof ApiPublicV1ClientsRoute
@@ -957,6 +966,7 @@ export interface FileRouteTypes {
     | '/api/public/send-alerts'
     | '/api/public/smtp-servers'
     | '/api/public/user-admin'
+    | '/api/public/worker-accounts'
     | '/api/public/v1/attendance'
     | '/api/public/v1/claim-template'
     | '/api/public/v1/clients'
@@ -1052,6 +1062,7 @@ export interface FileRouteTypes {
     | '/api/public/send-alerts'
     | '/api/public/smtp-servers'
     | '/api/public/user-admin'
+    | '/api/public/worker-accounts'
     | '/api/public/v1/attendance'
     | '/api/public/v1/claim-template'
     | '/api/public/v1/clients'
@@ -1148,6 +1159,7 @@ export interface FileRouteTypes {
     | '/api/public/send-alerts'
     | '/api/public/smtp-servers'
     | '/api/public/user-admin'
+    | '/api/public/worker-accounts'
     | '/api/public/v1/attendance'
     | '/api/public/v1/claim-template'
     | '/api/public/v1/clients'
@@ -1197,6 +1209,7 @@ export interface RootRouteChildren {
   ApiPublicSendAlertsRoute: typeof ApiPublicSendAlertsRoute
   ApiPublicSmtpServersRoute: typeof ApiPublicSmtpServersRoute
   ApiPublicUserAdminRoute: typeof ApiPublicUserAdminRoute
+  ApiPublicWorkerAccountsRoute: typeof ApiPublicWorkerAccountsRoute
   ApiPublicV1AttendanceRoute: typeof ApiPublicV1AttendanceRouteWithChildren
   ApiPublicV1ClaimTemplateRoute: typeof ApiPublicV1ClaimTemplateRoute
   ApiPublicV1ClientsRoute: typeof ApiPublicV1ClientsRoute
@@ -1727,6 +1740,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicUserAdminRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/worker-accounts': {
+      id: '/api/public/worker-accounts'
+      path: '/api/public/worker-accounts'
+      fullPath: '/api/public/worker-accounts'
+      preLoaderRoute: typeof ApiPublicWorkerAccountsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/v1/attendance': {
       id: '/api/public/v1/attendance'
       path: '/api/public/v1/attendance'
@@ -2080,6 +2100,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicSendAlertsRoute: ApiPublicSendAlertsRoute,
   ApiPublicSmtpServersRoute: ApiPublicSmtpServersRoute,
   ApiPublicUserAdminRoute: ApiPublicUserAdminRoute,
+  ApiPublicWorkerAccountsRoute: ApiPublicWorkerAccountsRoute,
   ApiPublicV1AttendanceRoute: ApiPublicV1AttendanceRouteWithChildren,
   ApiPublicV1ClaimTemplateRoute: ApiPublicV1ClaimTemplateRoute,
   ApiPublicV1ClientsRoute: ApiPublicV1ClientsRoute,

@@ -20,6 +20,7 @@ import type { ClientContract } from "@/lib/types";
 import type { Quotation, QuotationLine } from "@/lib/types";
 import type { MedicalClaim, EmployeeLoan, LoanRepayment, ManpowerRequest, ManpowerRequestItem } from "@/lib/types";
 import { supabase } from "@/integrations/supabase/client";
+import { autoCreateWorkerAccount } from "@/lib/worker-accounts";
 import { sessionDataCache } from "@/lib/session-data-cache";
 import { pageCollections } from "@/lib/page-data";
 import { assertAvailableTable } from "@/core/data-tables";
@@ -263,6 +264,7 @@ export async function saveEmployeeConfirmed(updates: Partial<Employee>, id?: str
   if (error) throw new Error(error.message);
   if (!data || data.id !== row.id) throw new Error("The employee save could not be confirmed");
   const saved = { ...fromEmployee(data), site: existing?.site ?? null };
+  if (!saved.userId) saved.userId = await autoCreateWorkerAccount(saved.id);
   const current = getState();
   setState({ ...current, employees: existing ? current.employees.map(employee => employee.id === saved.id ? saved : employee) : [saved, ...current.employees.filter(employee => employee.id !== saved.id)] });
   sessionDataCache.invalidate("employees|");
@@ -305,7 +307,17 @@ export function addEmployee(employee: Omit<Employee, "id" | "employeeCode" | "cr
   const row: Employee = { ...employee, id: newId(), employeeCode: nextCode, createdAt: now, updatedAt: now };
   setState({ ...s, employees: [row, ...s.employees] });
   void supabase.from("employees").insert({ id: row.id, ...toEmployee(row) }).then(({ error }) => {
-    if (!error) { onSaved?.(row); return; }
+    if (!error) {
+      void autoCreateWorkerAccount(row.id).then(userId => {
+        if (userId) {
+          row.userId = userId;
+          const current = getState();
+          setState({ ...current, employees: current.employees.map(employee => employee.id === row.id ? { ...employee, userId } : employee) });
+        }
+        onSaved?.(row);
+      });
+      return;
+    }
     fail("employees", error);
     // Roll back the optimistic row so the list matches what was actually saved.
     const cur = getState();

@@ -135,7 +135,7 @@ function AuthCard() {
     <Card className="w-full max-w-md border border-border/60 shadow-elegant">
       <CardHeader className="space-y-1">
         <CardTitle className="text-xl font-semibold">Welcome back</CardTitle>
-        <CardDescription>Sign in with your email and password to continue.</CardDescription>
+        <CardDescription>Sign in with your email or worker login ID.</CardDescription>
       </CardHeader>
       <CardContent>
         <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -146,11 +146,12 @@ function AuthCard() {
           <TabsContent value="signin">
             <form onSubmit={handleSignIn} className="space-y-4 pt-2">
               <div className="space-y-2">
-                <Label htmlFor="signin-email">Email</Label>
+                <Label htmlFor="signin-email">Email / Worker login ID</Label>
                 <Input
                   id="signin-email"
-                  type="email"
-                  placeholder="admin@bsm.sg"
+                  type="text"
+                  autoComplete="username"
+                  placeholder="Email or worker login ID"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}

@@ -8,6 +8,7 @@ import {
   type Context,
 } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { loginEmail } from "@/core/worker-login";
 import { clearSessionStore } from "@/lib/store";
 import type { User, Session } from "@supabase/supabase-js";
 
@@ -97,7 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [fetchRoles]);
 
   const signIn = useCallback(async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await supabase.auth.signInWithPassword({ email: loginEmail(email), password });
     return { error };
   }, []);
 

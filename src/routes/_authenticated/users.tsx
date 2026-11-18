@@ -7,6 +7,7 @@ import {
   ChevronRight,
   Globe,
   Loader2,
+  KeyRound,
   Mail,
   Pencil,
   Phone,
@@ -68,6 +69,7 @@ import { ROLE_LABELS, type AppAuthRole } from "@/lib/permissions";
 import { createUser, deleteUsers, updateUser, setUserRole } from "@/lib/user-admin";
 import { uploadToR2 } from "@/lib/r2";
 import { accountGroup, displayRole, type AccountGroup } from "@/features/user-directory/groups";
+import { ensureWorkerAccounts, resetWorkerPassword } from "@/lib/worker-accounts";
 
 const roles: AppAuthRole[] = [
   "admin",
@@ -145,17 +147,32 @@ export default function UsersPage() {
   const [editUser, setEditUser] = useState<SystemUser | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string[] | null>(null);
   const [busy, setBusy] = useState(false);
+  const [workers, setWorkers] = useState<{ id: string; name: string; employee_code: string; user_id: string | null }[]>([]);
+  const [provisioning, setProvisioning] = useState(false);
+  const [credentials, setCredentials] = useState<{ name: string; username: string; password: string } | null>(null);
+  const [passwordWorker, setPasswordWorker] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
-    const [{ data: profiles, error: pErr }, { data: roleRows, error: rErr }] = await Promise.all([
+    const [{ data: profiles, error: pErr }, { data: roleRows, error: rErr }, workerResult] = await Promise.all([
       supabase
         .from("profiles")
         .select(
           "id, email, full_name, username, avatar_key, phone, is_active, created_at, last_login_at, last_login_ip",
         ),
       supabase.from("user_roles").select("user_id, role"),
+      (async () => {
+        const rows: { id: string; name: string; employee_code: string; user_id: string | null }[] = [];
+        for (let offset = 0; ; offset += 500) {
+          const result = await supabase.from("employees").select("id,name,employee_code,user_id").order("id").range(offset, offset + 499);
+          if (result.error) return { rows, error: result.error };
+          rows.push(...result.data);
+          if (result.data.length < 500) return { rows, error: null };
+        }
+      })(),
     ]);
+    if (workerResult.error) toast.error("Could not load worker login links");
+    else setWorkers(workerResult.rows);
     if (pErr || rErr) {
       toast.error(pErr?.message ?? rErr?.message ?? "Could not load users");
       setLoading(false);
@@ -239,6 +256,7 @@ export default function UsersPage() {
     const matchesQuery =
       u.fullName.toLowerCase().includes(q) ||
       u.email.toLowerCase().includes(q) ||
+      u.username.toLowerCase().includes(q) ||
       u.phone.toLowerCase().includes(q);
     return matchesQuery && (roleFilter === "all" || u.roles.includes(roleFilter));
   });
@@ -264,6 +282,35 @@ export default function UsersPage() {
   const unassigned = users.filter((u) => accountGroup(u.roles) === "unassigned").length;
   const groupTitle = group === "workers" ? "Worker App Accounts" : group === "staff" ? "Admin & Staff Accounts" : "Unassigned Accounts";
   const availableFilters = group === "workers" ? ["employee" as const] : group === "staff" ? roles.filter((r) => r !== "employee") : [];
+  const missingWorkers = workers.filter(worker => !worker.user_id);
+
+  async function createMissingAccounts() {
+    setProvisioning(true);
+    let failed = 0;
+    let ready = 0;
+    try {
+      for (let offset = 0; offset < missingWorkers.length; offset += 20) {
+        const response = await ensureWorkerAccounts(missingWorkers.slice(offset, offset + 20).map(worker => worker.id));
+        ready += response.results.filter(result => result.ok).length;
+        failed += response.results.filter(result => !result.ok).length;
+      }
+      if (ready) toast.success(`${ready} worker logins ready`);
+      if (failed) toast.error(`${failed} worker logins could not be created. Retry remaining workers.`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Worker login creation failed");
+    } finally {
+      await load();
+      setProvisioning(false);
+    }
+  }
+
+  async function setWorkerPassword(employeeId: string) {
+    setPasswordWorker(null);
+    setSavingId(employeeId);
+    try { setCredentials(await resetWorkerPassword(employeeId)); }
+    catch (error) { toast.error(error instanceof Error ? error.message : "Could not set password"); }
+    finally { setSavingId(null); }
+  }
 
   function switchGroup(value: string) {
     if (value !== "staff" && value !== "workers" && value !== "unassigned") return;
@@ -304,6 +351,21 @@ export default function UsersPage() {
           <SummaryCard title="Active" value={activeCount.toString()} icon={<CheckCircle2 className="h-5 w-5" />} variant="success" caption="Can log in" />
           <SummaryCard title="Inactive" value={(groupUsers.length - activeCount).toString()} icon={<Power className="h-5 w-5" />} variant="warning" caption="Disabled accounts" />
         </div>
+
+        {group === "workers" && missingWorkers.length > 0 && <section className="space-y-3 border-y py-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h3 className="font-semibold">Workers without login ({missingWorkers.length})</h3>
+            <Button size="sm" disabled={provisioning} onClick={() => void createMissingAccounts()}>
+              {provisioning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}Create missing logins
+            </Button>
+          </div>
+          <div className="max-h-56 overflow-auto divide-y">
+            {missingWorkers.map(worker => <div key={worker.id} className="flex items-center justify-between gap-3 py-2 text-sm">
+              <span className="min-w-0 break-words">{worker.name} <span className="text-muted-foreground">· {worker.employee_code}</span></span>
+              <StatusBadge variant="warning" label="Login pending" />
+            </div>)}
+          </div>
+        </section>}
 
         <div className="rounded-xl border bg-card shadow-sm">
           <div className="flex flex-col gap-3 border-b p-4 lg:flex-row lg:items-center lg:justify-between">
@@ -378,7 +440,7 @@ export default function UsersPage() {
                     />
                   </TableHead>
                   <TableHead className="min-w-[240px]">{group === "workers" ? "Worker" : "User"}</TableHead>
-                  <TableHead className="min-w-[220px]">Login email / Phone</TableHead>
+                  <TableHead className="min-w-[220px]">{group === "workers" ? "Login ID / Phone" : "Login email / Phone"}</TableHead>
                   <TableHead className="min-w-[230px]">Login info</TableHead>
                   <TableHead className="w-56">Role</TableHead>
                   <TableHead className="w-28">Status</TableHead>
@@ -449,7 +511,7 @@ export default function UsersPage() {
                         <div className="space-y-1">
                           <div className="flex items-center gap-2 text-sm">
                             <Mail className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                            <span className="truncate">{u.email || "—"}</span>
+                            <span className="break-all">{group === "workers" ? u.username || u.email || "—" : u.email || "—"}</span>
                           </div>
                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <Phone className="h-3.5 w-3.5 shrink-0" />
@@ -503,6 +565,11 @@ export default function UsersPage() {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center justify-end gap-1.5">
+                          {group === "workers" && workers.some(worker => worker.user_id === u.id) && <Button
+                            size="icon" variant="outline" className="h-8 w-8" title="Set temporary password"
+                            aria-label={`Set temporary password for ${u.fullName}`} disabled={savingId !== null}
+                            onClick={() => setPasswordWorker(workers.find(worker => worker.user_id === u.id)?.id ?? null)}
+                          ><KeyRound className="h-3.5 w-3.5" /></Button>}
                           <Button
                             size="icon"
                             variant="outline"
@@ -575,6 +642,22 @@ export default function UsersPage() {
         </Tabs>
       </div>
 
+      <Dialog open={credentials !== null} onOpenChange={(open) => !open && setCredentials(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>{credentials?.name} — Worker login</DialogTitle><DialogDescription>Temporary password. Share privately with this worker; it will not be shown again after closing.</DialogDescription></DialogHeader>
+          <div className="space-y-3">
+            <Label>Login ID</Label><Input readOnly value={credentials?.username ?? ""} />
+            <Label>Temporary password</Label><Input readOnly autoComplete="off" value={credentials?.password ?? ""} />
+          </div>
+          <DialogFooter><Button onClick={() => setCredentials(null)}>Done</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <AlertDialog open={passwordWorker !== null} onOpenChange={(open) => !open && setPasswordWorker(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader><AlertDialogTitle>Set a new temporary password?</AlertDialogTitle><AlertDialogDescription>The current password will stop working. Share the new password privately with the worker.</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => { if (passwordWorker) void setWorkerPassword(passwordWorker); }}>Set password</AlertDialogAction></AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       <AddUserDialog
         key={group}
         group={group}
