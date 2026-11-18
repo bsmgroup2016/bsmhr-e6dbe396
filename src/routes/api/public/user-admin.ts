@@ -138,12 +138,29 @@ export const Route = createFileRoute("/api/public/user-admin")({
           }
 
           if (body.action === "update") {
-            if (body.email || body.password) {
+            // Worker logins authenticate with the generated alias email, so a username
+            // change must rename that email too; editing only the profile would break sign-in.
+            let email = body.email;
+            if (!email && body.username) {
+              const [profile] = await rest<{ email: string | null }>(`profiles?select=email&id=eq.${body.id}&limit=1`);
+              if (profile?.email?.endsWith("@workers.hrbsm.xyz")) {
+                const next = body.username.trim().toLowerCase();
+                if (!/^[a-z0-9][a-z0-9._-]{1,58}[a-z0-9]$/.test(next)) {
+                  return Response.json({ error: "Username may use only small letters, numbers, dot, dash and underscore" }, { status: 400 });
+                }
+                email = `${next}@workers.hrbsm.xyz`;
+                if (email !== profile.email) {
+                  const taken = await rest<{ id: string }>(`profiles?select=id&email=eq.${encodeURIComponent(email)}&id=neq.${body.id}&limit=1`);
+                  if (taken.length) return Response.json({ error: "This username is already in use" }, { status: 409 });
+                }
+              }
+            }
+            if (email || body.password) {
               const res = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${body.id}`, {
                 method: "PUT",
                 headers: serviceHeaders(),
                 body: JSON.stringify({
-                  ...(body.email ? { email: body.email, email_confirm: true } : {}),
+                  ...(email ? { email, email_confirm: true } : {}),
                   ...(body.password ? { password: body.password } : {}),
                 }),
               });
@@ -155,7 +172,7 @@ export const Route = createFileRoute("/api/public/user-admin")({
                 full_name: body.fullName ?? null,
                 phone: body.phone ?? null,
                 username: body.username ?? null,
-                ...(body.email ? { email: body.email } : {}),
+                ...(email ? { email } : {}),
                 ...(body.isActive === undefined ? {} : { is_active: body.isActive }),
                 ...(body.avatarKey === undefined ? {} : { avatar_key: body.avatarKey }),
               }),
