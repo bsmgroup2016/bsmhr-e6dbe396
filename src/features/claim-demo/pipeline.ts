@@ -146,8 +146,8 @@ export async function saveToRecords(workers: Worker[], month: string, site: stri
           status: "Present",
           checkIn: entry.checkIn,
           checkOut: entry.checkOut,
-          hoursWorked: entry.normalHours,
-          overtimeHours: entry.otHours,
+          hoursWorked: entry.normalHours ?? 0,
+          overtimeHours: entry.otHours ?? 0,
           notes: `TimeCard Claim (${entry.siteName || site})`,
         });
       }

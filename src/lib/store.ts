@@ -10,6 +10,7 @@ import type {
   Asset, AssetIssuance,
   DormitoryInvoice, DormitoryInspection, DormitoryMovement,
 } from "@/lib/types";
+import type { ApprovalStatus } from "@/lib/types";
 import type { TrainingCourse, TrainingRecord, SafetyIncident } from "@/lib/types";
 import type { JobRequisition, Candidate } from "@/lib/types";
 import type { Lead, CrmActivity } from "@/lib/types";
@@ -797,7 +798,7 @@ export function generatePayrollForMonth(month: string, companyId?: string): { cr
           employeeId: emp.id,
           month,
           amount: installment,
-          source: "Payroll Deduction",
+          source: "Payroll",
           paidOn: new Date().toISOString().slice(0, 10),
           remarks: `Auto-deducted from ${month} payroll`,
         });
@@ -933,7 +934,7 @@ export function updateLeaveRequest(id: string, updates: Partial<LeaveRequest>): 
     );
     if (matchingApp && matchingApp.status !== updates.status) {
       updateApproval(matchingApp.id, {
-        status: updates.status === "Approved" ? "Approved" : updates.status === "Rejected" ? "Rejected" : "Cancelled",
+        status: updates.status === "Approved" ? "Approved" : updates.status === "Rejected" ? "Rejected" : "Rejected",
         decidedAt: new Date().toISOString(),
       });
     }
@@ -966,7 +967,7 @@ export function deleteLeaveRequest(id: string): boolean {
     (a) => a.type === "Leave" && (a.payload.includes(id) || (a.status === "Pending" && a.payload.includes(existing.employeeId) && a.payload.includes(existing.startDate))),
   );
   if (matchingApp && matchingApp.status === "Pending") {
-    updateApproval(matchingApp.id, { status: "Cancelled", decidedAt: new Date().toISOString() });
+    updateApproval(matchingApp.id, { status: "Rejected", decidedAt: new Date().toISOString() });
   }
 
   setState({ ...s, leaveRequests: s.leaveRequests.filter((l) => l.id !== id) });
@@ -998,7 +999,6 @@ export function approveLeaveRequest(id: string): LeaveRequest | undefined {
     if (existing && ((existing.hoursWorked || 0) > 0 || existing.status === "Present")) {
       // Work was recorded for this day; preserve hours and annotate with leave status
       upsertAttendance({
-        id: existing.id,
         employeeId: leave.employeeId,
         date: dateStr,
         status: existing.status,
@@ -1008,7 +1008,6 @@ export function approveLeaveRequest(id: string): LeaveRequest | undefined {
       });
     } else {
       upsertAttendance({
-        id: existing?.id,
         employeeId: leave.employeeId,
         date: dateStr,
         status: attendanceStatus,
