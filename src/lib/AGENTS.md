@@ -1,0 +1,1 @@
+- A worker's own direct portal check-in/check-out is written server-side with the service key, scoped to the employee resolved from the caller's token and limited to time/GPS fields, because the connected RLS grants workers no attendance writes.
