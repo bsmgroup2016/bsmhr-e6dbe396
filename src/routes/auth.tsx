@@ -34,20 +34,33 @@ function AuthPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-background via-background to-muted/40 p-4">
-      <div className="mb-6 flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-primary text-primary-foreground font-bold shadow-elegant">
-          BSM
-        </div>
-        <div>
-          <h1 className="text-lg font-semibold tracking-tight">BSM Engineering</h1>
-          <p className="text-xs text-muted-foreground">Workforce & Operations Management</p>
-        </div>
+    <div className="worker-app relative flex min-h-screen items-center justify-center overflow-hidden p-4 lg:p-8">
+      <div aria-hidden className="pointer-events-none absolute -left-32 -top-32 h-96 w-96 rounded-full bg-brand-lime/30 blur-3xl" />
+      <div aria-hidden className="pointer-events-none absolute -bottom-40 -right-24 h-[28rem] w-[28rem] rounded-full bg-primary/20 blur-3xl" />
+      <div className="relative grid w-full max-w-5xl overflow-hidden rounded-3xl bg-card shadow-[var(--wa-shadow)] lg:grid-cols-2">
+        <section className="wa-hero relative hidden flex-col justify-between overflow-hidden p-10 text-primary-foreground lg:flex">
+          <div aria-hidden className="pointer-events-none absolute -right-20 -top-20 h-72 w-72 rounded-full bg-brand-lime/30 blur-3xl" />
+          <div className="relative flex items-center gap-3">
+            <div className="wa-glass flex h-12 w-12 items-center justify-center rounded-2xl font-bold">BSM</div>
+            <div><p className="text-lg font-semibold">BSM Engineering</p><p className="text-xs opacity-80">Workforce & Operations Management</p></div>
+          </div>
+          <div className="relative space-y-4">
+            <h2 className="text-3xl font-semibold leading-tight">Your workforce,<br />one secure place.</h2>
+            <p className="max-w-sm text-sm opacity-80">Attendance, leave, payslips and site operations for Singapore manpower teams.</p>
+            <div className="grid grid-cols-3 gap-3 pt-2">
+              {["Attendance", "Payroll", "Projects"].map((t) => <div key={t} className="wa-glass rounded-xl px-3 py-2 text-center text-xs font-medium">{t}</div>)}
+            </div>
+          </div>
+          <p className="relative text-xs opacity-70">Singapore manpower supply · Secure sign-in required</p>
+        </section>
+        <section className="flex flex-col items-center justify-center p-5 sm:p-10">
+          <div className="mb-6 flex items-center gap-3 lg:hidden">
+            <div className="wa-avatar flex h-11 w-11 items-center justify-center rounded-2xl font-bold shadow-md">BSM</div>
+            <div><h1 className="text-lg font-semibold tracking-tight">BSM Engineering</h1><p className="text-xs text-muted-foreground">Workforce & Operations Management</p></div>
+          </div>
+          <AuthCard />
+        </section>
       </div>
-      <AuthCard />
-      <p className="mt-6 text-xs text-muted-foreground">
-        Singapore manpower supply · Secure sign-in required
-      </p>
     </div>
   );
 }
@@ -132,7 +145,7 @@ function AuthCard() {
   };
 
   return (
-    <Card className="w-full max-w-md border border-border/60 shadow-elegant">
+    <Card className="w-full max-w-md border-0 shadow-none">
       <CardHeader className="space-y-1">
         <CardTitle className="text-xl font-semibold">Welcome back</CardTitle>
         <CardDescription>Sign in with your email or worker login ID.</CardDescription>
@@ -179,7 +192,7 @@ function AuthCard() {
                   <AlertDescription>{message}</AlertDescription>
                 </Alert>
               )}
-              <Button type="submit" className="w-full" disabled={loading}>
+              <Button type="submit" className="wa-pink-btn h-11 w-full border-0 text-primary font-semibold" disabled={loading}>
                 {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                 Sign in
               </Button>
@@ -257,7 +270,7 @@ function AuthCard() {
                   <AlertDescription>{message}</AlertDescription>
                 </Alert>
               )}
-              <Button type="submit" className="w-full" disabled={loading}>
+              <Button type="submit" className="wa-pink-btn h-11 w-full border-0 text-primary font-semibold" disabled={loading}>
                 {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                 Create account
               </Button>
@@ -292,7 +305,7 @@ function AuthCard() {
                     <AlertDescription>{error}</AlertDescription>
                   </Alert>
                 )}
-                <Button type="submit" className="w-full" disabled={loading}>
+                <Button type="submit" className="wa-pink-btn h-11 w-full border-0 text-primary font-semibold" disabled={loading}>
                   {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                   Send reset link
                 </Button>
