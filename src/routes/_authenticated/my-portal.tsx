@@ -508,10 +508,10 @@ function MyPortalPage() {
       </div>
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {balances.filter((b) => b.entitled > 0 || b.taken > 0).map((b) => (
-          <Card key={b.type} className="p-4">
+          <Card key={b.type} className="relative overflow-hidden p-4 before:absolute before:inset-x-0 before:top-0 before:h-1 before:bg-gradient-to-r before:from-primary before:to-[var(--wa-pink)]">
             <p className="text-xs text-muted-foreground">{b.type}</p>
             <p className="mt-1 text-2xl font-semibold tabular-nums">{b.balance}<span className="text-sm font-normal text-muted-foreground"> / {b.entitled} days left</span></p>
-            <div className="mt-2 h-1.5 rounded-full bg-muted"><div className="h-1.5 rounded-full bg-primary" style={{ width: `${b.entitled ? Math.min(100, (b.taken / b.entitled) * 100) : 0}%` }} /></div>
+            <div className="mt-2 h-1.5 rounded-full bg-muted"><div className="wa-bar h-1.5 rounded-full" style={{ width: `${b.entitled ? Math.min(100, (b.taken / b.entitled) * 100) : 0}%` }} /></div>
             <p className="mt-1 text-xs text-muted-foreground">{b.taken} taken{b.eligible ? "" : " · not yet eligible"}</p>
           </Card>
         ))}
@@ -582,7 +582,7 @@ function MyPortalPage() {
             <ul className="divide-y">
               {ps.rows.map((p) => (
                 <li key={p.id}>
-                  <button type="button" onClick={() => { setPaySel(p.id); if (window.innerWidth < 1024) window.setTimeout(() => document.getElementById("payslip-detail")?.scrollIntoView({ behavior: "smooth", block: "start" }), 50); }} className={`flex w-full items-center justify-between gap-3 px-4 py-3 text-left ${selected?.id === p.id ? "bg-primary/10" : "hover:bg-muted/50"}`}>
+                  <button type="button" onClick={() => { setPaySel(p.id); if (window.innerWidth < 1024) window.setTimeout(() => document.getElementById("payslip-detail")?.scrollIntoView({ behavior: "smooth", block: "start" }), 50); }} className={`flex w-full items-center justify-between gap-3 px-4 py-3 text-left ${selected?.id === p.id ? "wa-tint border-l-4 border-primary" : "hover:bg-muted/50"}`}>
                     <div className="min-w-0"><p className="font-medium">{new Date(`${p.month}-01T00:00:00`).toLocaleDateString("en-SG", { month: "long", year: "numeric" })}</p><p className="text-xs text-muted-foreground">{p.status}</p></div>
                     <span className="shrink-0 font-semibold tabular-nums">{money(p.netPay)}</span>
                   </button>
@@ -591,7 +591,7 @@ function MyPortalPage() {
             </ul>
           </Card>
           {selected && (
-            <div id="payslip-detail" className="scroll-mt-20 lg:sticky lg:top-24 lg:self-start"><Card className="p-5">
+            <div id="payslip-detail" className="scroll-mt-20 lg:sticky lg:top-24 lg:self-start"><Card className="relative overflow-hidden p-5 shadow-[var(--wa-shadow)]"><div aria-hidden className="wa-bar absolute inset-x-0 top-0 h-1.5" />
               <div className="mb-3 flex items-start justify-between gap-3">
                 <div><p className="text-xs uppercase tracking-wide text-muted-foreground">Payslip</p><p className="text-lg font-semibold">{new Date(`${selected.month}-01T00:00:00`).toLocaleDateString("en-SG", { month: "long", year: "numeric" })}</p></div>
                 <StatusBadge label={selected.status} />
@@ -611,9 +611,9 @@ function MyPortalPage() {
                 {line("Other deductions", selected.otherDeductions, true)}
                 {!selected.accommodationDeduction && !selected.loanRepayment && !selected.otherDeductions ? line("Deductions", selected.deductions, true) : null}
               </div>
-              <div className="mt-3 flex justify-between border-t pt-3 text-base font-semibold"><span>Net pay</span><span className="tabular-nums text-primary">{money(selected.netPay)}</span></div>
+              <div className="wa-net mt-3 flex justify-between rounded-xl px-4 py-3 text-base font-semibold"><span>Net pay</span><span className="tabular-nums">{money(selected.netPay)}</span></div>
               {selected.paidAt && <p className="mt-1 text-xs text-muted-foreground">Paid on {selected.paidAt.slice(0, 10)}</p>}
-              <Button variant="outline" className="mt-4 h-10 w-full gap-2" onClick={() => void downloadPayslipPdf(selected, { employee }).catch(() => toast.error("Could not create payslip PDF"))}>
+              <Button className="wa-pink-btn mt-4 h-10 w-full gap-2 border-0 text-primary" onClick={() => void downloadPayslipPdf(selected, { employee }).catch(() => toast.error("Could not create payslip PDF"))}>
                 <Download className="h-4 w-4" />Download payslip
               </Button>
             </Card></div>

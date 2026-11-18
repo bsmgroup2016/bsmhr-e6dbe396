@@ -545,3 +545,6 @@ iframe[src*="lovable.dev/badge"] {
 .worker-app .wa-avatar { background: var(--wa-hero); color: var(--primary-foreground); }
 .worker-app .wa-glass { background: oklch(1 0 0 / 0.1); border: 1px solid oklch(1 0 0 / 0.14); backdrop-filter: blur(8px); }
 .worker-app [data-ui="summary-metric"] { border-color: var(--border); box-shadow: 0 6px 18px -12px oklch(0.32 0.12 265 / 0.35); }
+.worker-app .wa-bar { background: linear-gradient(90deg, oklch(0.36 0.12 265), oklch(0.72 0.13 225)); }
+.worker-app .wa-tint { background: linear-gradient(120deg, oklch(0.95 0.03 240), oklch(0.97 0.015 230)); }
+.worker-app .wa-net { background: var(--wa-hero); color: var(--primary-foreground); box-shadow: var(--wa-shadow); }
