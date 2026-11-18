@@ -1,5 +1,10 @@
 # Full-section UI/UX and workflow audit
 
+## Updated Antigravity Android handoff
+
+- [x] Replace the old Android prompt with current worker login, blue–sky UI, attendance/leave/payslip/profile flows, secure WebView requirements and APK/AAB deliverables; distinguish unavailable push/offline-event features and outdated API examples.
+- [x] Validate documentation against current source and provide a downloadable copy without modifying application behaviour; 14-section handoff checks passed and preview build is clean.
+
 ## Worker attendance submission error
 
 - [x] Investigate the reported pre-handler 502: current direct requests reach the handler; daemon logs contain no underlying transform error.
