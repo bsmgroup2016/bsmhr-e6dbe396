@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { SmtpSettings } from "@/components/settings/smtp-settings";
 import { StorageSettings } from "@/components/settings/storage-settings";
+import { MediaBrowser } from "@/components/settings/media-browser";
 import { ApiIntegrationSettings } from "@/components/settings/ai-settings";
 import { Badge } from "@/components/ui/badge";
 
@@ -130,6 +131,7 @@ export default function SettingsPage() {
             <TabsTrigger value="smtp">SMTP</TabsTrigger>
             <TabsTrigger value="payments">Payments</TabsTrigger>
             <TabsTrigger value="storage">Storage</TabsTrigger>
+            {isAdmin && <TabsTrigger value="media">Media</TabsTrigger>}
             {isAdmin && <TabsTrigger value="archive">Archive &amp; Clean</TabsTrigger>}
             <TabsTrigger value="data">Data</TabsTrigger>
             <TabsTrigger value="automation">Automation</TabsTrigger>
@@ -275,6 +277,7 @@ export default function SettingsPage() {
           <TabsContent value="storage" className="mt-4 space-y-4">
             <StorageSettings />
           </TabsContent>
+          {isAdmin && <TabsContent value="media" className="mt-4 space-y-4"><MediaBrowser /></TabsContent>}
           {isAdmin && <TabsContent value="archive" className="mt-4 space-y-4"><ArchiveSettings /></TabsContent>}
 
           <TabsContent value="data" className="mt-4 space-y-4">

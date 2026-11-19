@@ -77,6 +77,7 @@ import { Route as ApiPublicOcrRouteImport } from './routes/api/public/ocr'
 import { Route as ApiPublicProvisionEmployeeRouteImport } from './routes/api/public/provision-employee'
 import { Route as ApiPublicR2DeleteRouteImport } from './routes/api/public/r2-delete'
 import { Route as ApiPublicR2FileRouteImport } from './routes/api/public/r2-file'
+import { Route as ApiPublicR2FilesRouteImport } from './routes/api/public/r2-files'
 import { Route as ApiPublicR2SignedRouteImport } from './routes/api/public/r2-signed'
 import { Route as ApiPublicR2StatusRouteImport } from './routes/api/public/r2-status'
 import { Route as ApiPublicR2UploadRouteImport } from './routes/api/public/r2-upload'
@@ -463,6 +464,11 @@ const ApiPublicR2FileRoute = ApiPublicR2FileRouteImport.update({
   path: '/api/public/r2-file',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicR2FilesRoute = ApiPublicR2FilesRouteImport.update({
+  id: '/api/public/r2-files',
+  path: '/api/public/r2-files',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicR2SignedRoute = ApiPublicR2SignedRouteImport.update({
   id: '/api/public/r2-signed',
   path: '/api/public/r2-signed',
@@ -682,6 +688,7 @@ export interface FileRoutesByFullPath {
   '/api/public/provision-employee': typeof ApiPublicProvisionEmployeeRoute
   '/api/public/r2-delete': typeof ApiPublicR2DeleteRoute
   '/api/public/r2-file': typeof ApiPublicR2FileRoute
+  '/api/public/r2-files': typeof ApiPublicR2FilesRoute
   '/api/public/r2-signed': typeof ApiPublicR2SignedRoute
   '/api/public/r2-status': typeof ApiPublicR2StatusRoute
   '/api/public/r2-upload': typeof ApiPublicR2UploadRoute
@@ -780,6 +787,7 @@ export interface FileRoutesByTo {
   '/api/public/provision-employee': typeof ApiPublicProvisionEmployeeRoute
   '/api/public/r2-delete': typeof ApiPublicR2DeleteRoute
   '/api/public/r2-file': typeof ApiPublicR2FileRoute
+  '/api/public/r2-files': typeof ApiPublicR2FilesRoute
   '/api/public/r2-signed': typeof ApiPublicR2SignedRoute
   '/api/public/r2-status': typeof ApiPublicR2StatusRoute
   '/api/public/r2-upload': typeof ApiPublicR2UploadRoute
@@ -880,6 +888,7 @@ export interface FileRoutesById {
   '/api/public/provision-employee': typeof ApiPublicProvisionEmployeeRoute
   '/api/public/r2-delete': typeof ApiPublicR2DeleteRoute
   '/api/public/r2-file': typeof ApiPublicR2FileRoute
+  '/api/public/r2-files': typeof ApiPublicR2FilesRoute
   '/api/public/r2-signed': typeof ApiPublicR2SignedRoute
   '/api/public/r2-status': typeof ApiPublicR2StatusRoute
   '/api/public/r2-upload': typeof ApiPublicR2UploadRoute
@@ -980,6 +989,7 @@ export interface FileRouteTypes {
     | '/api/public/provision-employee'
     | '/api/public/r2-delete'
     | '/api/public/r2-file'
+    | '/api/public/r2-files'
     | '/api/public/r2-signed'
     | '/api/public/r2-status'
     | '/api/public/r2-upload'
@@ -1078,6 +1088,7 @@ export interface FileRouteTypes {
     | '/api/public/provision-employee'
     | '/api/public/r2-delete'
     | '/api/public/r2-file'
+    | '/api/public/r2-files'
     | '/api/public/r2-signed'
     | '/api/public/r2-status'
     | '/api/public/r2-upload'
@@ -1177,6 +1188,7 @@ export interface FileRouteTypes {
     | '/api/public/provision-employee'
     | '/api/public/r2-delete'
     | '/api/public/r2-file'
+    | '/api/public/r2-files'
     | '/api/public/r2-signed'
     | '/api/public/r2-status'
     | '/api/public/r2-upload'
@@ -1228,6 +1240,7 @@ export interface RootRouteChildren {
   ApiPublicProvisionEmployeeRoute: typeof ApiPublicProvisionEmployeeRoute
   ApiPublicR2DeleteRoute: typeof ApiPublicR2DeleteRoute
   ApiPublicR2FileRoute: typeof ApiPublicR2FileRoute
+  ApiPublicR2FilesRoute: typeof ApiPublicR2FilesRoute
   ApiPublicR2SignedRoute: typeof ApiPublicR2SignedRoute
   ApiPublicR2StatusRoute: typeof ApiPublicR2StatusRoute
   ApiPublicR2UploadRoute: typeof ApiPublicR2UploadRoute
@@ -1731,6 +1744,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicR2FileRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/r2-files': {
+      id: '/api/public/r2-files'
+      path: '/api/public/r2-files'
+      fullPath: '/api/public/r2-files'
+      preLoaderRoute: typeof ApiPublicR2FilesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/r2-signed': {
       id: '/api/public/r2-signed'
       path: '/api/public/r2-signed'
@@ -2136,6 +2156,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicProvisionEmployeeRoute: ApiPublicProvisionEmployeeRoute,
   ApiPublicR2DeleteRoute: ApiPublicR2DeleteRoute,
   ApiPublicR2FileRoute: ApiPublicR2FileRoute,
+  ApiPublicR2FilesRoute: ApiPublicR2FilesRoute,
   ApiPublicR2SignedRoute: ApiPublicR2SignedRoute,
   ApiPublicR2StatusRoute: ApiPublicR2StatusRoute,
   ApiPublicR2UploadRoute: ApiPublicR2UploadRoute,
