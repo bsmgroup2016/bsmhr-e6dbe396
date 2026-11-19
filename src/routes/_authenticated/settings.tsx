@@ -39,7 +39,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
-import { getBranches, getCurrentBranch, setCurrentBranch, exportState, importState, resetState, getAllBranchPrefixes, addBranchPrefix, updateBranchPrefix, deleteBranchPrefix } from "@/lib/store";
+import { getBranches, getCurrentBranch, setCurrentBranch, exportState, importState, resetState, getAllBranchPrefixes, updateBranchPrefix, deleteBranchPrefix } from "@/lib/store";
 import { MOTHER_COMPANY } from "@/core/company-identity";
 import { checkR2Status } from "@/lib/r2";
 import { SystemHealth } from "@/components/settings/system-health";
@@ -354,21 +354,9 @@ function sortBranchPrefixes<T extends { code: string }>(list: T[]): T[] {
 
 function BranchPrefixManager() {
   const [rows, setRows] = useState(() => sortBranchPrefixes(getAllBranchPrefixes()));
-  const [code, setCode] = useState("");
-  const [name, setName] = useState("");
 
   function refresh() {
     setRows(sortBranchPrefixes(getAllBranchPrefixes()));
-  }
-
-  function handleAdd() {
-    const c = code.trim().toUpperCase();
-    if (!c || !name.trim()) return;
-    if (rows.some((r) => r.code.toUpperCase() === c)) return;
-    addBranchPrefix({ code: c, name: name.trim(), active: true });
-    setCode("");
-    setName("");
-    refresh();
   }
 
   return (
@@ -430,18 +418,6 @@ function BranchPrefixManager() {
             </div>
           ))
         )}
-      </div>
-
-      <div className="mt-4 flex flex-wrap items-end gap-2">
-        <div className="space-y-2">
-          <Label htmlFor="newPrefixCode">Prefix</Label>
-          <Input id="newPrefixCode" className="w-24" value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} placeholder="BS" />
-        </div>
-        <div className="space-y-2 flex-1 min-w-40">
-          <Label htmlFor="newPrefixName">Branch / company</Label>
-          <Input id="newPrefixName" value={name} onChange={(e) => setName(e.target.value)} placeholder="BSM Engineering" />
-        </div>
-        <Button onClick={handleAdd}>Add prefix</Button>
       </div>
     </div>
   );
