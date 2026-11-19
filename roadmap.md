@@ -1,5 +1,12 @@
 # Full-section UI/UX and workflow audit
 
+## Media file management
+
+- [x] Rename the Media folder label to Particulars; delete the exact five screenshot PDFs, verify absence, clear exact employee references and confirm both claim-template objects unchanged.
+- [x] Add admin-only bucket-specific upload/delete, preserve claim templates and storage placement, and verify writes before success; seven focused tests pass, unauthenticated GET/POST/DELETE return 401.
+- [x] Add all-file browsing, image/PDF/Excel previews, downloads and delete confirmation; controlled upload/CSV preview/cancel/delete and mobile layout pass without page errors; preview build clean.
+- [ ] Verify real signed-in upload, preview and deletion. Blocker: external account has no authorized browser session.
+
 ## Claim workflow filter bar
 
 - [x] Add one filter bar (claim month, search, company, payroll status) above the three steps; search matches worker name, P-File, project, site or client and narrows the rows inside each company.

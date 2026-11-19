@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { isAdmin, verifyUser, r2BucketClient, safeKey } from "@/lib/r2.server";
+import { uploadMedia, deleteMedia } from "@/lib/media-management.server";
+import { mediaObjectUrl, protectedMediaKey } from "@/lib/media-policy";
 
 const BUCKET_META = {
   main: { title: "Main bucket", purpose: "Work permits, ICs, passports, certificates, employee documents, logos, invoices and other attachments." },
@@ -25,10 +27,12 @@ function decodeXml(s: string) {
     .replace(/&amp;/g, "&");
 }
 
-async function presign(client: ReturnType<typeof r2BucketClient>, key: string, expiresIn = 300) {
+async function presign(client: ReturnType<typeof r2BucketClient>, key: string, expiresIn = 300, inline = false) {
   if (!client) return null;
+  const params = new URLSearchParams({ "X-Amz-Expires": String(expiresIn) });
+  if (inline) params.set("response-content-disposition", "inline");
   const signed = await client.client.sign(
-    new Request(`${client.base}/${key}?X-Amz-Expires=${expiresIn}`),
+    new Request(`${mediaObjectUrl(client.base, key)}?${params}`),
     { aws: { signQuery: true } },
   );
   return signed.url;
@@ -37,6 +41,20 @@ async function presign(client: ReturnType<typeof r2BucketClient>, key: string, e
 export const Route = createFileRoute("/api/public/r2-files")({
   server: {
     handlers: {
+      POST: async ({ request }) => {
+        const userId = await verifyUser(request);
+        if (!userId) return new Response("Unauthorized", { status: 401 });
+        if (!(await isAdmin(userId))) return new Response("Forbidden", { status: 403 });
+        try { return await uploadMedia(request, userId); }
+        catch (error) { return Response.json({ error: error instanceof Error ? error.message : "Upload failed" }, { status: 400 }); }
+      },
+      DELETE: async ({ request }) => {
+        const userId = await verifyUser(request);
+        if (!userId) return new Response("Unauthorized", { status: 401 });
+        if (!(await isAdmin(userId))) return new Response("Forbidden", { status: 403 });
+        try { return await deleteMedia(request); }
+        catch { return Response.json({ error: "Could not delete file; please refresh and retry" }, { status: 400 }); }
+      },
       GET: async ({ request }) => {
         const userId = await verifyUser(request);
         if (!userId) return new Response("Unauthorized", { status: 401 });
@@ -52,9 +70,9 @@ export const Route = createFileRoute("/api/public/r2-files")({
         const view = url.searchParams.get("view");
         if (view) {
           const key = safeKey(view);
-          const head = await client.client.fetch(`${client.base}/${key}`, { method: "HEAD" });
+          const head = await client.client.fetch(mediaObjectUrl(client.base, key), { method: "HEAD" });
           if (!head.ok) return Response.json({ error: "File not found" }, { status: 404 });
-          const viewUrl = await presign(client, key);
+          const viewUrl = await presign(client, key, 300, /\.(pdf|png|jpe?g|webp|gif|avif|bmp|mp4|webm|mov|mp3|wav|ogg|m4a)$/i.test(key));
           return Response.json(
             { url: viewUrl, contentType: head.headers.get("content-type") ?? "application/octet-stream" },
             { headers: { "Cache-Control": "no-store" } },
@@ -86,7 +104,7 @@ export const Route = createFileRoute("/api/public/r2-files")({
           const key = decodeXml(text("Key", block)[0] ?? "");
           const size = Number(text("Size", block)[0] ?? 0);
           const lastModified = text("LastModified", block)[0] ?? "";
-          return { key, name: key.slice(prefix.length), size, lastModified };
+          return { key, name: key.slice(prefix.length), size, lastModified, protected: protectedMediaKey(key) };
         }).filter((f) => f.key && f.key !== prefix);
 
         const next = text("NextContinuationToken", xml)[0];

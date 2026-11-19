@@ -1,3 +1,4 @@
 - A worker's own direct portal check-in/check-out is written server-side with the service key, scoped to the employee resolved from the caller's token and limited to time/GPS fields, because the connected RLS grants workers no attendance writes.
 - Direct self punches preserve original times through conditional writes and read-back; checkout derives hours from the shared duty rule, never from client-supplied totals.
 - Auth event callbacks defer session-dependent queries until after the session lock releases, preventing sign-in/refresh deadlocks.
+- Media mutations require server-verified admin access, target only the selected bucket, verify object writes/deletion and protect claim-template files; manual uploads preserve the scans/main split and register only small metadata.
