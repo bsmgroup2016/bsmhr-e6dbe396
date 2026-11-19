@@ -15,7 +15,11 @@ import {
 } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
-import { ExportButton } from "@/components/data-io";
+import { ExportButton, ImportDialog } from "@/components/data-io";
+import { CLIENT_IMPORT_FIELDS, prepareClientImport } from "@/core/client-import";
+import { pick, type ImportColumn } from "@/lib/xlsx";
+
+const CLIENT_IMPORT_COLUMNS: ImportColumn[] = CLIENT_IMPORT_FIELDS.map((f) => ({ ...f }));
 import { SummaryCard } from "@/components/ui/summary-card";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -140,6 +144,14 @@ export default function ClientsPage() {
     refresh();
   }
 
+  function handleImport(rows: Record<string, string>[]) {
+    const keyed = rows.map((row) => Object.fromEntries(CLIENT_IMPORT_COLUMNS.map((c) => [c.key, pick(row, c)])));
+    const { clients: ready, errors } = prepareClientImport(keyed, getClients().map((c) => c.name));
+    for (const client of ready) addClient(client);
+    refresh();
+    return { imported: ready.length, errors };
+  }
+
   function handleEdit(formData: FormData) {
     if (!editingClient) return;
     updateClient(editingClient.id, {
@@ -188,6 +200,16 @@ export default function ClientsPage() {
             </DialogContent>
           </Dialog>
           <div className="mt-2 flex flex-wrap gap-2 sm:mt-0">
+            <ImportDialog
+              title="Bulk upload clients"
+              description="Upload an Excel/CSV of clients, then match its columns. Existing client names are skipped."
+              templateName="clients"
+              label="Bulk upload"
+              columns={CLIENT_IMPORT_COLUMNS}
+              onImport={handleImport}
+              onDone={refresh}
+              mappable
+            />
             <ExportButton
               rows={filtered.map((c) => ({
                 Code: c.code,
