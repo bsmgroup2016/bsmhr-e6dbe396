@@ -55,9 +55,10 @@ const routeLabels: Record<string, string> = {
   alerts: "Alerts Centre",
 };
 
-export function AppBreadcrumbs() {
-  const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const segments = pathname.split("/").filter(Boolean);
+const idLikeSegment = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export function buildCrumbs(pathname: string): Crumb[] {
+  const segments = pathname.split("/").filter(Boolean).filter((segment) => !idLikeSegment.test(segment));
 
   const crumbs: Crumb[] = [{ label: "Dashboard", href: segments.length && pathname !== "/dashboard" ? "/dashboard" : undefined }];
 
@@ -67,6 +68,13 @@ export function AppBreadcrumbs() {
     const href = index < segments.length - 1 ? "/" + segments.slice(0, index + 1).join("/") : undefined;
     crumbs.push({ label, href });
   });
+
+  return crumbs;
+}
+
+export function AppBreadcrumbs() {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const crumbs = buildCrumbs(pathname);
 
   return (
     <Breadcrumb className="min-w-0">
