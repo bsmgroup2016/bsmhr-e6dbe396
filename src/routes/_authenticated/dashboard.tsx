@@ -553,58 +553,6 @@ function OperationsDashboard() {
         </section>
 
 
-        {/* 2. Attention needed — pass expiry alerts */}
-        <section className="space-y-3">
-          <SectionHeading
-            title="Pass expiry alerts"
-            caption="Next 60 days"
-            icon={<ShieldAlert className="h-4 w-4 text-warning" />}
-          />
-          {expiringPasses.length === 0 ? (
-            <EmptyState
-              icon={<AlertCircle className="h-5 w-5" />}
-              title="No passes expiring soon"
-              description="All work permits and passes are valid for more than 60 days."
-            />
-          ) : (
-            <div className="space-y-5">
-              {passGroups.map((group) => (
-                <div key={group.company?.id ?? "unassigned"} className="space-y-2">
-                  <p className="text-sm font-semibold text-foreground">
-                    {group.company?.name ?? "Unassigned"}
-                    <span className="ml-2 text-xs font-normal text-muted-foreground">{group.items.length} worker{group.items.length === 1 ? "" : "s"}</span>
-                  </p>
-                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                    {group.items.map((e) => (
-                      <Link
-                        key={e.id}
-                        to="/workforce/$slug"
-                        params={{ slug: employeeSlugById(e.id) }}
-                        className="rounded-lg border bg-card p-4 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-warning/40 hover:shadow-elegant"
-                      >
-                        <p className="truncate text-sm font-medium text-foreground">{e.name}</p>
-                        <p className="truncate text-sm text-muted-foreground">
-                          {e.passType} · {e.employeeCode}
-                        </p>
-                        <div className="mt-3">
-                          <StatusBadge
-                            variant={e.days < 0 ? "destructive" : e.days <= 30 ? "warning" : "info"}
-                            label={
-                              e.days < 0
-                                ? `Expired ${Math.abs(e.days)}d ago`
-                                : `${e.days}d left · ${e.passExpiry}`
-                            }
-                            dot
-                          />
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
 
         <section className="space-y-3">
           <SectionHeading title="Pending Approvals" caption={`${pendingApprovals} awaiting review`} />
