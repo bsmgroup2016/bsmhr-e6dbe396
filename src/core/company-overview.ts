@@ -13,10 +13,10 @@ export function companyOverview(
   const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Singapore", year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
   const year = today.slice(0, 4);
   const day = new Date(`${today}T00:00:00+08:00`).getTime();
-  const due = (date?: string) => {
+  const due = (date?: string, window = 60) => {
     if (!date || date === "-") return false;
     const diff = (new Date(`${date}T00:00:00+08:00`).getTime() - day) / 86_400_000;
-    return Number.isFinite(diff) && diff >= 0 && diff <= 60;
+    return Number.isFinite(diff) && diff >= 0 && diff <= window;
   };
   const staff = employees.filter((e) => !companyId || e.companyId === companyId);
   const workers = staff.filter(isCountableWorker);
@@ -24,13 +24,14 @@ export function companyOverview(
   const workerIds = new Set(workers.map((e) => e.id));
   const waiting = workers.filter((e) => e.passType === "Work Permit" && ["IPA Issued", "Arrived", "Medical Cleared"].includes(e.wpStage ?? ""));
   const permits = workers.filter((e) => e.passType === "Work Permit" && due(e.passExpiry));
+  const passports = workers.filter((e) => due(e.passportExpiry, 90));
   const csocIds = new Set(workers.filter((e) => due(e.safetyCourseExpiry) && (!e.safetyCourseType || /csoc|safety orientation|safety course/i.test(e.safetyCourseType))).map((e) => e.id));
   certifications.forEach((c) => {
     if (workerIds.has(c.employeeId) && /csoc|safety orientation|safety course/i.test(c.courseName) && due(c.expiryDate)) csocIds.add(c.employeeId);
   });
   const annualPayroll = payroll.filter((p) => ids.has(p.employeeId) && p.month.startsWith(`${year}-`) && p.status !== "Rejected");
   return {
-    year, staff, workers, waiting, permits, csoc: workers.filter((e) => csocIds.has(e.id)), annualPayroll,
+    year, staff, workers, waiting, permits, passports, csoc: workers.filter((e) => csocIds.has(e.id)), annualPayroll,
     annualWages: annualPayroll.reduce((sum, p) => sum + p.basicSalary + p.overtimePay + p.allowances + (p.bonus ?? 0), 0),
   };
 }

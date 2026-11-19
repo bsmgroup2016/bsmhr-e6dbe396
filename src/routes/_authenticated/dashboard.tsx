@@ -17,7 +17,8 @@ function urgencyTone(days: number | null): SummaryBadge["tone"] {
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { EmptyState } from "@/components/ui/empty-state";
-import { DashboardCharts } from "@/components/dashboard/dashboard-charts";
+import { ComplianceOverview, DashboardCharts } from "@/components/dashboard/dashboard-charts";
+import { companyOverview } from "@/core/company-overview";
 import { CompanyOverviewCards } from "@/components/dashboard/company-overview-cards";
 import {
   Users,
@@ -248,6 +249,8 @@ function OperationsDashboard() {
   const annualWages = payrollAll
     .filter((p) => p.month.startsWith(yearKey))
     .reduce((s, p) => s + p.basicSalary + p.overtimePay + p.allowances, 0);
+
+  const compliance = companyOverview(allEmployees, getCertifications(), payrollAll, undefined, today);
 
   const sgd = (n: number) => `$${Math.round(n).toLocaleString("en-SG")}`;
 
@@ -536,7 +539,6 @@ function OperationsDashboard() {
           ))}
         </section>
 
-        <DashboardCharts data={{ wageTrend, attendance: attendanceTrend, passMix, projectMix }} />
 
         {/* 2. Attention needed — pass expiry alerts */}
         <section className="space-y-3">
@@ -580,6 +582,76 @@ function OperationsDashboard() {
             </div>
           )}
         </section>
+
+        {/* 5. History + system status */}
+        <section className="grid gap-4 lg:grid-cols-3">
+          <div className="space-y-3 lg:col-span-2">
+            <SectionHeading title="Recent activity" caption="Latest 10 actions" />
+            {logs.length === 0 ? (
+              <EmptyState
+                icon={<CalendarClock className="h-5 w-5" />}
+                title="No recent activity"
+                description="Once you start managing assignments and attendance, recent actions will appear here."
+              />
+            ) : (
+              <div tabIndex={0} role="region" aria-label="Recent activity table" className="overflow-x-auto rounded-lg border bg-card shadow-sm">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/50">
+                    <tr>
+                      <th className="px-4 py-2.5 text-left font-medium">Time</th>
+                      <th className="px-4 py-2.5 text-left font-medium">User</th>
+                      <th className="px-4 py-2.5 text-left font-medium">Action</th>
+                      <th className="px-4 py-2.5 text-left font-medium">Details</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {logs.map((l) => (
+                      <tr key={l.id} className="border-t">
+                        <td className="px-4 py-2.5 text-muted-foreground">{new Date(l.timestamp).toLocaleString()}</td>
+                        <td className="px-4 py-2.5 font-medium">{l.userName}</td>
+                        <td className="px-4 py-2.5">{l.action} {l.entityType}</td>
+                        <td className="max-w-xs truncate px-4 py-2.5 text-muted-foreground">{l.details}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-3">
+            <SectionHeading title="Period & document alerts" />
+            <div className="space-y-3 rounded-lg border bg-card p-5 shadow-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Current calendar month</span>
+                <StatusBadge variant="primary" label={monthKey} />
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Expiring docs</span>
+                <StatusBadge
+                  variant={expiringDocs > 0 ? "warning" : "success"}
+                  label={expiringDocs > 0 ? `${expiringDocs} alert` : "OK"}
+                />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="space-y-3">
+          <SectionHeading title="Pending Approvals" caption={`${pendingApprovals} awaiting review`} />
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <Link to="/leave" className="dashboard-stat rounded-lg border border-warning/25 bg-warning/10 p-4 shadow-card hover:border-warning/60"><p className="text-xs text-muted-foreground">Leave Requests</p><p className="mt-2 text-2xl font-bold text-warning-text">{getLeaveRequests().filter((l) => l.status === "Pending").length}</p></Link>
+            <Link to="/approvals" className="dashboard-stat rounded-lg border border-dashboard-blue/20 bg-dashboard-blue/5 p-4 shadow-card hover:border-dashboard-blue/50"><p className="text-xs text-muted-foreground">Pending Approvals</p><p className="mt-2 text-2xl font-bold text-primary">{pendingApprovals}</p></Link>
+            <Link to="/documents" search={{ employee: undefined }} className="dashboard-stat rounded-lg border border-dashboard-coral/20 bg-dashboard-coral/5 p-4 shadow-card hover:border-dashboard-coral/50"><p className="text-xs text-muted-foreground">Document Alerts</p><p className="mt-2 text-2xl font-bold text-warning">{expiringDocs}</p></Link>
+            <Link to="/projects" search={{ new: undefined }} className="dashboard-stat rounded-lg border border-dashboard-teal/20 bg-dashboard-teal/5 p-4 shadow-card hover:border-dashboard-teal/50"><p className="text-xs text-muted-foreground">Projects Ending Soon</p><p className="mt-2 text-2xl font-bold text-info">{endingProjects.length}</p></Link>
+          </div>
+        </section>
+
+        <nav aria-label="Quick actions" className="flex flex-wrap gap-2 border-y py-3">
+          {quickActions.map((action) => <Button key={action.to} asChild variant="ghost" size="sm"><Link to={action.to} search={action.search as never}><action.icon />{action.label}</Link></Button>)}
+        </nav>
+
+        <ComplianceOverview counts={{ csoc: compliance.csoc.length, permits: compliance.permits.length, passports: compliance.passports.length, waiting: compliance.waiting.length }} />
 
         <section className="space-y-3">
           <SectionHeading title="Company snapshot" caption="Live figures across sites and approvals" />
@@ -758,74 +830,6 @@ function OperationsDashboard() {
           </section>
         ) : null}
 
-        {/* 5. History + system status */}
-        <section className="grid gap-4 lg:grid-cols-3">
-          <div className="space-y-3 lg:col-span-2">
-            <SectionHeading title="Recent activity" caption="Latest 10 actions" />
-            {logs.length === 0 ? (
-              <EmptyState
-                icon={<CalendarClock className="h-5 w-5" />}
-                title="No recent activity"
-                description="Once you start managing assignments and attendance, recent actions will appear here."
-              />
-            ) : (
-              <div tabIndex={0} role="region" aria-label="Recent activity table" className="overflow-x-auto rounded-lg border bg-card shadow-sm">
-                <table className="w-full text-sm">
-                  <thead className="bg-muted/50">
-                    <tr>
-                      <th className="px-4 py-2.5 text-left font-medium">Time</th>
-                      <th className="px-4 py-2.5 text-left font-medium">User</th>
-                      <th className="px-4 py-2.5 text-left font-medium">Action</th>
-                      <th className="px-4 py-2.5 text-left font-medium">Details</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {logs.map((l) => (
-                      <tr key={l.id} className="border-t">
-                        <td className="px-4 py-2.5 text-muted-foreground">{new Date(l.timestamp).toLocaleString()}</td>
-                        <td className="px-4 py-2.5 font-medium">{l.userName}</td>
-                        <td className="px-4 py-2.5">{l.action} {l.entityType}</td>
-                        <td className="max-w-xs truncate px-4 py-2.5 text-muted-foreground">{l.details}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-
-          <div className="space-y-3">
-            <SectionHeading title="Period & document alerts" />
-            <div className="space-y-3 rounded-lg border bg-card p-5 shadow-sm">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Current calendar month</span>
-                <StatusBadge variant="primary" label={monthKey} />
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Expiring docs</span>
-                <StatusBadge
-                  variant={expiringDocs > 0 ? "warning" : "success"}
-                  label={expiringDocs > 0 ? `${expiringDocs} alert` : "OK"}
-                />
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section className="space-y-3">
-          <SectionHeading title="Pending Approvals" caption={`${pendingApprovals} awaiting review`} />
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Link to="/leave" className="dashboard-stat rounded-lg border border-warning/25 bg-warning/10 p-4 shadow-card hover:border-warning/60"><p className="text-xs text-muted-foreground">Leave Requests</p><p className="mt-2 text-2xl font-bold text-warning-text">{getLeaveRequests().filter((l) => l.status === "Pending").length}</p></Link>
-            <Link to="/approvals" className="dashboard-stat rounded-lg border border-dashboard-blue/20 bg-dashboard-blue/5 p-4 shadow-card hover:border-dashboard-blue/50"><p className="text-xs text-muted-foreground">Pending Approvals</p><p className="mt-2 text-2xl font-bold text-primary">{pendingApprovals}</p></Link>
-            <Link to="/documents" search={{ employee: undefined }} className="dashboard-stat rounded-lg border border-dashboard-coral/20 bg-dashboard-coral/5 p-4 shadow-card hover:border-dashboard-coral/50"><p className="text-xs text-muted-foreground">Document Alerts</p><p className="mt-2 text-2xl font-bold text-warning">{expiringDocs}</p></Link>
-            <Link to="/projects" search={{ new: undefined }} className="dashboard-stat rounded-lg border border-dashboard-teal/20 bg-dashboard-teal/5 p-4 shadow-card hover:border-dashboard-teal/50"><p className="text-xs text-muted-foreground">Projects Ending Soon</p><p className="mt-2 text-2xl font-bold text-info">{endingProjects.length}</p></Link>
-          </div>
-        </section>
-
-        <nav aria-label="Quick actions" className="flex flex-wrap gap-2 border-y py-3">
-          {quickActions.map((action) => <Button key={action.to} asChild variant="ghost" size="sm"><Link to={action.to} search={action.search as never}><action.icon />{action.label}</Link></Button>)}
-        </nav>
-
         {/* Key numbers */}
         <section className="space-y-3">
           <SectionHeading
@@ -853,6 +857,8 @@ function OperationsDashboard() {
             ))}
           </div>
         </section>
+
+        <DashboardCharts data={{ wageTrend, attendance: attendanceTrend, passMix, projectMix }} />
 
       </div>
     </AppShell>

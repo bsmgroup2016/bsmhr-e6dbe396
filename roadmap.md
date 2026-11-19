@@ -1,5 +1,11 @@
 # Full-section UI/UX and workflow audit
 
+## Dashboard chart placement and compliance overview
+
+- [x] Move all charts and overview sections below operational items; add CSOC, confirmed Work Permit, passport and IPA issuance counts using existing records.
+- [x] Seven focused count tests pass; controlled populated desktop/mobile chart rendering has no overflow or page errors and the preview build is clean.
+- [ ] Verify real signed-in dashboard counts. Blocker: no authorized external-account browser session is available; the live dashboard redirects to sign-in.
+
 ## Dashboard company overview
 
 - [x] Replace the welcome strip with BSM Group and automatically listed company cards sharing scoped issuance, confirmed expiry and recorded annual-wage metrics.

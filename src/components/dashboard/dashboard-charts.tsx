@@ -6,6 +6,7 @@ import {
   CartesianGrid,
   Cell,
   Legend,
+  LabelList,
   Pie,
   PieChart,
   ResponsiveContainer,
@@ -61,6 +62,43 @@ export interface DashboardChartData {
   attendance: { day: string; Present: number; Absent: number; Leave: number }[];
   passMix: { name: string; value: number }[];
   projectMix: { name: string; value: number }[];
+}
+
+export function ComplianceOverview({ counts }: { counts: { csoc: number; permits: number; passports: number; waiting: number } }) {
+  const rows = [
+    { name: "CSOC expiring", value: counts.csoc, fill: C.warning },
+    { name: "WP expiring", value: counts.permits, fill: C.destructive },
+    { name: "Passport expiring", value: counts.passports, fill: C.info },
+    { name: "IPA awaiting issuance", value: counts.waiting, fill: C.primary },
+  ];
+  return (
+    <section aria-label="Compliance overview" className="space-y-3">
+      <h2 className="text-sm font-semibold text-foreground">Compliance overview</h2>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {rows.map((row, index) => (
+          <div key={row.name} className="min-w-0 rounded-lg border border-border bg-card p-4 shadow-card">
+            <p className="text-sm font-medium text-foreground">{row.name}</p>
+            <p className="mt-2 text-3xl font-bold tabular-nums text-foreground">{row.value}</p>
+            <p className="mt-1 text-xs text-muted-foreground">{index === 3 ? "IPA issued · arrived · medical cleared" : index === 2 ? "Next 90 days" : "Next 60 days"}</p>
+          </div>
+        ))}
+      </div>
+      <ChartCard title="Compliance & issuance" caption="Workers per category">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={rows} layout="vertical" margin={{ top: 4, right: 32, left: 0, bottom: 0 }} barSize={20}>
+            <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="var(--border)" />
+            <XAxis type="number" allowDecimals={false} domain={[0, (max: number) => Math.max(1, max)]} tickLine={false} axisLine={false} fontSize={12} />
+            <YAxis type="category" dataKey="name" width={135} tickLine={false} axisLine={false} fontSize={11} />
+            <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "var(--muted)" }} />
+            <Bar dataKey="value" name="Workers" radius={[0, 4, 4, 0]}>
+              {rows.map((row) => <Cell key={row.name} fill={row.fill} />)}
+              <LabelList dataKey="value" position="right" fill="var(--foreground)" fontSize={12} />
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </ChartCard>
+    </section>
+  );
 }
 
 export function DashboardCharts({ data }: { data: DashboardChartData }) {
