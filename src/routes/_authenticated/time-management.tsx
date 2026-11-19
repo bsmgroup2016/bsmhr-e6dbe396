@@ -65,8 +65,7 @@ import {
 import {
   getEmployees,
   getSites,
-  getAttendance,
-  addAttendance,
+  upsertAttendance,
   updateAttendance,
   deleteAttendance,
   saveDailySheet,
@@ -84,7 +83,13 @@ import { monthlyAttendanceSummary } from "@/lib/ops";
 import { exportRows, timestampedName } from "@/lib/xlsx";
 import { toast } from "sonner";
 
-const statuses: AttendanceStatus[] = ["Present", "Absent", "On Leave", "MC", "Half Day", "Off", "Public Holiday", "Pending"];
+const NO_SITE = "none";
+const siteFrom = (formData: FormData) => {
+  const v = formData.get("siteId") as string | null;
+  return v && v !== NO_SITE ? v : undefined;
+};
+
+const statuses: AttendanceStatus[] =["Present", "Absent", "On Leave", "MC", "Half Day", "Off", "Public Holiday", "Pending"];
 
 const ATTENDANCE_IMPORT_COLUMNS: ImportColumn[] = [
   { key: "date", label: "Date", required: true, example: "2026-07-28" },
@@ -194,7 +199,8 @@ export default function TimeManagementPage() {
   const { data: stats } = useSuspenseQuery(historySummaryOptions("attendance", user?.id ?? "", filters));
   const attendance = page.rows.map(fromAttendance);
   mergeHistoryRows("attendance", attendance);
-  const monthRows = viewMode === "month" ? stats.attendanceWorkers.sort((a, b) => (empById.get(a.employeeId)?.employeeCode ?? "").localeCompare(empById.get(b.employeeId)?.employeeCode ?? "")) : [];
+  // Copy before sorting: the rows belong to the shared query cache.
+  const monthRows = viewMode === "month" ? [...stats.attendanceWorkers].sort((a, b) => (empById.get(a.employeeId)?.employeeCode ?? "").localeCompare(empById.get(b.employeeId)?.employeeCode ?? "")) : [];
 
   async function exportMonthlySummary() {
     const rows = monthlyAttendanceSummary(
@@ -283,7 +289,7 @@ export default function TimeManagementPage() {
     updateAttendance(editRecord.id, {
       employeeId: formData.get("employeeId") as string,
       date: formData.get("date") as string,
-      siteId: (formData.get("siteId") as string) || undefined,
+      siteId: siteFrom(formData),
       status: formData.get("status") as AttendanceStatus,
       checkIn: (formData.get("checkIn") as string) || undefined,
       checkOut: (formData.get("checkOut") as string) || undefined,
@@ -350,7 +356,7 @@ export default function TimeManagementPage() {
       const status = (statuses.find((s) => s.toLowerCase() === statusValue) ??
         "Present") as AttendanceStatus;
 
-      addAttendance({
+      upsertAttendance({
         employeeId: emp.id,
         date: day,
         siteId: site?.id,
@@ -372,10 +378,13 @@ export default function TimeManagementPage() {
       const v = Number(formData.get(k));
       return Number.isFinite(v) && formData.get(k) !== "" ? v : undefined;
     };
-    addAttendance({
-      employeeId: formData.get("employeeId") as string,
+    const employeeId = formData.get("employeeId") as string;
+    if (!employeeId) { toast.error("Choose an employee"); return; }
+    // One record per worker per day: marking the same day again updates it instead of duplicating it.
+    upsertAttendance({
+      employeeId,
       date: formData.get("date") as string,
-      siteId: (formData.get("siteId") as string) || undefined,
+      siteId: siteFrom(formData),
       status: formData.get("status") as AttendanceStatus,
       checkIn: (formData.get("checkIn") as string) || undefined,
       checkOut: (formData.get("checkOut") as string) || undefined,
@@ -391,6 +400,7 @@ export default function TimeManagementPage() {
     });
     setIsCreateOpen(false);
     refresh();
+    toast.success("Attendance saved");
   }
 
   return (
@@ -486,7 +496,7 @@ export default function TimeManagementPage() {
                   <DialogTitle>Mark attendance</DialogTitle>
                   <DialogDescription>Record daily attendance for a worker.</DialogDescription>
                 </DialogHeader>
-                <AttendanceForm employees={employees} sites={sites} onSubmit={handleCreate} />
+                <AttendanceForm employees={companyEmployees} sites={sites} onSubmit={handleCreate} />
               </DialogContent>
             </Dialog>
           </div>
@@ -1027,12 +1037,13 @@ function AttendanceForm({ employees, sites, onSubmit, record }: { employees: Ret
         </div>
         <div className="space-y-2">
           <Label htmlFor="siteId">Site</Label>
-          <Select name="siteId" defaultValue={record?.siteId}>
+          <Select name="siteId" defaultValue={record?.siteId ?? NO_SITE}>
             <SelectTrigger id="siteId">
               <SelectValue placeholder="Select site" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">None</SelectItem>
+              {/* Radix Select crashes on an empty-string item value, so "no site" uses a sentinel. */}
+              <SelectItem value={NO_SITE}>None</SelectItem>
               {sites.map((s) => (
                 <SelectItem key={s.id} value={s.id}>
                   {s.name}
