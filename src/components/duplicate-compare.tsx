@@ -8,7 +8,7 @@ export const COMPARE_FIELDS: [string, string, string][] = [
   ["name", "name", "Name"], ["employeeCode", "employee_code", "P-File number"], ["fin", "fin", "FIN"],
   ["passportNumber", "passport_number", "Passport number"], ["passportExpiry", "passport_expiry", "Passport expiry"],
   ["nationality", "nationality", "Nationality"], ["dateOfBirth", "date_of_birth", "Date of birth"], ["gender", "gender", "Gender"],
-  ["passType", "pass_type", "Pass type"], ["passExpiry", "pass_expiry", "Pass expiry"], ["branch", "branch", "Branch"],
+  ["passType", "pass_type", "Pass type"], ["passExpiry", "pass_expiry", "Pass expiry"],
   ["jobTitle", "job_title", "Job title"], ["phone", "phone", "Phone"], ["email", "email", "Email"],
   ["joinedOn", "joined_on", "Joined on"], ["dormitory", "dormitory", "Dormitory"],
 ];

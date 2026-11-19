@@ -258,7 +258,7 @@ function toEmployeeRow(employee: Employee) {
   row["Days To Expiry"] = daysUntil(employee.passExpiry) ?? "";
   row["Estimated Work Permit Expiry (Unverified)"] = estimatedWorkPermitExpiry(employee.workPermitIssueDate, employee.passType) ?? "";
   for (const field of IPA_DETAIL_FIELDS) row[field.label] = employee[field.key] ?? "";
-  row["Company"] = getCompanies().find(company => company.id === employee.companyId)?.name ?? employee.branch ?? "";
+  row["Company"] = getCompanies().find(company => company.id === employee.companyId)?.name ?? "";
   return row;
 }
 
@@ -1039,7 +1039,7 @@ export default function WorkforcePage() {
                       <TableCell>
                         <div className="space-y-0.5 text-xs text-muted-foreground">
                           <div className="text-sm font-semibold text-foreground">
-                            {companies.find((c) => c.id === e.companyId)?.name ?? e.branch ?? "—"}
+                            {companies.find((c) => c.id === e.companyId)?.name ?? "—"}
                           </div>
                           <div>Department : {e.department || "—"}</div>
                           <div>Designation : {e.trade || "—"}</div>
