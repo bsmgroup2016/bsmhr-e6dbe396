@@ -1,5 +1,11 @@
 # Full-section UI/UX and workflow audit
 
+## Claim workflow filter bar
+
+- [x] Add one filter bar (claim month, search, company, payroll status) above the three steps; search matches worker name, P-File, project, site or client and narrows the rows inside each company.
+- [x] Filters drive the Excel too: combined and salary downloads contain only the filtered rows, and the file name names the selected company. Seven focused filter tests pass; project typecheck is clean.
+- [ ] Verify signed-in filter interaction and browser downloads. Blocker: external account has no authorized session; live route redirects to /auth.
+
 ## Three-stage claim and salary workflow
 
 - [x] Show company claim summaries, an all-company combined claim sheet, then a salary sheet; remove billing and AP/AR steps.
