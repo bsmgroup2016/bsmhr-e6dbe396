@@ -8,13 +8,13 @@ export function CompanyOverviewCards() {
   const companies = orderedCompanies(getCompanies());
   const entities = [{ id: "group", name: "BSM Group", code: "BSM", logoUrl: undefined as string | undefined }, ...companies];
   return (
-    <section aria-label="Company overview" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <section aria-label="Company overview" className="grid grid-cols-1 justify-start gap-3 sm:grid-cols-[repeat(auto-fill,minmax(220px,240px))]">
       {entities.map((company) => {
         const group = company.id === "group";
         const data = companyOverview(getEmployees(), getCertifications(), getPayroll(), group ? undefined : company.id);
         return (
           <Link key={company.id} to="/companies/$id" params={{ id: company.id }} aria-label={`Open ${company.name} dashboard`}
-            className={`group relative min-w-0 overflow-hidden rounded-lg border p-5 shadow-card transition-shadow hover:shadow-elegant focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${group ? "border-primary bg-gradient-primary text-primary-foreground" : "border-border bg-card text-card-foreground"}`}>
+            className={`group relative min-w-0 overflow-hidden rounded-lg border p-4 shadow-card transition-shadow hover:shadow-elegant focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${group ? "border-primary bg-gradient-primary text-primary-foreground" : "border-border bg-card text-card-foreground"}`}>
             <div className="flex items-start gap-3">
               <div className={`flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-lg ${group ? "bg-primary-foreground/15" : "bg-primary/10 text-primary"}`}>
                 {group ? <Building2 className="size-6" /> : <R2Image src={company.logoUrl} alt={`${company.name} logo`} className="size-full object-contain" fallback={<span className="text-xs font-bold">{company.code}</span>} />}
