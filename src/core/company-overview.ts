@@ -24,16 +24,13 @@ export function companyOverview(
   const workerIds = new Set(workers.map((e) => e.id));
   const waiting = workers.filter((e) => e.passType === "Work Permit" && ["IPA Issued", "Arrived", "Medical Cleared"].includes(e.wpStage ?? ""));
   const permits = workers.filter((e) => e.passType === "Work Permit" && due(e.passExpiry));
-  const permitDay = (e: Employee) => e.passType === "Work Permit" && e.passExpiry && e.passExpiry !== "-" ? new Date(`${e.passExpiry}T00:00:00+08:00`).getTime() : NaN;
-  const livePermits = workers.filter((e) => permitDay(e) >= day && ["Card Issued", "Active"].includes(e.wpStage ?? "Active"));
-  const expiredPermits = workers.filter((e) => permitDay(e) < day);
   const csocIds = new Set(workers.filter((e) => due(e.safetyCourseExpiry) && (!e.safetyCourseType || /csoc|safety orientation|safety course/i.test(e.safetyCourseType))).map((e) => e.id));
   certifications.forEach((c) => {
     if (workerIds.has(c.employeeId) && /csoc|safety orientation|safety course/i.test(c.courseName) && due(c.expiryDate)) csocIds.add(c.employeeId);
   });
   const annualPayroll = payroll.filter((p) => ids.has(p.employeeId) && p.month.startsWith(`${year}-`) && p.status !== "Rejected");
   return {
-    year, staff, workers, waiting, permits, livePermits, expiredPermits, csoc: workers.filter((e) => csocIds.has(e.id)), annualPayroll,
+    year, staff, workers, waiting, permits, csoc: workers.filter((e) => csocIds.has(e.id)), annualPayroll,
     annualWages: annualPayroll.reduce((sum, p) => sum + p.basicSalary + p.overtimePay + p.allowances + (p.bonus ?? 0), 0),
   };
 }

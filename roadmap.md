@@ -2,8 +2,6 @@
 
 ## Dashboard company overview
 
-- [x] Put two-column company cards first, followed by company-scoped onboarding and permit/CSOC details; move approvals and charts below workforce compliance.
-- [x] Seven aggregate/scoped metric tests pass; controlled desktop/mobile company selection, worker rows, navigation and overflow checks pass. Real account checks remain blocked by the unavailable external-account session below.
 - [x] Replace the welcome strip with BSM Group and automatically listed company cards sharing scoped issuance, confirmed expiry and recorded annual-wage metrics.
 - [x] Connect group/company details; nine focused tests pass, controlled populated desktop/mobile cards and group/company link destinations verified without overflow or browser errors; preview build is clean.
 - [ ] Verify real signed-in dashboard and company detail read-back. Blocker: no authorized external-account browser session is available.
