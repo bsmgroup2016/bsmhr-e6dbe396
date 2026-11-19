@@ -1,5 +1,11 @@
 # Full-section UI/UX and workflow audit
 
+## Unified storage settings
+
+- [x] Merge Storage, Media and Archive & Clean into one Storage & Media page, with file browsing first; preserve existing admin restrictions and all file actions without deleting files.
+- [x] Preview build is clean; 19 media/archive safety tests pass; live Settings redirects to sign-in without page errors.
+- [ ] Verify combined-page layout with real account access. Blocker: no authorized external-account browser session.
+
 ## Media file management
 
 - [x] Rename the Media folder label to Particulars; delete the exact five screenshot PDFs, verify absence, clear exact employee references and confirm both claim-template objects unchanged.

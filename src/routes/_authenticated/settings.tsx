@@ -130,9 +130,7 @@ export default function SettingsPage() {
             <TabsTrigger value="api">API Integration</TabsTrigger>
             <TabsTrigger value="smtp">SMTP</TabsTrigger>
             <TabsTrigger value="payments">Payments</TabsTrigger>
-            <TabsTrigger value="storage">Storage</TabsTrigger>
-            {isAdmin && <TabsTrigger value="media">Media</TabsTrigger>}
-            {isAdmin && <TabsTrigger value="archive">Archive &amp; Clean</TabsTrigger>}
+            <TabsTrigger value="storage">Storage &amp; Media</TabsTrigger>
             <TabsTrigger value="data">Data</TabsTrigger>
             <TabsTrigger value="automation">Automation</TabsTrigger>
             <TabsTrigger value="health">Health</TabsTrigger>
@@ -274,11 +272,17 @@ export default function SettingsPage() {
             <PaymentDetails />
           </TabsContent>
 
-          <TabsContent value="storage" className="mt-4 space-y-4">
-            <StorageSettings />
+          <TabsContent value="storage" className="mt-4 space-y-8">
+            {isAdmin && <MediaBrowser />}
+            <section className={isAdmin ? "border-t pt-6" : undefined} aria-label="Storage connections">
+              <StorageSettings />
+            </section>
+            {isAdmin && (
+              <section className="border-t pt-6" aria-label="Archive and cleanup">
+                <ArchiveSettings />
+              </section>
+            )}
           </TabsContent>
-          {isAdmin && <TabsContent value="media" className="mt-4 space-y-4"><MediaBrowser /></TabsContent>}
-          {isAdmin && <TabsContent value="archive" className="mt-4 space-y-4"><ArchiveSettings /></TabsContent>}
 
           <TabsContent value="data" className="mt-4 space-y-4">
             <div className="rounded-xl border bg-card p-5 shadow-sm">
