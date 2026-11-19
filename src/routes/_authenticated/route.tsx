@@ -25,7 +25,7 @@ export const Route = createFileRoute("/_authenticated")({
     return { user: data.user, roles, permissionError: false };
   },
   component: AuthenticatedLayout,
-  errorComponent: PermissionRecovery,
+  errorComponent: ({ reset }) => <PermissionRecovery reset={reset} />,
 });
 
 function PermissionRecovery({ reset }: Partial<ErrorComponentProps>) {
