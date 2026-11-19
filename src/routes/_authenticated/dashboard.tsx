@@ -583,60 +583,6 @@ function OperationsDashboard() {
           )}
         </section>
 
-        {/* 5. History + system status */}
-        <section className="grid gap-4 lg:grid-cols-3">
-          <div className="space-y-3 lg:col-span-2">
-            <SectionHeading title="Recent activity" caption="Latest 10 actions" />
-            {logs.length === 0 ? (
-              <EmptyState
-                icon={<CalendarClock className="h-5 w-5" />}
-                title="No recent activity"
-                description="Once you start managing assignments and attendance, recent actions will appear here."
-              />
-            ) : (
-              <div tabIndex={0} role="region" aria-label="Recent activity table" className="overflow-x-auto rounded-lg border bg-card shadow-sm">
-                <table className="w-full text-sm">
-                  <thead className="bg-muted/50">
-                    <tr>
-                      <th className="px-4 py-2.5 text-left font-medium">Time</th>
-                      <th className="px-4 py-2.5 text-left font-medium">User</th>
-                      <th className="px-4 py-2.5 text-left font-medium">Action</th>
-                      <th className="px-4 py-2.5 text-left font-medium">Details</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {logs.map((l) => (
-                      <tr key={l.id} className="border-t">
-                        <td className="px-4 py-2.5 text-muted-foreground">{new Date(l.timestamp).toLocaleString()}</td>
-                        <td className="px-4 py-2.5 font-medium">{l.userName}</td>
-                        <td className="px-4 py-2.5">{l.action} {l.entityType}</td>
-                        <td className="max-w-xs truncate px-4 py-2.5 text-muted-foreground">{l.details}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-
-          <div className="space-y-3">
-            <SectionHeading title="Period & document alerts" />
-            <div className="space-y-3 rounded-lg border bg-card p-5 shadow-sm">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Current calendar month</span>
-                <StatusBadge variant="primary" label={monthKey} />
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Expiring docs</span>
-                <StatusBadge
-                  variant={expiringDocs > 0 ? "warning" : "success"}
-                  label={expiringDocs > 0 ? `${expiringDocs} alert` : "OK"}
-                />
-              </div>
-            </div>
-          </div>
-        </section>
-
         <section className="space-y-3">
           <SectionHeading title="Pending Approvals" caption={`${pendingApprovals} awaiting review`} />
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -859,6 +805,60 @@ function OperationsDashboard() {
         </section>
 
         <DashboardCharts data={{ wageTrend, attendance: attendanceTrend, passMix, projectMix }} />
+
+        {/* History + system status — always last */}
+        <section className="grid gap-4 lg:grid-cols-3">
+          <div className="space-y-3 lg:col-span-2">
+            <SectionHeading title="Recent activity" caption="Latest 10 actions" />
+            {logs.length === 0 ? (
+              <EmptyState
+                icon={<CalendarClock className="h-5 w-5" />}
+                title="No recent activity"
+                description="Once you start managing assignments and attendance, recent actions will appear here."
+              />
+            ) : (
+              <div tabIndex={0} role="region" aria-label="Recent activity table" className="overflow-x-auto rounded-lg border bg-card shadow-sm">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/50">
+                    <tr>
+                      <th className="px-4 py-2.5 text-left font-medium">Time</th>
+                      <th className="px-4 py-2.5 text-left font-medium">User</th>
+                      <th className="px-4 py-2.5 text-left font-medium">Action</th>
+                      <th className="px-4 py-2.5 text-left font-medium">Details</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {logs.map((l) => (
+                      <tr key={l.id} className="border-t">
+                        <td className="px-4 py-2.5 text-muted-foreground">{new Date(l.timestamp).toLocaleString()}</td>
+                        <td className="px-4 py-2.5 font-medium">{l.userName}</td>
+                        <td className="px-4 py-2.5">{l.action} {l.entityType}</td>
+                        <td className="max-w-xs truncate px-4 py-2.5 text-muted-foreground">{l.details}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-3">
+            <SectionHeading title="Period & document alerts" />
+            <div className="space-y-3 rounded-lg border bg-card p-5 shadow-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Current calendar month</span>
+                <StatusBadge variant="primary" label={monthKey} />
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Expiring docs</span>
+                <StatusBadge
+                  variant={expiringDocs > 0 ? "warning" : "success"}
+                  label={expiringDocs > 0 ? `${expiringDocs} alert` : "OK"}
+                />
+              </div>
+            </div>
+          </div>
+        </section>
 
       </div>
     </AppShell>
