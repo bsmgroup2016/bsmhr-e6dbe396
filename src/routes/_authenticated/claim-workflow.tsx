@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { companyClaimSummaries, NO_COMPANY, type CompanyClaimSummary } from "@/core/company-claim-summary";
 import { createAllCompanyClaimWorkbook, downloadCompanyClaimWorkbook } from "@/lib/company-claim-export";
 import { claimWorkbookBlob, downloadClaimBlob } from "@/lib/combined-claim-export";
-import { claimSalaryRows, eligibleClaimSummaries } from "@/core/claim-workflow";
+import { claimCompanyCards, claimSalaryRows, eligibleClaimSummaries } from "@/core/claim-workflow";
 import { exportRows } from "@/lib/xlsx";
 import { getClaimSheets, getClients, getCompanies, getEmployees, getPayroll, getProjects, getSites, subscribe } from "@/lib/store";
 
@@ -48,6 +48,7 @@ function ClaimWorkflowPage() {
     }
   }, [month, revision]);
   const eligible = eligibleClaimSummaries(summaries);
+  const companyCards = claimCompanyCards(summaries, getCompanies());
   const salaryRows = claimSalaryRows(summaries, getEmployees(), getPayroll(), month);
   const incompleteSalary = salaryRows.filter(row => row["Net pay (SGD)"] === null);
   const totalNormal = eligible.reduce((n, s) => n + s.projects.reduce((v, p) => v + p.normalHours, 0), 0);
@@ -113,11 +114,26 @@ function ClaimWorkflowPage() {
 
         {error && <div className="rounded-[10px] border border-destructive/40 bg-destructive/5 p-3 text-sm text-destructive">{error}</div>}
 
-        {!error && summaries.length === 0 && (
+        {!error && summaries.length === 0 && step !== 0 && (
           <EmptyState title="No saved claims for this month" description="Generate and save claim sheets first (Timecard to ClaimSheet), then come back here." />
         )}
 
-        {step === 0 && summaries.map((s) => {
+        {step === 0 && !error && (
+          <section className="space-y-3 rounded-[10px] border border-primary/25 bg-primary/5 p-4">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-semibold">BSM Group</h2>
+                <p className="text-sm text-muted-foreground">{getCompanies().length} companies · {eligible.reduce((n, s) => n + s.workers.length, 0)} workers · {hours(totalNormal)} G hrs · {hours(totalOt)} OT hrs</p>
+              </div>
+              <Button onClick={() => void downloadAll()} disabled={busy !== null || eligible.length === 0}>{busy === "combined" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />} Download combined Excel</Button>
+            </div>
+            <Table><TableHeader><TableRow><TableHead>Company</TableHead><TableHead className="text-right">Workers</TableHead><TableHead className="text-right">G hrs</TableHead><TableHead className="text-right">OT hrs</TableHead></TableRow></TableHeader>
+              <TableBody>{companyCards.filter(s => s.companyId !== NO_COMPANY).map(s => <TableRow key={s.companyId}><TableCell className="font-medium">{s.companyName}</TableCell><TableCell className="text-right">{s.workers.length}</TableCell><TableCell className="text-right">{hours(s.projects.reduce((n, p) => n + p.normalHours, 0))}</TableCell><TableCell className="text-right">{hours(s.projects.reduce((n, p) => n + p.otHours, 0))}</TableCell></TableRow>)}</TableBody>
+            </Table>
+          </section>
+        )}
+
+        {step === 0 && !error && companyCards.map((s) => {
           const normal = s.projects.reduce((n, p) => n + p.normalHours, 0);
           const ot = s.projects.reduce((n, p) => n + p.otHours, 0);
           const unassigned = s.projects.filter((p) => p.key.startsWith("UNASSIGNED|"));
@@ -130,7 +146,7 @@ function ClaimWorkflowPage() {
                     {s.projects.length} project / site · {s.workers.length} workers · {hours(normal)} G hrs · {hours(ot)} OT hrs
                   </p>
                 </div>
-                <Button onClick={() => void download(s)} disabled={busy !== null || s.companyId === NO_COMPANY}>
+                <Button onClick={() => void download(s)} disabled={busy !== null || s.companyId === NO_COMPANY || s.sheets.length === 0}>
                   {busy === s.companyId ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />} Download Excel
                 </Button>
               </div>
@@ -153,6 +169,7 @@ function ClaimWorkflowPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
+                  {s.projects.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground">No saved claims for {month}</TableCell></TableRow>}
                   {s.projects.map((p) => (
                     <TableRow key={p.key}>
                       <TableCell>{p.label}</TableCell>

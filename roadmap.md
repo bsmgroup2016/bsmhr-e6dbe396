@@ -5,7 +5,8 @@
 - [x] Show company claim summaries, an all-company combined claim sheet, then a salary sheet; remove billing and AP/AR steps.
 - [x] Six aggregation/workbook/payroll tests pass; combined Excel recalculates 51 formulas with zero errors, preserving claim templates and saved payroll.
 - [ ] Verify signed-in workflow and browser downloads. Blocker: external account has no authorized session; live route redirects to /auth without runtime errors.
-- [ ] Confirm claim-to-salary calculation basis. Blocker: awaiting owner answer; use saved payroll meanwhile.
+- [x] Owner confirmed Salary Sheet uses saved payroll, not recalculated claim-hour pay.
+- [x] Show BSM Group followed by every registered company, including companies with no claims; preserve claim-only downloads and salary calculations.
 
 ## Dashboard chart placement and compliance overview
 

@@ -1,5 +1,16 @@
 import { NO_COMPANY, type CompanyClaimSummary } from "./company-claim-summary";
-import type { Employee, PayrollEntry } from "@/lib/types";
+import type { Company, Employee, PayrollEntry } from "@/lib/types";
+import { orderedCompanies } from "./company-overview";
+
+/** Display every registered company without adding empty or aggregate claims to exports. */
+export function claimCompanyCards(summaries: CompanyClaimSummary[], companies: Company[]) {
+  const cards = orderedCompanies(companies).map(company =>
+    summaries.find(summary => summary.companyId === company.id) ?? {
+      companyId: company.id, companyName: company.name, companyCode: company.code,
+      sheets: [], projects: [], workers: [],
+    });
+  return [...cards, ...summaries.filter(summary => !companies.some(company => company.id === summary.companyId))];
+}
 
 export function eligibleClaimSummaries(summaries: CompanyClaimSummary[]) {
   return summaries.filter(s => s.companyId !== NO_COMPANY);
