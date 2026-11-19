@@ -1,5 +1,12 @@
 # Full-section UI/UX and workflow audit
 
+## Three-stage claim and salary workflow
+
+- [x] Show company claim summaries, an all-company combined claim sheet, then a salary sheet; remove billing and AP/AR steps.
+- [x] Six aggregation/workbook/payroll tests pass; combined Excel recalculates 51 formulas with zero errors, preserving claim templates and saved payroll.
+- [ ] Verify signed-in workflow and browser downloads. Blocker: external account has no authorized session; live route redirects to /auth without runtime errors.
+- [ ] Confirm claim-to-salary calculation basis. Blocker: awaiting owner answer; use saved payroll meanwhile.
+
 ## Dashboard chart placement and compliance overview
 
 - [x] Move all charts and overview sections below operational items; add CSOC, confirmed Work Permit, passport and IPA issuance counts using existing records.

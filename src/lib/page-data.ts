@@ -21,7 +21,7 @@ const pages: Record<string, CollectionKey[]> = {
   payroll: ["employees", "payroll", "attendance", "loans", "loanRepayments", "medicalClaims", "issuances", "assets"],
   "time-cards": ["employees", "timeCards", "claimSheets", "attendance", "sites", "projects", "clients"],
   "claim-generator": ["employees", "timeCards", "claimSheets", "attendance", "sites", "projects", "clients", "assignments"],
-  "claim-workflow": ["employees", "claimSheets", "sites", "projects", "clients"],
+  "claim-workflow": ["employees", "claimSheets", "sites", "projects", "clients", "payroll"],
   leave: ["employees", "leaveRequests", "attendance"],
   billing: ["clients", "projects", "invoices", "rateAgreements", "contracts", "receipts", "expenses", "attendance", "employees", "sites", "assignments"],
   contracts: ["clients", "rateAgreements", "contracts", "projects", "attendance", "employees", "sites", "assignments", "invoices"],

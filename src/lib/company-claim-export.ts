@@ -151,3 +151,40 @@ export async function downloadCompanyClaimWorkbook(summary: CompanyClaimSummary,
   const workbook = await createCompanyClaimWorkbook(summary, employees, companies, month, lookups);
   downloadClaimBlob(await claimWorkbookBlob(workbook), companyClaimFileName(summary, month));
 }
+
+/** All companies share one download; project claims still use the current user template. */
+export async function createAllCompanyClaimWorkbook(summaries: CompanyClaimSummary[], employees: Employee[], companies: Company[], month: string, lookups: ClaimLookups = {}) {
+  if (!summaries.length) throw new Error("No company claims for this month");
+  const sheets = summaries.flatMap(s => s.sheets.map(sheet => ({ ...sheet, companyId: s.companyId })));
+  const workbook = await createClaimWorkbook(sheets, employees, companies, month, lookups);
+  const original = [...workbook.worksheets];
+  const overview = workbook.addWorksheet("ALL COMPANIES");
+  overview.addRow([`COMBINED CLAIM SUMMARY - ${monthLabel(month)}`]);
+  overview.addRow(["Company", "Workers", "Projects / sites", "G hours", "OT hours", "Total hours"]);
+  summaries.forEach(s => {
+    const r = overview.rowCount + 1;
+    overview.addRow([s.companyName, s.workers.length, s.projects.length,
+      s.projects.reduce((n, p) => n + p.normalHours, 0), s.projects.reduce((n, p) => n + p.otHours, 0),
+      { formula: `D${r}+E${r}` }]);
+  });
+  const total = overview.rowCount + 1;
+  overview.addRow(["TOTAL", ...["B", "C", "D", "E", "F"].map(c => ({ formula: `SUM(${c}3:${c}${total - 1})` }))]);
+  overview.getRow(1).font = { bold: true, size: 14 };
+  overview.getRow(2).font = { bold: true };
+  overview.getRow(total).font = { bold: true };
+  overview.columns.forEach((c, i) => { c.width = i === 0 ? 32 : 18; });
+  overview.views = [{ state: "frozen", ySplit: 2 }];
+  const used = new Set(workbook.worksheets.map(s => s.name.toUpperCase()));
+  const companyPages = summaries.map(s => {
+    const stem = `${s.companyCode || s.companyName}`.replace(/[\\/*?:[\]]/g, " ").slice(0, 20).trim() || "COMPANY";
+    let name = `${stem} SUMMARY`;
+    for (let n = 2; used.has(name.toUpperCase()); n++) name = `${stem} ${n}`;
+    used.add(name.toUpperCase());
+    const page = workbook.addWorksheet(name);
+    writeCombinedSheet(page, s, month);
+    return page;
+  });
+  [overview, ...companyPages, ...original].forEach((s, i) => { (s as unknown as { orderNo: number }).orderNo = i; });
+  workbook.views = [{ x: 0, y: 0, width: 20000, height: 12000, firstSheet: 0, activeTab: 0, visibility: "visible" }];
+  return workbook;
+}

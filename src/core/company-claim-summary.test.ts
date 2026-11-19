@@ -1,7 +1,7 @@
 import { describe, expect, it } from "bun:test";
 import ExcelJS from "exceljs";
 import { companyClaimSummaries, NO_COMPANY } from "./company-claim-summary";
-import { createCompanyClaimWorkbook } from "@/lib/company-claim-export";
+import { createAllCompanyClaimWorkbook, createCompanyClaimWorkbook } from "@/lib/company-claim-export";
 import type { ClaimSheet, Company, Project, Site } from "@/lib/types";
 
 const companies = [{ id: "bsm", code: "BSM", name: "BSM Engineering" }, { id: "vrl", code: "VRL", name: "VRL" }] as Company[];
@@ -25,6 +25,23 @@ const claims = [
 const lookups = { projects, sites, clients };
 
 describe("company claim summary", () => {
+  it("combines BSM and VRL summaries with all template project sheets in one workbook", async () => {
+    const template = new ExcelJS.Workbook();
+    const page = template.addWorksheet("TEMPLATE");
+    page.getCell(4, 2).value = "STAFF CODE"; page.getCell(4, 3).value = "NAME"; page.getCell(4, 4).value = "CATEGORY";
+    for (let d = 1; d <= 28; d++) page.getCell(4, 4 + d).value = d;
+    page.getCell(5, 4).value = "G-HRS"; page.getCell(6, 4).value = "OT HOURS";
+    const summaries = companyClaimSummaries(claims, [], companies, "2026-02", lookups).filter(s => s.companyId !== NO_COMPANY);
+    const book = await createAllCompanyClaimWorkbook(summaries, [], companies, "2026-02", { ...lookups, templateBuffer: await template.xlsx.writeBuffer() as ArrayBuffer });
+    const back = new ExcelJS.Workbook();
+    await back.xlsx.load(await book.xlsx.writeBuffer());
+    expect(back.worksheets.slice(0, 3).map(s => s.name)).toEqual(["ALL COMPANIES", "BSM SUMMARY", "VRL SUMMARY"]);
+    expect(back.worksheets[0]?.getCell("D3").value).toBe(32);
+    expect(back.worksheets[0]?.getCell("D4").value).toBe(8);
+    expect(back.worksheets[0]?.getCell("E3").value).toBe(6);
+    expect(back.worksheets[0]?.getCell("E4").value).toBe(4);
+    expect(back.worksheets.length).toBe(6);
+  });
   it("splits by company, keeps project/site per worker and counts Sundays separately", () => {
     const out = companyClaimSummaries(claims, [], companies, "2026-02", lookups);
     expect(out.map((s) => s.companyId)).toEqual(["bsm", "vrl", NO_COMPANY]);
