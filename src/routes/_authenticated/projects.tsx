@@ -18,6 +18,8 @@ import {
 } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
+import { getCompanies } from "@/lib/store";
+import { clientCompanyOptions } from "@/core/client-filters";
 import { ExportButton } from "@/components/data-io";
 import { SummaryCard } from "@/components/ui/summary-card";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -92,6 +94,8 @@ export default function ProjectsPage() {
   const [projects, setProjects] = useState(getProjects());
   const [sites, setSites] = useState(getSites());
   const [search, setSearch] = useState("");
+  const [companies] = useState(() => getCompanies());
+  const [companyFilter, setCompanyFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<ProjectStatus | "all">("all");
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [isCreateProjectOpen, setIsCreateProjectOpen] = useCreateDialog(
@@ -111,7 +115,8 @@ export default function ProjectsPage() {
       p.code.toLowerCase().includes(q) ||
       p.location.toLowerCase().includes(q) ||
       c?.name.toLowerCase().includes(q);
-    return matchesSearch && (statusFilter === "all" || p.status === statusFilter);
+    const matchesCompany = companyFilter === "all" || (c?.companyId ?? "") === companyFilter;
+    return matchesSearch && matchesCompany && (statusFilter === "all" || p.status === statusFilter);
   });
 
   const activeProjects = projects.filter((p) => p.status === "Active").length;
@@ -242,6 +247,18 @@ export default function ProjectsPage() {
               <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input aria-label="Search projects" type="search" placeholder="Search projects..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
             </div>
+            <div className="flex w-full flex-col gap-2 sm:flex-row lg:w-auto">
+            <Select value={companyFilter} onValueChange={setCompanyFilter}>
+              <SelectTrigger aria-label="Company" className="w-full sm:w-64">
+                <SelectValue placeholder="Company" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All companies</SelectItem>
+                {clientCompanyOptions(companies).map((o) => (
+                  <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as ProjectStatus | "all")}>
               <SelectTrigger aria-label="Project status" className="w-full sm:w-40">
                 <SelectValue placeholder="Status" />
@@ -255,10 +272,11 @@ export default function ProjectsPage() {
                 ))}
               </SelectContent>
             </Select>
+            </div>
           </div>
 
           {/* Mobile card list */}
-          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground"><span>{filtered.length} of {projects.length} projects</span>{(search || statusFilter !== "all") && <Button size="sm" variant="ghost" onClick={() => { setSearch(""); setStatusFilter("all"); }}>Clear filters</Button>}</div>
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground"><span>{filtered.length} of {projects.length} projects</span>{(search || statusFilter !== "all" || companyFilter !== "all") && <Button size="sm" variant="ghost" onClick={() => { setSearch(""); setStatusFilter("all"); setCompanyFilter("all"); }}>Clear filters</Button>}</div>
           <div className="mt-4 space-y-3 lg:hidden">
             {filtered.length === 0 ? (
               <EmptyState icon={<Building2 className="h-5 w-5" />} title="No projects found" description="Add a project to get started." />
