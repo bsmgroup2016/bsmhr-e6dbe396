@@ -109,6 +109,7 @@ export default function ProjectsPage() {
   const [viewingProject, setViewingProject] = useState<Project | null>(null);
   const [addSiteProject, setAddSiteProject] = useState<Project | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Project | null>(null);
+  const [editingSite, setEditingSite] = useState<Site | null>(null);
   const [crewProject, setCrewProject] = useState<Project | null>(null);
 
   const [clientFilter, setClientFilter] = useState<string>("all");
@@ -120,7 +121,8 @@ export default function ProjectsPage() {
       p.name.toLowerCase().includes(q) ||
       p.code.toLowerCase().includes(q) ||
       p.location.toLowerCase().includes(q) ||
-      c?.name.toLowerCase().includes(q);
+      c?.name.toLowerCase().includes(q) ||
+      sites.some((st) => st.projectId === p.id && `${st.name} ${st.location}`.toLowerCase().includes(q));
     const matchesCompany = companyFilter === "all" || (c?.companyId ?? "") === companyFilter;
     const matchesClient = clientFilter === "all" || p.clientId === clientFilter;
     return matchesSearch && matchesCompany && matchesClient && (statusFilter === "all" || p.status === statusFilter);
@@ -270,7 +272,7 @@ export default function ProjectsPage() {
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div className="relative w-full max-w-sm">
               <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input aria-label="Search projects" type="search" placeholder="Search projects..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+              <Input aria-label="Search projects" type="search" placeholder="Search project, site, client, location..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
             </div>
             <div className="flex w-full flex-col gap-2 sm:flex-row lg:w-auto">
             <Select value={companyFilter} onValueChange={setCompanyFilter}>
@@ -423,7 +425,7 @@ export default function ProjectsPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-10"></TableHead>
-                  <TableHead className="w-24 whitespace-nowrap">Code</TableHead>
+                  <TableHead className="w-20 whitespace-nowrap text-xs">Code</TableHead>
                   <TableHead className="min-w-[14rem]">Project / Site</TableHead>
                   <TableHead className="min-w-[12rem]">Client</TableHead>
                   <TableHead className="min-w-[11rem]">Location</TableHead>
@@ -465,7 +467,7 @@ export default function ProjectsPage() {
                               {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                             </Button>
                           </TableCell>
-                          <TableCell className="whitespace-nowrap align-middle font-medium">{p.code}</TableCell>
+                          <TableCell className="whitespace-nowrap align-middle font-mono text-xs text-muted-foreground">{p.code}</TableCell>
                           <TableCell className="align-middle">
                             <div className="font-medium leading-tight">{p.name}</div>
                           </TableCell>
@@ -580,7 +582,12 @@ export default function ProjectsPage() {
                                             <p className="text-xs text-muted-foreground">{s.location} · Required: {s.requiredWorkers}</p>
                                           </div>
                                         </div>
-                                        <StatusBadge variant={s.status === "Active" ? "success" : "ghost"} label={s.status} />
+                                        <div className="flex items-center gap-2">
+                                          <StatusBadge variant={s.status === "Active" ? "success" : "ghost"} label={s.status} />
+                                          <Button size="sm" variant="ghost" aria-label={`Edit site ${s.name}`} onClick={() => setEditingSite(s)}>
+                                            <Pencil className="mr-1 h-3.5 w-3.5" />Edit
+                                          </Button>
+                                        </div>
                                       </div>
                                     ))}
                                   </div>
@@ -597,6 +604,45 @@ export default function ProjectsPage() {
             </Table>
           </div>
         </div>
+
+        <Dialog open={!!editingSite} onOpenChange={(open) => !open && setEditingSite(null)}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Edit site</DialogTitle>
+              <DialogDescription>Update site name, location, manpower and status.</DialogDescription>
+            </DialogHeader>
+            {editingSite && (
+              <form
+                className="space-y-3"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const fd = new FormData(e.currentTarget);
+                  const name = String(fd.get("name") ?? "").trim();
+                  if (!name) return;
+                  updateSite(editingSite.id, {
+                    name,
+                    location: String(fd.get("location") ?? "").trim(),
+                    requiredWorkers: Math.max(0, Number(fd.get("requiredWorkers") || 0)),
+                    status: fd.get("status") as Site["status"],
+                  });
+                  setEditingSite(null);
+                  refresh();
+                }}
+              >
+                <div className="space-y-1"><Label htmlFor="site-name">Site name</Label><Input id="site-name" name="name" required defaultValue={editingSite.name} /></div>
+                <div className="space-y-1"><Label htmlFor="site-location">Location</Label><Input id="site-location" name="location" defaultValue={editingSite.location} /></div>
+                <div className="space-y-1"><Label htmlFor="site-req">Required workers</Label><Input id="site-req" name="requiredWorkers" type="number" min={0} defaultValue={editingSite.requiredWorkers} /></div>
+                <div className="space-y-1">
+                  <Label htmlFor="site-status">Status</Label>
+                  <select id="site-status" name="status" defaultValue={editingSite.status} className="h-9 w-full rounded-md border bg-background px-3 text-sm">
+                    {(["Active", "Inactive", "Completed"] as const).map((st) => <option key={st} value={st}>{st}</option>)}
+                  </select>
+                </div>
+                <Button type="submit" className="w-full">Save site</Button>
+              </form>
+            )}
+          </DialogContent>
+        </Dialog>
 
         <Dialog open={!!editingProject} onOpenChange={(open) => !open && setEditingProject(null)}>
           <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
