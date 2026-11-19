@@ -536,49 +536,7 @@ function OperationsDashboard() {
           ))}
         </section>
 
-        <section className="space-y-3">
-          <SectionHeading title="Pending Approvals" caption={`${pendingApprovals} awaiting review`} />
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Link to="/leave" className="dashboard-stat rounded-lg border border-warning/25 bg-warning/10 p-4 shadow-card hover:border-warning/60"><p className="text-xs text-muted-foreground">Leave Requests</p><p className="mt-2 text-2xl font-bold text-warning-text">{getLeaveRequests().filter((l) => l.status === "Pending").length}</p></Link>
-            <Link to="/approvals" className="dashboard-stat rounded-lg border border-dashboard-blue/20 bg-dashboard-blue/5 p-4 shadow-card hover:border-dashboard-blue/50"><p className="text-xs text-muted-foreground">Pending Approvals</p><p className="mt-2 text-2xl font-bold text-primary">{pendingApprovals}</p></Link>
-            <Link to="/documents" search={{ employee: undefined }} className="dashboard-stat rounded-lg border border-dashboard-coral/20 bg-dashboard-coral/5 p-4 shadow-card hover:border-dashboard-coral/50"><p className="text-xs text-muted-foreground">Document Alerts</p><p className="mt-2 text-2xl font-bold text-warning">{expiringDocs}</p></Link>
-            <Link to="/projects" search={{ new: undefined }} className="dashboard-stat rounded-lg border border-dashboard-teal/20 bg-dashboard-teal/5 p-4 shadow-card hover:border-dashboard-teal/50"><p className="text-xs text-muted-foreground">Projects Ending Soon</p><p className="mt-2 text-2xl font-bold text-info">{endingProjects.length}</p></Link>
-          </div>
-        </section>
-
         <DashboardCharts data={{ wageTrend, attendance: attendanceTrend, passMix, projectMix }} />
-
-        <nav aria-label="Quick actions" className="flex flex-wrap gap-2 border-y py-3">
-          {quickActions.map((action) => <Button key={action.to} asChild variant="ghost" size="sm"><Link to={action.to} search={action.search as never}><action.icon />{action.label}</Link></Button>)}
-        </nav>
-
-        {/* 1. Key numbers */}
-        <section className="space-y-3">
-          <SectionHeading
-            title="Overview"
-            icon={<CheckCircle2 className="h-4 w-4 text-primary" />}
-          />
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {keyMetrics.map((m) => (
-              <Link
-                key={m.title}
-                to={m.to}
-                search={m.search as never}
-                className="block focus-visible:outline-none"
-              >
-                <SummaryCard
-                  title={m.title}
-                  value={m.value}
-                  caption={m.caption}
-                  icon={m.icon}
-                  badges={m.badges}
-                  variant={m.variant}
-                  className="h-full cursor-pointer transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-elegant"
-                />
-              </Link>
-            ))}
-          </div>
-        </section>
 
         {/* 2. Attention needed — pass expiry alerts */}
         <section className="space-y-3">
@@ -851,6 +809,48 @@ function OperationsDashboard() {
                 />
               </div>
             </div>
+          </div>
+        </section>
+
+        <section className="space-y-3">
+          <SectionHeading title="Pending Approvals" caption={`${pendingApprovals} awaiting review`} />
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <Link to="/leave" className="dashboard-stat rounded-lg border border-warning/25 bg-warning/10 p-4 shadow-card hover:border-warning/60"><p className="text-xs text-muted-foreground">Leave Requests</p><p className="mt-2 text-2xl font-bold text-warning-text">{getLeaveRequests().filter((l) => l.status === "Pending").length}</p></Link>
+            <Link to="/approvals" className="dashboard-stat rounded-lg border border-dashboard-blue/20 bg-dashboard-blue/5 p-4 shadow-card hover:border-dashboard-blue/50"><p className="text-xs text-muted-foreground">Pending Approvals</p><p className="mt-2 text-2xl font-bold text-primary">{pendingApprovals}</p></Link>
+            <Link to="/documents" search={{ employee: undefined }} className="dashboard-stat rounded-lg border border-dashboard-coral/20 bg-dashboard-coral/5 p-4 shadow-card hover:border-dashboard-coral/50"><p className="text-xs text-muted-foreground">Document Alerts</p><p className="mt-2 text-2xl font-bold text-warning">{expiringDocs}</p></Link>
+            <Link to="/projects" search={{ new: undefined }} className="dashboard-stat rounded-lg border border-dashboard-teal/20 bg-dashboard-teal/5 p-4 shadow-card hover:border-dashboard-teal/50"><p className="text-xs text-muted-foreground">Projects Ending Soon</p><p className="mt-2 text-2xl font-bold text-info">{endingProjects.length}</p></Link>
+          </div>
+        </section>
+
+        <nav aria-label="Quick actions" className="flex flex-wrap gap-2 border-y py-3">
+          {quickActions.map((action) => <Button key={action.to} asChild variant="ghost" size="sm"><Link to={action.to} search={action.search as never}><action.icon />{action.label}</Link></Button>)}
+        </nav>
+
+        {/* Key numbers */}
+        <section className="space-y-3">
+          <SectionHeading
+            title="Overview"
+            icon={<CheckCircle2 className="h-4 w-4 text-primary" />}
+          />
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {keyMetrics.map((m) => (
+              <Link
+                key={m.title}
+                to={m.to}
+                search={m.search as never}
+                className="block focus-visible:outline-none"
+              >
+                <SummaryCard
+                  title={m.title}
+                  value={m.value}
+                  caption={m.caption}
+                  icon={m.icon}
+                  badges={m.badges}
+                  variant={m.variant}
+                  className="h-full cursor-pointer transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-elegant"
+                />
+              </Link>
+            ))}
           </div>
         </section>
 
