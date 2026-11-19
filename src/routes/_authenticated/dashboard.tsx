@@ -17,7 +17,10 @@ function urgencyTone(days: number | null): SummaryBadge["tone"] {
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { EmptyState } from "@/components/ui/empty-state";
-import { DashboardCharts } from "@/components/dashboard/dashboard-charts";
+import { ComplianceOverview, DashboardCharts } from "@/components/dashboard/dashboard-charts";
+import { companyOverview, orderedCompanies } from "@/core/company-overview";
+import type { Company } from "@/lib/types";
+import { CompanyOverviewCards } from "@/components/dashboard/company-overview-cards";
 import {
   Users,
   Building2,
@@ -60,6 +63,7 @@ import {
   getLeaveRequests,
   getCertifications,
   getPayroll,
+  getCompanies,
 } from "@/lib/store";
 import { getAssignments } from "@/lib/store";
 import { activeAssignedEmployeeIds, isEmployeeAvailable } from "@/lib/availability";
@@ -247,6 +251,8 @@ function OperationsDashboard() {
   const annualWages = payrollAll
     .filter((p) => p.month.startsWith(yearKey))
     .reduce((s, p) => s + p.basicSalary + p.overtimePay + p.allowances, 0);
+
+  const compliance = companyOverview(allEmployees, getCertifications(), payrollAll, undefined, today);
 
   const sgd = (n: number) => `$${Math.round(n).toLocaleString("en-SG")}`;
 
@@ -492,8 +498,19 @@ function OperationsDashboard() {
   const expiringPasses = employees
     .filter((e) => e.passExpiry && e.passExpiry !== "-" && daysLeft(e.passExpiry) <= 60)
     .map((e) => ({ ...e, days: daysLeft(e.passExpiry) }))
-    .sort((a, b) => a.days - b.days)
-    .slice(0, 8);
+    .sort((a, b) => a.days - b.days);
+
+  // Group expiring passes by company (BSM → VRL → PLUTO → others), unmapped workers last.
+  const passGroups = (() => {
+    const companies = orderedCompanies(getCompanies());
+    const groups: { company: Company | undefined; items: typeof expiringPasses }[] = companies
+      .map((c) => ({ company: c as Company | undefined, items: expiringPasses.filter((e) => e.companyId === c.id).slice(0, 8) }))
+      .filter((g) => g.items.length > 0);
+    const known = new Set(companies.map((c) => c.id));
+    const unassigned = expiringPasses.filter((e) => !e.companyId || !known.has(e.companyId)).slice(0, 8);
+    if (unassigned.length > 0) groups.push({ company: undefined, items: unassigned });
+    return groups;
+  })();
 
   const quickActions = [
     { to: "/workforce", search: { new: true }, icon: Users, label: "Register employee", desc: "Add a new worker to the system.", color: "primary" },
@@ -516,13 +533,7 @@ function OperationsDashboard() {
           <Button asChild size="sm"><Link to="/workforce" search={{ new: true }}><Users />Register employee</Link></Button>
         </header>
 
-        <div className="dashboard-welcome flex flex-wrap items-center justify-between gap-4 border-l-4 border-dashboard-blue px-5 py-4">
-          <div className="flex items-center gap-3">
-            <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-dashboard-blue/10 text-dashboard-blue"><Sparkles className="size-5" /></span>
-            <div><h2 className="font-semibold text-foreground">Your workforce, in focus</h2><p className="text-sm text-muted-foreground">{pendingApprovals} pending approvals · {activeProjects} active projects · {availableWorkers} available workers</p></div>
-          </div>
-          <Button asChild variant="outline" size="sm"><Link to="/approvals">Review approvals<ArrowUpRight /></Link></Button>
-        </div>
+        <CompanyOverviewCards />
 
         <section aria-label="Today's workforce" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
           {[
@@ -541,6 +552,8 @@ function OperationsDashboard() {
           ))}
         </section>
 
+
+
         <section className="space-y-3">
           <SectionHeading title="Pending Approvals" caption={`${pendingApprovals} awaiting review`} />
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -551,82 +564,11 @@ function OperationsDashboard() {
           </div>
         </section>
 
-        <DashboardCharts data={{ wageTrend, attendance: attendanceTrend, passMix, projectMix }} />
-
         <nav aria-label="Quick actions" className="flex flex-wrap gap-2 border-y py-3">
           {quickActions.map((action) => <Button key={action.to} asChild variant="ghost" size="sm"><Link to={action.to} search={action.search as never}><action.icon />{action.label}</Link></Button>)}
         </nav>
 
-        {/* 1. Key numbers */}
-        <section className="space-y-3">
-          <SectionHeading
-            title="Overview"
-            icon={<CheckCircle2 className="h-4 w-4 text-primary" />}
-          />
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {keyMetrics.map((m) => (
-              <Link
-                key={m.title}
-                to={m.to}
-                search={m.search as never}
-                className="block focus-visible:outline-none"
-              >
-                <SummaryCard
-                  title={m.title}
-                  value={m.value}
-                  caption={m.caption}
-                  icon={m.icon}
-                  badges={m.badges}
-                  variant={m.variant}
-                  className="h-full cursor-pointer transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-elegant"
-                />
-              </Link>
-            ))}
-          </div>
-        </section>
-
-        {/* 2. Attention needed — pass expiry alerts */}
-        <section className="space-y-3">
-          <SectionHeading
-            title="Pass expiry alerts"
-            caption="Next 60 days"
-            icon={<ShieldAlert className="h-4 w-4 text-warning" />}
-          />
-          {expiringPasses.length === 0 ? (
-            <EmptyState
-              icon={<AlertCircle className="h-5 w-5" />}
-              title="No passes expiring soon"
-              description="All work permits and passes are valid for more than 60 days."
-            />
-          ) : (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {expiringPasses.map((e) => (
-                <Link
-                  key={e.id}
-                  to="/workforce/$slug"
-                  params={{ slug: employeeSlugById(e.id) }}
-                  className="rounded-lg border bg-card p-4 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-warning/40 hover:shadow-elegant"
-                >
-                  <p className="truncate text-sm font-medium text-foreground">{e.name}</p>
-                  <p className="truncate text-sm text-muted-foreground">
-                    {e.passType} · {e.employeeCode}
-                  </p>
-                  <div className="mt-3">
-                    <StatusBadge
-                      variant={e.days < 0 ? "destructive" : e.days <= 30 ? "warning" : "info"}
-                      label={
-                        e.days < 0
-                          ? `Expired ${Math.abs(e.days)}d ago`
-                          : `${e.days}d left · ${e.passExpiry}`
-                      }
-                      dot
-                    />
-                  </div>
-                </Link>
-              ))}
-            </div>
-          )}
-        </section>
+        <ComplianceOverview counts={{ csoc: compliance.csoc.length, permits: compliance.permits.length, passports: compliance.passports.length, waiting: compliance.waiting.length }} />
 
         <section className="space-y-3">
           <SectionHeading title="Company snapshot" caption="Live figures across sites and approvals" />
@@ -805,7 +747,37 @@ function OperationsDashboard() {
           </section>
         ) : null}
 
-        {/* 5. History + system status */}
+        {/* Key numbers */}
+        <section className="space-y-3">
+          <SectionHeading
+            title="Overview"
+            icon={<CheckCircle2 className="h-4 w-4 text-primary" />}
+          />
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {keyMetrics.map((m) => (
+              <Link
+                key={m.title}
+                to={m.to}
+                search={m.search as never}
+                className="block focus-visible:outline-none"
+              >
+                <SummaryCard
+                  title={m.title}
+                  value={m.value}
+                  caption={m.caption}
+                  icon={m.icon}
+                  badges={m.badges}
+                  variant={m.variant}
+                  className="h-full cursor-pointer transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-elegant"
+                />
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        <DashboardCharts data={{ wageTrend, attendance: attendanceTrend, passMix, projectMix }} />
+
+        {/* History + system status — always last */}
         <section className="grid gap-4 lg:grid-cols-3">
           <div className="space-y-3 lg:col-span-2">
             <SectionHeading title="Recent activity" caption="Latest 10 actions" />

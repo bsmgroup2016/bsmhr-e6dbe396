@@ -29,6 +29,9 @@ import { MOM_SECTORS } from "@/lib/mom";
 import { uploadToR2 } from "@/lib/r2";
 import { employeeSlugById } from "@/lib/employee-slug";
 import type { Company, Employee } from "@/lib/types";
+import { companyOverview } from "@/core/company-overview";
+import { CompanyOverviewCards } from "@/components/dashboard/company-overview-cards";
+import { getCertifications, getPayroll } from "@/lib/store";
 
 export const Route = createFileRoute("/_authenticated/companies_/$id")({
   head: () => ({
@@ -66,9 +69,16 @@ const money = (n: number) => `$${Math.round(n).toLocaleString("en-SG")}`;
 function CompanyDashboardPage() {
   const { id: param } = Route.useParams();
   const navigate = useNavigate();
-  const [company, setCompany] = useState<Company | undefined>(() =>
+  const [savedCompany, setCompany] = useState<Company | undefined>(() =>
     findCompanyByParam(getCompanies(), param),
   );
+  const isGroup = param === "group";
+  const resolvedCompany = findCompanyByParam(getCompanies(), param);
+  const company: Company | undefined = isGroup ? {
+    id: "group", code: "BSM", name: "BSM Group", legalName: "All group companies",
+    uen: "", industry: "", address: "", phone: "", email: "", status: "Active",
+    accent: "primary", createdAt: "", updatedAt: "",
+  } : savedCompany?.id === resolvedCompany?.id ? savedCompany : resolvedCompany;
   const id = company?.id ?? param;
   const [editing, setEditing] = useState(false);
   const [current, setCurrent] = useState(getCurrentCompany());
@@ -79,9 +89,10 @@ function CompanyDashboardPage() {
   const sites = getSites();
   const assignments = getAssignments();
   const leaves = getLeaveRequests();
+  const overview = companyOverview(employees, getCertifications(), getPayroll(), isGroup ? undefined : id);
 
   const data = useMemo(() => {
-    const staff = employees.filter((e) => (e.companyId ?? "bsm") === id);
+    const staff = employees.filter((e) => isGroup || e.companyId === id);
     const staffIds = new Set(staff.map((e) => e.id));
     const today = new Date().toISOString().slice(0, 10);
     const onLeaveIds = new Set(
@@ -98,9 +109,9 @@ function CompanyDashboardPage() {
     const projectIds = new Set(
       assignments.filter((a) => staffIds.has(a.employeeId)).map((a) => a.projectId).filter(Boolean),
     );
-    const companyProjects = projects.filter((p) => projectIds.has(p.id));
+    const companyProjects = projects.filter((p) => isGroup || projectIds.has(p.id));
     const clientIds = new Set(companyProjects.map((p) => p.clientId));
-    const companyClients = clients.filter((c) => clientIds.has(c.id));
+    const companyClients = clients.filter((c) => isGroup || clientIds.has(c.id));
 
     const expiring = staff
       .map((e) => ({ e, days: daysUntil(e.passExpiry) }))
@@ -113,9 +124,9 @@ function CompanyDashboardPage() {
       staff, active, available, companyProjects, companyClients, expiring, monthlyWage,
       onLeave: staff.filter((e) => onLeaveIds.has(e.id)).length,
       deployed: deployedIds.size,
-      siteCount: sites.filter((s) => projectIds.has(s.projectId)).length,
+      siteCount: sites.filter((s) => isGroup || projectIds.has(s.projectId)).length,
     };
-  }, [employees, projects, clients, sites, assignments, leaves, id]);
+  }, [employees, projects, clients, sites, assignments, leaves, id, isGroup]);
 
   if (!company) {
     return (
@@ -162,12 +173,12 @@ function CompanyDashboardPage() {
                   {current === company.id && <StatusBadge variant="info" dot label="Current" />}
                 </div>
                 <p className="truncate text-sm text-muted-foreground">{company.legalName}</p>
-                <p className="mt-1 text-xs text-muted-foreground">
+                {!isGroup && <p className="mt-1 text-xs text-muted-foreground">
                   UEN {company.uen || "—"} · {company.industry || "—"} · {company.sector ?? "—"}
-                </p>
+                </p>}
               </div>
             </div>
-            <div className="flex flex-wrap gap-2">
+            {!isGroup && <div className="flex flex-wrap gap-2">
               <Button
                 size="sm"
                 variant={current === company.id ? "secondary" : "default"}
@@ -179,14 +190,23 @@ function CompanyDashboardPage() {
               <Button size="sm" variant="outline" className="gap-1" onClick={() => setEditing(true)}>
                 <Pencil className="h-3.5 w-3.5" /> Edit company
               </Button>
-            </div>
+            </div>}
           </div>
 
-          <dl className="mt-5 grid gap-2 break-words text-xs text-muted-foreground sm:grid-cols-3 [&_svg]:shrink-0">
+          {!isGroup && <dl className="mt-5 grid gap-2 break-words text-xs text-muted-foreground sm:grid-cols-3 [&_svg]:shrink-0">
             <div className="flex items-center gap-2"><MapPin className="h-3.5 w-3.5" /> {company.address || "—"}</div>
             <div className="flex items-center gap-2"><Phone className="h-3.5 w-3.5" /> {company.phone || "—"}</div>
             <div className="flex items-center gap-2"><Mail className="h-3.5 w-3.5" /> {company.email || "—"}</div>
-          </dl>
+          </dl>}
+        </div>
+
+        {isGroup && <CompanyOverviewCards />}
+
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <SummaryCard title="Waiting for issuance" value={String(overview.waiting.length)} icon={<CalendarClock className="h-5 w-5" />} variant="warning" caption="IPA issued / arrived / medical cleared" />
+          <SummaryCard title="Work Permit expiring" value={String(overview.permits.length)} icon={<ShieldAlert className="h-5 w-5" />} variant="destructive" caption="Confirmed expiry · next 60 days" />
+          <SummaryCard title="CSOC expiring" value={String(overview.csoc.length)} icon={<ShieldAlert className="h-5 w-5" />} variant="info" caption="Next 60 days · unique workers" />
+          <SummaryCard title="Annual wages" value={money(overview.annualWages)} icon={<Wallet className="h-5 w-5" />} variant="primary" caption={`Recorded gross wages · ${overview.year} YTD`} />
         </div>
 
         {/* Metrics */}
@@ -234,12 +254,15 @@ function CompanyDashboardPage() {
         </div>
 
         <Tabs defaultValue="workers" className="space-y-4">
-          <TabsList>
+          <TabsList className="h-auto flex flex-wrap justify-start">
             <TabsTrigger value="workers">Workers ({data.staff.length})</TabsTrigger>
             <TabsTrigger value="available">Available ({data.available.length})</TabsTrigger>
             <TabsTrigger value="projects">Projects ({data.companyProjects.length})</TabsTrigger>
             <TabsTrigger value="clients">Clients ({data.companyClients.length})</TabsTrigger>
             <TabsTrigger value="compliance">Compliance ({data.expiring.length})</TabsTrigger>
+            <TabsTrigger value="issuance">Waiting for issuance ({overview.waiting.length})</TabsTrigger>
+            <TabsTrigger value="csoc">CSOC expiring ({overview.csoc.length})</TabsTrigger>
+            <TabsTrigger value="wages">Annual wages</TabsTrigger>
           </TabsList>
 
           <TabsContent value="workers">
@@ -247,6 +270,26 @@ function CompanyDashboardPage() {
           </TabsContent>
           <TabsContent value="available">
             <WorkerTable rows={data.available} />
+          </TabsContent>
+          <TabsContent value="issuance"><WorkerTable rows={overview.waiting} /></TabsContent>
+          <TabsContent value="csoc">
+            <div className="overflow-x-auto rounded-lg border bg-card">
+              <Table><TableHeader><TableRow><TableHead>Worker</TableHead><TableHead>P-File</TableHead><TableHead>CSOC expiry</TableHead></TableRow></TableHeader>
+                <TableBody>{overview.csoc.map((e) => {
+                  const dates = [e.safetyCourseExpiry, ...getCertifications().filter((c) => c.employeeId === e.id && /csoc|safety orientation|safety course/i.test(c.courseName)).map((c) => c.expiryDate)].filter((date): date is string => Boolean(date));
+                  return <TableRow key={e.id}><TableCell><Link to="/workforce/$slug" params={{ slug: employeeSlugById(e.id) }}>{e.name}</Link></TableCell><TableCell>{e.employeeCode}</TableCell><TableCell>{[...new Set(dates)].sort().join(" · ")}</TableCell></TableRow>;
+                })}{overview.csoc.length === 0 && <TableRow><TableCell colSpan={3} className="text-center text-muted-foreground">No CSOC expiring in the next 60 days</TableCell></TableRow>}</TableBody>
+              </Table>
+            </div>
+          </TabsContent>
+          <TabsContent value="wages">
+            <div className="overflow-x-auto rounded-lg border bg-card">
+              <Table><TableHeader><TableRow><TableHead>Month</TableHead><TableHead>Worker</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Gross wages</TableHead></TableRow></TableHeader>
+                <TableBody>{overview.annualPayroll.map((p) => <TableRow key={p.id}><TableCell>{p.month}</TableCell><TableCell>{employees.find((e) => e.id === p.employeeId)?.name ?? "—"}</TableCell><TableCell>{p.status}</TableCell><TableCell className="text-right tabular-nums">{money(p.basicSalary + p.overtimePay + p.allowances + (p.bonus ?? 0))}</TableCell></TableRow>)}
+                {overview.annualPayroll.length === 0 && <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground">No payroll recorded for {overview.year}</TableCell></TableRow>}
+                <TableRow><TableCell colSpan={3} className="font-semibold">Total · {overview.year}</TableCell><TableCell className="text-right font-semibold">{money(overview.annualWages)}</TableCell></TableRow></TableBody>
+              </Table>
+            </div>
           </TabsContent>
 
           <TabsContent value="projects">
@@ -342,12 +385,12 @@ function CompanyDashboardPage() {
         </Tabs>
       </div>
 
-      <EditCompanyDialog
+      {!isGroup && <EditCompanyDialog
         company={company}
         open={editing}
         onOpenChange={setEditing}
         onSaved={(c) => setCompany(c)}
-      />
+      />}
     </AppShell>
   );
 }

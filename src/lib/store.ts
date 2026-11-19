@@ -821,7 +821,9 @@ export function generatePayrollForMonth(month: string, companyId?: string): { cr
     const totalAllowances = round2(medicalReimbursement);
     const totalDeductions = round2(unpaidDeduction + loanRepaymentDeduction);
 
-    const gross = round2(Math.max(0, basicSalary + overtimePay + totalAllowances - unpaidDeduction));
+    // Gross stays basic + OT + allowances; unpaid leave is deducted once via totalDeductions,
+    // matching the payroll page's recalculate (gross - deductions - CPF - SHG).
+    const gross = round2(Math.max(0, basicSalary + overtimePay + totalAllowances));
     const stat = computeStatutory(emp, gross);
 
     addPayroll({
