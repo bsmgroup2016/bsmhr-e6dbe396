@@ -18,7 +18,7 @@ import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ComplianceOverview, DashboardCharts } from "@/components/dashboard/dashboard-charts";
-import { companyOverview } from "@/core/company-overview";
+import { companyOverview, orderedCompanies } from "@/core/company-overview";
 import { CompanyOverviewCards } from "@/components/dashboard/company-overview-cards";
 import {
   Users,
@@ -62,6 +62,7 @@ import {
   getLeaveRequests,
   getCertifications,
   getPayroll,
+  getCompanies,
 } from "@/lib/store";
 import { getAssignments } from "@/lib/store";
 import { activeAssignedEmployeeIds, isEmployeeAvailable } from "@/lib/availability";
@@ -496,8 +497,19 @@ function OperationsDashboard() {
   const expiringPasses = employees
     .filter((e) => e.passExpiry && e.passExpiry !== "-" && daysLeft(e.passExpiry) <= 60)
     .map((e) => ({ ...e, days: daysLeft(e.passExpiry) }))
-    .sort((a, b) => a.days - b.days)
-    .slice(0, 8);
+    .sort((a, b) => a.days - b.days);
+
+  // Group expiring passes by company (BSM → VRL → PLUTO → others), unmapped workers last.
+  const passGroups = (() => {
+    const companies = orderedCompanies(getCompanies());
+    const groups = companies
+      .map((c) => ({ company: c, items: expiringPasses.filter((e) => e.companyId === c.id).slice(0, 8) }))
+      .filter((g) => g.items.length > 0);
+    const known = new Set(companies.map((c) => c.id));
+    const unassigned = expiringPasses.filter((e) => !e.companyId || !known.has(e.companyId)).slice(0, 8);
+    if (unassigned.length > 0) groups.push({ company: undefined, items: unassigned });
+    return groups;
+  })();
 
   const quickActions = [
     { to: "/workforce", search: { new: true }, icon: Users, label: "Register employee", desc: "Add a new worker to the system.", color: "primary" },
@@ -554,30 +566,40 @@ function OperationsDashboard() {
               description="All work permits and passes are valid for more than 60 days."
             />
           ) : (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {expiringPasses.map((e) => (
-                <Link
-                  key={e.id}
-                  to="/workforce/$slug"
-                  params={{ slug: employeeSlugById(e.id) }}
-                  className="rounded-lg border bg-card p-4 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-warning/40 hover:shadow-elegant"
-                >
-                  <p className="truncate text-sm font-medium text-foreground">{e.name}</p>
-                  <p className="truncate text-sm text-muted-foreground">
-                    {e.passType} · {e.employeeCode}
+            <div className="space-y-5">
+              {passGroups.map((group) => (
+                <div key={group.company?.id ?? "unassigned"} className="space-y-2">
+                  <p className="text-sm font-semibold text-foreground">
+                    {group.company?.name ?? "Unassigned"}
+                    <span className="ml-2 text-xs font-normal text-muted-foreground">{group.items.length} worker{group.items.length === 1 ? "" : "s"}</span>
                   </p>
-                  <div className="mt-3">
-                    <StatusBadge
-                      variant={e.days < 0 ? "destructive" : e.days <= 30 ? "warning" : "info"}
-                      label={
-                        e.days < 0
-                          ? `Expired ${Math.abs(e.days)}d ago`
-                          : `${e.days}d left · ${e.passExpiry}`
-                      }
-                      dot
-                    />
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                    {group.items.map((e) => (
+                      <Link
+                        key={e.id}
+                        to="/workforce/$slug"
+                        params={{ slug: employeeSlugById(e.id) }}
+                        className="rounded-lg border bg-card p-4 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-warning/40 hover:shadow-elegant"
+                      >
+                        <p className="truncate text-sm font-medium text-foreground">{e.name}</p>
+                        <p className="truncate text-sm text-muted-foreground">
+                          {e.passType} · {e.employeeCode}
+                        </p>
+                        <div className="mt-3">
+                          <StatusBadge
+                            variant={e.days < 0 ? "destructive" : e.days <= 30 ? "warning" : "info"}
+                            label={
+                              e.days < 0
+                                ? `Expired ${Math.abs(e.days)}d ago`
+                                : `${e.days}d left · ${e.passExpiry}`
+                            }
+                            dot
+                          />
+                        </div>
+                      </Link>
+                    ))}
                   </div>
-                </Link>
+                </div>
               ))}
             </div>
           )}
