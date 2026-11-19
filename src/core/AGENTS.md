@@ -3,3 +3,4 @@
 - Correction-history CSV derives from the same entry audit, labels missing legacy originals honestly, includes UTC timestamps, and escapes spreadsheet formulas; downloads use synchronous Blob clicks with delayed URL cleanup.
 - Workforce create/edit/delete and document registration await caller-RLS read-back before success; branch resolves company, partial imports update only supplied fields, and retries retain form/upload references.
 - Settings reads mother-company identity from a separate browser-safe constant, never the selected operating company, so branch switching cannot replace group identity.
+- Specific branch identity resolves before broad company matching for P-File validation and generation, preserving independent branch sequences without renumbering workers.

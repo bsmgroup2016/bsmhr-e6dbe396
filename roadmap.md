@@ -1,5 +1,10 @@
 # Full-section UI/UX and workflow audit
 
+## Pluto branch prefixes
+
+- [x] Keep Pluto Pte 01 linked to P and add Pluto Pte 02 linked to PC under the existing Pluto company; no employee rows or other branches changed.
+- [x] Both branches read back correctly; twelve prefix/company tests pass and preview build is clean. Real signed-in worker creation remains unverified without an authorized account session.
+
 ## Permission verification recovery
 
 - [x] Retry transient role-read failures without bypassing permissions; show recoverable errors instead of a blank page or unassigned-user view, with SDK retries disabled to keep attempts bounded.

@@ -365,7 +365,7 @@ function BranchPrefixManager() {
         <h2 className="text-lg font-semibold">Branch prefixes (P-File Number)</h2>
       </div>
       <p className="mb-4 text-sm text-muted-foreground">
-        Each branch keeps its own sequence, e.g. BS1, BS2 … / V1, V2 … / P1, P2 …
+        Each branch keeps its own sequence: BS-01, V-01, P-01 (Pluto Pte 01), PC-01 (Pluto Pte 02).
       </p>
 
       <div className="space-y-2">
