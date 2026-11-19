@@ -19,6 +19,7 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { DashboardCharts } from "@/components/dashboard/dashboard-charts";
 import { CompanyOverviewCards } from "@/components/dashboard/company-overview-cards";
+import { CompanyCompliance } from "@/components/dashboard/company-compliance";
 import {
   Users,
   Building2,
@@ -519,6 +520,8 @@ function OperationsDashboard() {
 
         <CompanyOverviewCards />
 
+        <CompanyCompliance />
+
         <section aria-label="Today's workforce" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
           {[
             { title: "Active Employees", value: activeEmployees, icon: Users, tone: "bg-primary text-primary-foreground", to: "/workforce", caption: `${employees.length} workers in total` },
@@ -546,7 +549,6 @@ function OperationsDashboard() {
           </div>
         </section>
 
-        <DashboardCharts data={{ wageTrend, attendance: attendanceTrend, passMix, projectMix }} />
 
         <nav aria-label="Quick actions" className="flex flex-wrap gap-2 border-y py-3">
           {quickActions.map((action) => <Button key={action.to} asChild variant="ghost" size="sm"><Link to={action.to} search={action.search as never}><action.icon />{action.label}</Link></Button>)}
@@ -579,6 +581,8 @@ function OperationsDashboard() {
             ))}
           </div>
         </section>
+
+        <DashboardCharts data={{ wageTrend, attendance: attendanceTrend, passMix, projectMix }} />
 
         {/* 2. Attention needed — pass expiry alerts */}
         <section className="space-y-3">

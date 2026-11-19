@@ -8,7 +8,7 @@ export function CompanyOverviewCards() {
   const companies = orderedCompanies(getCompanies());
   const entities = [{ id: "group", name: "BSM Group", code: "BSM", logoUrl: undefined as string | undefined }, ...companies];
   return (
-    <section aria-label="Company overview" className="grid grid-cols-1 justify-start gap-3 sm:grid-cols-[repeat(auto-fill,minmax(250px,270px))]">
+    <section aria-label="Company overview" className="grid grid-cols-1 gap-4 sm:grid-cols-2">
       {entities.map((company) => {
         const group = company.id === "group";
         const data = companyOverview(getEmployees(), getCertifications(), getPayroll(), group ? undefined : company.id);

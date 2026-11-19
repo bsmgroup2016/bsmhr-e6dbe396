@@ -31,6 +31,7 @@ import { employeeSlugById } from "@/lib/employee-slug";
 import type { Company, Employee } from "@/lib/types";
 import { companyOverview } from "@/core/company-overview";
 import { CompanyOverviewCards } from "@/components/dashboard/company-overview-cards";
+import { CompanyCompliance } from "@/components/dashboard/company-compliance";
 import { getCertifications, getPayroll } from "@/lib/store";
 
 export const Route = createFileRoute("/_authenticated/companies_/$id")({
@@ -201,6 +202,8 @@ function CompanyDashboardPage() {
         </div>
 
         {isGroup && <CompanyOverviewCards />}
+
+        <CompanyCompliance companyId={isGroup ? "group" : id} />
 
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <SummaryCard title="Waiting for issuance" value={String(overview.waiting.length)} icon={<CalendarClock className="h-5 w-5" />} variant="warning" caption="IPA issued / arrived / medical cleared" />

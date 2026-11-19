@@ -5,6 +5,13 @@ import type { Company, Employee, PayrollEntry } from "../lib/types";
 const employee = (id: string, companyId: string, values: Partial<Employee> = {}) => ({ id, companyId, department: "Construction", passType: "Work Permit", wpStage: "Active", ...values } as Employee);
 const now = new Date("2026-11-19T06:21:00Z");
 describe("company overview", () => {
+  it("separates live and expired permits using confirmed dates and company scope", () => {
+    const employees = [employee("live", "bsm", { passExpiry: "2026-11-19" }), employee("expired", "vrl", { passExpiry: "2026-11-18" }), employee("unknown", "bsm", { passExpiry: "-" }), employee("waiting", "bsm", { wpStage: "Arrived", passExpiry: "2027-01-01" })];
+    const group = companyOverview(employees, [], [], undefined, now);
+    expect(group.livePermits.map((e) => e.id)).toEqual(["live"]);
+    expect(group.expiredPermits.map((e) => e.id)).toEqual(["expired"]);
+    expect(companyOverview(employees, [], [], "bsm", now).expiredPermits.length).toBe(0);
+  });
   it("includes newly added companies after BSM, VRL and Pluto", () => {
     const companies = ["NEW", "PLUTO", "VRL", "BSM"].map((code) => ({ id: code, code, name: code }) as Company);
     expect(orderedCompanies(companies).map((c) => c.code)).toEqual(["BSM", "VRL", "PLUTO", "NEW"]);
