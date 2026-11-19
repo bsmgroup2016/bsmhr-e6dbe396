@@ -107,6 +107,8 @@ export default function ProjectsPage() {
   const [deleteTarget, setDeleteTarget] = useState<Project | null>(null);
   const [crewProject, setCrewProject] = useState<Project | null>(null);
 
+  const [clientFilter, setClientFilter] = useState<string>("all");
+  const clientName = (id: string) => clients.find((x) => x.id === id)?.name ?? "No client";
   const filtered = projects.filter((p) => {
     const q = search.toLowerCase();
     const c = clients.find((x) => x.id === p.clientId);
@@ -116,8 +118,10 @@ export default function ProjectsPage() {
       p.location.toLowerCase().includes(q) ||
       c?.name.toLowerCase().includes(q);
     const matchesCompany = companyFilter === "all" || (c?.companyId ?? "") === companyFilter;
-    return matchesSearch && matchesCompany && (statusFilter === "all" || p.status === statusFilter);
-  });
+    const matchesClient = clientFilter === "all" || p.clientId === clientFilter;
+    return matchesSearch && matchesCompany && matchesClient && (statusFilter === "all" || p.status === statusFilter);
+  }).sort((a, b) => clientName(a.clientId).localeCompare(clientName(b.clientId)) || a.name.localeCompare(b.name));
+  const clientProjectCount = (id: string) => filtered.filter((x) => x.clientId === id).length;
 
   const activeProjects = projects.filter((p) => p.status === "Active").length;
   const totalRequired = projects.reduce((s, p) => s + p.requiredWorkers, 0);
@@ -259,6 +263,17 @@ export default function ProjectsPage() {
                 ))}
               </SelectContent>
             </Select>
+            <Select value={clientFilter} onValueChange={setClientFilter}>
+              <SelectTrigger aria-label="Client" className="w-full sm:w-56">
+                <SelectValue placeholder="Client" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All clients</SelectItem>
+                {[...clients].sort((a, b) => a.name.localeCompare(b.name)).map((c) => (
+                  <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as ProjectStatus | "all")}>
               <SelectTrigger aria-label="Project status" className="w-full sm:w-40">
                 <SelectValue placeholder="Status" />
@@ -276,22 +291,30 @@ export default function ProjectsPage() {
           </div>
 
           {/* Mobile card list */}
-          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground"><span>{filtered.length} of {projects.length} projects</span>{(search || statusFilter !== "all" || companyFilter !== "all") && <Button size="sm" variant="ghost" onClick={() => { setSearch(""); setStatusFilter("all"); setCompanyFilter("all"); }}>Clear filters</Button>}</div>
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground"><span>{filtered.length} of {projects.length} projects / sites · {new Set(filtered.map((x) => x.clientId)).size} clients</span>{(search || statusFilter !== "all" || companyFilter !== "all" || clientFilter !== "all") && <Button size="sm" variant="ghost" onClick={() => { setSearch(""); setStatusFilter("all"); setCompanyFilter("all"); setClientFilter("all"); }}>Clear filters</Button>}</div>
           <div className="mt-4 space-y-3 lg:hidden">
             {filtered.length === 0 ? (
               <EmptyState icon={<Building2 className="h-5 w-5" />} title="No projects found" description="Add a project to get started." />
             ) : (
-              filtered.map((p) => {
+              filtered.map((p, i) => {
                 const client = clients.find((c) => c.id === p.clientId);
                 const f = projectFulfilment(p, sites, assignments);
                 const projectSites = sites.filter((s) => s.projectId === p.id);
+                const newGroup = i === 0 || filtered[i - 1].clientId !== p.clientId;
                 return (
-                  <div key={`m-${p.id}`} className="rounded-lg border bg-card p-3">
+                  <div key={`m-${p.id}`} className="space-y-2">
+                  {newGroup && (
+                    <div className="flex items-center justify-between rounded-md bg-muted px-3 py-2 text-sm font-semibold">
+                      <span className="truncate">{client?.name ?? "No client"}</span>
+                      <span className="text-xs font-normal text-muted-foreground">{clientProjectCount(p.clientId)} projects / sites</span>
+                    </div>
+                  )}
+                  <div className="rounded-lg border bg-card p-3">
                     <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
                       <div className="min-w-0">
                         <div className="truncate font-medium leading-tight">{p.name}</div>
                         <div className="mt-0.5 truncate text-xs text-muted-foreground">
-                          {p.code} · {client?.name}
+                          {p.code}
                         </div>
                         <div className="mt-0.5 truncate text-xs text-muted-foreground">{p.location}</div>
                       </div>
@@ -375,6 +398,7 @@ export default function ProjectsPage() {
                       <span className="shrink-0 text-xs text-muted-foreground">{projectSites.length} sites</span>
                     </div>
                   </div>
+                  </div>
                 );
               })
             )}
@@ -386,7 +410,8 @@ export default function ProjectsPage() {
                 <TableRow>
                   <TableHead className="w-10"></TableHead>
                   <TableHead className="w-24 whitespace-nowrap">Code</TableHead>
-                  <TableHead className="min-w-[15rem]">Project / Client</TableHead>
+                  <TableHead className="min-w-[14rem]">Project / Site</TableHead>
+                  <TableHead className="min-w-[12rem]">Client</TableHead>
                   <TableHead className="min-w-[11rem]">Location</TableHead>
                   <TableHead className="w-[10.5rem] whitespace-nowrap">Start date</TableHead>
                   <TableHead className="w-[10.5rem] whitespace-nowrap">End date</TableHead>
@@ -398,17 +423,26 @@ export default function ProjectsPage() {
               <TableBody>
                 {filtered.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="h-32 text-center">
+                    <TableCell colSpan={10} className="h-32 text-center">
                       <EmptyState className="bg-transparent border-0" icon={<Building2 className="h-5 w-5" />} title="No projects found" description="Add a project to get started." />
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filtered.map((p) => {
+                  filtered.map((p, i) => {
+                    const newGroup = i === 0 || filtered[i - 1].clientId !== p.clientId;
                     const isExpanded = expanded.has(p.id);
                     const projectSites = sites.filter((s) => s.projectId === p.id);
                     const client = clients.find((c) => c.id === p.clientId);
                     return (
                       <>
+                        {newGroup && (
+                          <TableRow key={`g-${p.id}`} className="bg-muted/60 hover:bg-muted/60">
+                            <TableCell colSpan={10} className="py-2 text-sm font-semibold">
+                              {client?.name ?? "No client"}
+                              <span className="ml-2 text-xs font-normal text-muted-foreground">{clientProjectCount(p.clientId)} projects / sites</span>
+                            </TableCell>
+                          </TableRow>
+                        )}
                         <TableRow key={p.id} className="cursor-pointer align-middle hover:bg-muted/50" onClick={() => setViewingProject(p)}>
                           <TableCell className="align-middle">
                             <Button
@@ -429,8 +463,8 @@ export default function ProjectsPage() {
                           <TableCell className="whitespace-nowrap align-middle font-medium">{p.code}</TableCell>
                           <TableCell className="align-middle">
                             <div className="font-medium leading-tight">{p.name}</div>
-                            <div className="mt-0.5 text-xs text-muted-foreground">{client?.name}</div>
                           </TableCell>
+                          <TableCell className="align-middle text-sm">{client?.name ?? "—"}</TableCell>
                           <TableCell className="align-middle text-sm text-muted-foreground">{p.location}</TableCell>
                           <TableCell className="align-middle" onClick={(evt) => evt.stopPropagation()}>
                             <Input
@@ -525,7 +559,7 @@ export default function ProjectsPage() {
                         </TableRow>
                         {isExpanded && (
                           <TableRow key={`${p.id}-sites`}>
-                            <TableCell colSpan={9} className="bg-muted/30 p-0">
+                            <TableCell colSpan={10} className="bg-muted/30 p-0">
                               <div className="px-6 py-3">
                                 <p className="mb-2 text-sm font-medium text-muted-foreground">Sites</p>
                                 {projectSites.length === 0 ? (
