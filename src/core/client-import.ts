@@ -2,8 +2,12 @@ import type { Client, ClientStatus } from "@/lib/types";
 
 export type ClientImportInput = Omit<Client, "id" | "code" | "createdAt" | "updatedAt">;
 
+/** A company reference used to resolve an imported Company name/code into an id. */
+export interface CompanyRef { id: string; name: string; code?: string }
+
 export const CLIENT_IMPORT_FIELDS = [
   { key: "name", label: "Client Name", required: true, example: "Jurong Port Logistics" },
+  { key: "company", label: "Company", example: "BSM" },
   { key: "contactPerson", label: "Contact Person", example: "Tan Wei Ming" },
   { key: "email", label: "Email", example: "ops@example.com" },
   { key: "phone", label: "Phone", example: "+65 6123 4567" },
@@ -18,8 +22,17 @@ const STATUSES: ClientStatus[] = ["Active", "Inactive", "Prospect"];
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 /** Turns imported rows (keyed by field key) into clients; skips blanks and names already present. */
-export function prepareClientImport(rows: Record<string, string>[], existingNames: string[]) {
+export function prepareClientImport(
+  rows: Record<string, string>[],
+  existingNames: string[],
+  companies: CompanyRef[] = [],
+) {
   const seen = new Set(existingNames.map((n) => n.trim().toLowerCase()));
+  const companyIds = new Map<string, string>();
+  for (const company of companies) {
+    companyIds.set(company.name.trim().toLowerCase(), company.id);
+    if (company.code) companyIds.set(company.code.trim().toLowerCase(), company.id);
+  }
   const clients: ClientImportInput[] = [];
   const errors: string[] = [];
   rows.forEach((row, index) => {
@@ -30,6 +43,9 @@ export function prepareClientImport(rows: Record<string, string>[], existingName
     const rawStatus = (row.status ?? "").trim().toLowerCase();
     const status = STATUSES.find((s) => s.toLowerCase() === rawStatus) ?? "Active";
     const date = (v?: string) => { const t = (v ?? "").trim(); return DATE.test(t) ? t : undefined; };
+    const companyText = (row.company ?? "").trim();
+    const companyId = companyText ? companyIds.get(companyText.toLowerCase()) : undefined;
+    if (companyText && !companyId) errors.push(`Row ${line}: company "${companyText}" not found, left unassigned`);
     seen.add(name.toLowerCase());
     clients.push({
       name,
@@ -39,6 +55,7 @@ export function prepareClientImport(rows: Record<string, string>[], existingName
       address: (row.address ?? "").trim(),
       industry: (row.industry ?? "").trim(),
       status,
+      companyId,
       contractStart: date(row.contractStart),
       contractEnd: date(row.contractEnd),
     });

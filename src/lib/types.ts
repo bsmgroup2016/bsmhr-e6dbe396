@@ -275,6 +275,8 @@ export interface Client {
   address: string;
   status: ClientStatus;
   industry?: string;
+  /** Operating company this client belongs to (BSM / VRL / Pluto). */
+  companyId?: string;
   contractStart?: string;
   contractEnd?: string;
   createdAt: string;

@@ -2,7 +2,7 @@ import type { Company, Employee, EmployeeCertification, PayrollEntry } from "@/l
 import { isCountableWorker } from "@/lib/workforce-split";
 
 export function orderedCompanies(companies: Company[]) {
-  const rank = (code: string) => ({ BSM: 0, VRL: 1, PLUTO: 2 }[code.toUpperCase()] ?? 3);
+  const rank = (code: string) => ({ BSM: 0, VRL: 1, PLUTO: 2, PLT: 2 }[code.toUpperCase()] ?? 3);
   return [...companies].sort((a, b) => rank(a.code) - rank(b.code) || a.name.localeCompare(b.name));
 }
 

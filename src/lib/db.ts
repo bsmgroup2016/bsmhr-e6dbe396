@@ -139,7 +139,8 @@ export const fromEmployee = (r: Row): Employee => ({
 export const fromClient = (r: Row): Client => ({
   id: r.id, code: r.code, name: r.name, contactPerson: r.contact_person ?? "", email: r.email ?? "",
   phone: r.phone ?? "", address: r.address ?? "", status: (r.status ?? "Active") as Client["status"],
-  industry: r.industry ?? undefined, contractStart: d(r.contract_start), contractEnd: d(r.contract_end),
+  industry: r.industry ?? undefined, companyId: r.company_id ?? undefined,
+  contractStart: d(r.contract_start), contractEnd: d(r.contract_end),
   createdAt: r.created_at, updatedAt: r.updated_at,
 });
 
@@ -317,6 +318,7 @@ export const toEmployee = (e: Partial<Employee>): Row => ({
 export const toClient = (c: Partial<Client>): Row => ({
   code: c.code, name: c.name, contact_person: c.contactPerson, email: c.email, phone: c.phone,
   address: c.address, industry: c.industry, status: c.status,
+  company_id: c.companyId || null,
   contract_start: nullDate(c.contractStart), contract_end: nullDate(c.contractEnd),
 });
 
