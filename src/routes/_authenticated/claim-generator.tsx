@@ -120,7 +120,7 @@ function ClaimGeneratorPage() {
         {step === 0 && <StepUpload files={files} setFiles={setFiles} details={details} setDetails={setDetails} progress={progress} failed={failed} onRead={() => void read()} />}
         {step === 1 && <StepReview workers={workers} year={y} month={m} onEdit={edit} onBack={() => setStep(0)} onNext={() => go(2)} />}
         {step === 2 && <StepClaim workers={workers} details={details} year={y} month={m} onBack={() => setStep(1)} onNext={() => go(3)} />}
-        {step === 3 && <StepExport workers={workers} month={details.month} site={details.site} onBack={() => setStep(2)} onRestart={restart} />}
+        {step === 3 && <StepExport workers={workers} details={details} onBack={() => setStep(2)} onRestart={restart} />}
       </div>
     </div>
     </AppShell>

@@ -23,7 +23,7 @@ async function newDoc() {
 }
 
 /** Fetch an R2-stored logo and return a jsPDF-friendly data URL. */
-async function loadLogo(
+export async function loadLogo(
   ref?: string,
 ): Promise<{ data: string; format: string; width: number; height: number } | null> {
   if (!ref) return null;
@@ -54,7 +54,7 @@ let defaultLogoPromise: Promise<{ data: string; format: string; width: number; h
   null;
 
 /** Fetch the built-in BSM logo from the CDN for documents without a company logo. */
-function loadDefaultLogo() {
+export function loadDefaultLogo() {
   if (!defaultLogoPromise) {
     defaultLogoPromise = (async () => {
       try {

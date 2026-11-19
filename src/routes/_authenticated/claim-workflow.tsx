@@ -15,7 +15,7 @@ import { getClaimSheets, getClients, getCompanies, getEmployees, getProjects, ge
 export const Route = createFileRoute("/_authenticated/claim-workflow")({
   head: () => ({
     meta: [
-      { title: "Claim to AP & AR — BSM HR" },
+      { title: "Salary sheet generator — BSM HR" },
       { name: "description", content: "Month-end company claim workbooks: combined summary and every project or site claim sheet." },
     ],
   }),
@@ -54,7 +54,7 @@ function ClaimWorkflowPage() {
     <AppShell>
       <div className="space-y-4 p-4 md:p-6">
         <div>
-          <h1 className="text-2xl font-semibold">Claim to AP &amp; AR</h1>
+          <h1 className="text-2xl font-semibold">Salary sheet generator</h1>
           <p className="text-sm text-muted-foreground">After claim sheets are generated: one Excel per company with the combined summary and every project / site claim sheet.</p>
         </div>
 
