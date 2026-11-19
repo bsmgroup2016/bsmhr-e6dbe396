@@ -125,7 +125,6 @@ export default function ProjectsPage() {
     const matchesClient = clientFilter === "all" || p.clientId === clientFilter;
     return matchesSearch && matchesCompany && matchesClient && (statusFilter === "all" || p.status === statusFilter);
   }).sort((a, b) => clientName(a.clientId).localeCompare(clientName(b.clientId)) || a.name.localeCompare(b.name));
-  const clientProjectCount = (id: string) => filtered.filter((x) => x.clientId === id).length;
 
   const activeProjects = projects.filter((p) => p.status === "Active").length;
   const totalRequired = projects.reduce((s, p) => s + p.requiredWorkers, 0);
@@ -322,15 +321,8 @@ export default function ProjectsPage() {
                 const client = clients.find((c) => c.id === p.clientId);
                 const f = projectFulfilment(p, sites, assignments);
                 const projectSites = sites.filter((s) => s.projectId === p.id);
-                const newGroup = i === 0 || filtered[i - 1].clientId !== p.clientId;
                 return (
                   <div key={`m-${p.id}`} className="space-y-2">
-                  {newGroup && (
-                    <div className="flex items-center justify-between rounded-md bg-muted px-3 py-2 text-sm font-semibold">
-                      <span className="truncate">{client?.name ?? "No client"}</span>
-                      <span className="text-xs font-normal text-muted-foreground">{clientProjectCount(p.clientId)} projects / sites</span>
-                    </div>
-                  )}
                   <div className="rounded-lg border bg-card p-3">
                     <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
                       <div className="min-w-0">
@@ -451,20 +443,11 @@ export default function ProjectsPage() {
                   </TableRow>
                 ) : (
                   filtered.map((p, i) => {
-                    const newGroup = i === 0 || filtered[i - 1].clientId !== p.clientId;
                     const isExpanded = expanded.has(p.id);
                     const projectSites = sites.filter((s) => s.projectId === p.id);
                     const client = clients.find((c) => c.id === p.clientId);
                     return (
                       <>
-                        {newGroup && (
-                          <TableRow key={`g-${p.id}`} className="bg-muted/60 hover:bg-muted/60">
-                            <TableCell colSpan={10} className="py-2 text-sm font-semibold">
-                              {client?.name ?? "No client"}
-                              <span className="ml-2 text-xs font-normal text-muted-foreground">{clientProjectCount(p.clientId)} projects / sites</span>
-                            </TableCell>
-                          </TableRow>
-                        )}
                         <TableRow key={p.id} className="cursor-pointer align-middle hover:bg-muted/50" onClick={() => setViewingProject(p)}>
                           <TableCell className="align-middle">
                             <Button
