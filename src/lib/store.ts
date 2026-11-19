@@ -1,3 +1,4 @@
+import { nextProjectCode, projectCodeLetter } from "@/core/project-code";
 import { countedCardHours } from "@/core/time-card-settlement";
 import { bsmBranchPrefix, plutoBranchPrefix, vrlBranchPrefix } from "@/core/pfile-prefixes";
 // App state store backed by Supabase.
@@ -509,7 +510,10 @@ export function getProject(id: string): Project | undefined { return getState().
 export function addProject(project: Omit<Project, "id" | "code" | "createdAt" | "updatedAt">): Project {
   const s = getState();
   const now = new Date().toISOString();
-  const row: Project = { ...project, id: newId(), code: `PRJ-${String(s.projects.length + 1).padStart(3, "0")}`, createdAt: now, updatedAt: now };
+  const clientCompanyId = s.clients.find((c) => c.id === project.clientId)?.companyId;
+  const letter = projectCodeLetter(s.companies.find((c) => c.id === clientCompanyId));
+  const code = nextProjectCode(letter, s.projects.map((x) => x.code ?? ""));
+  const row: Project = { ...project, id: newId(), code, createdAt: now, updatedAt: now };
   setState({ ...s, projects: [row, ...s.projects] });
   void supabase.from("projects").insert({ id: row.id, ...toProject(row) }).then(({ error }) => fail("projects", error));
   addAuditLog("CREATE", "Project", row.id, `Created project ${row.name}`);
