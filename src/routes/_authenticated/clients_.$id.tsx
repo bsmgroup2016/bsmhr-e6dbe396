@@ -14,10 +14,10 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import type { Invoice } from "@/lib/billing-types";
+import type { Invoice, RateAgreement, RateUnit } from "@/lib/billing-types";
 import {
   getClients, getProjects, getSites, getAssignments, getEmployees,
-  getInvoices, getRateAgreements, getContracts, getReceipts, getQuotations, recordInvoicePayment,
+  getInvoices, getRateAgreements, getContracts, getReceipts, getQuotations, recordInvoicePayment, addRateAgreement, updateRateAgreement, deleteRateAgreement,
 } from "@/lib/store";
 import { getCompanies, subscribe } from "@/lib/store";
 import { downloadInvoicePdf } from "@/lib/pdf";
@@ -63,6 +63,7 @@ function ClientProfilePage() {
   const [invStatus, setInvStatus] = useState<string>("all");
   const [payFor, setPayFor] = useState<Invoice | null>(null);
   const [payAmount, setPayAmount] = useState("");
+  const [rateEdit, setRateEdit] = useState<(Partial<RateAgreement> & { isNew?: boolean }) | null>(null);
   const clients = getClients();
   const client = clients.find((c) => c.id === id || c.code.toLowerCase() === id.toLowerCase());
 
@@ -454,9 +455,12 @@ function ClientProfilePage() {
 
           <TabsContent value="commercial" className="space-y-4">
             <div className="rounded-xl border bg-card p-4 shadow-sm">
-              <h2 className="mb-3 text-sm font-semibold">Rate agreements</h2>
+              <div className="mb-3 flex items-center justify-between">
+                <h2 className="text-sm font-semibold">Rate agreements</h2>
+                <Button size="sm" onClick={() => setRateEdit({ isNew: true, clientId: client.id, unit: "Hourly", normalRate: 0, otRate: 0, effectiveFrom: today, status: "Active", trade: "" })}>Add rate</Button>
+              </div>
               {data.rates.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No rate card set. Add one in Rate Agreements.</p>
+                <p className="text-sm text-muted-foreground">No rate card set. Click Add rate.</p>
               ) : (
                 <Table>
                   <TableHeader>
@@ -467,6 +471,7 @@ function ClientProfilePage() {
                       <TableHead>OT</TableHead>
                       <TableHead>Effective</TableHead>
                       <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -478,6 +483,15 @@ function ClientProfilePage() {
                         <TableCell>{money(r.otRate)}</TableCell>
                         <TableCell className="text-xs">{r.effectiveFrom} → {r.effectiveTo ?? "open"}</TableCell>
                         <TableCell><StatusBadge variant={r.status === "Active" ? "success" : "ghost"} label={r.status} dot /></TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-1">
+                            <Button size="sm" variant="outline" onClick={() => setRateEdit({ ...r })}>Edit</Button>
+                            <Button size="sm" variant="ghost" className="text-destructive" onClick={() => {
+                              if (!confirm(`Delete ${r.trade} rate?`)) return;
+                              deleteRateAgreement(r.id); toast.success("Rate deleted");
+                            }}>Delete</Button>
+                          </div>
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -548,6 +562,44 @@ function ClientProfilePage() {
             </div>
           </TabsContent>
         </Tabs>
+        <Dialog open={!!rateEdit} onOpenChange={(o) => !o && setRateEdit(null)}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader><DialogTitle>{rateEdit?.isNew ? "Add rate" : "Edit rate"}</DialogTitle></DialogHeader>
+            {rateEdit && (
+              <div className="grid grid-cols-2 gap-3">
+                <div className="col-span-2 space-y-1"><Label>Designation</Label><Input value={rateEdit.trade ?? ""} onChange={(e) => setRateEdit({ ...rateEdit, trade: e.target.value })} /></div>
+                <div className="space-y-1"><Label>Unit</Label>
+                  <select className="h-9 w-full rounded-md border bg-background px-2 text-sm" value={rateEdit.unit} onChange={(e) => setRateEdit({ ...rateEdit, unit: e.target.value as RateUnit })}>
+                    {["Hourly", "Daily", "Monthly"].map((u) => <option key={u}>{u}</option>)}
+                  </select></div>
+                <div className="space-y-1"><Label>Status</Label>
+                  <select className="h-9 w-full rounded-md border bg-background px-2 text-sm" value={rateEdit.status} onChange={(e) => setRateEdit({ ...rateEdit, status: e.target.value as RateAgreement["status"] })}>
+                    <option>Active</option><option>Inactive</option>
+                  </select></div>
+                <div className="space-y-1"><Label>Normal rate ($)</Label><Input type="number" step="0.01" value={rateEdit.normalRate ?? 0} onChange={(e) => setRateEdit({ ...rateEdit, normalRate: Number(e.target.value) })} /></div>
+                <div className="space-y-1"><Label>OT rate ($)</Label><Input type="number" step="0.01" value={rateEdit.otRate ?? 0} onChange={(e) => setRateEdit({ ...rateEdit, otRate: Number(e.target.value) })} /></div>
+                <div className="space-y-1"><Label>Effective from</Label><Input type="date" value={rateEdit.effectiveFrom ?? ""} onChange={(e) => setRateEdit({ ...rateEdit, effectiveFrom: e.target.value })} /></div>
+                <div className="space-y-1"><Label>Effective to</Label><Input type="date" value={rateEdit.effectiveTo ?? ""} onChange={(e) => setRateEdit({ ...rateEdit, effectiveTo: e.target.value || undefined })} /></div>
+                <div className="col-span-2 space-y-1"><Label>Remarks</Label><Input value={rateEdit.remarks ?? ""} onChange={(e) => setRateEdit({ ...rateEdit, remarks: e.target.value })} /></div>
+              </div>
+            )}
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setRateEdit(null)}>Cancel</Button>
+              <Button onClick={() => {
+                const r = rateEdit!;
+                if (!r.trade?.trim()) { toast.error("Designation is required"); return; }
+                if (!(Number(r.normalRate) >= 0) || !(Number(r.otRate) >= 0)) { toast.error("Rates must be 0 or more"); return; }
+                if (!r.effectiveFrom) { toast.error("Effective from date is required"); return; }
+                if (r.effectiveTo && r.effectiveTo < r.effectiveFrom) { toast.error("Effective to must be after effective from"); return; }
+                const { isNew, id: rid, createdAt: _c, updatedAt: _u, ...fields } = r;
+                const payload = { ...fields, trade: r.trade.trim(), clientId: client.id } as Omit<RateAgreement, "id" | "createdAt" | "updatedAt">;
+                if (isNew || !rid) addRateAgreement(payload); else updateRateAgreement(rid, payload);
+                toast.success(isNew ? "Rate added" : "Rate updated");
+                setRateEdit(null);
+              }}>Save</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
         <Dialog open={!!payFor} onOpenChange={(o) => !o && setPayFor(null)}>
           <DialogContent className="sm:max-w-sm">
             <DialogHeader><DialogTitle>Record payment · {payFor?.invoiceNo}</DialogTitle></DialogHeader>
