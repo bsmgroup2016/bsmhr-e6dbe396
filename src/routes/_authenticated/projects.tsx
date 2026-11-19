@@ -20,7 +20,11 @@ import {
 import { AppShell } from "@/components/app-shell";
 import { getCompanies } from "@/lib/store";
 import { clientCompanyOptions } from "@/core/client-filters";
-import { ExportButton } from "@/components/data-io";
+import { ExportButton, ImportDialog } from "@/components/data-io";
+import { PROJECT_IMPORT_FIELDS, prepareProjectImport } from "@/core/project-import";
+import { pick, type ImportColumn } from "@/lib/xlsx";
+
+const PROJECT_IMPORT_COLUMNS: ImportColumn[] = PROJECT_IMPORT_FIELDS.map((f) => ({ ...f }));
 import { SummaryCard } from "@/components/ui/summary-card";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -153,6 +157,14 @@ export default function ProjectsPage() {
     refresh();
   }
 
+  function handleImportProjects(rows: Record<string, string>[]) {
+    const keyed = rows.map((row) => Object.fromEntries(PROJECT_IMPORT_COLUMNS.map((c) => [c.key, pick(row, c)])));
+    const { projects: ready, errors } = prepareProjectImport(keyed, getClients(), getProjects());
+    for (const project of ready) addProject(project);
+    refresh();
+    return { imported: ready.length, errors };
+  }
+
   function handleEditProject(formData: FormData) {
     if (!editingProject) return;
     updateProject(editingProject.id, {
@@ -220,6 +232,16 @@ export default function ProjectsPage() {
             </DialogContent>
           </Dialog>
           <div className="mt-2 flex flex-wrap gap-2 sm:mt-0">
+            <ImportDialog
+              title="Bulk upload projects / sites"
+              description="Upload an Excel/CSV with Client Name and Project / Site, then match its columns. One client can have many projects. Clients must already exist; duplicates are skipped."
+              templateName="projects"
+              label="Bulk upload"
+              columns={PROJECT_IMPORT_COLUMNS}
+              onImport={handleImportProjects}
+              onDone={refresh}
+              mappable
+            />
             <ExportButton
               rows={filtered.map((p) => ({
                 Code: p.code,
