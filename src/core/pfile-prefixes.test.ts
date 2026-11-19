@@ -1,8 +1,24 @@
 import { describe, expect, it } from "bun:test";
-import { nextPFileNumber, prefixesForCompany, plutoBranchPrefix } from "./pfile-prefixes";
+import { nextPFileNumber, prefixesForCompany, plutoBranchPrefix, bsmBranchPrefix } from "./pfile-prefixes";
 
 describe("P-File prefixes", () => {
   it("BSM uses B and BS", () => expect(prefixesForCompany("BSM")).toEqual(["B", "BS"]));
+  it("BSM Pte 01 validates and generates only B", () => {
+    const branch = "BSM Engineering & Construction Pte Ltd  (Pte 01)";
+    expect(prefixesForCompany(branch)).toEqual(["B"]);
+    expect(bsmBranchPrefix(branch)).toBe("B");
+  });
+  it("BSM Pte 02 validates and generates only BS", () => {
+    const branch = "BSM Engineering & Construction Pte Ltd (Pte 02)";
+    expect(prefixesForCompany(branch)).toEqual(["BS"]);
+    expect(bsmBranchPrefix(branch)).toBe("BS");
+  });
+  it("B and BS retain separate existing sequences", () => {
+    const existing = ["B-99", "BS-150"];
+    expect(nextPFileNumber("B", existing)).toBe("B-100");
+    expect(nextPFileNumber("BS", existing)).toBe("BS-151");
+    expect(existing).toEqual(["B-99", "BS-150"]);
+  });
   it("Pluto uses P, PC and PS", () => expect(prefixesForCompany("Pluto")).toEqual(["P", "PC", "PS"]));
   it("VRL uses only V", () => expect(prefixesForCompany("VRL")).toEqual(["V"]));
   it("P-99 is followed by P-100, ignoring PC numbers", () =>

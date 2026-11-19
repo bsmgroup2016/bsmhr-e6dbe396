@@ -7,10 +7,20 @@ export const PFILE_PREFIXES: Record<string, readonly string[]> = {
 
 export function prefixesForCompany(company?: string): readonly string[] {
   const key = (company ?? "").trim().toLowerCase();
+  const bsmPrefix = bsmBranchPrefix(company);
+  if (bsmPrefix) return [bsmPrefix];
   if (key.includes("pluto") && /pte\s*0?1\b/.test(key)) return ["P"];
   if (key.includes("pluto") && /pte\s*0?2\b/.test(key)) return ["PC"];
   const hit = Object.keys(PFILE_PREFIXES).find((name) => key && (key === name.toLowerCase() || key.includes(name.toLowerCase())));
   return hit ? PFILE_PREFIXES[hit] : [];
+}
+
+export function bsmBranchPrefix(branch?: string): string | undefined {
+  const key = (branch ?? "").trim().toLowerCase();
+  if (!key.includes("bsm")) return undefined;
+  if (/pte\s*0?1\b/.test(key)) return "B";
+  if (/pte\s*0?2\b/.test(key)) return "BS";
+  return undefined;
 }
 
 export function plutoBranchPrefix(branch?: string): string | undefined {
