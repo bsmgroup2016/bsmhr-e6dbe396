@@ -2,3 +2,4 @@
 - Direct self punches preserve original times through conditional writes and read-back; checkout derives hours from the shared duty rule, never from client-supplied totals.
 - Auth event callbacks defer session-dependent queries until after the session lock releases, preventing sign-in/refresh deadlocks.
 - Media mutations require server-verified admin access, target only the selected bucket, verify object writes/deletion and protect claim-template files; manual uploads preserve the scans/main split and register only small metadata.
+- Browser role reads share bounded transport retries and fail closed with explicit recovery; failed reads are not empty role assignments, and stale results cannot cross account identities.

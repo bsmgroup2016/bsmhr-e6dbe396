@@ -1,5 +1,11 @@
 # Full-section UI/UX and workflow audit
 
+## Permission verification recovery
+
+- [x] Retry transient role-read failures without bypassing permissions; show recoverable errors instead of a blank page or unassigned-user view, with SDK retries disabled to keep attempts bounded.
+- [x] Twelve permission/access tests pass; controlled browser failure shows Try again and a successful retry opens Settings without page errors; preview build clean.
+- [ ] Verify real account permission recovery. Blocker: no authorized external-account browser session is available.
+
 ## Unified storage settings
 
 - [x] Merge Storage, Media and Archive & Clean into one Storage & Media page, with file browsing first; preserve existing admin restrictions and all file actions without deleting files.

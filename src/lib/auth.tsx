@@ -4,12 +4,14 @@ import {
   useEffect,
   useState,
   useCallback,
+  useRef,
   type ReactNode,
   type Context,
 } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { loginEmail } from "@/core/worker-login";
 import { clearSessionStore } from "@/lib/store";
+import { readAccountRoles } from "@/lib/account-permissions";
 import type { User, Session } from "@supabase/supabase-js";
 
 import type { AppAuthRole } from "@/lib/permissions";
@@ -20,6 +22,7 @@ interface AuthContextValue {
   user: User | null;
   session: Session | null;
   roles: AppRole[];
+  roleError: string | null;
   isLoading: boolean;
   isAuthenticated: boolean;
   isAdmin: boolean;
@@ -47,18 +50,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [roles, setRoles] = useState<AppRole[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [roleError, setRoleError] = useState<string | null>(null);
+  const activeUserId = useRef<string | null>(null);
 
   const fetchRoles = useCallback(async (userId: string) => {
-    const { data, error } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", userId);
-    if (error) {
-      console.error("Failed to fetch roles:", error);
+    try {
+      const verified = await readAccountRoles(userId);
+      if (activeUserId.current !== userId) return;
+      setRoles(verified);
+      setRoleError(null);
+    } catch {
+      if (activeUserId.current !== userId) return;
       setRoles([]);
-      return;
+      setRoleError("Could not verify account permissions. Please try again.");
     }
-    setRoles((data?.map((r) => r.role as AppRole) ?? []).filter(Boolean));
   }, []);
 
   useEffect(() => {
@@ -67,6 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     supabase.auth.getSession().then(({ data: { session: initialSession }, error }) => {
       if (!mounted) return;
       if (error) console.error("getSession error:", error);
+      activeUserId.current = initialSession?.user.id ?? null;
       setSession(initialSession);
       setUser(initialSession?.user ?? null);
       if (initialSession?.user) {
@@ -78,6 +84,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const { data: listener } = supabase.auth.onAuthStateChange((event, newSession) => {
       if (!mounted) return;
+      if (activeUserId.current !== (newSession?.user.id ?? null)) {
+        setRoles([]);
+        setRoleError(null);
+      }
+      activeUserId.current = newSession?.user.id ?? null;
       setSession(newSession);
       setUser(newSession?.user ?? null);
       if (newSession?.user) {
@@ -92,6 +103,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         clearSessionStore();
         setRoles([]);
+        setRoleError(null);
       }
     });
 
@@ -130,6 +142,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     user,
     session,
     roles,
+    roleError,
     isLoading,
     isAuthenticated: !!user,
     isAdmin: roles.includes("admin"),
