@@ -8,8 +8,8 @@ describe("project codes", () => {
     expect(projectCodeLetter({ code: "PLT", name: "Pluto System Engineering" })).toBe("P");
   });
   test("numbers per company", () => {
-    expect(nextProjectCode("V", [])).toBe("V01");
-    expect(nextProjectCode("V", ["V01", "V02", "P05"])).toBe("V03");
-    expect(nextProjectCode("P", ["V01", "P05"])).toBe("P06");
+    expect(nextProjectCode("V", [])).toBe("V001");
+    expect(nextProjectCode("V", ["V001", "V002", "P005"])).toBe("V003");
+    expect(nextProjectCode("P", ["V001", "P005"])).toBe("P006");
   });
 });
