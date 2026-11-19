@@ -6,7 +6,7 @@ test("mother company is BSM GROUP", () => {
 });
 
 test("mother company keeps the supplied Soon Lee Street address", () => {
-  expect(MOTHER_COMPANY.address).toBe("1 Soon Lee Street");
+  expect(MOTHER_COMPANY.address).toBe("1 Soon Lee Street, Pioneer Centre (S) 627605");
 });
 
 test("mother company has no UEN", () => {
