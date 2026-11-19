@@ -339,13 +339,26 @@ export default function SettingsPage() {
   );
 }
 
+const PREFIX_ORDER = ["B", "BS", "V", "VR", "P", "PC"];
+
+function sortBranchPrefixes<T extends { code: string }>(list: T[]): T[] {
+  return [...list].sort((a, b) => {
+    const ia = PREFIX_ORDER.indexOf(a.code.toUpperCase());
+    const ib = PREFIX_ORDER.indexOf(b.code.toUpperCase());
+    const oa = ia === -1 ? PREFIX_ORDER.length : ia;
+    const ob = ib === -1 ? PREFIX_ORDER.length : ib;
+    if (oa !== ob) return oa - ob;
+    return a.code.localeCompare(b.code);
+  });
+}
+
 function BranchPrefixManager() {
-  const [rows, setRows] = useState(getAllBranchPrefixes());
+  const [rows, setRows] = useState(() => sortBranchPrefixes(getAllBranchPrefixes()));
   const [code, setCode] = useState("");
   const [name, setName] = useState("");
 
   function refresh() {
-    setRows(getAllBranchPrefixes());
+    setRows(sortBranchPrefixes(getAllBranchPrefixes()));
   }
 
   function handleAdd() {
