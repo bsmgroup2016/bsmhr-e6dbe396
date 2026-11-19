@@ -8,7 +8,7 @@ const pages: Record<string, CollectionKey[]> = {
   "deployed-workers": ["employees", "assignments", "projects", "sites", "clients", "certifications", "documents"],
   "deployment-history": ["assignments", "clients", "employees", "projects", "sites"],
   clients: ["clients", "projects", "sites", "assignments", "employees", "invoices", "rateAgreements", "contracts"],
-  companies: ["employees", "projects", "clients", "sites", "assignments", "leaveRequests"],
+  companies: ["employees", "projects", "clients", "sites", "assignments", "leaveRequests", "certifications", "payroll"],
   projects: ["clients", "projects", "sites", "assignments", "employees", "certifications"],
   operations: ["employees", "projects", "sites", "assignments", "users", "clients", "certifications", "documents", "payroll", "rateAgreements", "expenses", "invoices"],
   documents: ["documents", "employees"], compliance: ["employees", "documents", "certifications"],

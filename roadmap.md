@@ -1,5 +1,11 @@
 # Full-section UI/UX and workflow audit
 
+## Dashboard company overview
+
+- [x] Replace the welcome strip with BSM Group and automatically listed company cards sharing scoped issuance, confirmed expiry and recorded annual-wage metrics.
+- [x] Connect group/company details; nine focused tests pass, controlled populated desktop/mobile cards and group/company link destinations verified without overflow or browser errors; preview build is clean.
+- [ ] Verify real signed-in dashboard and company detail read-back. Blocker: no authorized external-account browser session is available.
+
 ## IPA side-by-side verification and duplicate warnings
 
 - [x] Show original IPA pages beside extracted particulars and the editable form; require review confirmation and preserve missing/additional readings without invented confidence.

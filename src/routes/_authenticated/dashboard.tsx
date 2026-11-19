@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { DashboardCharts } from "@/components/dashboard/dashboard-charts";
+import { CompanyOverviewCards } from "@/components/dashboard/company-overview-cards";
 import {
   Users,
   Building2,
@@ -516,13 +517,7 @@ function OperationsDashboard() {
           <Button asChild size="sm"><Link to="/workforce" search={{ new: true }}><Users />Register employee</Link></Button>
         </header>
 
-        <div className="dashboard-welcome flex flex-wrap items-center justify-between gap-4 border-l-4 border-dashboard-blue px-5 py-4">
-          <div className="flex items-center gap-3">
-            <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-dashboard-blue/10 text-dashboard-blue"><Sparkles className="size-5" /></span>
-            <div><h2 className="font-semibold text-foreground">Your workforce, in focus</h2><p className="text-sm text-muted-foreground">{pendingApprovals} pending approvals · {activeProjects} active projects · {availableWorkers} available workers</p></div>
-          </div>
-          <Button asChild variant="outline" size="sm"><Link to="/approvals">Review approvals<ArrowUpRight /></Link></Button>
-        </div>
+        <CompanyOverviewCards />
 
         <section aria-label="Today's workforce" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
           {[
