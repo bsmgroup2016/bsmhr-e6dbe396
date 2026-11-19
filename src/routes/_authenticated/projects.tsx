@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useCreateDialog } from "@/hooks/use-create-dialog";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   Plus,
   Search,
@@ -471,7 +471,20 @@ export default function ProjectsPage() {
                           <TableCell className="align-middle">
                             <div className="font-medium leading-tight">{p.name}</div>
                           </TableCell>
-                          <TableCell className="align-middle text-sm">{client?.name ?? "—"}</TableCell>
+                          <TableCell className="align-middle text-sm">
+                            {client ? (
+                              <Link
+                                to="/clients/$id"
+                                params={{ id: client.id }}
+                                className="font-medium text-primary hover:underline"
+                                onClick={(evt) => evt.stopPropagation()}
+                              >
+                                {client.name}
+                              </Link>
+                            ) : (
+                              "—"
+                            )}
+                          </TableCell>
                           <TableCell className="align-middle text-sm text-muted-foreground">{p.location}</TableCell>
                           <TableCell className="align-middle" onClick={(evt) => evt.stopPropagation()}>
                             <Input
