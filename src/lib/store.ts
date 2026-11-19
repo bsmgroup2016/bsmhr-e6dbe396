@@ -1,5 +1,5 @@
 import { countedCardHours } from "@/core/time-card-settlement";
-import { bsmBranchPrefix, plutoBranchPrefix } from "@/core/pfile-prefixes";
+import { bsmBranchPrefix, plutoBranchPrefix, vrlBranchPrefix } from "@/core/pfile-prefixes";
 // App state store backed by Supabase.
 // Data is hydrated once (see hydrateStore) into an in-memory cache so the
 // existing synchronous getters keep working; every mutation writes to Supabase.
@@ -375,6 +375,8 @@ export function prefixForBranch(branch?: string): string {
   if (bsmPrefix) return bsmPrefix;
   const plutoPrefix = plutoBranchPrefix(branch);
   if (plutoPrefix) return plutoPrefix;
+  const vrlPrefix = vrlBranchPrefix(branch);
+  if (vrlPrefix) return vrlPrefix;
   const list = getState().branchPrefixes;
   if (!list.length) return "X";
   const key = (branch ?? "").trim().toLowerCase();

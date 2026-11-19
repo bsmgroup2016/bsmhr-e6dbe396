@@ -2,7 +2,7 @@
 export const PFILE_PREFIXES: Record<string, readonly string[]> = {
   BSM: ["B", "BS"],
   Pluto: ["P", "PC", "PS"],
-  VRL: ["V"],
+  VRL: ["V", "VR"],
 };
 
 export function prefixesForCompany(company?: string): readonly string[] {
@@ -11,6 +11,8 @@ export function prefixesForCompany(company?: string): readonly string[] {
   if (bsmPrefix) return [bsmPrefix];
   if (key.includes("pluto") && /pte\s*0?1\b/.test(key)) return ["P"];
   if (key.includes("pluto") && /pte\s*0?2\b/.test(key)) return ["PC"];
+  const vrlPrefix = vrlBranchPrefix(company);
+  if (vrlPrefix) return [vrlPrefix];
   const hit = Object.keys(PFILE_PREFIXES).find((name) => key && (key === name.toLowerCase() || key.includes(name.toLowerCase())));
   return hit ? PFILE_PREFIXES[hit] : [];
 }
@@ -28,6 +30,14 @@ export function plutoBranchPrefix(branch?: string): string | undefined {
   if (!key.includes("pluto")) return undefined;
   if (/pte\s*0?1\b/.test(key)) return "P";
   if (/pte\s*0?2\b/.test(key)) return "PC";
+  return undefined;
+}
+
+export function vrlBranchPrefix(branch?: string): string | undefined {
+  const key = (branch ?? "").trim().toLowerCase();
+  if (!key.includes("vrl")) return undefined;
+  if (/pte\s*0?1\b/.test(key)) return "V";
+  if (/pte\s*0?2\b/.test(key)) return "VR";
   return undefined;
 }
 
