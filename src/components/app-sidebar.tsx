@@ -87,11 +87,11 @@ const navGroups: { label: string; items: NavItem[] }[] = [
     items: [
       { title: "Quotation Management", url: "/quotations", icon: FileSignature },
       { title: "Client Directory", url: "/clients", icon: Handshake },
-      { title: "Business Pipeline (CRM)", url: "/crm", icon: BadgeDollarSign },
       { title: "Projects & Sites", url: "/projects", icon: FolderKanban },
       { title: "Manpower Deployment", url: "/operations", icon: Layers },
       { title: "Rate Agreements", url: "/contracts", icon: FileText },
       { title: "Billing & Invoicing", url: "/billing", icon: Receipt },
+      { title: "Business Pipeline (CRM)", url: "/crm", icon: BadgeDollarSign },
     ],
   },
   {
