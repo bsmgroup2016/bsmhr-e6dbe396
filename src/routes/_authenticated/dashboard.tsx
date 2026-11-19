@@ -19,6 +19,7 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ComplianceOverview, DashboardCharts } from "@/components/dashboard/dashboard-charts";
 import { companyOverview, orderedCompanies } from "@/core/company-overview";
+import type { Company } from "@/lib/types";
 import { CompanyOverviewCards } from "@/components/dashboard/company-overview-cards";
 import {
   Users,
@@ -502,8 +503,8 @@ function OperationsDashboard() {
   // Group expiring passes by company (BSM → VRL → PLUTO → others), unmapped workers last.
   const passGroups = (() => {
     const companies = orderedCompanies(getCompanies());
-    const groups = companies
-      .map((c) => ({ company: c, items: expiringPasses.filter((e) => e.companyId === c.id).slice(0, 8) }))
+    const groups: { company: Company | undefined; items: typeof expiringPasses }[] = companies
+      .map((c) => ({ company: c as Company | undefined, items: expiringPasses.filter((e) => e.companyId === c.id).slice(0, 8) }))
       .filter((g) => g.items.length > 0);
     const known = new Set(companies.map((c) => c.id));
     const unassigned = expiringPasses.filter((e) => !e.companyId || !known.has(e.companyId)).slice(0, 8);
