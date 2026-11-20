@@ -308,8 +308,8 @@ export default function ClientsPage() {
                             {c.name}
                           </Link>
                         </TableCell>
-                        <TableCell>{c.contactPerson}</TableCell>
                         <TableCell>{companyName(c.companyId)}</TableCell>
+                        <TableCell>{c.contactPerson}</TableCell>
                         <TableCell>{c.industry || "—"}</TableCell>
                         <TableCell>
                           <StatusBadge
