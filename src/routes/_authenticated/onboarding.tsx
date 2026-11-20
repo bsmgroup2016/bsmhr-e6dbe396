@@ -4,6 +4,7 @@ import { CalendarClock, CheckCircle2, FileText, Pencil, Plus, Users } from "luci
 import { toast } from "sonner";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
+import { AppShell } from "@/components/app-shell";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
@@ -103,7 +104,7 @@ function OnboardingPage() {
 
   const exportRows = filtered.map(e => { const data = readOnboarding(e); return { "P-File Number": e.employeeCode, "Worker Name": e.name, Company: companies.find(c => c.id === e.companyId)?.name ?? "", FIN: e.fin, "Passport Number": e.passportNumber ?? "", Stage: data?.stage ?? "Needs review", "Onboard Booking Date": data?.bookingDate ?? "", "Onboard Centre": data?.centre ?? "", "Onboard Completion Date": data?.completedDate ?? "", "MOM Appointment Date": data?.appointmentDate ?? "", "MOM Reference": data?.appointmentReference ?? "", "Work Permit Number": e.workPermitNumber ?? "", "Work Permit Issue Date": e.workPermitIssueDate ?? "", "Work Permit Expiry Date": e.workPermitExpiryDate ?? "", Notes: data?.notes ?? "" }; });
 
-  return <div className="space-y-6">
+  return <AppShell><div className="space-y-6">
     <div className="flex flex-wrap items-center justify-between gap-4"><h1 className="text-2xl font-bold">Onboard & Issuence</h1><div className="flex flex-wrap gap-2">
       <OnboardingImport columns={columns} onImport={importWorkers} />
       <ExportButton rows={exportRows} baseName="Onboard_Issuence" />
@@ -125,7 +126,7 @@ function OnboardingPage() {
     <Dialog open={create} onOpenChange={setCreate}><DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-6xl"><DialogHeader><DialogTitle>Register onboarding worker</DialogTitle></DialogHeader><EmployeeRegistration onSubmit={register} existingEmployeeId={createdId.current} /></DialogContent></Dialog>
     <Dialog open={Boolean(editing)} onOpenChange={open => { if (!open) setEditing(null); }}><DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-4xl"><DialogHeader><DialogTitle>Edit worker particulars</DialogTitle></DialogHeader>{editing && <EmployeeForm initialValues={editing} existingEmployeeId={editing.id} onSubmit={async fd => { const current = getEmployees().find(e => e.id === editing.id); if (!current) throw new Error("Worker not found"); const state = readOnboarding(current); if (!state) throw new Error("Tracking data needs review"); const values = { ...current, ...employeeFromForm(fd), internalNotes: current.internalNotes }; await saveEmployeeConfirmed({ ...values, ...onboardingEmployeePatch(values, state) }, current.id); await saveEmployeeDocumentsConfirmed(current.id, employeeFormDocuments(fd, getDocumentsByEmployee(current.id))); setEditing(null); toast.success("Worker particulars saved"); }} />}</DialogContent></Dialog>
     {tracking && <TrackingDialog key={tracking.id} employee={tracking} onClose={() => setTracking(null)} />}
-  </div>;
+  </div></AppShell>;
 }
 
 function TrackingDialog({ employee, onClose }: { employee: Employee; onClose: () => void }) {
