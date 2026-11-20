@@ -1,5 +1,12 @@
 # Full-section UI/UX and workflow audit
 
+## MOM Compliance permit register
+
+- [x] Add current Work Permit register, company/status/search filters, pagination, edit, profile/document actions and filtered exports; repair stale compliance data after store hydration/updates.
+- [x] Add existing-worker Excel bulk updates with identity matching, date validation and confirmed caller-authorized writes; preserve unsupplied data and reject unknown/conflicting identities.
+- [x] Thirteen focused tests pass; controlled populated desktop/mobile UI verifies company filtering, edit/read-back, Excel preview with rejected unknown worker, valid-row import and downloaded export; preview build clean.
+- [ ] Verify real account permit edit/import and saved-data read-back. Blocker: external account has no authorized session; controlled UI checks do not verify production writes or a MOM connection.
+
 ## Onboard & Issuence
 
 - [x] Add six isolated interactive sample records with stage updates, company/stage filters, reset and a separate Live records switch; never create real workers or upload files in demo mode.

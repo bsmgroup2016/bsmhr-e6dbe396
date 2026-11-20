@@ -12,7 +12,7 @@ import type { ImportResult } from "@/components/data-io";
 type Sheet = { name: string; grid: string[][]; startRow: number };
 const normal = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
 
-export function OnboardingImport({ columns, onImport }: { columns: ImportColumn[]; onImport: (rows: Record<string, string>[]) => Promise<ImportResult> }) {
+export function OnboardingImport({ columns, onImport, title = "Import onboarding workers", templateName = "onboarding_template.xlsx", fileLabel = "Onboarding spreadsheet", previewLabels = ["Worker Name", "Company", "Stage"], validateRow }: { columns: ImportColumn[]; onImport: (rows: Record<string, string>[]) => Promise<ImportResult>; title?: string; templateName?: string; fileLabel?: string; previewLabels?: string[]; validateRow?: (row: Record<string, string>) => string[] }) {
   const [open, setOpen] = useState(false);
   const [sheets, setSheets] = useState<Sheet[]>([]);
   const [sheetIndex, setSheetIndex] = useState(0);
@@ -25,7 +25,7 @@ export function OnboardingImport({ columns, onImport }: { columns: ImportColumn[
   const rows = (sheet?.grid.slice(headerIndex + 1) ?? []).flatMap((cells, index) => {
     if (cells.every(cell => !cell.trim())) return [];
     const values = Object.fromEntries(columns.map(c => [c.label.toLowerCase(), mapping[c.key] == null ? "" : cells[mapping[c.key]] ?? ""]));
-    const errors = columns.filter(c => c.required && !values[c.label.toLowerCase()]).map(c => `${c.label} is required`);
+    const errors = [...columns.filter(c => c.required && !values[c.label.toLowerCase()]).map(c => `${c.label} is required`), ...(validateRow?.(values) ?? [])];
     return [{ record: (sheet?.startRow ?? 1) + headerIndex + index + 1, values, errors }];
   });
   const valid = rows.filter(r => !r.errors.length);
@@ -72,12 +72,12 @@ export function OnboardingImport({ columns, onImport }: { columns: ImportColumn[
     } catch (error) { setIssues([error instanceof Error ? error.message : "Import failed"]); }
     finally { setBusy(false); }
   }
-  return <Dialog open={open} onOpenChange={v => { if (!busy) setOpen(v); }}><Button variant="outline" size="sm" onClick={() => setOpen(true)}><Upload className="mr-2 size-4" />Upload XLSX</Button><DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl"><DialogHeader><DialogTitle>Import onboarding workers</DialogTitle></DialogHeader>
-    <Button variant="outline" size="sm" onClick={() => void downloadTemplate(columns, "onboarding_template.xlsx")}><Download className="mr-2 size-4" />Download template</Button>
-    <Input type="file" aria-label="Onboarding spreadsheet" accept=".xlsx,.xls,.csv" disabled={busy} onChange={e => void upload(e.target.files?.[0])} />
+  return <Dialog open={open} onOpenChange={v => { if (!busy) setOpen(v); }}><Button variant="outline" size="sm" onClick={() => setOpen(true)}><Upload className="mr-2 size-4" />Upload XLSX</Button><DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl"><DialogHeader><DialogTitle>{title}</DialogTitle></DialogHeader>
+    <Button variant="outline" size="sm" onClick={() => void downloadTemplate(columns, templateName)}><Download className="mr-2 size-4" />Download template</Button>
+    <Input type="file" aria-label={fileLabel} accept=".xlsx,.xls,.csv" disabled={busy} onChange={e => void upload(e.target.files?.[0])} />
     {sheet && <><div className="grid gap-3 sm:grid-cols-2"><div className="space-y-2"><Label>Worksheet</Label><Select value={String(sheetIndex)} onValueChange={v => choose(Number(v), 0)}><SelectTrigger aria-label="Worksheet"><SelectValue /></SelectTrigger><SelectContent>{sheets.map((s, i) => <SelectItem key={i} value={String(i)}>{s.name}</SelectItem>)}</SelectContent></Select></div><div className="space-y-2"><Label htmlFor="import-header">Header row</Label><Input id="import-header" type="number" min={sheet.startRow} max={sheet.startRow + sheet.grid.length - 1} value={sheet.startRow + headerIndex} onChange={e => { const value = Number(e.target.value) - sheet.startRow; if (value >= 0 && value < sheet.grid.length) choose(sheetIndex, value); }} /></div></div>
     <div className="grid gap-3 sm:grid-cols-2">{columns.map(c => <div key={c.key} className="space-y-1"><Label>{c.label}{c.required ? " *" : ""}</Label><Select value={mapping[c.key] == null ? "none" : String(mapping[c.key])} onValueChange={v => setMapping(m => { const next = { ...m }; if (v === "none") delete next[c.key]; else next[c.key] = Number(v); return next; })}><SelectTrigger aria-label={`Map ${c.label}`}><SelectValue /></SelectTrigger><SelectContent><SelectItem value="none">Not imported</SelectItem>{headers.map((h, i) => <SelectItem key={i} value={String(i)}>Column {i + 1}: {h || "(blank)"}</SelectItem>)}</SelectContent></Select></div>)}</div>
-    <p className="text-sm font-medium">{rows.length} records · {valid.length} ready · {rows.length - valid.length} invalid</p><div className="overflow-x-auto rounded-lg border"><table className="w-full text-sm"><thead><tr>{["Row", "Worker Name", "Company", "Stage", "Validation"].map(h => <th key={h} className="p-2 text-left">{h}</th>)}</tr></thead><tbody>{rows.slice(0, 5).map(r => <tr key={r.record} className="border-t"><td className="p-2">{r.record}</td><td className="p-2">{r.values["worker name"]}</td><td className="p-2">{r.values.company}</td><td className="p-2">{r.values.stage || "IPA registered"}</td><td className="p-2">{r.errors.join(", ") || "Ready"}</td></tr>)}</tbody></table></div></>}
+    <p className="text-sm font-medium">{rows.length} records · {valid.length} ready · {rows.length - valid.length} invalid</p><div className="overflow-x-auto rounded-lg border"><table className="w-full text-sm"><thead><tr>{["Row", ...previewLabels, "Validation"].map(h => <th key={h} className="p-2 text-left">{h}</th>)}</tr></thead><tbody>{rows.slice(0, 5).map(r => <tr key={r.record} className="border-t"><td className="p-2">{r.record}</td>{previewLabels.map(label => <td key={label} className="p-2">{r.values[label.toLowerCase()] || "—"}</td>)}<td className="p-2">{r.errors.join(", ") || "Ready"}</td></tr>)}</tbody></table></div></>}
     {issues.length > 0 && <div role="alert" className="space-y-1 text-sm text-destructive">{issues.map((issue, i) => <p key={i}>{issue}</p>)}</div>}
     <div className="flex justify-end gap-2"><Button variant="outline" disabled={busy} onClick={() => setOpen(false)}>Cancel</Button><Button disabled={busy || !valid.length} onClick={() => void confirm()}>{busy ? "Importing…" : `Import ${valid.length} workers`}</Button></div>
   </DialogContent></Dialog>;

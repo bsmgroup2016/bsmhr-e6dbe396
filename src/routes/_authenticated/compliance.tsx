@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ShieldCheck, AlertTriangle, CalendarClock, Search, Download, FileText, Eye, FileQuestion } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -16,7 +16,8 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { getEmployees, getDocuments, getCurrentCompany } from "@/lib/store";
+import { getEmployees, getDocuments, getCurrentCompany, getCompanies, subscribe } from "@/lib/store";
+import { PermitRegister } from "@/components/permit-register";
 import { buildComplianceItems, missingComplianceRecords, severityLabel, severityVariant, type ComplianceSeverity } from "@/lib/compliance";
 import { openR2File } from "@/lib/r2";
 import { exportRows } from "@/lib/xlsx";
@@ -45,22 +46,25 @@ const WINDOWS = [
 ];
 
 export default function CompliancePage() {
+  const [, rerender] = useState(0);
+  useEffect(() => subscribe(() => rerender(v => v + 1)), []);
+  const employees = getEmployees(), documents = getDocuments();
   const companyId = getCurrentCompany();
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [severityFilter, setSeverityFilter] = useState<ComplianceSeverity | "all">("all");
   const [windowFilter, setWindowFilter] = useState<string>("90");
-  const [tab, setTab] = useState<"expiry" | "missing">("expiry");
+  const [tab, setTab] = useState<"permits" | "expiry" | "missing">("permits");
 
   const items = useMemo(() => {
-    const all = buildComplianceItems(getEmployees(), getDocuments());
+    const all = buildComplianceItems(employees, documents);
     return companyId ? all.filter((i) => !i.companyId || i.companyId === companyId) : all;
-  }, [companyId]);
+  }, [companyId, employees, documents]);
 
   const missing = useMemo(() => {
-    const all = missingComplianceRecords(getEmployees());
+    const all = missingComplianceRecords(employees);
     return companyId ? all.filter((m) => !m.companyId || m.companyId === companyId) : all;
-  }, [companyId]);
+  }, [companyId, employees]);
 
   const expiredCount = items.filter((i) => i.severity === "expired").length;
   const criticalCount = items.filter((i) => i.severity === "critical").length;
@@ -125,10 +129,10 @@ export default function CompliancePage() {
               Work passes, passports, medical cover, safety courses and documents in one watchlist.
             </p>
           </div>
-          <Button size="sm" variant="outline" className="mt-2 sm:mt-0" onClick={tab === "expiry" ? handleExport : exportMissing} disabled={tab === "expiry" ? filtered.length === 0 : missing.length === 0}>
+          {tab !== "permits" && <Button size="sm" variant="outline" className="mt-2 sm:mt-0" onClick={tab === "expiry" ? handleExport : exportMissing} disabled={tab === "expiry" ? filtered.length === 0 : missing.length === 0}>
             <Download className="mr-1 h-4 w-4" />
             Export
-          </Button>
+          </Button>}
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
@@ -149,14 +153,16 @@ export default function CompliancePage() {
           </button>
         </div>
 
-        <Tabs value={tab} onValueChange={(v) => setTab(v as "expiry" | "missing")}>
+        <Tabs value={tab} onValueChange={(v) => { if (v === "permits" || v === "expiry" || v === "missing") setTab(v); }}>
           <TabsList>
+            <TabsTrigger value="permits">Work Permits</TabsTrigger>
             <TabsTrigger value="expiry">Expiry watchlist</TabsTrigger>
             <TabsTrigger value="missing">Missing records ({missing.length})</TabsTrigger>
           </TabsList>
+          <TabsContent value="permits" className="mt-5"><PermitRegister employees={employees} companies={getCompanies()} documents={documents} /></TabsContent>
 
           <TabsContent value="missing" className="mt-4">
-            <div className="rounded-xl border bg-card p-4 shadow-sm">
+            <div className="space-y-4">
               <p className="text-xs text-muted-foreground">
                 Foreign workers whose expiry dates are not saved, so they cannot be tracked. Open the profile to fill them in.
               </p>
@@ -205,7 +211,7 @@ export default function CompliancePage() {
           </TabsContent>
 
           <TabsContent value="expiry" className="mt-4">
-        <div className="rounded-xl border bg-card p-4 shadow-sm">
+        <div className="space-y-4">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div className="relative w-full max-w-sm">
               <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -283,7 +289,7 @@ export default function CompliancePage() {
                       <TableCell>
                         <div className="flex justify-end gap-1">
                           {i.fileUrl && (
-                            <Button size="icon" variant="ghost" title="Open file" onClick={() => void openR2File(i.fileUrl!)}>
+                            <Button size="icon" variant="ghost" title="Open file" onClick={() => { if (i.fileUrl) void openR2File(i.fileUrl); }}>
                               <FileText className="h-4 w-4" />
                             </Button>
                           )}
