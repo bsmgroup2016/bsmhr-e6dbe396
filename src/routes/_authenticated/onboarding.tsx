@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { CalendarClock, CheckCircle2, FileText, Pencil, Plus, Users } from "lucide-react";
+import { CalendarClock, CheckCircle2, FileText, Pencil, Upload, Users } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
@@ -108,7 +108,7 @@ function OnboardingPage() {
     <div className="flex flex-wrap items-center justify-between gap-4"><h1 className="text-2xl font-bold">Onboard & Issuence</h1><div className="flex flex-wrap gap-2">
       <OnboardingImport columns={columns} onImport={importWorkers} />
       <ExportButton rows={exportRows} baseName="Onboard_Issuence" />
-      <Button onClick={() => setCreate(true)}><Plus className="mr-2 size-4" />Register by IPA</Button>
+      <Button onClick={() => setCreate(true)}><Upload className="mr-2 size-4" />Upload IPA</Button>
     </div></div>
     <div className="grid grid-cols-2 gap-5 border-y py-5 lg:grid-cols-4">
       {[{ title: "Onboard booked", value: scoped.filter(e => readOnboarding(e)?.stage === "Onboard booked").length, icon: CalendarClock }, { title: "At Onboard", value: scoped.filter(e => readOnboarding(e)?.stage === "At Onboard").length, icon: Users }, { title: "MOM appointments", value: scoped.filter(e => readOnboarding(e)?.stage === "MOM appointment booked").length, icon: FileText }, { title: "Work Permits issued", value: scoped.filter(e => readOnboarding(e)?.stage === "Work Permit issued").length, icon: CheckCircle2 }].map(item => <div key={item.title}><div className="flex items-center gap-2 text-sm text-muted-foreground"><item.icon className="size-4 text-primary" />{item.title}</div><p className="mt-2 text-3xl font-semibold">{item.value}</p></div>)}
@@ -123,7 +123,7 @@ function OnboardingPage() {
       {!filtered.length && <TableRow><TableCell colSpan={7} className="h-40 text-center text-muted-foreground">{tracked.length ? "No workers match these filters." : "No onboarding workers registered yet."}</TableCell></TableRow>}
     </TableBody></Table></div>
     <div className="flex items-center justify-between text-sm text-muted-foreground"><span>{filtered.length} workers</span><div className="flex items-center gap-3"><Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>Previous</Button><span>{page} / {Math.max(1, Math.ceil(filtered.length / 15))}</span><Button variant="outline" size="sm" disabled={page * 15 >= filtered.length} onClick={() => setPage(p => p + 1)}>Next</Button></div></div>
-    <Dialog open={create} onOpenChange={setCreate}><DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-6xl"><DialogHeader><DialogTitle>Register onboarding worker</DialogTitle></DialogHeader><EmployeeRegistration onSubmit={register} existingEmployeeId={createdId.current} /></DialogContent></Dialog>
+    <Dialog open={create} onOpenChange={setCreate}><DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-6xl"><DialogHeader><DialogTitle>Upload IPA for onboarding</DialogTitle></DialogHeader><EmployeeRegistration onSubmit={register} existingEmployeeId={createdId.current} /></DialogContent></Dialog>
     <Dialog open={Boolean(editing)} onOpenChange={open => { if (!open) setEditing(null); }}><DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-4xl"><DialogHeader><DialogTitle>Edit worker particulars</DialogTitle></DialogHeader>{editing && <EmployeeForm initialValues={editing} existingEmployeeId={editing.id} onSubmit={async fd => { const current = getEmployees().find(e => e.id === editing.id); if (!current) throw new Error("Worker not found"); const state = readOnboarding(current); if (!state) throw new Error("Tracking data needs review"); const values = { ...current, ...employeeFromForm(fd), internalNotes: current.internalNotes }; await saveEmployeeConfirmed({ ...values, ...onboardingEmployeePatch(values, state) }, current.id); await saveEmployeeDocumentsConfirmed(current.id, employeeFormDocuments(fd, getDocumentsByEmployee(current.id))); setEditing(null); toast.success("Worker particulars saved"); }} />}</DialogContent></Dialog>
     {tracking && <TrackingDialog key={tracking.id} employee={tracking} onClose={() => setTracking(null)} />}
   </div></AppShell>;
