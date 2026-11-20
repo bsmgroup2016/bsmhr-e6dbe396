@@ -1,4 +1,5 @@
 import type { Employee } from "@/lib/types";
+import { onboardingIncomplete } from "@/core/onboarding";
 
 /** Work permit / pass expired (or expiring today) — worker cannot be deployed. */
 export function hasExpiredWorkPermit(e: Employee) {
@@ -19,6 +20,7 @@ export function hasExpiredWorkPermit(e: Employee) {
 export function isEmployeeAvailable(e: Employee, assignedIds: Set<string>) {
   const deploy = e.deploymentStatus ?? "Available";
   return (
+    !onboardingIncomplete(e) &&
     !assignedIds.has(e.id) &&
     deploy !== "Blocked" &&
     deploy !== "Not Deployable" &&

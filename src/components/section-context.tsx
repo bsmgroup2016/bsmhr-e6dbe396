@@ -3,7 +3,7 @@ import { BriefcaseBusiness, Building2, ChartNoAxesCombined, Settings2, Truck, Us
 
 const groups = [
   { label: "Overview", icon: ChartNoAxesCombined, paths: ["dashboard", "companies", "reports", "alerts"] },
-  { label: "Workforce", icon: Users, paths: ["workforce", "available-workers", "deployed-workers", "deployment-history", "time-management", "time-cards", "payroll", "leave", "compliance", "mom", "training", "documents", "qr-punch"] },
+  { label: "Workforce", icon: Users, paths: ["workforce", "available-workers", "deployed-workers", "deployment-history", "time-management", "time-cards", "payroll", "leave", "compliance", "onboarding", "mom", "training", "documents", "qr-punch"] },
   { label: "Clients & Deployment", icon: Building2, paths: ["quotations", "clients", "projects", "operations", "contracts", "billing", "crm"] },
   { label: "Drivers & Transport", icon: Truck, paths: ["drivers", "driver-duty", "driver-dispatch", "transport", "driver-compliance"] },
   { label: "Business & HR", icon: BriefcaseBusiness, paths: ["staff-management", "staff-attendance", "staff-payroll", "recruitment", "finance", "my-portal"] },

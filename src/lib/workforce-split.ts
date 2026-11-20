@@ -1,3 +1,5 @@
+import { onboardingIncomplete } from "@/core/onboarding";
+
 /**
  * Splits people into site workforce (Construction) and office staff (HR,
  * Accounts, QS, IT, Admin, others). Department is the primary signal;
@@ -44,7 +46,7 @@ const has = (list: string[], v?: string | null) =>
 
 /** `trade` is the employee designation column. */
 type Person = { department?: string | null; trade?: string | null };
-type WorkerRecord = Person & { companyId?: string | null };
+type WorkerRecord = Person & { companyId?: string | null; internalNotes?: string };
 
 /**
  * Department is authoritative (Construction always belongs to the worker
@@ -61,7 +63,7 @@ export function isSiteWorker(p: Person): boolean {
 
 /** Shared population rule for every worker count and worker-only screen. */
 export function isCountableWorker(p: WorkerRecord): boolean {
-  return Boolean(p.companyId) && isSiteWorker(p);
+  return Boolean(p.companyId) && isSiteWorker(p) && !onboardingIncomplete(p);
 }
 
 /** True for office / administrative staff (everyone not on site). */

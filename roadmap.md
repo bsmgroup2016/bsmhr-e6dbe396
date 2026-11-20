@@ -1,5 +1,12 @@
 # Full-section UI/UX and workflow audit
 
+## Onboard & Issuence
+
+- [x] Add separate workforce section with IPA registration, Excel/CSV worksheet and positional column mapping, company/stage filters and booking/issuance controls.
+- [x] Keep one employee ID and IPA reference throughout; block worker-roster availability until onboarding completes, preserve actual permit data and validate tracking server-side.
+- [x] Run 26 focused regression tests; preview build clean and live signed-out access redirects to sign-in without page errors.
+- [ ] Verify real signed-in IPA registration, Excel import, status save and read-back. Blocker: no authorized external-account session is available; no production test workers were created.
+
 ## Pluto branch prefixes
 
 - [x] Keep Pluto Pte 01 linked to P and add Pluto Pte 02 linked to PC under the existing Pluto company; no employee rows or other branches changed.

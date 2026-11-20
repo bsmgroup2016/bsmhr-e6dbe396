@@ -1,4 +1,6 @@
 import { nextProjectCode, projectCodeLetter } from "@/core/project-code";
+import { hasOnboarding, onboardingEmployeePatch, readOnboarding } from "@/core/onboarding";
+import { validateOnboardingSave } from "@/lib/onboarding.functions";
 import { countedCardHours } from "@/core/time-card-settlement";
 import { bsmBranchPrefix, plutoBranchPrefix, vrlBranchPrefix } from "@/core/pfile-prefixes";
 // App state store backed by Supabase.
@@ -259,6 +261,14 @@ export function getEmployee(id: string): Employee | undefined { return getState(
 export async function saveEmployeeConfirmed(updates: Partial<Employee>, id?: string): Promise<Employee> {
   const existing = id ? getEmployee(id) : undefined;
   if (id && !existing) throw new Error("Employee not found");
+  if (existing && hasOnboarding(existing) && !hasOnboarding(updates)) updates = { ...updates, internalNotes: existing.internalNotes };
+  if (hasOnboarding(updates)) {
+    const tracking = readOnboarding(updates);
+    if (!tracking) throw new Error("Onboarding data needs review before saving");
+    const merged = { ...existing, ...updates };
+    await validateOnboardingSave({ data: { tracking, permit: { workPermitNumber: merged.workPermitNumber, workPermitIssueDate: merged.workPermitIssueDate, workPermitExpiryDate: merged.workPermitExpiryDate } } });
+    updates = { ...updates, ...onboardingEmployeePatch({ ...existing, ...updates }, tracking) };
+  }
   const code = updates.employeeCode?.trim() || existing?.employeeCode || nextEmployeeCode(updates.branch ?? "");
   if (isEmployeeCodeTaken(code, id)) throw new Error(`P-File Number ${code} is already in use`);
   const now = new Date().toISOString();
