@@ -19,6 +19,7 @@ import { OnboardingImport } from "@/components/onboarding-import";
 import { FileUpload } from "@/components/file-upload";
 import { employeeFormDocuments } from "@/core/employee-form-documents";
 import { employeeCompanyId } from "@/core/employee-company";
+import { createOnboardingDemo, DEMO_COMPANIES, updateOnboardingDemo } from "@/core/onboarding-demo";
 import { hasOnboarding, newOnboarding, ONBOARD_STAGES, onboardingEmployeePatch, onboardingSchema, readOnboarding, type Onboarding } from "@/core/onboarding";
 import { getEmployees, getCompanies, getBranchPrefixes, getDocumentsByEmployee, getCurrentCompany, saveEmployeeConfirmed, saveEmployeeDocumentsConfirmed, subscribe } from "@/lib/store";
 import { employeeSlug } from "@/lib/employee-slug";
@@ -51,7 +52,9 @@ const norm = (v: string) => v.trim().toLowerCase().replace(/[^a-z0-9]/g, "");
 function OnboardingPage() {
   const [employees, setEmployees] = useState(getEmployees);
   useEffect(() => subscribe(() => setEmployees(getEmployees())), []);
-  const companies = getCompanies();
+  const [demo, setDemo] = useState(true);
+  const [demoEmployees, setDemoEmployees] = useState(() => createOnboardingDemo());
+  const companies = demo ? DEMO_COMPANIES : getCompanies();
   const [search, setSearch] = useState("");
   const [company, setCompany] = useState("all");
   const [stage, setStage] = useState("all");
@@ -59,7 +62,7 @@ function OnboardingPage() {
   const [editing, setEditing] = useState<Employee | null>(null);
   const [tracking, setTracking] = useState<Employee | null>(null);
   const createdId = useRef<string | undefined>(undefined);
-  const tracked = employees.filter(hasOnboarding);
+  const tracked = demo ? demoEmployees : employees.filter(hasOnboarding);
   const scoped = tracked.filter(e => company === "all" || e.companyId === company);
   const filtered = scoped.filter(e => (stage === "all" || readOnboarding(e)?.stage === stage) && (!search || [e.name, e.employeeCode, e.fin, e.passportNumber].some(v => v?.toLowerCase().includes(search.toLowerCase()))));
   const [page, setPage] = useState(1);
@@ -106,10 +109,10 @@ function OnboardingPage() {
 
   return <AppShell><div className="space-y-6">
     <div className="flex flex-wrap items-center justify-between gap-4"><h1 className="text-2xl font-bold">Onboard & Issuence</h1><div className="flex flex-wrap gap-2">
-      <OnboardingImport columns={columns} onImport={importWorkers} />
-      <ExportButton rows={exportRows} baseName="Onboard_Issuence" />
-      <Button onClick={() => setCreate(true)}><Upload className="mr-2 size-4" />Upload IPA</Button>
+      <Button variant="outline" onClick={() => { setDemo(d => !d); setCompany("all"); setStage("all"); setSearch(""); setTracking(null); setEditing(null); setCreate(false); setPage(1); }}>{demo ? "Live records" : "View demo"}</Button>
+      {demo ? <Button variant="outline" onClick={() => { setDemoEmployees(createOnboardingDemo()); setTracking(null); toast.success("Sample records reset"); }}>Reset demo</Button> : <><OnboardingImport columns={columns} onImport={importWorkers} /><ExportButton rows={exportRows} baseName="Onboard_Issuence" /><Button onClick={() => setCreate(true)}><Upload className="mr-2 size-4" />Upload IPA</Button></>}
     </div></div>
+    {demo && <div className="flex flex-wrap items-center gap-3 border-l-4 border-primary bg-muted px-4 py-3"><Badge variant="secondary">Demo</Badge><span className="text-sm text-muted-foreground">Sample records · Not saved to workforce</span></div>}
     <div className="grid grid-cols-2 gap-5 border-y py-5 lg:grid-cols-4">
       {[{ title: "Onboard booked", value: scoped.filter(e => readOnboarding(e)?.stage === "Onboard booked").length, icon: CalendarClock }, { title: "At Onboard", value: scoped.filter(e => readOnboarding(e)?.stage === "At Onboard").length, icon: Users }, { title: "MOM appointments", value: scoped.filter(e => readOnboarding(e)?.stage === "MOM appointment booked").length, icon: FileText }, { title: "Work Permits issued", value: scoped.filter(e => readOnboarding(e)?.stage === "Work Permit issued").length, icon: CheckCircle2 }].map(item => <div key={item.title}><div className="flex items-center gap-2 text-sm text-muted-foreground"><item.icon className="size-4 text-primary" />{item.title}</div><p className="mt-2 text-3xl font-semibold">{item.value}</p></div>)}
     </div>
@@ -119,17 +122,17 @@ function OnboardingPage() {
       {(search || company !== "all" || stage !== "all") && <Button variant="ghost" onClick={() => { setSearch(""); setCompany("all"); setStage("all"); }}>Clear filters</Button>}
     </div>
     <div className="overflow-x-auto rounded-lg border"><Table><TableHeader><TableRow><TableHead>Worker / P-File</TableHead><TableHead>Company</TableHead><TableHead>Stage</TableHead><TableHead>Onboard booking</TableHead><TableHead>MOM appointment</TableHead><TableHead>Main document</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader><TableBody>
-      {paged.map(e => { const data = readOnboarding(e); return <TableRow key={e.id}><TableCell><p className="font-medium">{e.name}</p><p className="text-xs text-muted-foreground">{e.employeeCode} · {e.fin || e.passportNumber || "Identity pending"}</p></TableCell><TableCell>{companies.find(c => c.id === e.companyId)?.name}</TableCell><TableCell><Badge variant={data?.stage === "Work Permit issued" ? "default" : "secondary"}>{data?.stage ?? "Needs review"}</Badge></TableCell><TableCell>{data?.bookingDate || "—"}<p className="text-xs text-muted-foreground">{data?.centre}</p></TableCell><TableCell>{data?.appointmentDate || "—"}<p className="text-xs text-muted-foreground">{data?.appointmentReference}</p></TableCell><TableCell>{data?.stage === "Work Permit issued" ? "Work Permit" : e.ipaDocumentUrl ? "IPA" : "IPA pending"}</TableCell><TableCell><div className="flex justify-end gap-2"><Button variant="outline" size="sm" onClick={() => setTracking(e)}>Update status</Button><Button variant="ghost" size="icon" aria-label={`Edit ${e.name}`} onClick={() => setEditing(e)}><Pencil className="size-4" /></Button></div></TableCell></TableRow>; })}
+      {paged.map(e => { const data = readOnboarding(e); return <TableRow key={e.id}><TableCell><p className="font-medium">{e.name}</p><p className="text-xs text-muted-foreground">{e.employeeCode} · {e.fin || e.passportNumber || "Identity pending"}</p></TableCell><TableCell>{companies.find(c => c.id === e.companyId)?.name}</TableCell><TableCell><Badge variant={data?.stage === "Work Permit issued" ? "default" : "secondary"}>{data?.stage ?? "Needs review"}</Badge></TableCell><TableCell>{data?.bookingDate || "—"}<p className="text-xs text-muted-foreground">{data?.centre}</p></TableCell><TableCell>{data?.appointmentDate || "—"}<p className="text-xs text-muted-foreground">{data?.appointmentReference}</p></TableCell><TableCell>{data?.stage === "Work Permit issued" ? "Work Permit" : demo ? "IPA · Sample" : e.ipaDocumentUrl ? "IPA" : "IPA pending"}</TableCell><TableCell><div className="flex justify-end gap-2"><Button variant="outline" size="sm" onClick={() => setTracking(e)}>Update status</Button>{!demo && <Button variant="ghost" size="icon" aria-label={`Edit ${e.name}`} onClick={() => setEditing(e)}><Pencil className="size-4" /></Button>}</div></TableCell></TableRow>; })}
       {!filtered.length && <TableRow><TableCell colSpan={7} className="h-40 text-center text-muted-foreground">{tracked.length ? "No workers match these filters." : "No onboarding workers registered yet."}</TableCell></TableRow>}
     </TableBody></Table></div>
     <div className="flex items-center justify-between text-sm text-muted-foreground"><span>{filtered.length} workers</span><div className="flex items-center gap-3"><Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>Previous</Button><span>{page} / {Math.max(1, Math.ceil(filtered.length / 15))}</span><Button variant="outline" size="sm" disabled={page * 15 >= filtered.length} onClick={() => setPage(p => p + 1)}>Next</Button></div></div>
     <Dialog open={create} onOpenChange={setCreate}><DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-6xl"><DialogHeader><DialogTitle>Upload IPA for onboarding</DialogTitle></DialogHeader><EmployeeRegistration onSubmit={register} existingEmployeeId={createdId.current} /></DialogContent></Dialog>
     <Dialog open={Boolean(editing)} onOpenChange={open => { if (!open) setEditing(null); }}><DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-4xl"><DialogHeader><DialogTitle>Edit worker particulars</DialogTitle></DialogHeader>{editing && <EmployeeForm initialValues={editing} existingEmployeeId={editing.id} onSubmit={async fd => { const current = getEmployees().find(e => e.id === editing.id); if (!current) throw new Error("Worker not found"); const state = readOnboarding(current); if (!state) throw new Error("Tracking data needs review"); const values = { ...current, ...employeeFromForm(fd), internalNotes: current.internalNotes }; await saveEmployeeConfirmed({ ...values, ...onboardingEmployeePatch(values, state) }, current.id); await saveEmployeeDocumentsConfirmed(current.id, employeeFormDocuments(fd, getDocumentsByEmployee(current.id))); setEditing(null); toast.success("Worker particulars saved"); }} />}</DialogContent></Dialog>
-    {tracking && <TrackingDialog key={tracking.id} employee={tracking} onClose={() => setTracking(null)} />}
+    {tracking && <TrackingDialog key={tracking.id} employee={tracking} onClose={() => setTracking(null)} onDemoSave={demo ? updated => setDemoEmployees(rows => rows.map(row => row.id === updated.id ? updated : row)) : undefined} />}
   </div></AppShell>;
 }
 
-function TrackingDialog({ employee, onClose }: { employee: Employee; onClose: () => void }) {
+function TrackingDialog({ employee, onClose, onDemoSave }: { employee: Employee; onClose: () => void; onDemoSave?: (employee: Employee) => void }) {
   const [data, setData] = useState<Onboarding>(() => readOnboarding(employee) ?? newOnboarding());
   const [permit, setPermit] = useState({ workPermitNumber: employee.workPermitNumber ?? "", workPermitIssueDate: employee.workPermitIssueDate ?? "", workPermitExpiryDate: employee.workPermitExpiryDate ?? "" });
   const [ipa, setIpa] = useState(employee.ipaDocumentUrl ?? "");
@@ -137,6 +140,12 @@ function TrackingDialog({ employee, onClose }: { employee: Employee; onClose: ()
   const [error, setError] = useState("");
   async function save() {
     setBusy(true); setError("");
+    if (onDemoSave) {
+      try { onDemoSave(updateOnboardingDemo(employee, data, permit)); toast.success("Sample status updated"); onClose(); }
+      catch (e) { setError(e instanceof Error ? e.message : "Sample update failed"); }
+      finally { setBusy(false); }
+      return;
+    }
     try { const current = getEmployees().find(e => e.id === employee.id); if (!current) throw new Error("Worker not found"); const values = { ...current, ...permit, ipaDocumentUrl: ipa }; await saveEmployeeConfirmed({ ...values, ...onboardingEmployeePatch(values, data) }, employee.id); toast.success("Onboarding status saved"); onClose(); }
     catch (e) { setError(e instanceof Error ? e.message : "Save failed"); } finally { setBusy(false); }
   }
@@ -144,9 +153,9 @@ function TrackingDialog({ employee, onClose }: { employee: Employee; onClose: ()
     <div className="space-y-4"><div className="space-y-2"><Label>Stage</Label><Select value={data.stage} onValueChange={v => setData(d => ({ ...d, stage: z.enum(ONBOARD_STAGES).parse(v) }))}><SelectTrigger aria-label="Onboarding stage"><SelectValue /></SelectTrigger><SelectContent>{ONBOARD_STAGES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select></div>
     <div className="grid gap-4 sm:grid-cols-2">{([ ["bookingDate", "Onboard booking date", "date"], ["centre", "Onboard centre", "text"], ["completedDate", "Onboard completed on", "date"], ["appointmentDate", "MOM appointment date", "date"], ["appointmentReference", "MOM appointment reference", "text"] ] as const).map(([key, label, type]) => <div key={key} className="space-y-2"><Label htmlFor={`onboard-${key}`}>{label}</Label><Input id={`onboard-${key}`} type={type} value={data[key]} maxLength={200} onChange={e => setData(d => ({ ...d, [key]: e.target.value }))} /></div>)}</div>
     {data.stage === "Work Permit issued" && <div className="grid gap-4 border-t pt-4 sm:grid-cols-2">{([ ["workPermitNumber", "Work Permit number", "text"], ["workPermitIssueDate", "Work Permit issue date", "date"], ["workPermitExpiryDate", "Confirmed expiry date", "date"] ] as const).map(([key, label, type]) => <div key={key} className="space-y-2"><Label htmlFor={key}>{label}</Label><Input id={key} type={type} value={permit[key]} onChange={e => setPermit(p => ({ ...p, [key]: e.target.value }))} /></div>)}</div>}
-    <FileUpload name="onboardingIpa" label="IPA document" folder="ipa" accept=".pdf,.jpg,.jpeg,.png,.webp" defaultValue={ipa} onUploaded={setIpa} display="document" documentLabel="IPA" />
+    {!onDemoSave && <FileUpload name="onboardingIpa" label="IPA document" folder="ipa" accept=".pdf,.jpg,.jpeg,.png,.webp" defaultValue={ipa} onUploaded={setIpa} display="document" documentLabel="IPA" />}
     <div className="space-y-2"><Label htmlFor="onboard-notes">Notes</Label><Textarea id="onboard-notes" maxLength={2000} value={data.notes} onChange={e => setData(d => ({ ...d, notes: e.target.value }))} /></div>
     {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
-    <div className="flex flex-wrap justify-between gap-3"><Button variant="outline" asChild><Link to="/workforce/$slug" params={{ slug: employeeSlug(employee) }}>Open worker profile</Link></Button><Button disabled={busy} onClick={() => void save()}>{busy ? "Saving…" : "Save status"}</Button></div></div>
+    <div className="flex flex-wrap justify-between gap-3">{onDemoSave ? <Badge variant="secondary">Sample record</Badge> : <Button variant="outline" asChild><Link to="/workforce/$slug" params={{ slug: employeeSlug(employee) }}>Open worker profile</Link></Button>}<Button disabled={busy} onClick={() => void save()}>{busy ? "Saving…" : "Save status"}</Button></div></div>
   </DialogContent></Dialog>;
 }

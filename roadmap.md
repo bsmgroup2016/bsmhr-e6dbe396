@@ -2,6 +2,7 @@
 
 ## Onboard & Issuence
 
+- [x] Add six isolated interactive sample records with stage updates, company/stage filters, reset and a separate Live records switch; never create real workers or upload files in demo mode.
 - [x] Add separate workforce section with IPA registration, Excel/CSV worksheet and positional column mapping, company/stage filters and booking/issuance controls.
 - [x] Keep one employee ID and IPA reference throughout; block worker-roster availability until onboarding completes, preserve actual permit data and validate tracking server-side.
 - [x] Run 26 focused regression tests; preview build clean and live signed-out access redirects to sign-in without page errors.
