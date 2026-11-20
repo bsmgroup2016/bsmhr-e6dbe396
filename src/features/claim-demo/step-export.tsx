@@ -8,7 +8,9 @@ import { OT_MONTHLY_LIMIT } from "@/core/payslip-calc";
 import type { ClaimDetails, Worker } from "./types";
 import { batchTotals, isSunday, mismatchCount } from "./helpers";
 import { DevNote, SummaryTiles } from "./shared";
-import { downloadExcel, saveToRecords } from "./pipeline";
+import { checkClaimExcel, downloadExcel, downloadWorkbook, saveToRecords } from "./pipeline";
+import { applyClaimFixes } from "@/lib/claim-sheet-check";
+import { ClaimCheckPanel } from "./claim-check-panel";
 import { DEFAULT_RATE_PER_HOUR, downloadInvoiceBundle, downloadPayslips, suggestInvoiceNo } from "./claim-outputs";
 
 export function StepExport({ workers, details, onBack, onRestart }: { workers: Worker[]; details: ClaimDetails; onBack: () => void; onRestart: () => void }) {
@@ -16,6 +18,7 @@ export function StepExport({ workers, details, onBack, onRestart }: { workers: W
   const [busy, setBusy] = useState<string | null>(null);
   const [invoiceNo, setInvoiceNo] = useState(() => suggestInvoiceNo(month));
   const [rate, setRate] = useState(String(DEFAULT_RATE_PER_HOUR));
+  const [check, setCheck] = useState<Awaited<ReturnType<typeof checkClaimExcel>> | null>(null);
   const overOt = workers.filter((w) => w.days.reduce((n, d) => n + (d.status === "work" ? d.ot ?? 0 : 0), 0) > OT_MONTHLY_LIMIT);
   const [y, m] = month.split("-").map(Number);
   const days = workers[0]?.days.length ?? 0;
@@ -36,7 +39,7 @@ export function StepExport({ workers, details, onBack, onRestart }: { workers: W
     try { await fn(); toast.success(ok); } catch (e) { toast.error(e instanceof Error ? e.message : "Something went wrong"); } finally { setBusy(null); }
   };
   const outs: [string, string, () => void][] = [
-    ["Download Excel (.xlsx)", "Filled into your template, formulas kept", () => run("x", () => downloadExcel(workers, month, site), "Claim sheet downloaded")],
+    ["Download Excel (.xlsx)", "Filled into your template, formulas kept", () => run("x", () => downloadExcel(workers, month, site, details.client), "Claim sheet downloaded")],
     ["PDF preview", "To send to the client", () => toast("PDF preview is not available yet")],
     ["Save to HR records", "Can be reopened and corrected later", () => run("s", () => saveToRecords(workers, month, site), "Saved to HR records")],
   ];
@@ -56,6 +59,19 @@ export function StepExport({ workers, details, onBack, onRestart }: { workers: W
         </div>
         <div className="space-y-3 rounded-[10px] border bg-card p-4">
           <h3 className="font-semibold">Output</h3>
+          <Button disabled={busy !== null} variant="secondary" className="h-auto w-full flex-col items-start py-3"
+            onClick={() => run("c", async () => setCheck(await checkClaimExcel(workers, month, site, details.client)), "Claim sheet checked")}>
+            <span className="flex items-center gap-2">{busy === "c" && <Loader2 className="h-4 w-4 animate-spin" />}Check claim sheet</span>
+            <span className="text-xs font-normal text-muted-foreground">Checks the Excel before download: hours, formulas on added rows, totals, site and month</span>
+          </Button>
+          {check && (
+            <ClaimCheckPanel
+              result={check.result}
+              busy={busy !== null}
+              onFix={() => run("f", async () => { const n = applyClaimFixes(check.workbook, check.result.issues); await downloadWorkbook(check.workbook, month); setCheck(null); toast.info(`${n} item(s) fixed in the downloaded file`); }, "Fixed claim sheet downloaded")}
+              onDownload={() => run("x", () => downloadWorkbook(check.workbook, month), "Claim sheet downloaded")}
+            />
+          )}
           {outs.map(([t, s, fn], i) => (
             <Button key={t} disabled={busy !== null} variant={i === 0 ? "default" : "outline"} className="h-auto w-full flex-col items-start py-3" onClick={fn}>
               <span className="flex items-center gap-2">{busy === (i === 0 ? "x" : i === 2 ? "s" : "") && <Loader2 className="h-4 w-4 animate-spin" />}{t}</span>

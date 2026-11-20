@@ -3,6 +3,7 @@ import { groupTimeCardRows, splitTimeCardFile } from "@/core/time-card-batch";
 import { countedCardHours } from "@/core/time-card-settlement";
 import { matchCardWorker, uniqueCardMatch } from "@/core/time-card-matching";
 import { uploadToR2 } from "@/lib/r2";
+import { checkClaimWorkbook } from "@/lib/claim-sheet-check";
 import { extractTimeCardData } from "@/lib/ocr";
 import { buildClaimSheetFromCard, deleteClaimSheet, getClaimSheets, getClients, getCompanies, getCurrentCompany, getEmployees, getProjects, getSites, saveGeneratedClaims, upsertAttendance } from "@/lib/store";
 import type { TimeCard, TimeCardEntry } from "@/lib/types";
@@ -114,14 +115,31 @@ function drafts(workers: Worker[], month: string, site: string) {
 }
 
 /** Fills the user's saved blank template (Template manager) only; never builds its own layout. */
-export async function buildWorkbook(workers: Worker[], month: string, site: string) {
+export async function buildWorkbook(workers: Worker[], month: string, site: string, client = "") {
   const list = drafts(workers, month, site);
   if (!list.length) throw new Error("No worked hours to claim");
-  return createClaimWorkbook(list as never, getEmployees(), getCompanies(), month, { projects: getProjects(), sites: getSites(), clients: getClients() });
+  return createClaimWorkbook(list as never, getEmployees(), getCompanies(), month, { projects: getProjects(), sites: getSites(), clients: getClients(), clientName: client });
 }
 
-export async function downloadExcel(workers: Worker[], month: string, site: string) {
-  downloadClaimBlob(await claimWorkbookBlob(await buildWorkbook(workers, month, site)), `claim_sheet_${month}.xlsx`);
+export async function downloadExcel(workers: Worker[], month: string, site: string, client = "") {
+  await downloadWorkbook(await buildWorkbook(workers, month, site, client), month);
+}
+
+export async function downloadWorkbook(workbook: Awaited<ReturnType<typeof buildWorkbook>>, month: string) {
+  downloadClaimBlob(await claimWorkbookBlob(workbook), `claim_sheet_${month}.xlsx`);
+}
+
+/** Builds the exact workbook that would be downloaded and checks it cell by cell against the reviewed hours. */
+export async function checkClaimExcel(workers: Worker[], month: string, site: string, client = "") {
+  const workbook = await buildWorkbook(workers, month, site, client);
+  const result = checkClaimWorkbook(workbook, {
+    sheets: drafts(workers, month, site) as never,
+    employees: getEmployees(),
+    month,
+    site,
+    knownSites: getSites().flatMap((s) => [s.name, s.code]).filter(Boolean),
+  });
+  return { workbook, result };
 }
 
 /** Saves claims to HR records, safely replacing earlier claims and syncing confirmed entries to Attendance. */

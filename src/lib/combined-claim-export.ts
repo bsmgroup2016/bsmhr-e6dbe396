@@ -7,6 +7,14 @@ import type { ClaimSheet, Client, Company, Employee, Project, Site } from "@/lib
 /** Per generated page: template slot count and the rows added for extra workers (for preview). */
 export const claimExpansion = new WeakMap<object, { templateSlots: number; added: number; firstAddedRow: number; workers: number }>();
 
+export const WEEKDAY = /^(sun|mon|tue|wed|thu|fri|sat)[a-z]*\.?$/i;
+const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+/** Weekday of y-m-day written the way the template writes it ("Thu" / "THU"). */
+export function weekdayLike(sample: string, y: number, m: number, day: number) {
+  const name = DAY_NAMES[new Date(Date.UTC(y, m - 1, day)).getUTCDay()]!;
+  return sample === sample.toUpperCase() ? name.toUpperCase() : name;
+}
+
 export function claimSheetTitle(companyName: string, month: string) {
   return `${companyName.toUpperCase()} CLAIM - ${monthLabel(month)}`;
 }
@@ -16,7 +24,7 @@ function monthLabel(month: string) {
   return y && m ? new Date(Date.UTC(y, m - 1, 1)).toLocaleString("en-SG", { month: "short", year: "numeric", timeZone: "UTC" }).toUpperCase() : month;
 }
 
-export interface ClaimLookups { companies?: Company[]; projects?: Project[]; sites?: Site[]; clients?: Client[]; fileName?: string; templateBuffer?: ArrayBuffer }
+export interface ClaimLookups { companies?: Company[]; projects?: Project[]; sites?: Site[]; clients?: Client[]; fileName?: string; templateBuffer?: ArrayBuffer; /** Typed on the upload step; used when the site's project has no client. */ clientName?: string }
 
 interface ProjectGroup { key: string; projectName: string; siteName: string; clientName: string; companyName: string; workers: Map<string, { code: string; name: string; days: Map<number, { g: number; ot: number }> }> }
 
@@ -85,20 +93,24 @@ export async function createClaimWorkbook(sheets: ClaimSheet[], employees: Emplo
 
     // Fill only the three title cells; the template's styling, formulas and columns stay untouched.
     if (layout.headerRow >= 4) {
-      page.getCell("A1").value = (group.clientName || group.projectName).toUpperCase() || null;
+      page.getCell("A1").value = (group.clientName || lookups.clientName?.trim() || group.projectName).toUpperCase() || null;
       page.getCell("A2").value = group.siteName || null;
       const label = String(page.getCell("A3").value ?? "").trim() || "CLAIM SHEET FOR";
       page.getCell("A3").value = `${label.replace(/\s+[A-Z]{3}\s+\d{4}$/, "")} ${monthLabel(month)}`;
     }
 
-    // Date header formulas follow the claim month (=DATE(y,m,d)); other header cells stay untouched.
-    for (const col of layout.days.values()) {
+    // Date headers follow the claim month: =DATE(y,m,d) formulas, typed dates, and a weekday row ("Thu")
+    // right below them. Typed days past the month end are cleared so Feb never shows Oct 29–31.
+    for (const [day, col] of layout.days) {
       const cell = page.getCell(layout.headerRow, col);
-      const v = cell.value as { formula?: string } | null;
-      if (v && typeof v === "object" && typeof v.formula === "string") {
+      const v = cell.value as { formula?: string } | Date | null;
+      if (v instanceof Date) cell.value = day <= daysInMonth ? new Date(Date.UTC(y, m - 1, day)) : null;
+      else if (v && typeof v === "object" && typeof v.formula === "string") {
         const f = v.formula.replace(/DATE\(\s*\d+\s*,\s*\d+\s*,/i, `DATE(${y},${m},`);
         if (f !== v.formula) cell.value = { formula: f } as never;
       }
+      const weekday = page.getCell(layout.headerRow + 1, col);
+      if (typeof weekday.value === "string" && WEEKDAY.test(weekday.value.trim())) weekday.value = day <= daysInMonth ? weekdayLike(weekday.value.trim(), y, m, day) : null;
     }
 
     // More workers than template slots: copy the last slot so format and formulas carry over.

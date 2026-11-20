@@ -13,7 +13,7 @@ export function StepClaim({ workers, details, onBack, onNext }: { workers: Worke
   const [busy, setBusy] = useState(false);
   async function download() {
     setBusy(true); setError("");
-    try { await downloadExcel(workers, details.month, details.site); toast.success("Claim sheet downloaded"); }
+    try { await downloadExcel(workers, details.month, details.site, details.client); toast.success("Claim sheet downloaded"); }
     catch (e) { setError(e instanceof Error ? e.message : "Could not fill your template"); }
     finally { setBusy(false); }
   }
