@@ -82,10 +82,18 @@ const worked = (d?: CardDay) => !!d && !d.off && !!(d.start || d.end || (d.norma
 const sameDay = (a: CardDay, b: CardDay) => a.start === b.start && a.end === b.end && (a.normal ?? 0) === (b.normal ?? 0) && (a.ot ?? 0) === (b.ot ?? 0);
 const describe = (d: CardDay) => `${d.start ?? "?"}–${d.end ?? "?"} (${d.normal ?? "?"}+${d.ot ?? 0})`;
 
-function pick<T>(a: T | undefined, b: T | undefined, same: (x: T, y: T) => boolean) {
-  if (a === undefined) return { value: b, agree: b === undefined };
-  if (b === undefined) return { value: a, agree: false };
-  return { value: a, agree: same(a, b) };
+/**
+ * One header value from two readers; when they differ, a third reader that agrees with one
+ * side settles it (two of three). Unsettled differences stay flagged for review.
+ */
+function pick<T>(a: T | undefined, b: T | undefined, same: (x: T, y: T) => boolean, judge?: T) {
+  if (a === undefined && b === undefined) return { value: undefined, agree: true, settled: false };
+  if (a !== undefined && b !== undefined && same(a, b)) return { value: a, agree: true, settled: false };
+  if (judge !== undefined) {
+    if (a !== undefined && same(judge, a)) return { value: a, agree: true, settled: true };
+    if (b !== undefined && same(judge, b)) return { value: b, agree: true, settled: true };
+  }
+  return { value: a ?? b, agree: false, settled: false };
 }
 
 function matchAudit(card: CardRead, primary: CardRead[], audit: CardRead[]) {
@@ -94,6 +102,45 @@ function matchAudit(card: CardRead, primary: CardRead[], audit: CardRead[]) {
   if (byCode && byCode.length === 1) return byCode[0];
   const byIndex = audit.filter(a => a.cardIndex === card.cardIndex);
   return byIndex.length === 1 ? byIndex[0] : undefined;
+}
+
+const HEADER_FIELDS = ["siteName", "workerName", "employeeCode", "fin"] as const;
+export type DisputedField = (typeof HEADER_FIELDS)[number] | "year" | "month";
+export interface CardDispute { cardIndex: number; workerName?: string; employeeCode?: string; days: number[]; fields: DisputedField[] }
+
+/**
+ * Exactly what two readers could not agree on, per card: dates read differently (or work vs off)
+ * and card details both read but differently. Nothing else goes to the paid tie-breaker.
+ */
+export function cardDisputes(primary: CardRead[], audit: CardRead[]): CardDispute[] {
+  return primary.flatMap((card) => {
+    const other = matchAudit(card, primary, audit);
+    if (!other) return [];
+    const days: number[] = [];
+    for (let day = 1; day <= 31; day++) {
+      const p = card.days.find(d => d.day === day), a = other.days.find(d => d.day === day);
+      if (!worked(p) && !worked(a)) continue;
+      if (worked(p) && worked(a) && sameDay(p!, a!)) continue;
+      days.push(day);
+    }
+    const fields: DisputedField[] = HEADER_FIELDS.filter(f => card[f] && other[f] && norm(card[f]) !== norm(other[f]));
+    if (card.year && other.year && card.year !== other.year) fields.push("year");
+    if (card.month && other.month && card.month !== other.month) fields.push("month");
+    return days.length || fields.length ? [{ cardIndex: card.cardIndex, workerName: card.workerName ?? other.workerName, employeeCode: card.employeeCode ?? other.employeeCode, days, fields }] : [];
+  });
+}
+
+/** A short question about only the disputed items, so the tie-breaker's answer stays small. */
+export function disputeInstruction(disputes: CardDispute[]): string {
+  const asks = disputes.map(d => {
+    const who = [d.workerName, d.employeeCode].filter(Boolean).join(", ") || "unnamed worker";
+    const parts = [d.days.length ? `dates ${d.days.join(", ")}` : "", d.fields.length ? `header fields ${d.fields.join(", ")}` : ""].filter(Boolean).join(" and ");
+    return `cardIndex ${d.cardIndex} (${who}): ${parts}`;
+  });
+  return `${TIME_CARD_READ_INSTRUCTION}\n\nTWO READERS ALREADY READ THIS CARD AND DISAGREED ONLY ON THE ITEMS BELOW. ` +
+    `Re-read ONLY these items very carefully from the image and return nothing else:\n- ${asks.join("\n- ")}\n` +
+    `Use exactly these cardIndex values. In "days" include only the listed dates (a listed date that is off or empty: {"day":N,"off":true}). ` +
+    `Include a header field only if it is listed. Return JSON {"cards":[{"cardIndex":1,"days":[...]}]}.`;
 }
 
 /** Merge two independent readings; agreement = high confidence, disagreement = flagged. */
@@ -105,9 +152,14 @@ export function mergeCardReads(primary: CardRead[], audit: CardRead[] | null, na
     if (other) matched.add(other);
     // Optional tie-breaker: a third independent read settles days the first two disagree on.
     const judge = other && third?.length ? matchAudit(card, primary, third) : undefined;
-    const site = pick(card.siteName, other?.siteName, (x, y) => norm(x) === norm(y));
-    const year = pick(card.year, other?.year, (x, y) => x === y);
-    const month = pick(card.month, other?.month, (x, y) => x === y);
+    const sameText = (x: string, y: string) => norm(x) === norm(y);
+    const sameNum = (x: number, y: number) => x === y;
+    const header = HEADER_FIELDS.map(field => [field, pick(card[field], other?.[field], sameText, judge?.[field])] as const);
+    const headerOf = Object.fromEntries(header) as Record<(typeof header)[number][0], ReturnType<typeof pick<string>>>;
+    const site = headerOf.siteName;
+    const year = other ? pick(card.year, other.year, sameNum, judge?.year) : { value: card.year, agree: false, settled: false };
+    const month = other ? pick(card.month, other.month, sameNum, judge?.month) : { value: card.month, agree: false, settled: false };
+    const settled = [...header.filter(([, v]) => v.settled).map(([f]) => f), ...(year.settled ? ["year"] : []), ...(month.settled ? ["month"] : [])];
     let y = year.value, m = month.value;
     // An unreadable month must not silently drop a worker: borrow it only when every other card agrees.
     const borrowed = !y || !m;
@@ -118,14 +170,15 @@ export function mergeCardReads(primary: CardRead[], audit: CardRead[] | null, na
       y = by; m = bm;
     }
     const periodDoubt = borrowed || (!!other && (!year.agree || !month.agree));
-    const headerConflicts = other ? (["siteName", "workerName", "employeeCode", "fin"] as const).filter(field => norm(card[field]) !== norm(other[field])) : [];
+    const headerConflicts = other ? header.filter(([, v]) => !v.agree).map(([f]) => f) : [];
     const max = new Date(Date.UTC(y!, m!, 0)).getUTCDate();
     const identity = {
-      workerName: card.workerName ?? other?.workerName,
-      employeeCode: card.employeeCode ?? other?.employeeCode,
-      fin: card.fin ?? other?.fin,
+      workerName: headerOf.workerName.value,
+      employeeCode: headerOf.employeeCode.value,
+      fin: headerOf.fin.value,
       siteName: site.value,
     };
+    const settledNote = settled.length ? `Card details settled by ${names.third ?? "third"} reader: ${settled.join(", ")}` : undefined;
     for (let day = 1; day <= max; day++) {
       const p = card.days.find(d => d.day === day);
       const a = other?.days.find(d => d.day === day);
@@ -163,8 +216,9 @@ export function mergeCardReads(primary: CardRead[], audit: CardRead[] | null, na
       if (periodDoubt) { confidence = Math.min(confidence, 0.5); remarks = [remarks, "Readers disagree on month/year — check Claim Month"].filter(Boolean).join(" · "); }
       if (headerConflicts.length && other) {
         confidence = Math.min(confidence, 0.5);
-        remarks = [remarks, `Readers disagree on card details: ${headerConflicts.map(field => `${field}: ${card[field] || "unreadable"} / ${other[field] || "unreadable"}`).join("; ")} — verify the original`].filter(Boolean).join(" · ");
+        remarks = [remarks, `Readers disagree on card details: ${headerConflicts.map(field => `${field}: ${card[field] || "unreadable"} / ${other[field] || "unreadable"}${judge ? ` / ${judge[field] || "unreadable"}` : ""}`).join("; ")} — verify the original`].filter(Boolean).join(" · ");
       }
+      if (settledNote) remarks = [remarks, settledNote].filter(Boolean).join(" · ");
       const fallback = span === null ? undefined : splitDutyHours(span);
       rows.push({
         cardIndex: card.cardIndex,

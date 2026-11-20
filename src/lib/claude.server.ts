@@ -16,6 +16,7 @@ export interface ClaudeRead {
   prompt: string;
   dataUrl?: string;
   timeoutMs: number;
+  effort?: "low" | "medium" | "high";
 }
 
 /** One Messages API call; returns Claude's text answer. */
@@ -34,10 +35,10 @@ export async function askClaude(req: ClaudeRead): Promise<string> {
 
   const response = await client.beta.messages.stream({
     model: req.model,
-    max_tokens: 32000,
-    // Accuracy over speed, matching the other readers: think carefully about handwriting.
+    max_tokens: req.effort === "high" || !req.effort ? 32000 : 8000,
+    // Accuracy over speed by default; narrow tie-break questions pass a lower effort to save cost.
     thinking: { type: "adaptive" },
-    output_config: { effort: "high" },
+    output_config: { effort: req.effort ?? "high" },
     // If the model declines a document, the API retries on its default substitute model.
     betas: ["server-side-fallback-2026-07-01"],
     fallbacks: "default",

@@ -59,6 +59,8 @@ export interface AiRequest {
   only?: AiProviderName;
   /** With `only`: fail instead of falling back when that provider is off. */
   strict?: boolean;
+  /** Claude only: how hard to think (default "high"); narrow questions can use less. */
+  effort?: "low" | "medium" | "high";
 }
 
 const promptOf = (req: AiRequest) => (req.context ? `${req.instruction}\n\n${req.context}` : req.instruction);
@@ -118,7 +120,7 @@ export async function askAiJson(req: AiRequest): Promise<unknown> {
       if (provider.name === "claude") {
         return extractJson(await askClaude({
           apiKey: provider.apiKey, model: provider.model, system: req.system ?? DEFAULT_SYSTEM,
-          prompt: promptOf(req), dataUrl: req.dataUrl, timeoutMs: AI_TIMEOUT_MS,
+          prompt: promptOf(req), dataUrl: req.dataUrl, timeoutMs: AI_TIMEOUT_MS, effort: req.effort,
         }));
       }
       const res = await fetch(provider.url, {

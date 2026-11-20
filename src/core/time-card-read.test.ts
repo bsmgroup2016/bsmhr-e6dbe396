@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { mergeCardReads, parseCardReads, redateToMonth } from "./time-card-read";
+import { cardDisputes, disputeInstruction, mergeCardReads, parseCardReads, redateToMonth } from "./time-card-read";
 import { nextBatchCardId, readBatchState, writeBatchState } from "./time-card-batch-state";
 
 const fullMonth = (overrides: Record<number, object> = {}) =>
@@ -40,6 +40,46 @@ describe("whole-card time card reading", () => {
   it("a third reader confirms a day only one of the first two saw as worked", () => {
     const rows = mergeCardReads(parseCardReads(card(fullMonth())), parseCardReads(card(fullMonth({ 21: { off: true, start: undefined, end: undefined, normal: undefined, ot: undefined } }))), { primary: "gemini", audit: "openai", third: "claude" }, parseCardReads(card(fullMonth())));
     expect(rows.find(r => r.date === "2026-10-21")).toMatchObject({ confidence: 0.9, verifiedBy: "gemini+claude" });
+  });
+
+  it("a third reader settles a disputed P-file code and month (two of three)", () => {
+    const names = { primary: "gemini", audit: "openai", third: "claude" };
+    const g = parseCardReads(card(fullMonth()));
+    const o = parseCardReads(card(fullMonth(), { employeeCode: "PC-84", month: 11 }));
+    const unsettled = mergeCardReads(g, o, names);
+    expect(unsettled[0]!.confidence).toBe(0.5);
+    const rows = mergeCardReads(g, o, names, parseCardReads(card(fullMonth())));
+    expect(rows.every(r => r.employeeCode === "PC-34" && r.date.startsWith("2026-10-"))).toBe(true);
+    expect(rows[0]).toMatchObject({ confidence: 0.97, verifiedBy: "gemini+openai" });
+    expect(rows[0]!.remarks).toContain("settled by claude reader: employeeCode, month");
+  });
+
+  it("keeps a card detail flagged when the third reader agrees with neither", () => {
+    const rows = mergeCardReads(parseCardReads(card(fullMonth())), parseCardReads(card(fullMonth(), { employeeCode: "PC-84" })), { primary: "gemini", audit: "openai", third: "claude" }, parseCardReads(card(fullMonth(), { employeeCode: "PC-99" })));
+    expect(rows[0]!.confidence).toBe(0.5);
+    expect(rows[0]!.remarks).toContain("employeeCode: PC-34 / PC-84 / PC-99");
+  });
+
+  it("lists only the dates and card details the two readers disagree on", () => {
+    const g = parseCardReads(card(fullMonth()));
+    const o = parseCardReads(card(fullMonth({ 21: { end: "2200", ot: 5 }, 4: { off: true, start: undefined, end: undefined, normal: undefined, ot: undefined } }), { employeeCode: "PC-84" }));
+    expect(cardDisputes(g, o)).toEqual([{ cardIndex: 1, workerName: "ISLAM MD RAKIBUL", employeeCode: "PC-34", days: [4, 21], fields: ["employeeCode"] }]);
+    expect(cardDisputes(g, parseCardReads(card(fullMonth())))).toEqual([]);
+    // One side unreadable is not a dispute for the paid tie-breaker; it stays for human review.
+    expect(cardDisputes(g, parseCardReads(card(fullMonth(), { fin: undefined })))).toEqual([]);
+    const ask = disputeInstruction(cardDisputes(g, o));
+    expect(ask).toContain("cardIndex 1 (ISLAM MD RAKIBUL, PC-34): dates 4, 21 and header fields employeeCode");
+  });
+
+  it("settles disputes from a tie-breaker that answered only the disputed items", () => {
+    const g = parseCardReads(card(fullMonth()));
+    const o = parseCardReads(card(fullMonth({ 21: { end: "2200", ot: 5 } }), { employeeCode: "PC-84" }));
+    const partial = parseCardReads({ cards: [{ cardIndex: 1, employeeCode: "PC-34", days: [{ day: 21, start: "0800", end: "2000", normal: 8, ot: 3 }] }] });
+    const rows = mergeCardReads(g, o, { primary: "gemini", audit: "openai", third: "claude" }, partial);
+    expect(rows).toHaveLength(30);
+    expect(rows.every(r => r.employeeCode === "PC-34" && r.date.startsWith("2026-10-"))).toBe(true);
+    expect(rows.find(r => r.date === "2026-10-21")).toMatchObject({ checkOut: "20:00", confidence: 0.95, verifiedBy: "gemini+claude" });
+    expect(rows.find(r => r.date === "2026-10-01")).toMatchObject({ confidence: 0.97, verifiedBy: "gemini+openai" });
   });
 
   it("flags a day the two readers disagree on and keeps the other reading as a suggestion", () => {
