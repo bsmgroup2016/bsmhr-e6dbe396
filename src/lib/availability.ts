@@ -38,7 +38,9 @@ export function isEmployeeAvailable(e: Employee, assignedIds: Set<string>) {
 export function workforceBands(workers: Employee[], assignedIds: Set<string>) {
   const live = workers.length;
   const available = workers.filter((e) => isEmployeeAvailable(e, assignedIds)).length;
-  return { live, working: live - available, available };
+  // Working = actually on a site (active assignment or marked Deployed); on-leave / not-deployable are neither.
+  const working = workers.filter((e) => assignedIds.has(e.id) || e.deploymentStatus === "Deployed" || (e.status as string) === "Deployed").length;
+  return { live, working, available };
 }
 
 export function activeAssignedEmployeeIds(

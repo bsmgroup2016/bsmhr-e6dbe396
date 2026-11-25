@@ -1,6 +1,9 @@
 import type { Company, Employee, EmployeeCertification, PayrollEntry } from "@/lib/types";
 import { isCountableWorker } from "@/lib/workforce-split";
 
+// Official CSOC course title is "Apply Workplace Safety and Health in Construction Sites"; SOC is a common short form.
+const CSOC_RE = /csoc|\bsoc\b|safety orientation|safety course|safety and health in construction/i;
+
 export function orderedCompanies(companies: Company[]) {
   const rank = (code: string) => ({ BSM: 0, VRL: 1, PLUTO: 2, PLT: 2 }[code.toUpperCase()] ?? 3);
   return [...companies].sort((a, b) => rank(a.code) - rank(b.code) || a.name.localeCompare(b.name));
@@ -26,9 +29,9 @@ export function companyOverview(
   const waiting = workers.filter((e) => e.passType === "Work Permit" && ["IPA Issued", "Arrived", "Medical Cleared"].includes(e.wpStage ?? ""));
   const permits = workers.filter((e) => e.passType === "Work Permit" && due(e.passExpiry));
   const passports = workers.filter((e) => due(e.passportExpiry, 90));
-  const csocIds = new Set(workers.filter((e) => due(e.safetyCourseExpiry) && (!e.safetyCourseType || /csoc|safety orientation|safety course/i.test(e.safetyCourseType))).map((e) => e.id));
+  const csocIds = new Set(workers.filter((e) => due(e.safetyCourseExpiry) && (!e.safetyCourseType || CSOC_RE.test(e.safetyCourseType))).map((e) => e.id));
   certifications.forEach((c) => {
-    if (workerIds.has(c.employeeId) && /csoc|safety orientation|safety course/i.test(c.courseName) && due(c.expiryDate)) csocIds.add(c.employeeId);
+    if (workerIds.has(c.employeeId) && CSOC_RE.test(c.courseName) && due(c.expiryDate)) csocIds.add(c.employeeId);
   });
   const coreIds = new Set(workers.filter((e) => due(e.skillCertExpiry) && (e.skillCertType === "Skills Evaluation (SEC(K))" || /coretrade|core trade/i.test(e.skillCertType ?? ""))).map((e) => e.id));
   certifications.forEach((c) => {

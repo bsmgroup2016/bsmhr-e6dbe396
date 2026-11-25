@@ -27,6 +27,10 @@ describe("company overview", () => {
     const certs = [{ id: "1", employeeId: "a", courseName: "CSOC", expiryDate: "2026-12-01" }, { id: "2", employeeId: "b", courseName: "CSOC", expiryDate: "2026-12-01" }];
     expect(companyOverview(employees, certs, [], "bsm", now).csoc.length).toBe(1);
   });
+  it("recognises the official CSOC course title and SOC short form", () => {
+    const employees = [employee("a", "bsm", { safetyCourseType: "Apply Workplace Safety and Health in Construction Sites", safetyCourseExpiry: "2026-12-14" }), employee("b", "bsm", { safetyCourseType: "SOC", safetyCourseExpiry: "2026-12-17" })];
+    expect(companyOverview(employees, [], [], "bsm", now).csoc.length).toBe(2);
+  });
   it("counts confirmed passport expiries through 90 days and scopes company totals", () => {
     const employees = [employee("a", "bsm", { passportExpiry: "2027-02-17" }), employee("b", "bsm", { passportExpiry: "2027-02-18" }), employee("c", "bsm", { passportExpiry: "2026-11-18" }), employee("d", "vrl", { passportExpiry: "2026-11-19" }), employee("e", "bsm", { passportExpiry: "-" })];
     expect(companyOverview(employees, [], [], "bsm", now).passports.map((e) => e.id)).toEqual(["a"]);

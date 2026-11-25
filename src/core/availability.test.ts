@@ -14,12 +14,16 @@ describe("workforceBands", () => {
       worker("d"),
     ];
     const bands = workforceBands(workers, new Set(["a"]));
-    expect(bands).toEqual({ live: 4, working: 3, available: 1 });
+    expect(bands).toEqual({ live: 4, working: 2, available: 1 });
   });
 
   it("counts assigned workers as working", () => {
     const bands = workforceBands([worker("a"), worker("b")], new Set(["a", "b"]));
     expect(bands).toEqual({ live: 2, working: 2, available: 0 });
+  });
+
+  it("does not count not-deployable workers as working", () => {
+    expect(workforceBands([worker("a", { deploymentStatus: "Not Deployable" })], new Set())).toEqual({ live: 1, working: 0, available: 0 });
   });
 
   it("handles an empty company", () => {
