@@ -2,15 +2,15 @@
  * OCR / document AI layer — used ONLY for scanning time cards & documents,
  * filling the claim-sheet Excel and building claim sheets.
  *
- * Exactly two paid providers (both read images):
- *   1. Google Gemini (GOOGLE_API_KEY or GEMINI_API_KEY) — reads the scan
- *   2. OpenAI        (OPENAI_API_KEY)                  — audits / fallback
+ * Settings controls the enabled document readers, including Gemini, OpenAI,
+ * Claude and the optional AI Brain. Disabled readers are never called.
  *
  * The AI chatbot uses its OWN separate keys (see assistant.server.ts).
  */
 
 import { activeProviders } from "./api-integrations.server";
 import { askClaude, isClaudeUrl } from "./claude.server";
+import { HR_BRAIN_BASE_URL } from "@/core/hr-brain";
 
 /** "gemini" / "openai" for the built-in pair; any other provider uses its label. */
 export type AiProviderName = string;
@@ -28,7 +28,7 @@ interface ProviderConfig {
 async function configured(): Promise<ProviderConfig[]> {
   const list = await activeProviders("ocr");
   return list.map((p) => ({
-    name: p.url.includes("googleapis.com") ? "gemini" : p.url.includes("api.openai.com") ? "openai" : isClaudeUrl(p.url) ? "claude" : p.name,
+    name: p.url.startsWith(`${HR_BRAIN_BASE_URL}/`) ? "hr-brain" : p.url.includes("googleapis.com") ? "gemini" : p.url.includes("api.openai.com") ? "openai" : isClaudeUrl(p.url) ? "claude" : p.name,
     label: p.name,
     url: p.url,
     apiKey: p.key,
@@ -68,7 +68,7 @@ const DEFAULT_SYSTEM =
   "You read scanned Singapore HR documents and return strict JSON only. " +
   "Never invent values: omit any field you cannot read. Dates must be YYYY-MM-DD.";
 
-function buildBody(provider: ProviderConfig, req: AiRequest) {
+export function buildBody(provider: ProviderConfig, req: AiRequest) {
   const prompt = promptOf(req);
   const userContent = req.dataUrl
     ? [
@@ -82,7 +82,7 @@ function buildBody(provider: ProviderConfig, req: AiRequest) {
   return {
     model: provider.model,
     // Accuracy over cost: think carefully before reading handwritten cards.
-    reasoning_effort: "high",
+    ...(provider.name === "hr-brain" ? { stream: false } : { reasoning_effort: "high" }),
     messages: [
       {
         role: "system",
@@ -111,7 +111,7 @@ export async function askAiJson(req: AiRequest): Promise<unknown> {
   }
   if (req.only) list = list.filter((p) => p.name === req.only);
   if (list.length === 0) {
-    throw new Error("No OCR provider is configured — add the Gemini or OpenAI key in Settings → API Integration");
+    throw new Error("No OCR provider is enabled with a saved key — check Settings → API Integration");
   }
 
   let lastError: Error | null = null;

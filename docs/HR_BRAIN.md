@@ -1,6 +1,6 @@
 # AI Brain service
 
-AI Brain is isolated from existing OCR, chatbot and HR calculations. No HR records are read, written or automatically sent to the provider.
+AI Brain has optional integrations for document review and chat; software calculations remain separate. Its initial transport setup did not send HR records to the provider.
 
 ## Backend and secrets
 
@@ -68,3 +68,11 @@ Code inspection of sibling paths found no other instance of this native-fetch bi
 - Searched database migrations and Supabase sources for AI Brain/completions and HTTP cron calls: no direct AI Brain/database forwarding implementation found.
 
 These sibling paths were inspected for this invocation bug, not end-to-end retested. No permissions, provider settings, existing records or sample data were changed. The real signed-in Settings click remains unverified without an authorized app session.
+
+## Optional OCR reader (25 November 2026)
+
+- Added a separate OCR provider row below Claude, model `hr-brain`, URL `https://stbd.seobdshop.com/v1/chat/completions`, using server-only `HR_BRAIN_API_KEY`. The existing Gemini, OpenAI and Claude rows remain off; chatbot settings are unchanged. Migration `db/migrations/0077_ai_brain_ocr.sql` inserts the row idempotently and never restores deleted/changed settings on page load.
+- Enabled AI Brain for the requested OCR trial. Its existing row controls support on/off, ordering, details, editing, testing and deletion. Provider testing now displays returned model and elapsed time in Details.
+- The shared OCR service forwards image content and PDF file parts, explicitly sends `stream: false` (required by this upstream) and omits provider-specific `reasoning_effort`. Document extraction and the time-card fallback use this service; claim templates, calculated hours and approval behavior remain unchanged.
+- Live shared-service checks on a fictional printed fixture returned the correct name, P-File, date and check-in/out for both PNG (~7.6s) and PDF (~5.4s). This verifies the transport and readable printed content, not handwritten-card accuracy. No real worker file was sent or stored by the check.
+- 35 focused OCR, AI Brain and time-card tests passed. Signed-in Settings and an actual uploaded time-card batch remain unverified: this external account service cannot mint a sandbox session.

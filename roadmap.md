@@ -224,3 +224,9 @@
 - [x] Reproduce the last original worker's range total absorbing added workers.
 - [x] Keep per-worker ranges bounded while extending sheet-wide totals.
 - [x] Verify generated and saved Excel totals with 15 original slots and 25 workers: each worker totals 11 hours, grand total 275; all 16 related tests pass.
+
+## AI Brain OCR option
+
+- [x] Add AI Brain below Claude using the existing server secret, preserving all other provider toggles; verify database read-back.
+- [x] Verify fictional image/PDF reading through the shared OCR service and run 35 focused tests.
+- [ ] Verify signed-in Settings and a real uploaded time-card batch. Blocker: no authorized external account-service session is available.

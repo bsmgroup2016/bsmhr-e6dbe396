@@ -130,8 +130,9 @@ function ApiRow({ item, index, total, onChanged }: { item: Item; index: number; 
   const test = async () => {
     setTesting(true);
     try {
-      const r = await api<{ success: boolean; error: string | null }>("POST", { action: "test", id: item.id });
-      const res = { ok: r.success, message: r.success ? "Working" : r.error ?? "Failed", at: new Date().toLocaleTimeString() };
+      const r = await api<{ success: boolean; error: string | null; model?: string; latencyMs?: number }>("POST", { action: "test", id: item.id });
+      const details = [r.model, r.latencyMs === undefined ? null : `${(r.latencyMs / 1000).toFixed(1)}s`].filter(Boolean).join(" · ");
+      const res = { ok: r.success, message: r.success ? `Working${details ? ` · ${details}` : ""}` : r.error ?? "Failed", at: new Date().toLocaleTimeString() };
       setResult(res);
       res.ok ? toast.success(`${item.label} is working`) : toast.error(`${item.label}: ${res.message}`);
     } catch (e) {
