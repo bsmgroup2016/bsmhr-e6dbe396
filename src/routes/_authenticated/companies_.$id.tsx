@@ -29,7 +29,7 @@ import { MOM_SECTORS } from "@/lib/mom";
 import { uploadToR2 } from "@/lib/r2";
 import { employeeSlugById } from "@/lib/employee-slug";
 import type { Company, Employee } from "@/lib/types";
-import { companyOverview } from "@/core/company-overview";
+import { companyOverview, CSOC_RE } from "@/core/company-overview";
 import { CompanyOverviewCards } from "@/components/dashboard/company-overview-cards";
 import { getCertifications, getPayroll } from "@/lib/store";
 
@@ -276,7 +276,7 @@ function CompanyDashboardPage() {
             <div className="overflow-x-auto rounded-lg border bg-card">
               <Table><TableHeader><TableRow><TableHead>Worker</TableHead><TableHead>P-File</TableHead><TableHead>CSOC expiry</TableHead></TableRow></TableHeader>
                 <TableBody>{overview.csoc.map((e) => {
-                  const dates = [e.safetyCourseExpiry, ...getCertifications().filter((c) => c.employeeId === e.id && /csoc|safety orientation|safety course/i.test(c.courseName)).map((c) => c.expiryDate)].filter((date): date is string => Boolean(date));
+                  const dates = [e.safetyCourseExpiry, ...getCertifications().filter((c) => c.employeeId === e.id && CSOC_RE.test(c.courseName)).map((c) => c.expiryDate)].filter((date): date is string => Boolean(date));
                   return <TableRow key={e.id}><TableCell><Link to="/workforce/$slug" params={{ slug: employeeSlugById(e.id) }}>{e.name}</Link></TableCell><TableCell>{e.employeeCode}</TableCell><TableCell>{[...new Set(dates)].sort().join(" · ")}</TableCell></TableRow>;
                 })}{overview.csoc.length === 0 && <TableRow><TableCell colSpan={3} className="text-center text-muted-foreground">No CSOC expiring in the next 60 days</TableCell></TableRow>}</TableBody>
               </Table>

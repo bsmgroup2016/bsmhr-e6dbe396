@@ -4,6 +4,8 @@ import { isCountableWorker } from "@/lib/workforce-split";
 // Official CSOC course title is "Apply Workplace Safety and Health in Construction Sites"; SOC is a common short form.
 const CSOC_RE = /csoc|\bsoc\b|safety orientation|safety course|safety and health in construction/i;
 
+export { CSOC_RE };
+
 export function orderedCompanies(companies: Company[]) {
   const rank = (code: string) => ({ BSM: 0, VRL: 1, PLUTO: 2, PLT: 2 }[code.toUpperCase()] ?? 3);
   return [...companies].sort((a, b) => rank(a.code) - rank(b.code) || a.name.localeCompare(b.name));
