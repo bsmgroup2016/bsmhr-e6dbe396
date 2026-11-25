@@ -162,31 +162,34 @@
   --dashboard-ink: oklch(0.27 0.015 260);
   --dashboard-on-colour: oklch(1 0 0);
   --dashboard-layer: linear-gradient(115deg, transparent 45%, oklch(1 0 0 / 12%) 45%, oklch(1 0 0 / 4%) 72%, transparent 72%);
-  /* Company brand gradients — matched to each company logo */
-  --company-bsm-1: oklch(0.38 0.13 262);
-  --company-bsm-2: oklch(0.27 0.11 266);
-  --company-vrl-1: oklch(0.46 0.13 243);
-  --company-vrl-2: oklch(0.33 0.11 250);
-  --company-pluto-1: oklch(0.5 0.11 205);
-  --company-pluto-2: oklch(0.36 0.09 218);
+  /* Company brand tints — light washes matched to each company logo */
+  --company-bsm-ink: oklch(0.37 0.08 262);
+  --company-bsm-1: oklch(0.93 0.035 215);
+  --company-bsm-2: oklch(0.95 0.02 262);
+  --company-vrl-ink: oklch(0.36 0.07 272);
+  --company-vrl-1: oklch(0.94 0.03 272);
+  --company-vrl-2: oklch(0.96 0.015 272);
+  --company-pluto-ink: oklch(0.45 0.1 228);
+  --company-pluto-1: oklch(0.94 0.045 228);
+  --company-pluto-2: oklch(0.96 0.02 228);
 }
 
 @utility company-card-bsm {
   background: linear-gradient(150deg, var(--company-bsm-1), var(--company-bsm-2));
-  color: oklch(1 0 0);
-  border-color: var(--company-bsm-2);
+  color: var(--company-bsm-ink);
+  border-color: color-mix(in oklab, var(--company-bsm-ink) 25%, transparent);
 }
 
 @utility company-card-vrl {
   background: linear-gradient(150deg, var(--company-vrl-1), var(--company-vrl-2));
-  color: oklch(1 0 0);
-  border-color: var(--company-vrl-2);
+  color: var(--company-vrl-ink);
+  border-color: color-mix(in oklab, var(--company-vrl-ink) 25%, transparent);
 }
 
 @utility company-card-pluto {
   background: linear-gradient(150deg, var(--company-pluto-1), var(--company-pluto-2));
-  color: oklch(1 0 0);
-  border-color: var(--company-pluto-2);
+  color: var(--company-pluto-ink);
+  border-color: color-mix(in oklab, var(--company-pluto-ink) 25%, transparent);
 }
 
 /* Optional deep variant for dark surfaces inside a light page */
