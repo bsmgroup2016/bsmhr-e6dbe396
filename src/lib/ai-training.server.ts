@@ -5,6 +5,7 @@
  */
 import { ASSISTANT_TABLES } from "./assistant.server";
 import { activeProviders } from "./api-integrations.server";
+import { chatbotCompletion } from "./chatbot-provider.server";
 
 const SUPABASE_URL = "https://thrfyeyqafmdnpexgmlc.supabase.co";
 
@@ -61,24 +62,12 @@ async function snapshotTable(table: string) {
 }
 
 async function chat(prompt: string) {
-  let last = "";
-  for (const p of await activeProviders("chatbot")) {
-    try {
-      const res = await fetch(p.url, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${p.key}`, "Content-Type": "application/json", ...p.extra },
-        body: JSON.stringify({ model: p.model, messages: [{ role: "user", content: prompt }] }),
-      });
-      if (!res.ok) throw new Error(`${p.name} ${res.status}: ${(await res.text()).slice(0, 150)}`);
-      const j = (await res.json()) as { choices?: { message?: { content?: string } }[] };
-      const text = j.choices?.[0]?.message?.content;
-      if (text) return { text, provider: `${p.name} (${p.model})` };
-      throw new Error(`${p.name}: empty reply`);
-    } catch (e) {
-      last = e instanceof Error ? e.message : String(e);
-    }
-  }
-  throw new Error(`All chatbot providers failed. ${last}`);
+  const { completion, provider } = await chatbotCompletion(await activeProviders("chatbot"), {
+    messages: [{ role: "user", content: prompt }],
+  }, { timeoutMs: 60_000 });
+  const text = completion.choices?.[0]?.message?.content;
+  if (!text) throw new Error("Chatbot returned no training content.");
+  return { text, provider: `${provider.name} (${completion.model ?? provider.model})` };
 }
 
 /** Ask the AI to write lookup recipes from the current snapshots. Replaces old AI-made skills. */

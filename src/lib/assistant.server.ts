@@ -18,7 +18,8 @@ export const ASSISTANT_TABLES = [
   "leads", "crm_activities", "time_cards", "claim_sheets", "departments", "designations", "audit_logs",
 ] as const;
 
-import { activeProviders, postChat } from "./api-integrations.server";
+import { activeProviders } from "./api-integrations.server";
+import { chatbotCompletion } from "./chatbot-provider.server";
 
 /** Chatbot providers come from Settings → API Integration (fallback order, on/off, keys). */
 async function providers() {
@@ -206,35 +207,28 @@ const SYSTEM =
 export type ChatMsg = { role: "user" | "assistant"; content: string };
 
 export async function runAssistant(messages: ChatMsg[], auth: string, anon: string, userId?: string) {
-  const list = await providers();
+  const { knowledgePrompt } = await import("./ai-training.server");
+  const [list, trained] = await Promise.all([providers(), knowledgePrompt()]);
   if (list.length === 0) throw new Error("AI Assistant keys are not set yet");
   const today = new Date().toISOString().slice(0, 10);
-  const { knowledgePrompt } = await import("./ai-training.server");
-  const trained = await knowledgePrompt();
-  let lastErr = "";
-  for (const p of list) {
-    try {
-      const convo: Record<string, unknown>[] = [{ role: "system", content: `${SYSTEM} Today is ${today}.${trained}` }, ...messages];
+  const convo: Record<string, unknown>[] = [{ role: "system", content: `${SYSTEM} Today is ${today}.${trained}` }, ...messages];
+  let ordered = list;
+  let providerName = "";
       for (let step = 0; step < 8; step++) {
-        const res = await postChat(p, { messages: convo, tools, tool_choice: "auto" });
-        if (!res.ok) throw new Error(`${p.name} ${res.status}: ${(await res.text()).slice(0, 200)}`);
-        const json = (await res.json()) as { choices?: { message?: { content?: string; tool_calls?: { id: string; function: { name: string; arguments: string } }[] } }[] };
+        const { completion: json, provider: p } = await chatbotCompletion(ordered, { messages: convo, tools, tool_choice: "auto" });
+        providerName = p.name;
+        ordered = [p, ...list.filter((candidate) => candidate.id !== p.id)];
         const msg = json.choices?.[0]?.message;
         if (!msg) throw new Error(`${p.name}: empty reply`);
         if (!msg.tool_calls?.length) return { reply: msg.content || "", provider: p.name };
         convo.push({ role: "assistant", content: msg.content ?? "", tool_calls: msg.tool_calls });
-        for (const tc of msg.tool_calls) {
+        const results = await Promise.all(msg.tool_calls.map(async (tc) => {
           let args: Record<string, unknown> = {};
           try { args = JSON.parse(tc.function.arguments || "{}"); } catch { /* ignore */ }
           const result = await runTool(tc.function.name, args, auth, anon, userId);
-          convo.push({ role: "tool", tool_call_id: tc.id, name: tc.function.name, content: JSON.stringify(result).slice(0, 40000) });
-        }
+          return { role: "tool", tool_call_id: tc.id, name: tc.function.name, content: JSON.stringify(result).slice(0, 40000) };
+        }));
+        convo.push(...results);
       }
-      return { reply: "I needed too many lookups for this question — please narrow it down.", provider: p.name };
-    } catch (e) {
-      lastErr = e instanceof Error ? e.message : String(e);
-      console.error("assistant provider failed:", lastErr);
-    }
-  }
-  throw new Error(`All assistant providers failed. Last error: ${lastErr}`);
+      return { reply: "I needed too many lookups for this question — please narrow it down.", provider: providerName };
 }

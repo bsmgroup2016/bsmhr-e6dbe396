@@ -80,12 +80,13 @@ export async function activeProviders(category: Category): Promise<ActiveProvide
 
 /** Gemini's newest model is often overloaded (503); retry once on a steadier Gemini model. */
 export const GEMINI_BUSY_FALLBACK = "gemini-3-flash-preview";
-export async function postChat(p: ActiveProvider, body: Record<string, unknown>) {
+export async function postChat(p: ActiveProvider, body: Record<string, unknown>, options: { signal?: AbortSignal } = {}) {
   const send = (model: string) =>
     fetch(p.url, {
       method: "POST",
       headers: { Authorization: `Bearer ${p.key}`, "Content-Type": "application/json", ...p.extra },
       body: JSON.stringify({ ...body, model }),
+      ...(options.signal ? { signal: options.signal } : {}),
     });
   const res = await send(p.model);
   if (res.status === 503 && p.url.includes("googleapis.com") && p.model !== GEMINI_BUSY_FALLBACK) {
@@ -97,8 +98,18 @@ export async function postChat(p: ActiveProvider, body: Record<string, unknown>)
 /** Send one tiny message to confirm a provider works. */
 export async function pingProvider(p: ActiveProvider) {
   if (isClaudeUrl(p.url)) return pingClaude(p.key, p.model);
-  const res = await postChat(p, { messages: [{ role: "user", content: "Reply with OK" }] });
-  if (res.ok) return { success: true, error: null as string | null };
+  const started = Date.now();
+  let res: Response;
+  try {
+    res = await postChat(p, { messages: [{ role: "user", content: "Reply with OK" }] }, { signal: AbortSignal.timeout(20_000) });
+    if (res.ok) {
+      const completion = await res.json() as { model?: string; choices?: { message?: { content?: string } }[] };
+      if (!completion.choices?.[0]?.message?.content?.trim()) return { success: false, error: "Provider returned no answer" };
+      return { success: true, error: null as string | null, latencyMs: Date.now() - started, model: completion.model ?? p.model };
+    }
+  } catch {
+    return { success: false, error: "Provider could not answer within 20 seconds. Try again or use another provider." };
+  }
   if (res.status === 503) return { success: false, error: "Model is busy right now (high demand) — the next one in the list will take over" };
   if (res.status === 429) return { success: false, error: "Limit reached for now (the next one in the list will take over)" };
   return { success: false, error: `Failed (${res.status}): ${(await res.text()).slice(0, 200)}` };

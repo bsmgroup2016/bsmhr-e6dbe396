@@ -1,5 +1,11 @@
 # Full-section UI/UX and workflow audit
 
+## Chatbot connection and response speed
+
+- [x] All four real chatbot providers returned HTTP 200/OK: Gemini 14–15s, Groq 0.4s, OpenRouter 1s; no keys exposed or settings changed.
+- [x] Shared cancellable staggered selection bypasses slow providers in replies and training; later rounds retain tool results/prefer their winner and independent caller-authorized reads run in parallel. Real engine OK reply took 2.8s; 20 focused tests pass and preview build is clean.
+- [ ] Verify real signed-in chatbot message → saved reply → reload. Blocker: external authentication cannot supply an authorized sandbox session; actual provider/engine requests and signed-out access checks are verified, not an authenticated UI flow. See docs/CHATBOT-SPEED-CHECK.md.
+
 ## Reusable AI Brain
 
 - [x] Reproduce Worker Illegal invocation caused by bound fetch; detach upstream fetch, verify real provider HTTP 200 in workerd, pass 14 tests and inspect sibling network paths without changing their settings/data.
