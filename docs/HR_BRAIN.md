@@ -34,6 +34,19 @@ const response = await callHrBrain({
 
 Settings → API Integration → Test AI Brain sends `Say OK` using the default 2048-token budget and displays the actual returned text and model. It does not change provider ordering or existing HR workflows.
 
+## Tool-calling check (25 November 2026)
+
+Rule: the chatbot assistant only works with a provider that can call tools, because every factual answer comes from `query_table`, `count_rows`, `describe_table`, `workforce_alerts` and `get_worker_files`.
+
+The real provider was called directly with the app's tool list and no HR data:
+
+- `stream: false` sent explicitly returns a normal JSON completion. Omitting the field makes the upstream stream SSE chunks instead, so callers must always send `stream` explicitly.
+- With `tools` and `tool_choice: "auto"`, the upstream returned a valid `count_rows` tool call with arguments `{"table":"employees"}` instead of guessing an answer.
+- Feeding the tool result back produced the final answer. The number in that answer (37) was a fixture value supplied by the test, not a real worker count.
+- The upstream reports its own model name (`gemini-4-hydrogen`) even though the app always sends model `hr-brain`.
+
+Consequence: AI Brain is capable of driving the assistant's live data lookups, so it can sit in front of the existing chatbot chain rather than replace it. The route itself stays admin-only until feature-specific authorization is added, so a chatbot wiring must decide who may spend this service.
+
 ## Runtime invocation check
 
 Rule: a valid configured AI service must receive the app's request, not fail inside the server before reaching the provider.

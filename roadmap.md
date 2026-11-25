@@ -6,6 +6,11 @@
 - [x] Shared cancellable staggered selection bypasses slow providers in replies and training; later rounds retain tool results/prefer their winner and independent caller-authorized reads run in parallel. Real engine OK reply took 2.8s; 20 focused tests pass and preview build is clean.
 - [ ] Verify real signed-in chatbot message → saved reply → reload. Blocker: external authentication cannot supply an authorized sandbox session; actual provider/engine requests and signed-out access checks are verified, not an authenticated UI flow. See docs/CHATBOT-SPEED-CHECK.md.
 
+## AI Brain in the chatbot
+
+- [x] Verify the AI Brain endpoint can drive the assistant: explicit `stream: false` returns JSON, the supplied tool list produced a real `count_rows` tool call, and the tool result round trip returned a final answer. Recorded in docs/HR_BRAIN.md.
+- [ ] Wire AI Brain into the chatbot provider chain. Blocker: waiting for the owner's choice of arrangement (primary with Gemini/Groq/OpenRouter as fallback, optional extra, or writing-only) because a paid endpoint in front of every chat spends money on each message.
+
 ## Reusable AI Brain
 
 - [x] Reproduce Worker Illegal invocation caused by bound fetch; detach upstream fetch, verify real provider HTTP 200 in workerd, pass 14 tests and inspect sibling network paths without changing their settings/data.
