@@ -153,8 +153,8 @@ export default function AccommodationPage() {
       <div className="w-full space-y-6">
         <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Accommodation</h1>
-            <p className="text-sm text-muted-foreground">Dormitories, bed allocation and occupancy tracking.</p>
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Dormitory & Beds</h1>
+            <p className="text-sm text-muted-foreground">Dormitory list, total beds, allocation and occupancy tracking.</p>
           </div>
           <div className="mt-2 flex gap-2 sm:mt-0">
             <Button size="sm" variant="outline" onClick={handleExport} disabled={filteredAllocs.length === 0}>

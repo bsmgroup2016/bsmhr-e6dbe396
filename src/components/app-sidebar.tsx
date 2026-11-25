@@ -81,6 +81,7 @@ const navGroups: { label: string; items: NavItem[] }[] = [
       { title: "Onboard & Issuence", url: "/onboarding", icon: UserPlus },
       { title: "Levy & Quota (DRC)", url: "/mom", icon: Landmark },
       { title: "Training & WSH Safety", url: "/training", icon: GraduationCap },
+      { title: "Dormitory & Beds", url: "/accommodation", icon: BedDouble },
     ],
   },
   {
@@ -120,7 +121,6 @@ const navGroups: { label: string; items: NavItem[] }[] = [
     items: [
       { title: "Stock & Inventory", url: "/inventory", icon: Package },
       { title: "PPE Management", url: "/assets", icon: Boxes },
-      { title: "Accommodation (Dorm)", url: "/accommodation", icon: BedDouble },
     ],
   },
 ];
