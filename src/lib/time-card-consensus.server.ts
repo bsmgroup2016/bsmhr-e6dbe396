@@ -6,9 +6,10 @@ import {
 } from "@/core/time-card-consensus";
 import { TIME_CARD_READ_INSTRUCTION } from "@/core/time-card-read";
 import type { ActiveProvider } from "./api-integrations.server";
+import { OCR_MODELS } from "@/core/ocr-models";
 
-export const CARBON_MODEL = "gemini-4-carbon";
-export const SOL_MODEL = "gpt-6.2-sol";
+export const CARBON_MODEL = OCR_MODELS.Gemini;
+export const SOL_MODEL = OCR_MODELS.OpenAI;
 export const ROUTER_TIMEOUT_MS = 30_000;
 const READ_PROMPT = `${TIME_CARD_READ_INSTRUCTION}\nInstead of nested cards/days, return {"rows":[...]} using the supplied flat-row schema. Preserve every worked date, including Sundays, and every distinct physical card. Do not emit genuinely OFF/empty rows. Read dates from the printed date and card's own month/year, never a guessed period. Transcribe printed identity, site, normal-hours and OT-hours separately. Transcribe reported_total_hours only if a total is printed; never add hours or perform arithmetic. Break minutes must be explicitly visible in the document; otherwise null. Illegible cells are null with lowered confidence. Never replace a source value with a plausible default.`;
 export const TARGETED_STATIC_PROMPT = `You verify Singapore time-card cells against the original image. Resolve ONLY the supplied flagged field names for ONE identified card/date. Do not change any unflagged cell or perform arithmetic. Illegible values stay null; confidence must reflect uncertainty. Return only the requested keys. Fixed field definitions and schema:\n${JSON.stringify(FLAT_ROW_JSON_SCHEMA)}`;

@@ -1,5 +1,10 @@
 # Full-section UI/UX and workflow audit
 
+## OCR Settings model correction
+
+- [x] Update saved OCR Gemini/OpenAI models to gemini-4-carbon / gpt-6.2-sol and category-specific presets; exact database read-back confirms models, unchanged toggles/order, and official model availability GETs return HTTP 200. Keys and chatbot settings are untouched.
+- [ ] Verify signed-in Settings display and real OCR inference. Blocker: external Auth cannot mint an authorized sandbox session; model availability does not establish successful document reading or activate consensus.
+
 ## Automatic claim and salary advisory review
 
 - [x] Automatically recheck visible Claim Summary/Combined Claim and saved Salary Sheet records; show concerns separately without changing downloads, formulas or data. Debounced identity-scoped requests cover every visible worker in bounded batches; failed/incomplete reviews never claim verification.
@@ -240,6 +245,6 @@
 
 - [x] Prepare 9Router → mandatory official Gemini → deterministic checks → targeted official OpenAI verification, preserving current result format and Excel calculations.
 - [x] Test nulls, normalization, 0.8 confidence, 0.25-hour tolerance, provider failures and targeted-only merging.
-- [ ] Activate and verify live OCR. Blocker: both saved official provider keys returned HTTP 401; do not break the existing OCR flow or substitute models.
+- [ ] Activate and verify live consensus OCR. Updated Settings keys now pass official model availability checks (HTTP 200); complete real-card inference and authorized signed-in verification remain required before activation. Keep the existing reader active and do not substitute models.
 - [x] Add authenticated owner/source-checked R2 job status and approved invisible heartbeat/result polling for the existing reader; 67 focused tests and real fictional-job R2 read-back/removal verify behavior without changing screens or upload/Excel flows.
 - [ ] Verify signed-in uploaded-card background execution in the published Worker. Blocker: no authorized external-Auth browser session; completely unattended crash-resumable execution would additionally require an external durable workflow/queue, not waitUntil alone.

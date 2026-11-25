@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { HrBrainTest } from "@/components/settings/hr-brain-test";
+import { integrationPresetModel } from "@/core/ocr-models";
 
 type Category = "ocr" | "chatbot";
 type Item = {
@@ -48,6 +49,7 @@ function KeyBadge({ source }: { source: Item["keySource"] }) {
 }
 
 function EditForm(props: {
+  category: Category;
   initial?: Partial<Item>;
   isNew?: boolean;
   onCancel: () => void;
@@ -77,7 +79,7 @@ function EditForm(props: {
           <span className="text-xs text-muted-foreground self-center">Quick fill:</span>
           {Object.entries(PRESETS).map(([n, p]) => (
             <Button key={n} type="button" variant="outline" size="sm" className="h-7 text-xs"
-              onClick={() => { setUrl(p.url); setModel(p.model); if (!label) setLabel(n); }}>{n}</Button>
+              onClick={() => { setUrl(p.url); setModel(integrationPresetModel(props.category, n, p.model)); if (!label) setLabel(n); }}>{n}</Button>
           ))}
         </div>
       )}
@@ -202,6 +204,7 @@ function ApiRow({ item, index, total, onChanged }: { item: Item; index: number; 
 
       {editing && (
         <EditForm
+          category={item.category}
           initial={item}
           canClearKey={item.keySource === "custom"}
           onCancel={() => setEditing(false)}
@@ -229,7 +232,7 @@ function Section({ category, title, description, icon: Icon, items, onChanged }:
         {list.length === 0 && <p className="text-sm text-muted-foreground">No API added yet.</p>}
       </div>
       {adding ? (
-        <EditForm isNew onCancel={() => setAdding(false)} onSave={async (v) => {
+        <EditForm category={category} isNew onCancel={() => setAdding(false)} onSave={async (v) => {
           try {
             await api("POST", { action: "create", category, ...v });
             toast.success("API added");
