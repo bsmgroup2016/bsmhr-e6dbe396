@@ -163,9 +163,9 @@
   --dashboard-on-colour: oklch(1 0 0);
   --dashboard-layer: linear-gradient(115deg, transparent 45%, oklch(1 0 0 / 12%) 45%, oklch(1 0 0 / 4%) 72%, transparent 72%);
   /* Company brand tints — light washes matched to each company logo */
-  --company-bsm-ink: oklch(0.37 0.08 262);
-  --company-bsm-1: oklch(0.92 0.045 255);
-  --company-bsm-2: oklch(0.95 0.02 265);
+  --company-bsm-ink: oklch(0.34 0.1 258);
+  --company-bsm-1: oklch(0.88 0.07 252);
+  --company-bsm-2: oklch(0.92 0.04 262);
   --company-vrl-ink: oklch(0.35 0.09 290);
   --company-vrl-1: oklch(0.93 0.045 295);
   --company-vrl-2: oklch(0.95 0.025 285);
