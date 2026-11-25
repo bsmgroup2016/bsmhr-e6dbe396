@@ -3,6 +3,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { AlertTriangle, Building2, Download, Loader2, Search, X } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
+import { ClaimSalaryAiReview } from "@/components/claim-salary-ai-review";
+import { claimSalaryReviewSnapshot } from "@/core/claim-salary-review";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -295,6 +297,7 @@ function ClaimWorkflowPage() {
         )}
 
         {summaries.length > 0 && <div className="flex justify-between border-t pt-4"><Button variant="outline" disabled={step === 0} onClick={() => setStep(n => n - 1)}>Back</Button>{step < 2 && <Button onClick={() => setStep(n => n + 1)}>Next: {STEPS[step + 1]}</Button>}</div>}
+        {!error && <ClaimSalaryAiReview snapshot={claimSalaryReviewSnapshot(month, visibleSummaries, salaryRows, step === 2 ? "salary" : "claim")} />}
       </div>
     </AppShell>
   );

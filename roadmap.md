@@ -1,5 +1,11 @@
 # Full-section UI/UX and workflow audit
 
+## Automatic claim and salary advisory review
+
+- [x] Automatically recheck visible Claim Summary/Combined Claim and saved Salary Sheet records; show concerns separately without changing downloads, formulas or data. Debounced identity-scoped requests cover every visible worker in bounded batches; failed/incomplete reviews never claim verification.
+- [x] 54 focused tests pass, including existing template/workbook and saved-pay regressions. Controlled desktop/mobile UI verifies automatic requests, unchanged-input reuse, changed salary scope and explicit failure states. Real upstream returned HTTP 200 and flagged missing payroll in a fictional fixture.
+- [ ] Verify real signed-in Claim Summary and Salary Sheet → AI results → Excel download. Blocker: the external authentication service cannot mint an authorized sandbox session; actual route redirects to /auth. Controlled UI and provider tests are not real-account verification.
+
 ## Chatbot connection and response speed
 
 - [x] All four real chatbot providers returned HTTP 200/OK: Gemini 14–15s, Groq 0.4s, OpenRouter 1s; no keys exposed or settings changed.
