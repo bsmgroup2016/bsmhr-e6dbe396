@@ -39,7 +39,7 @@ const PRESETS: Record<string, { url: string; model: string }> = {
   Gemini: { url: "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", model: "gemini-3.1-pro-preview" },
   OpenAI: { url: "https://api.openai.com/v1/chat/completions", model: "gpt-5.5" },
   Groq: { url: "https://api.groq.com/openai/v1/chat/completions", model: "openai/gpt-oss-120b" },
-  Claude: { url: "https://api.anthropic.com/v1/chat/completions", model: "claude-opus-4-5" },
+  Claude: { url: "https://api.anthropic.com/v1/chat/completions", model: "claude-sonnet-5-5" },
   OpenRouter: { url: "https://openrouter.ai/api/v1/chat/completions", model: "openai/gpt-4o-mini" },
 };
 
