@@ -3,13 +3,12 @@
  * filling the claim-sheet Excel and building claim sheets.
  *
  * Settings controls the enabled document readers, including Gemini, OpenAI,
- * Claude and the optional AI Brain. Disabled readers are never called.
+ * and the optional AI Brain. Disabled readers are never called.
  *
  * The AI chatbot uses its OWN separate keys (see assistant.server.ts).
  */
 
 import { activeProviders } from "./api-integrations.server";
-import { askClaude, isClaudeUrl } from "./claude.server";
 import { HR_BRAIN_BASE_URL } from "@/core/hr-brain";
 
 /** "gemini" / "openai" for the built-in pair; any other provider uses its label. */
@@ -28,7 +27,7 @@ interface ProviderConfig {
 async function configured(): Promise<ProviderConfig[]> {
   const list = await activeProviders("ocr");
   return list.map((p) => ({
-    name: p.url.startsWith(`${HR_BRAIN_BASE_URL}/`) ? "hr-brain" : p.url.includes("googleapis.com") ? "gemini" : p.url.includes("api.openai.com") ? "openai" : isClaudeUrl(p.url) ? "claude" : p.name,
+    name: p.url.startsWith(`${HR_BRAIN_BASE_URL}/`) ? "hr-brain" : p.url.includes("googleapis.com") ? "gemini" : p.url.includes("api.openai.com") ? "openai" : p.name,
     label: p.name,
     url: p.url,
     apiKey: p.key,
@@ -59,8 +58,6 @@ export interface AiRequest {
   only?: AiProviderName;
   /** With `only`: fail instead of falling back when that provider is off. */
   strict?: boolean;
-  /** Claude only: how hard to think (default "high"); narrow questions can use less. */
-  effort?: "low" | "medium" | "high";
 }
 
 const promptOf = (req: AiRequest) => (req.context ? `${req.instruction}\n\n${req.context}` : req.instruction);
@@ -101,7 +98,7 @@ function extractJson(text: string): unknown {
 
 const AI_TIMEOUT_MS = 120_000;
 
-/** Ask Gemini / OpenAI for a JSON answer, falling back on failure. */
+/** Ask the enabled OCR readers for a JSON answer, falling back on failure. */
 export async function askAiJson(req: AiRequest): Promise<unknown> {
   let list = await configured();
   // If the pinned provider is off/missing, fall back to the normal order.
@@ -117,12 +114,6 @@ export async function askAiJson(req: AiRequest): Promise<unknown> {
   let lastError: Error | null = null;
   for (const provider of list) {
     try {
-      if (provider.name === "claude") {
-        return extractJson(await askClaude({
-          apiKey: provider.apiKey, model: provider.model, system: req.system ?? DEFAULT_SYSTEM,
-          prompt: promptOf(req), dataUrl: req.dataUrl, timeoutMs: AI_TIMEOUT_MS, effort: req.effort,
-        }));
-      }
       const res = await fetch(provider.url, {
         method: "POST",
         headers: { Authorization: `Bearer ${provider.apiKey}`, "Content-Type": "application/json", ...provider.extra },

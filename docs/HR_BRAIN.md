@@ -60,7 +60,7 @@ The first AI Brain implementation invoked native Worker fetch as `deps.fetch()`.
 Code inspection of sibling paths found no other instance of this native-fetch binding bug:
 
 - Settings test and typed browser helper: ordinary standalone fetch; both JSON and SSE call the same protected endpoint.
-- OCR, time-card/document reading and provider tests (`ai.server.ts`, `ocr.server.ts`, `api-integrations.server.ts`): standalone native fetch; Claude reader/test uses the Anthropic SDK, not an injected native fetch method.
+- OCR, time-card/document reading and provider tests (`ai.server.ts`, `ocr.server.ts`, `api-integrations.server.ts`): standalone native fetch.
 - Assistant endpoint: delegates to the existing assistant service; shared provider forwarding is standalone fetch.
 - Email delivery and nightly automation (`email.server.ts`, `automation-run.server.ts`): standalone fetch/shared email sender.
 - Storage uploads (v1 and legacy), Media browsing/upload/delete, R2 status/deletion, signed file reads and archive storage: object methods belong to `AwsClient`, where method binding is intentional; these are not native global fetch references.
@@ -71,8 +71,14 @@ These sibling paths were inspected for this invocation bug, not end-to-end retes
 
 ## Optional OCR reader (25 November 2026)
 
-- Added a separate OCR provider row below Claude, model `hr-brain`, URL `https://stbd.seobdshop.com/v1/chat/completions`, using server-only `HR_BRAIN_API_KEY`. The existing Gemini, OpenAI and Claude rows remain off; chatbot settings are unchanged. Migration `db/migrations/0077_ai_brain_ocr.sql` inserts the row idempotently and never restores deleted/changed settings on page load.
+- Added a separate OCR provider row, model `hr-brain`, URL `https://stbd.seobdshop.com/v1/chat/completions`, using server-only `HR_BRAIN_API_KEY`. Gemini and OpenAI settings are unchanged; Claude has subsequently been removed by the owner. Migration `db/migrations/0077_ai_brain_ocr.sql` inserts the AI Brain row idempotently and never restores deleted/changed settings on page load.
 - Enabled AI Brain for the requested OCR trial. Its existing row controls support on/off, ordering, details, editing, testing and deletion. Provider testing now displays returned model and elapsed time in Details.
 - The shared OCR service forwards image content and PDF file parts, explicitly sends `stream: false` (required by this upstream) and omits provider-specific `reasoning_effort`. Document extraction and the time-card fallback use this service; claim templates, calculated hours and approval behavior remain unchanged.
 - Live shared-service checks on a fictional printed fixture returned the correct name, P-File, date and check-in/out for both PNG (~7.6s) and PDF (~5.4s). This verifies the transport and readable printed content, not handwritten-card accuracy. No real worker file was sent or stored by the check.
 - 35 focused OCR, AI Brain and time-card tests passed. Signed-in Settings and an actual uploaded time-card batch remain unverified: this external account service cannot mint a sandbox session.
+
+## Removed OCR reader
+
+Claude's reader, Settings test adapter and SDK dependency are removed. Shared provider resolution rejects old Claude/Anthropic OCR rows by endpoint, label or model before reading a key. Time-card Gemini/OpenAI disagreements remain flagged instead of invoking Claude; AI Brain fallback and other providers' saved toggles remain unchanged. No integration is recreated and no worker files or claim templates are modified.
+
+Source coverage: employee IPA registration/onboarding (`employee-registration.tsx`), employee IPA/passport/work-permit/Particular/CSOC autofill (`employee-form.tsx`), document-register passport reads (`documents.tsx`), medical-bill reads (`medical-claims-panel.tsx`), spreadsheet column mapping (`data-io.tsx`), time-card upload/retry (`claim-demo/pipeline.ts`), shared browser service (`ocr.ts`), OCR dispatch/status routes, Settings provider loading/testing and the shared server resolver were read. All use the same server resolver; none has an independent Claude call. The AI Brain migration only inserts AI Brain and does not restore Claude. Searches found no separate OCR background job or database function invoking Claude. Existing records, permissions and provider toggles were not changed. Signed-in Settings and real uploaded-file flows remain unverified because an authorized external-account session is unavailable.

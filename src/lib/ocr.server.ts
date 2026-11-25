@@ -3,7 +3,7 @@
  * layer, so the Lovable gateway and a personal OpenAI key are interchangeable.
  */
 import { askAiJson } from "@/lib/ai.server";
-import { cardDisputes, disputeInstruction, mergeCardReads, parseCardReads, TIME_CARD_READ_INSTRUCTION } from "@/core/time-card-read";
+import { mergeCardReads, parseCardReads, TIME_CARD_READ_INSTRUCTION } from "@/core/time-card-read";
 import { keyFromRef, presignGet } from "@/lib/r2.server";
 import { IPA_INSTRUCTION, type IpaExtract } from "@/core/ipa-registration";
 import { PARTICULAR_INSTRUCTION, DOCUMENT_UNDERSTANDING, IDENTITY_DOCUMENT_INSTRUCTION, CSOC_INSTRUCTION } from "@/core/employee-document-fields";
@@ -48,9 +48,8 @@ export async function readCsoc(ref: string) {
  * Time cards: Gemini and OpenAI each read the WHOLE card independently and in
  * parallel; rows are merged day by day. Agreement = high confidence; any
  * difference is flagged with the other reading for human review.
- * Claude (when configured) is used sparingly: only when both read the card and still disagree,
- * and then it is asked about just those dates / card details, not the whole card. Everything
- * else (one reader failing, unclear cards) is left flagged for the human review step.
+ * Disagreements stay flagged for human review; no third-reader call is made.
+ * When neither built-in reader is enabled, the configured OCR fallback is used.
  */
 export async function readTimeCard(ref: string) {
   const dataUrl = await fetchAsDataUrl(ref);
@@ -61,16 +60,7 @@ export async function readTimeCard(ref: string) {
   if (gemini.status === "rejected") console.error("timecard gemini read failed", gemini.reason);
   if (openai.status === "rejected") console.error("timecard openai read failed", openai.reason);
   if (g && o) {
-    const names = { primary: "gemini", audit: "openai", third: "claude" };
-    const disputes = cardDisputes(g, o);
-    if (!disputes.length) return mergeCardReads(g, o, names);
-    const c = await askAiJson({ instruction: disputeInstruction(disputes), dataUrl, only: "claude", strict: true, effort: "medium" })
-      .then(parseCardReads)
-      .catch((e) => {
-        if (!/not enabled/.test(String(e?.message ?? e))) console.error("timecard claude tie-break failed", e);
-        return [];
-      });
-    return mergeCardReads(g, o, names, c.length ? c : null);
+    return mergeCardReads(g, o, { primary: "gemini", audit: "openai" });
   }
   if (g) return mergeCardReads(g, null, { primary: "gemini" });
   if (o) return mergeCardReads(o, null, { primary: "openai" });

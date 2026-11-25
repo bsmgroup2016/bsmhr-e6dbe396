@@ -230,3 +230,8 @@
 - [x] Add AI Brain below Claude using the existing server secret, preserving all other provider toggles; verify database read-back.
 - [x] Verify fictional image/PDF reading through the shared OCR service and run 35 focused tests.
 - [ ] Verify signed-in Settings and a real uploaded time-card batch. Blocker: no authorized external account-service session is available.
+
+## Remove Claude from OCR
+
+- [x] Remove document-reader and time-card tie-break calls, reject stale Claude rows and preserve other provider settings.
+- [x] Verify removed-provider and time-card regressions: 38 focused tests pass; source audit covers every shared OCR entry point. Real signed-in upload remains blocked by unavailable external-account session.

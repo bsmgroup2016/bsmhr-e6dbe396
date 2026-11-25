@@ -1,5 +1,4 @@
 /** Server-only: editable API integrations (OCR + chatbot) stored in the database. */
-import { isClaudeUrl, pingClaude } from "./claude.server";
 const SUPABASE_URL = "https://thrfyeyqafmdnpexgmlc.supabase.co";
 
 export type Category = "ocr" | "chatbot";
@@ -58,7 +57,22 @@ export function effectiveKey(r: IntegrationRow): string | null {
   return r.api_key || (r.env_key ? process.env[r.env_key] || null : null);
 }
 
+function isAnthropicUrl(url: string): boolean {
+  try {
+    const host = new URL(url).hostname.toLowerCase();
+    return host === "anthropic.com" || host.endsWith(".anthropic.com");
+  } catch {
+    return false;
+  }
+}
+
+/** Deleted OCR readers must not run even if an old enabled row remains cached. */
+export function isRemovedOcrProvider(r: Pick<IntegrationRow, "category" | "label" | "model" | "url">): boolean {
+  return r.category === "ocr" && (isAnthropicUrl(r.url) || /claude|anthropic/i.test(`${r.label} ${r.model}`));
+}
+
 export function toProvider(r: IntegrationRow): ActiveProvider | null {
+  if (isRemovedOcrProvider(r)) return null;
   const key = effectiveKey(r);
   if (!key) return null;
   const extra: Record<string, string> = {};
@@ -71,8 +85,8 @@ export function toProvider(r: IntegrationRow): ActiveProvider | null {
 export async function activeProviders(category: Category): Promise<ActiveProvider[]> {
   const rows = await listIntegrations();
   return rows
-    // Claude is wired for document reading only; the chatbot speaks the OpenAI-style API.
-    .filter((r) => r.category === category && r.enabled && !(category === "chatbot" && isClaudeUrl(r.url)))
+    // Chatbot providers must speak the OpenAI-compatible API.
+    .filter((r) => r.category === category && r.enabled && !(category === "chatbot" && isAnthropicUrl(r.url)))
     .sort((a, b) => a.priority - b.priority)
     .map(toProvider)
     .filter((p): p is ActiveProvider => !!p);
@@ -97,7 +111,6 @@ export async function postChat(p: ActiveProvider, body: Record<string, unknown>,
 
 /** Send one tiny message to confirm a provider works. */
 export async function pingProvider(p: ActiveProvider) {
-  if (isClaudeUrl(p.url)) return pingClaude(p.key, p.model);
   const started = Date.now();
   let res: Response;
   try {
