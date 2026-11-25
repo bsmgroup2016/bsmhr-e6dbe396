@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { Building2, BedDouble, Users, Plus, Search, Trash2, LogOut, Download, FileText, ClipboardCheck, History, Eye, MapPin } from "lucide-react";
+import { Building2, BedDouble, Users, Plus, Search, Trash2, LogOut, Download, FileText, ClipboardCheck, History, Eye, MapPin, Pencil, Upload, FileSpreadsheet } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/app-shell";
@@ -19,12 +19,13 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   getDormitories, getAllocations, getEmployees, getCurrentCompany,
-  addDormitory, deleteDormitory, addAllocation, checkOutAllocation, deleteAllocation, dormOccupancy,
+  addDormitory, updateDormitory, updateAllocation, deleteDormitory, addAllocation, checkOutAllocation, deleteAllocation, dormOccupancy,
   getDormitoryInvoices, addDormitoryInvoice, updateDormitoryInvoice, deleteDormitoryInvoice,
   getDormitoryInspections, addDormitoryInspection, updateDormitoryInspection, deleteDormitoryInspection,
   getDormitoryMovements, addDormitoryMovement,
 } from "@/lib/store";
-import { exportRows } from "@/lib/xlsx";
+import { exportRows, readSpreadsheet, downloadDemoSheet } from "@/lib/xlsx";
+import { availableBeds, planBulkAllocation, type PlannedAllocation, type PlanError } from "@/features/dormitory/bulk-allocate";
 import { HousingNotificationPanel } from "@/components/housing-notification-panel";
 import { dormCapacityCheck, SQM_PER_RESIDENT } from "@/lib/mom";
 import type { Dormitory, BedAllocation } from "@/lib/types";
@@ -66,6 +67,11 @@ export default function AccommodationPage() {
   const [allocOpen, setAllocOpen] = useState(false);
   const [dormForm, setDormForm] = useState(emptyDorm);
   const [allocForm, setAllocForm] = useState(emptyAlloc);
+  const [editDormId, setEditDormId] = useState<string | null>(null);
+  const [editAllocId, setEditAllocId] = useState<string | null>(null);
+  const [dormFilter, setDormFilter] = useState("all");
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const [bulkPlan, setBulkPlan] = useState<{ valid: PlannedAllocation[]; errors: PlanError[]; total: number } | null>(null);
 
   function refresh() {
     setDorms(getDormitories());
@@ -97,15 +103,60 @@ export default function AccommodationPage() {
       empCode(a.employeeId).toLowerCase().includes(q) ||
       dormName(a.dormitoryId).toLowerCase().includes(q) ||
       a.roomNo.toLowerCase().includes(q),
-  );
+  ).filter((a) => dormFilter === "all" || a.dormitoryId === dormFilter);
+  const availableTotal = scopedDorms.reduce((s, d) => s + availableBeds(d, allocs), 0);
+
+  function openEditDorm(d: Dormitory) {
+    setEditDormId(d.id);
+    setDormForm({
+      name: d.name, address: d.address, operator: d.operator ?? "", contactPerson: d.contactPerson ?? "", contactPhone: d.contactPhone ?? "",
+      capacity: d.capacity, monthlyRent: d.monthlyRent, floorAreaSqm: d.floorAreaSqm ?? 0, rooms: d.rooms ?? 0, licenseNo: d.licenseNo ?? "",
+      licenseExpiry: d.licenseExpiry ?? "", lastInspection: d.lastInspection ?? "", status: d.status, remarks: d.remarks ?? "",
+    });
+    setDormOpen(true);
+  }
+  function openEditAlloc(a: BedAllocation) {
+    setEditAllocId(a.id);
+    setAllocForm({ dormitoryId: a.dormitoryId, employeeId: a.employeeId, roomNo: a.roomNo, bedNo: a.bedNo ?? "", checkInDate: a.checkInDate, monthlyRent: a.monthlyRent, status: a.status, remarks: a.remarks ?? "" });
+    setAllocOpen(true);
+  }
+
+  async function handleBulkFile(file: File | undefined) {
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) return toast.error("File too large (max 5 MB)");
+    try {
+      const rows = await readSpreadsheet(file);
+      if (rows.length > 1000) return toast.error("Maximum 1000 rows per upload");
+      const plan = planBulkAllocation(rows, scopedDorms, companyEmployees, allocs, today());
+      setBulkPlan({ ...plan, total: plan.valid.length + plan.errors.length });
+    } catch {
+      toast.error("Could not read the file. Use .xlsx or .csv");
+    }
+  }
+  function confirmBulk() {
+    if (!bulkPlan?.valid.length) return;
+    for (const p of bulkPlan.valid) {
+      addAllocation({ dormitoryId: p.dormitoryId, employeeId: p.employeeId, roomNo: p.roomNo, bedNo: p.bedNo || undefined, checkInDate: p.checkInDate, monthlyRent: p.monthlyRent, status: "Occupied", remarks: p.remarks || undefined });
+    }
+    toast.success(`${bulkPlan.valid.length} workers allocated${bulkPlan.errors.length ? `, ${bulkPlan.errors.length} rows skipped` : ""}`);
+    setBulkPlan(null);
+    setBulkOpen(false);
+    refresh();
+  }
+  function downloadBulkTemplate() {
+    const cols = ["P-File No", "FIN", "Dormitory", "Room", "Bed", "Check in", "Monthly rent", "Remarks"].map((l) => ({ key: l, label: l }));
+    void downloadDemoSheet(cols, [{ "P-File No": companyEmployees[0]?.employeeCode ?? "B-1", FIN: "", Dormitory: scopedDorms[0]?.name ?? "Dormitory name", Room: "01-05", Bed: "A", "Check in": today(), "Monthly rent": "", Remarks: "" }], "dormitory_worker_upload", "Workers");
+  }
 
   function saveDorm() {
     if (!dormForm.name.trim()) return toast.error("Dormitory name required");
-    addDormitory({ ...dormForm, companyId: companyId || undefined });
+    if (editDormId) updateDormitory(editDormId, dormForm);
+    else addDormitory({ ...dormForm, companyId: companyId || undefined });
+    toast.success(editDormId ? "Dormitory updated" : "Dormitory added");
+    setEditDormId(null);
     setDormForm(emptyDorm);
     setDormOpen(false);
     refresh();
-    toast.success("Dormitory added");
   }
 
   function saveAlloc() {
@@ -113,6 +164,13 @@ export default function AccommodationPage() {
       return toast.error("Dormitory, worker and room number required");
     }
     const dorm = dorms.find((d) => d.id === allocForm.dormitoryId);
+    if (editAllocId) {
+      const prev = allocs.find((a) => a.id === editAllocId);
+      if (dorm && prev && prev.dormitoryId !== dorm.id && availableBeds(dorm, allocs) <= 0) return toast.error(`${dorm.name} has no available beds`);
+      updateAllocation(editAllocId, { ...allocForm, bedNo: allocForm.bedNo || undefined, checkOutDate: allocForm.status === "Vacated" ? (prev?.checkOutDate ?? today()) : undefined });
+      setEditAllocId(null); setAllocForm(emptyAlloc); setAllocOpen(false); refresh();
+      return toast.success("Allocation updated");
+    }
     const check = dorm ? dormCapacityCheck(dorm, dormOccupancy(dorm.id)) : null;
     if (dorm && check && check.effective > 0 && check.occupied >= check.effective) {
       return toast.error(
@@ -163,9 +221,10 @@ export default function AccommodationPage() {
           </div>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
           <SummaryCard title="Dormitories" value={scopedDorms.length.toString()} icon={<Building2 className="h-5 w-5" />} variant="primary" caption="Registered housing" />
           <SummaryCard title="Total beds" value={totalBeds.toString()} icon={<BedDouble className="h-5 w-5" />} variant="default" caption="Licensed capacity" />
+          <SummaryCard title="Available seats" value={availableTotal.toString()} icon={<BedDouble className="h-5 w-5" />} variant="success" caption="Free beds right now" />
           <SummaryCard title="Occupied" value={`${occupied}`} icon={<Users className="h-5 w-5" />} variant="success" caption={`${totalBeds ? Math.round((occupied / totalBeds) * 100) : 0}% utilisation`} />
           <SummaryCard title="Monthly rent" value={`$${monthlyCost.toLocaleString()}`} icon={<BedDouble className="h-5 w-5" />} variant="warning" caption="Active allocations" />
         </div>
@@ -185,7 +244,52 @@ export default function AccommodationPage() {
                   <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input type="search" placeholder="Search worker, dorm or room..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
                 </div>
-                <Dialog open={allocOpen} onOpenChange={setAllocOpen}>
+                <div className="flex flex-wrap gap-2">
+                <Select value={dormFilter} onValueChange={setDormFilter}>
+                  <SelectTrigger className="h-9 w-48"><SelectValue placeholder="All dormitories" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All dormitories</SelectItem>
+                    {scopedDorms.map((d) => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <Dialog open={bulkOpen} onOpenChange={(o) => { setBulkOpen(o); if (!o) setBulkPlan(null); }}>
+                  <DialogTrigger asChild>
+                    <Button size="sm" variant="outline" disabled={scopedDorms.length === 0}><Upload className="mr-1 h-4 w-4" /> Upload worker list</Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                      <DialogTitle>Upload worker list (Excel)</DialogTitle>
+                      <DialogDescription>Columns: P-File No or FIN, Dormitory, Room, Bed, Check in, Monthly rent, Remarks. Dormitory name must match exactly; seats are checked before saving.</DialogDescription>
+                    </DialogHeader>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Button size="sm" variant="outline" onClick={downloadBulkTemplate}><FileSpreadsheet className="mr-1 h-4 w-4" /> Download template</Button>
+                      <Input type="file" accept=".xlsx,.xls,.csv" className="max-w-xs" onChange={(e) => { void handleBulkFile(e.target.files?.[0]); e.target.value = ""; }} />
+                    </div>
+                    {bulkPlan && (
+                      <div className="space-y-3">
+                        <p className="text-sm">{bulkPlan.total} rows · <span className="font-medium text-success">{bulkPlan.valid.length} ready</span> · <span className="font-medium text-destructive">{bulkPlan.errors.length} with problems</span></p>
+                        <div className="max-h-64 overflow-auto rounded-lg border">
+                          <Table>
+                            <TableHeader><TableRow><TableHead>Row</TableHead><TableHead>Worker</TableHead><TableHead>Dormitory</TableHead><TableHead>Room / Bed</TableHead><TableHead>Result</TableHead></TableRow></TableHeader>
+                            <TableBody>
+                              {bulkPlan.valid.map((p) => (
+                                <TableRow key={`v${p.rowNumber}`}><TableCell>{p.rowNumber}</TableCell><TableCell>{p.workerLabel}</TableCell><TableCell>{p.dormLabel}</TableCell><TableCell>{p.roomNo}{p.bedNo ? ` / ${p.bedNo}` : ""}</TableCell><TableCell><StatusBadge variant="success" label="Ready" dot /></TableCell></TableRow>
+                              ))}
+                              {bulkPlan.errors.map((e) => (
+                                <TableRow key={`e${e.rowNumber}`}><TableCell>{e.rowNumber}</TableCell><TableCell colSpan={3} className="text-destructive">{e.message}</TableCell><TableCell><StatusBadge variant="destructive" label="Skipped" dot /></TableCell></TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      </div>
+                    )}
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => { setBulkOpen(false); setBulkPlan(null); }}>Cancel</Button>
+                      <Button onClick={confirmBulk} disabled={!bulkPlan?.valid.length}>Allocate {bulkPlan?.valid.length ?? 0} workers</Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+                <Dialog open={allocOpen} onOpenChange={(o) => { setAllocOpen(o); if (!o) { setEditAllocId(null); setAllocForm(emptyAlloc); } }}>
                   <DialogTrigger asChild>
                     <Button size="sm" disabled={scopedDorms.length === 0}>
                       <Plus className="mr-1 h-4 w-4" /> Allocate bed
@@ -193,7 +297,7 @@ export default function AccommodationPage() {
                   </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
-                      <DialogTitle>Allocate bed</DialogTitle>
+                      <DialogTitle>{editAllocId ? "Edit allocation" : "Allocate bed"}</DialogTitle>
                       <DialogDescription>Assign a worker to a dormitory room.</DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-3 sm:grid-cols-2">
@@ -204,7 +308,7 @@ export default function AccommodationPage() {
                           <SelectContent>
                             {scopedDorms.map((d) => (
                               <SelectItem key={d.id} value={d.id}>
-                                {d.name} ({dormOccupancy(d.id)}/{d.capacity})
+                                {d.name} ({availableBeds(d, allocs)} free of {d.capacity})
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -212,7 +316,7 @@ export default function AccommodationPage() {
                       </div>
                       <div className="sm:col-span-2">
                         <Label>Worker</Label>
-                        <Select value={allocForm.employeeId} onValueChange={(v) => setAllocForm({ ...allocForm, employeeId: v })}>
+                        <Select disabled={!!editAllocId} value={allocForm.employeeId} onValueChange={(v) => setAllocForm({ ...allocForm, employeeId: v })}>
                           <SelectTrigger><SelectValue placeholder="Select worker" /></SelectTrigger>
                           <SelectContent>
                             {companyEmployees.map((e) => (
@@ -225,14 +329,23 @@ export default function AccommodationPage() {
                       <div><Label>Bed no</Label><Input value={allocForm.bedNo} onChange={(e) => setAllocForm({ ...allocForm, bedNo: e.target.value })} /></div>
                       <div><Label>Check-in date</Label><Input type="date" value={allocForm.checkInDate} onChange={(e) => setAllocForm({ ...allocForm, checkInDate: e.target.value })} /></div>
                       <div><Label>Monthly rent ($)</Label><Input type="number" value={allocForm.monthlyRent} onChange={(e) => setAllocForm({ ...allocForm, monthlyRent: Number(e.target.value) })} /></div>
+                      {editAllocId && (
+                        <div><Label>Status</Label>
+                          <Select value={allocForm.status} onValueChange={(v) => setAllocForm({ ...allocForm, status: v as BedAllocation["status"] })}>
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectContent>{(["Occupied", "Reserved", "Vacated"] as const).map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+                          </Select>
+                        </div>
+                      )}
                       <div className="sm:col-span-2"><Label>Remarks</Label><Textarea value={allocForm.remarks} onChange={(e) => setAllocForm({ ...allocForm, remarks: e.target.value })} /></div>
                     </div>
                     <DialogFooter>
                       <Button variant="outline" onClick={() => setAllocOpen(false)}>Cancel</Button>
-                      <Button onClick={saveAlloc}>Allocate</Button>
+                      <Button onClick={saveAlloc}>{editAllocId ? "Save" : "Allocate"}</Button>
                     </DialogFooter>
                   </DialogContent>
                 </Dialog>
+                </div>
               </div>
 
               <div className="mt-4 overflow-hidden rounded-lg border">
@@ -287,6 +400,7 @@ export default function AccommodationPage() {
                           </TableCell>
                           <TableCell>
                             <div className="flex justify-end gap-1">
+                              <Button size="icon" variant="ghost" title="Edit" onClick={() => openEditAlloc(a)}><Pencil className="h-4 w-4" /></Button>
                               {a.status !== "Vacated" && (
                                 <Button size="icon" variant="ghost" title="Move out" onClick={() => { checkOutAllocation(a.id); refresh(); toast.success("Marked as moved out"); }}>
                                   <LogOut className="h-4 w-4" />
@@ -310,13 +424,13 @@ export default function AccommodationPage() {
             <div className="rounded-xl border bg-card p-4 shadow-sm">
               <div className="flex items-center justify-between">
                 <h2 className="text-sm font-medium text-muted-foreground">Dormitory master</h2>
-                <Dialog open={dormOpen} onOpenChange={setDormOpen}>
+                <Dialog open={dormOpen} onOpenChange={(o) => { setDormOpen(o); if (!o) { setEditDormId(null); setDormForm(emptyDorm); } }}>
                   <DialogTrigger asChild>
                     <Button size="sm"><Plus className="mr-1 h-4 w-4" /> Add dormitory</Button>
                   </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
-                      <DialogTitle>Add dormitory</DialogTitle>
+                      <DialogTitle>{editDormId ? "Edit dormitory" : "Add dormitory"}</DialogTitle>
                       <DialogDescription>Register housing with capacity and licence details.</DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-3 sm:grid-cols-2">
@@ -332,6 +446,13 @@ export default function AccommodationPage() {
                       <div><Label>Licence no</Label><Input value={dormForm.licenseNo} onChange={(e) => setDormForm({ ...dormForm, licenseNo: e.target.value })} /></div>
                       <div><Label>Licence expiry</Label><Input type="date" value={dormForm.licenseExpiry} onChange={(e) => setDormForm({ ...dormForm, licenseExpiry: e.target.value })} /></div>
                       <div><Label>Last inspection</Label><Input type="date" value={dormForm.lastInspection} onChange={(e) => setDormForm({ ...dormForm, lastInspection: e.target.value })} /></div>
+                      <div><Label>Status</Label>
+                        <Select value={dormForm.status} onValueChange={(v) => setDormForm({ ...dormForm, status: v as Dormitory["status"] })}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent><SelectItem value="Active">Active</SelectItem><SelectItem value="Inactive">Inactive</SelectItem><SelectItem value="Full">Full</SelectItem></SelectContent>
+                        </Select>
+                      </div>
+                      <div className="sm:col-span-2"><Label>Remarks</Label><Textarea value={dormForm.remarks} onChange={(e) => setDormForm({ ...dormForm, remarks: e.target.value })} /></div>
                     </div>
                     <DialogFooter>
                       <Button variant="outline" onClick={() => setDormOpen(false)}>Cancel</Button>
@@ -348,17 +469,18 @@ export default function AccommodationPage() {
                       <TableHead>Dormitory</TableHead>
                       <TableHead>Address</TableHead>
                       <TableHead>Occupancy</TableHead>
+                      <TableHead>Available</TableHead>
                       <TableHead>MOM space</TableHead>
                       <TableHead>Rent / bed</TableHead>
                       <TableHead>Licence expiry</TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead className="w-16"></TableHead>
+                      <TableHead className="w-24"></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {scopedDorms.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={8} className="h-32 text-center">
+                        <TableCell colSpan={9} className="h-32 text-center">
                           <EmptyState className="border-0 bg-transparent" icon={<Building2 className="h-5 w-5" />} title="No dormitories" description="Add your first dormitory." />
                         </TableCell>
                       </TableRow>
@@ -371,6 +493,7 @@ export default function AccommodationPage() {
                           </TableCell>
                           <TableCell className="max-w-[220px] truncate">{d.address || "—"}</TableCell>
                           <TableCell>{dormOccupancy(d.id)} / {d.capacity}</TableCell>
+                          <TableCell><StatusBadge variant={availableBeds(d, allocs) > 0 ? "success" : "destructive"} label={`${availableBeds(d, allocs)} free`} dot /></TableCell>
                           <TableCell>
                             {(() => {
                               const check = dormCapacityCheck(d, dormOccupancy(d.id));
@@ -394,7 +517,8 @@ export default function AccommodationPage() {
                           <TableCell>{d.licenseExpiry || "—"}</TableCell>
                           <TableCell><StatusBadge variant={d.status === "Active" ? "success" : "ghost"} label={d.status} dot /></TableCell>
                           <TableCell>
-                            <Button size="icon" variant="ghost" title="Delete" onClick={() => { deleteDormitory(d.id); refresh(); }}>
+                            <Button size="icon" variant="ghost" title="Edit" onClick={() => openEditDorm(d)}><Pencil className="h-4 w-4" /></Button>
+                            <Button size="icon" variant="ghost" title="Delete" onClick={() => { if (confirm(`Delete ${d.name}?`)) { deleteDormitory(d.id); refresh(); } }}>
                               <Trash2 className="h-4 w-4 text-destructive" />
                             </Button>
                           </TableCell>
