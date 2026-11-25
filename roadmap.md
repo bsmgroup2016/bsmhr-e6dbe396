@@ -1,5 +1,12 @@
 # Full-section UI/UX and workflow audit
 
+## OCR disconnect recovery and latency
+
+- [ ] Add bounded parallel targeted checks without changing provider order, models, verification or human approval.
+- [ ] Preserve owner-scoped job references, tolerate temporary status/network failures and recover saved results without another paid read.
+- [ ] Connect durable execution for jobs that must finish after the browser closes; keep payloads/results in R2 and never replay ambiguous paid calls blindly.
+- [ ] Verify disconnect/reconnect, duplicate prevention, saved result recovery and unchanged claim output; report durable deployment and authenticated verification blockers.
+
 ## Activate three-stage time-card OCR
 
 - [x] Route all time-card reads through 9Router → mandatory Gemini → flagged-only OpenAI using enabled Settings credentials; preserve background jobs, review rows and Excel.
