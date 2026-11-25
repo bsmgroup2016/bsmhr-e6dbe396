@@ -51,7 +51,7 @@ export async function readCsoc(ref: string) {
  * Disagreements stay flagged for human review; no third-reader call is made.
  * When neither built-in reader is enabled, the configured OCR fallback is used.
  */
-export async function readTimeCard(ref: string) {
+export async function readTimeCardLegacy(ref: string) {
   const dataUrl = await fetchAsDataUrl(ref);
   const read = (only: string) => askAiJson({ instruction: TIME_CARD_READ_INSTRUCTION, dataUrl, only, strict: true }).then(parseCardReads);
   const [gemini, openai] = await Promise.allSettled([read("gemini"), read("openai")]);
@@ -75,7 +75,12 @@ export async function readTimeCard(ref: string) {
   return mergeCardReads(any, null, { primary: "fallback" });
 }
 
-/** Prepared consensus reader. Activation is held until official keys/model access and background transport are verified. */
+/** All time-card dispatch, including background jobs, uses the consensus reader. */
+export async function readTimeCard(ref: string) {
+  return readTimeCardWithConsensus(ref);
+}
+
+/** Uses the enabled Settings keys, including overrides; never bypass disabled readers. */
 export async function readTimeCardWithConsensus(ref: string) {
   const { activeProviders } = await import("./api-integrations.server");
   const { HR_BRAIN_BASE_URL } = await import("@/core/hr-brain");
@@ -83,10 +88,13 @@ export async function readTimeCardWithConsensus(ref: string) {
   const { toExistingClaimRows } = await import("@/core/time-card-consensus");
   const providers = await activeProviders("ocr");
   const router = providers.find(provider => provider.url.startsWith(`${HR_BRAIN_BASE_URL}/`)) ?? null;
+  const gemini = providers.find(provider => new URL(provider.url).hostname === "generativelanguage.googleapis.com");
+  const openai = providers.find(provider => new URL(provider.url).hostname === "api.openai.com");
+  if (!gemini) throw new Error("Official Gemini OCR must be enabled with a saved key in Settings");
   const result = await verifyTimeCardConsensus(await fetchAsDataUrl(ref), {
     router,
-    geminiKey: process.env['GEMINI_API_KEY'] ?? "",
-    openaiKey: process.env['OPENAI_API_KEY'] ?? "",
+    geminiKey: gemini.key,
+    openaiKey: openai?.key ?? "",
   });
   return toExistingClaimRows(result);
 }

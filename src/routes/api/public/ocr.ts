@@ -63,7 +63,7 @@ export const Route = createFileRoute("/api/public/ocr")({
           if (parsed.kind === "timecard" && parsed.background) {
             const { createOcrJob, ocrJobResponse } = await import("@/lib/ocr-jobs.server");
             const job = await createOcrJob(userId, key);
-            // Preserve the working reader until official consensus-provider access is verified.
+            // The shared time-card reader performs consensus verification for every job.
             return ocrJobResponse(request, job, ocr.readTimeCard);
           }
 

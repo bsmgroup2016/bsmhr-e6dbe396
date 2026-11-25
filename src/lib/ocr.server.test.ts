@@ -12,7 +12,7 @@ mock.module("@/lib/ai.server", () => ({
   },
 }));
 mock.module("@/lib/r2.server", () => ({ keyFromRef: (ref: string) => ref, presignGet: async () => "https://fixture.invalid/card" }));
-const { readTimeCard } = await import("./ocr.server");
+const { readTimeCardLegacy: readTimeCard } = await import("./ocr.server");
 const originalFetch = globalThis.fetch;
 
 beforeEach(() => {
