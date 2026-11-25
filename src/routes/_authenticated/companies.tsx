@@ -1,11 +1,10 @@
 import { useState } from "react";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Building2, CalendarClock, CheckCircle2, Mail, MapPin, Pencil, Phone, Plus, Trash2, Users, Wallet } from "lucide-react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { Building2, CalendarClock, CheckCircle2, Pencil, Plus, Trash2, Users, Wallet } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
-import { R2Image } from "@/components/r2-image";
+import { CompanyOverviewCards } from "@/components/dashboard/company-overview-cards";
 import { SummaryCard } from "@/components/ui/summary-card";
-import { StatusBadge } from "@/components/ui/status-badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -55,16 +54,7 @@ export const Route = createFileRoute("/_authenticated/companies")({
 
 const accents: Company["accent"][] = ["primary", "success", "warning", "info", "destructive"];
 
-const accentBg: Record<Company["accent"], string> = {
-  primary: "bg-gradient-primary",
-  success: "bg-gradient-success",
-  warning: "bg-gradient-warning",
-  info: "bg-gradient-info",
-  destructive: "bg-gradient-destructive",
-};
-
 function CompaniesPage() {
-  const navigate = useNavigate();
   const [companies, setCompanies] = useState<Company[]>(getCompanies());
   const [active, setActive] = useState<string>(getCurrentCompany());
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -77,17 +67,7 @@ function CompaniesPage() {
     setActive(getCurrentCompany());
   }
 
-  function headcount(id: string) {
-    return employees.filter((e) => (e.companyId ?? "bsm") === id).length;
-  }
-
   const money = (n: number) => `$${Math.round(n).toLocaleString("en-SG")}`;
-
-  function monthlyWage(id: string) {
-    return employees
-      .filter((e) => (e.companyId ?? "bsm") === id)
-      .reduce((s, e) => s + (e.basicSalary || 0), 0);
-  }
 
   const groupMonthlyWage = employees.reduce((s, e) => s + (e.basicSalary || 0), 0);
 
@@ -145,51 +125,15 @@ function CompaniesPage() {
           <SummaryCard title="Annualised basic wage estimate" value={money(groupMonthlyWage * 12)} icon={<CalendarClock className="h-5 w-5" />} variant="success" compact />
         </div>
 
-        <div className="grid gap-4 lg:grid-cols-3">
-          {companies.map((c) => (
-            <div
-              key={c.id}
-              role="link"
-              tabIndex={0}
-              onClick={() => navigate({ to: "/companies/$id", params: { id: companySlug(c) } })}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") navigate({ to: "/companies/$id", params: { id: companySlug(c) } });
-              }}
-              className={`relative cursor-pointer rounded-xl border bg-card p-5 shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
-                active === c.id ? "ring-2 ring-primary/60" : ""
-              }`}
-            >
-              <div className={`absolute inset-x-0 top-0 h-1 ${accentBg[c.accent]}`} />
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <div
-                    className={`flex h-11 w-11 items-center justify-center overflow-hidden rounded-lg text-sm font-bold text-primary-foreground shadow-elegant ${
-                      c.logoUrl ? "bg-card" : accentBg[c.accent]
-                    }`}
-                  >
-                    <R2Image src={c.logoUrl} alt={`${c.name} logo`} className="h-full w-full object-contain" fallback={<span>{c.code}</span>} />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="truncate font-semibold hover:underline">{c.name}</p>
-                    <p className="truncate text-xs text-muted-foreground">{c.legalName}</p>
-                  </div>
-                </div>
-                <StatusBadge variant={c.status === "Active" ? "success" : "warning"} label={c.status} />
-              </div>
-
-              <dl className="mt-4 space-y-1.5 break-words text-xs text-muted-foreground [&_svg]:shrink-0">
-                <div className="flex items-center gap-2"><Building2 className="h-3.5 w-3.5" /> UEN {c.uen} · {c.industry}</div>
-                <div className="flex items-center gap-2"><MapPin className="h-3.5 w-3.5" /> {c.address}</div>
-                <div className="flex items-center gap-2"><Phone className="h-3.5 w-3.5" /> {c.phone}</div>
-                <div className="flex items-center gap-2"><Mail className="h-3.5 w-3.5" /> {c.email}</div>
-                <div className="flex items-center gap-2"><Users className="h-3.5 w-3.5" /> {headcount(c.id)} {headcount(c.id) === 1 ? "employee" : "employees"}</div>
-                <div className="flex items-center gap-2"><Wallet className="h-3.5 w-3.5" /> {money(monthlyWage(c.id))} / month</div>
-                <div className="flex items-center gap-2"><CalendarClock className="h-3.5 w-3.5" /> {money(monthlyWage(c.id) * 12)} / year</div>
-              </dl>
-
-              <div className="mt-4 flex flex-wrap gap-2" onClick={(e) => e.stopPropagation()}>
+        <CompanyOverviewCards
+          includeGroup={false}
+          actions={(c) => {
+            const company = companies.find((x) => x.id === c.id);
+            if (!company) return null;
+            return (
+              <>
                 <Button asChild size="sm" variant="default" className="gap-1">
-                  <Link to="/companies/$id" params={{ id: companySlug(c) }}>Open dashboard</Link>
+                  <Link to="/companies/$id" params={{ id: companySlug(company) }}>Open dashboard</Link>
                 </Button>
                 <Button
                   size="sm"
@@ -202,16 +146,16 @@ function CompaniesPage() {
                 >
                   {active === c.id ? "Current company" : "Set as current"}
                 </Button>
-                <Button size="sm" variant="outline" className="gap-1" onClick={() => setEditing(c)}>
+                <Button size="sm" variant="outline" className="gap-1" onClick={() => setEditing(company)}>
                   <Pencil className="h-3.5 w-3.5" /> Edit
                 </Button>
-                <Button size="sm" variant="ghost" className="gap-1 text-destructive" onClick={() => setDeleteTarget(c)}>
+                <Button size="sm" variant="ghost" className="gap-1 text-destructive" onClick={() => setDeleteTarget(company)}>
                   <Trash2 className="h-3.5 w-3.5" /> Delete
                 </Button>
-              </div>
-            </div>
-          ))}
-        </div>
+              </>
+            );
+          }}
+        />
           </TabsContent>
 
           <TabsContent value="departments">
