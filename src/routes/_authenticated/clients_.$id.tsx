@@ -26,6 +26,7 @@ import { Input } from "@/components/ui/input";
 import { AGING_BUCKETS, daysOverdue, invoiceBalance, summarizeReceivables } from "@/core/client-receivables";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { employeeSlugById } from "@/lib/employee-slug";
+import { AiBrainAssist } from "@/components/ai-brain-assist";
 
 export const Route = createFileRoute("/_authenticated/clients_/$id")({
   head: () => ({
@@ -384,6 +385,9 @@ function ClientProfilePage() {
           </TabsContent>
 
           <TabsContent value="ar" className="space-y-4">
+            <div className="flex justify-end">
+              <AiBrainAssist label="Draft payment reminder" title={`Payment reminder — ${client.name}`} task="Write a polite, professional payment reminder email to this client. Include a subject line, the outstanding and overdue amounts, a short table of open invoices, and a request to arrange payment or share remittance details. Sign off as Accounts Department, BSM GROUP." data={() => ({ client: client.name, outstanding: data.ar.outstanding, overdue: data.ar.overdue, aging: data.ar.buckets, openInvoices: data.invoices.filter((i) => i.total - i.amountPaid > 0.005).slice(0, 30).map((i) => ({ invoice: i.invoiceNo, issued: i.issueDate, due: i.dueDate, total: i.total, paid: i.amountPaid })) })} />
+            </div>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <SummaryCard title="Outstanding" value={money(data.ar.outstanding)} icon={<Wallet className="h-5 w-5" />} variant="warning" caption={`${data.ar.openCount} open invoices`} compact />
               <SummaryCard title="Overdue" value={money(data.ar.overdue)} icon={<AlertTriangle className="h-5 w-5" />} variant={data.ar.overdue > 0 ? "destructive" : "success"} caption={`${data.ar.overdueCount} past due date`} compact />

@@ -28,8 +28,8 @@ export async function handleHrBrain(request: Request, deps: Dependencies): Promi
   try {
     const userId = await deps.verifyUser(request);
     if (!userId) return json({ error: "Not signed in" }, 401);
-    // Until feature-specific authorization is added, only administrators can spend this service's credits.
-    if (!(await deps.isAdmin(userId))) return json({ error: "Admins only" }, 403);
+    // Only staff roles (checked by the route) can spend this service's credits.
+    if (!(await deps.isAdmin(userId))) return json({ error: "Staff only" }, 403);
     const apiKey = deps.apiKey();
     if (!apiKey) return json({ error: "AI Brain is not configured. Add HR_BRAIN_API_KEY in project secrets." }, 503);
     const raw = await request.text();

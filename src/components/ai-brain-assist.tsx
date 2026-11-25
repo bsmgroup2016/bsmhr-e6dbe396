@@ -1,0 +1,39 @@
+import { useState } from "react";
+import { Brain, Copy, Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { callHrBrain } from "@/lib/hrBrain";
+
+const STYLE = "You are AI Brain, a professional HR and accounts assistant for BSM GROUP (Singapore manpower supply). Write in clear, polite, professional English. Use short headings and bullet points. Never invent facts beyond the data given. Amounts are SGD. Dates as DD MMM YYYY.";
+
+/** Reusable AI Brain helper: sends the given task + live screen data and shows an editable, copyable result. */
+export function AiBrainAssist({ label, title, task, data, size = "sm" }: { label: string; title: string; task: string; data: () => unknown; size?: "sm" | "default" }) {
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [text, setText] = useState("");
+  async function run() {
+    setOpen(true); setBusy(true); setText("");
+    try {
+      const res = await callHrBrain({ systemPrompt: STYLE, messages: [{ role: "user", content: `${task}\n\nData:\n${JSON.stringify(data(), null, 2)}` }], stream: false });
+      setText(res.choices?.[0]?.message?.content?.trim() || "AI Brain returned an empty answer.");
+    } catch (e) {
+      setText(""); toast.error(e instanceof Error ? e.message : "AI Brain request failed"); setOpen(false);
+    } finally { setBusy(false); }
+  }
+  return <>
+    <Button type="button" variant="outline" size={size} onClick={() => void run()} disabled={busy}><Brain className="mr-2 h-4 w-4" />{label}</Button>
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader><DialogTitle>{title}</DialogTitle><DialogDescription>Draft by AI Brain — review before using.</DialogDescription></DialogHeader>
+        {busy ? <p role="status" className="flex items-center gap-2 text-sm"><Loader2 className="h-4 w-4 animate-spin" />AI Brain is working…</p>
+          : <Textarea value={text} onChange={e => setText(e.target.value)} rows={16} />}
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="outline" disabled={busy} onClick={() => void run()}>Regenerate</Button>
+          <Button type="button" disabled={busy || !text} onClick={() => void navigator.clipboard.writeText(text).then(() => toast.success("Copied"))}><Copy className="mr-2 h-4 w-4" />Copy</Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  </>;
+}
