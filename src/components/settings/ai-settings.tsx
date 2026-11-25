@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { HrBrainTest } from "@/components/settings/hr-brain-test";
 
 type Category = "ocr" | "chatbot";
 type Item = {
@@ -262,6 +263,7 @@ export function ApiIntegrationSettings() {
         description="Scans time cards and documents, fills the claim-sheet Excel and creates claim sheets. Tried top to bottom." />
       <Section category="chatbot" title="2. AI Chatbot" icon={Bot} items={items} onChanged={refresh}
         description="Used only by the AI Assistant. If one runs out, the next one takes over. Never used for OCR." />
+      <HrBrainTest />
     </div>
   );
 }

@@ -1,5 +1,12 @@
 # Full-section UI/UX and workflow audit
 
+## Reusable AI Brain
+
+- [x] Add authenticated admin-only AI Brain forwarding with JSON/SSE, validated options and server-only credentials.
+- [x] Add reusable browser helper and Settings connection test; leave existing HR AI flows unchanged.
+- [x] 13 tests verify forwarding rules, stream passthrough and access denial; direct provider Say OK returned HTTP 200 and OK.
+- [ ] Verify the Settings button with a real signed-in admin. Blocker: no authorized app session is available.
+
 ## Dormitory rent billing
 
 - [x] Add dormitory/month invoice creation, unpaid-invoice edits/void, PDF/Excel, payment history and overdue balances with verified writes.

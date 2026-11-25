@@ -72,6 +72,7 @@ import { Route as ApiPublicApiIntegrationsRouteImport } from './routes/api/publi
 import { Route as ApiPublicArchiveTickRouteImport } from './routes/api/public/archive-tick'
 import { Route as ApiPublicAssistantRouteImport } from './routes/api/public/assistant'
 import { Route as ApiPublicAutomationRunRouteImport } from './routes/api/public/automation-run'
+import { Route as ApiPublicHrBrainRouteImport } from './routes/api/public/hr-brain'
 import { Route as ApiPublicLiveChatRouteImport } from './routes/api/public/live-chat'
 import { Route as ApiPublicNotifyLeaveRouteImport } from './routes/api/public/notify-leave'
 import { Route as ApiPublicOcrRouteImport } from './routes/api/public/ocr'
@@ -439,6 +440,11 @@ const ApiPublicAutomationRunRoute = ApiPublicAutomationRunRouteImport.update({
   path: '/api/public/automation-run',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHrBrainRoute = ApiPublicHrBrainRouteImport.update({
+  id: '/api/public/hr-brain',
+  path: '/api/public/hr-brain',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicLiveChatRoute = ApiPublicLiveChatRouteImport.update({
   id: '/api/public/live-chat',
   path: '/api/public/live-chat',
@@ -689,6 +695,7 @@ export interface FileRoutesByFullPath {
   '/api/public/archive-tick': typeof ApiPublicArchiveTickRoute
   '/api/public/assistant': typeof ApiPublicAssistantRoute
   '/api/public/automation-run': typeof ApiPublicAutomationRunRoute
+  '/api/public/hr-brain': typeof ApiPublicHrBrainRoute
   '/api/public/live-chat': typeof ApiPublicLiveChatRoute
   '/api/public/notify-leave': typeof ApiPublicNotifyLeaveRoute
   '/api/public/ocr': typeof ApiPublicOcrRoute
@@ -789,6 +796,7 @@ export interface FileRoutesByTo {
   '/api/public/archive-tick': typeof ApiPublicArchiveTickRoute
   '/api/public/assistant': typeof ApiPublicAssistantRoute
   '/api/public/automation-run': typeof ApiPublicAutomationRunRoute
+  '/api/public/hr-brain': typeof ApiPublicHrBrainRoute
   '/api/public/live-chat': typeof ApiPublicLiveChatRoute
   '/api/public/notify-leave': typeof ApiPublicNotifyLeaveRoute
   '/api/public/ocr': typeof ApiPublicOcrRoute
@@ -891,6 +899,7 @@ export interface FileRoutesById {
   '/api/public/archive-tick': typeof ApiPublicArchiveTickRoute
   '/api/public/assistant': typeof ApiPublicAssistantRoute
   '/api/public/automation-run': typeof ApiPublicAutomationRunRoute
+  '/api/public/hr-brain': typeof ApiPublicHrBrainRoute
   '/api/public/live-chat': typeof ApiPublicLiveChatRoute
   '/api/public/notify-leave': typeof ApiPublicNotifyLeaveRoute
   '/api/public/ocr': typeof ApiPublicOcrRoute
@@ -993,6 +1002,7 @@ export interface FileRouteTypes {
     | '/api/public/archive-tick'
     | '/api/public/assistant'
     | '/api/public/automation-run'
+    | '/api/public/hr-brain'
     | '/api/public/live-chat'
     | '/api/public/notify-leave'
     | '/api/public/ocr'
@@ -1093,6 +1103,7 @@ export interface FileRouteTypes {
     | '/api/public/archive-tick'
     | '/api/public/assistant'
     | '/api/public/automation-run'
+    | '/api/public/hr-brain'
     | '/api/public/live-chat'
     | '/api/public/notify-leave'
     | '/api/public/ocr'
@@ -1194,6 +1205,7 @@ export interface FileRouteTypes {
     | '/api/public/archive-tick'
     | '/api/public/assistant'
     | '/api/public/automation-run'
+    | '/api/public/hr-brain'
     | '/api/public/live-chat'
     | '/api/public/notify-leave'
     | '/api/public/ocr'
@@ -1246,6 +1258,7 @@ export interface RootRouteChildren {
   ApiPublicArchiveTickRoute: typeof ApiPublicArchiveTickRoute
   ApiPublicAssistantRoute: typeof ApiPublicAssistantRoute
   ApiPublicAutomationRunRoute: typeof ApiPublicAutomationRunRoute
+  ApiPublicHrBrainRoute: typeof ApiPublicHrBrainRoute
   ApiPublicLiveChatRoute: typeof ApiPublicLiveChatRoute
   ApiPublicNotifyLeaveRoute: typeof ApiPublicNotifyLeaveRoute
   ApiPublicOcrRoute: typeof ApiPublicOcrRoute
@@ -1721,6 +1734,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicAutomationRunRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hr-brain': {
+      id: '/api/public/hr-brain'
+      path: '/api/public/hr-brain'
+      fullPath: '/api/public/hr-brain'
+      preLoaderRoute: typeof ApiPublicHrBrainRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/live-chat': {
       id: '/api/public/live-chat'
       path: '/api/public/live-chat'
@@ -2171,6 +2191,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicArchiveTickRoute: ApiPublicArchiveTickRoute,
   ApiPublicAssistantRoute: ApiPublicAssistantRoute,
   ApiPublicAutomationRunRoute: ApiPublicAutomationRunRoute,
+  ApiPublicHrBrainRoute: ApiPublicHrBrainRoute,
   ApiPublicLiveChatRoute: ApiPublicLiveChatRoute,
   ApiPublicNotifyLeaveRoute: ApiPublicNotifyLeaveRoute,
   ApiPublicOcrRoute: ApiPublicOcrRoute,
