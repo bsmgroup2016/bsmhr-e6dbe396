@@ -124,8 +124,8 @@ export const Route = createFileRoute("/api/public/live-chat")({
             .map((m) => ({ role: m.sender === "user" ? ("user" as const) : ("assistant" as const), content: m.content }));
           try {
             const { runAssistant } = await import("@/lib/assistant.server");
-            // AI Brain is an admin-only option; everyone else uses the default provider chain.
-            const engine = p.action === "send" && p.engine === "hr-brain" && roles.includes("admin") ? "hr-brain" : undefined;
+            // AI Brain is optional for every staff role; default chain otherwise.
+            const engine = p.action === "send" && p.engine === "hr-brain" && roles.some((r) => ["admin","hr","manager","accounts","it"].includes(r)) ? "hr-brain" : undefined;
             const out = await runAssistant(history, auth, ANON, userId, engine ? { engine } : {});
             await addMsg(chat.id, "ai", out.reply || "(no answer)");
           } catch (e) {

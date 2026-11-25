@@ -75,7 +75,7 @@ export function LiveChatWidget() {
   const skipScrollRef = useRef(false);
   const endRef = useRef<HTMLDivElement>(null);
   const allowed = !!user && hasAssignedRole(roles);
-  const isAdmin = roles.includes("admin");
+  const isAdmin = hasAssignedRole(roles); // AI Brain toggle: all staff roles
   const [useBrain, setUseBrain] = useState(false);
 
   const load = useCallback(async () => {
