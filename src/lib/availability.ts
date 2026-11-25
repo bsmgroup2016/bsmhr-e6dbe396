@@ -31,6 +31,16 @@ export function isEmployeeAvailable(e: Employee, assignedIds: Set<string>) {
   );
 }
 
+/**
+ * Company-card workforce bands: live workers, currently working
+ * (live minus available) and available for deployment.
+ */
+export function workforceBands(workers: Employee[], assignedIds: Set<string>) {
+  const live = workers.length;
+  const available = workers.filter((e) => isEmployeeAvailable(e, assignedIds)).length;
+  return { live, working: live - available, available };
+}
+
 export function activeAssignedEmployeeIds(
   assignments: Array<{ employeeId: string; status: string }>,
 ) {

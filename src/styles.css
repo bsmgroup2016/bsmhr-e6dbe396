@@ -193,6 +193,22 @@
   border-color: color-mix(in oklab, var(--company-pluto-copper) 55%, transparent);
 }
 
+/* Workforce bands on company overview cards (green / yellow / red) */
+@utility worker-band-live {
+  background: oklch(0.82 0.19 145);
+  color: oklch(0.28 0.08 145);
+}
+
+@utility worker-band-working {
+  background: oklch(0.9 0.16 95);
+  color: oklch(0.35 0.09 85);
+}
+
+@utility worker-band-available {
+  background: oklch(0.62 0.22 27);
+  color: oklch(0.98 0.01 27);
+}
+
 /* Optional deep variant for dark surfaces inside a light page */
 .dark-panel {
   --background: oklch(0.13 0.032 281);
