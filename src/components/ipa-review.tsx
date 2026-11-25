@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight, Loader2, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { AiBrainAssist } from "@/components/ai-brain-assist";
+import { AiBrainAuto } from "@/components/ai-brain-assist";
 import { fetchR2Blob } from "@/lib/r2";
 import { IPA_DETAIL_FIELDS } from "@/core/ipa-detail-fields";
 import type { IpaExtract } from "@/core/ipa-registration";
@@ -76,7 +76,7 @@ export function IpaReview({ url, extracted, reviewed, onReviewed }: { url: strin
         {extracted.additionalDetails?.map((detail, index) => <div key={index} className="border-b pb-2"><dt className="text-muted-foreground">{detail.label}{detail.page ? ` · Page ${detail.page}` : ""}</dt><dd className="break-words">{detail.value}</dd></div>)}
       </dl>
     </details>
-    <AiBrainAssist label="AI Brain check" title="AI Brain check of IPA readings" task="Check these IPA readings for a Singapore work permit applicant. List any missing, inconsistent or suspicious values (FIN format, passport number, dates, age, salary, employer). Give a short verdict and a checklist of what HR must verify manually." data={() => ({ ...extracted, missing: missing.map(([, l]) => l) })} />
+    <AiBrainAuto title="AI Brain check" task="Check these IPA readings for a Singapore work permit applicant. List any missing, inconsistent or suspicious values (FIN format, passport number, dates, age, salary, employer). Give a short verdict and a checklist of what HR must verify manually." data={{ ...extracted, missing: missing.map(([, l]) => l) }} />
     <label className="flex items-start gap-2 text-sm"><input type="checkbox" className="mt-1 accent-primary" checked={reviewed} disabled={!image || loading || !!error} onChange={e => onReviewed(e.target.checked)} />I have checked the form details against the original IPA.</label>
   </aside>;
 }

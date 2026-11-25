@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Brain, Copy, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -36,4 +36,38 @@ export function AiBrainAssist({ label, title, task, data, size = "sm" }: { label
       </DialogContent>
     </Dialog>
   </>;
+}
+
+const autoCache = new Map<string, string>();
+
+/** Runs AI Brain automatically when shown (no click needed) and renders the result inline. Cached per data so re-renders don't spend credits. */
+export function AiBrainAuto({ title, task, data }: { title: string; task: string; data: unknown }) {
+  const key = task + JSON.stringify(data);
+  const [text, setText] = useState(() => autoCache.get(key) ?? "");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  async function run(force = false) {
+    if (!force && autoCache.has(key)) { setText(autoCache.get(key)!); return; }
+    setBusy(true); setError("");
+    try {
+      const res = await callHrBrain({ systemPrompt: STYLE, messages: [{ role: "user", content: `${task}\n\nData:\n${JSON.stringify(data, null, 2)}` }], stream: false });
+      const out = res.choices?.[0]?.message?.content?.trim() || "AI Brain returned an empty answer.";
+      autoCache.set(key, out); setText(out);
+    } catch (e) { setError(e instanceof Error ? e.message : "AI Brain request failed"); }
+    finally { setBusy(false); }
+  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { void run(); }, [key]);
+  return <div className="space-y-2 rounded-lg border p-3 text-sm">
+    <div className="flex items-center justify-between gap-2">
+      <p className="flex items-center gap-2 font-semibold"><Brain className="h-4 w-4" />{title}</p>
+      <div className="flex gap-1">
+        <Button type="button" variant="ghost" size="sm" disabled={busy} onClick={() => void run(true)}>Refresh</Button>
+        <Button type="button" variant="ghost" size="sm" disabled={busy || !text} onClick={() => void navigator.clipboard.writeText(text).then(() => toast.success("Copied"))}><Copy className="h-4 w-4" /></Button>
+      </div>
+    </div>
+    {busy ? <p role="status" className="flex items-center gap-2 text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />AI Brain is checking automatically…</p>
+      : error ? <p className="text-destructive">{error}</p>
+      : <pre className="max-h-72 overflow-y-auto whitespace-pre-wrap font-sans text-xs">{text}</pre>}
+  </div>;
 }
