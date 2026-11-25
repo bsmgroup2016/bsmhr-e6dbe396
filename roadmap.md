@@ -1,5 +1,11 @@
 # Full-section UI/UX and workflow audit
 
+## Dormitory rent billing
+
+- [x] Add dormitory/month invoice creation, unpaid-invoice edits/void, PDF/Excel, payment history and overdue balances with verified writes.
+- [x] Add fixed admin-only database setup and company-scoped billing permissions; nine focused tests pass, isolated PostgreSQL checks verify idempotency/payment limits/company denial, and controlled desktop/mobile invoice → payment → reload/PDF/Excel checks pass; preview build clean.
+- [ ] Enable billing and verify real authenticated invoice → payment → reload. Blocker: no authorized external-account session; administrator must use Rent & Payments → Enable billing once. Controlled checks do not verify production writes. Existing unrelated phase1-data test expects an outdated assets dependency list and fails; it was not changed in this request.
+
 ## MOM Compliance permit register
 
 - [x] Add current Work Permit register, company/status/search filters, pagination, edit, profile/document actions and filtered exports; repair stale compliance data after store hydration/updates.

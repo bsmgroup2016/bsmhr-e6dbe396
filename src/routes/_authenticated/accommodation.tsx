@@ -20,12 +20,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   getDormitories, getAllocations, getEmployees, getCurrentCompany,
   addDormitory, updateDormitory, updateAllocation, deleteDormitory, addAllocation, checkOutAllocation, deleteAllocation, dormOccupancy,
-  getDormitoryInvoices, addDormitoryInvoice, updateDormitoryInvoice, deleteDormitoryInvoice,
   getDormitoryInspections, addDormitoryInspection, updateDormitoryInspection, deleteDormitoryInspection,
   getDormitoryMovements, addDormitoryMovement,
 } from "@/lib/store";
 import { exportRows, readSpreadsheet, downloadDemoSheet } from "@/lib/xlsx";
 import { availableBeds, planBulkAllocation, type PlannedAllocation, type PlanError } from "@/features/dormitory/bulk-allocate";
+import { DormitoryBilling } from "@/components/dormitory-billing";
 import { HousingNotificationPanel } from "@/components/housing-notification-panel";
 import { dormCapacityCheck, SQM_PER_RESIDENT } from "@/lib/mom";
 import type { Dormitory, BedAllocation } from "@/lib/types";
@@ -33,10 +33,10 @@ import type { Dormitory, BedAllocation } from "@/lib/types";
 export const Route = createFileRoute("/_authenticated/accommodation")({
   head: () => ({
     meta: [
-      { title: "Accommodation — BSM Workforce & Operations" },
-      { name: "description", content: "Dormitory master, room allocation, occupancy and move in / move out tracking." },
-      { property: "og:title", content: "Accommodation — BSM Workforce & Operations" },
-      { property: "og:description", content: "Dormitory master, room allocation, occupancy and move in / move out tracking." },
+      { title: "Dormitory & Beds — BSM Workforce & Operations" },
+      { name: "description", content: "Manage dormitories, bed allocations, rent invoices, payments and outstanding balances." },
+      { property: "og:title", content: "Dormitory & Beds — BSM Workforce & Operations" },
+      { property: "og:description", content: "Manage dormitories, bed allocations, rent invoices, payments and outstanding balances." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -235,6 +235,7 @@ export default function AccommodationPage() {
             <TabsTrigger value="dormitories">Dormitories</TabsTrigger>
             <TabsTrigger value="history">Movement Tracking</TabsTrigger>
             <TabsTrigger value="mom-address">MOM Notification</TabsTrigger>
+            <TabsTrigger value="invoices">Rent & Payments</TabsTrigger>
           </TabsList>
 
           <TabsContent value="allocations" className="mt-4">
@@ -532,69 +533,7 @@ export default function AccommodationPage() {
           </TabsContent>
           
           <TabsContent value="invoices" className="mt-4">
-            <div className="rounded-xl border bg-card p-4 shadow-sm">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <h2 className="text-sm font-medium text-muted-foreground">Dormitory Invoices</h2>
-                </div>
-                <Button size="sm" disabled title="Dormitory invoices are unavailable">
-                  <Plus className="mr-1 h-4 w-4" /> Log invoice
-                </Button>
-              </div>
-              
-              <div className="mt-4 overflow-hidden rounded-lg border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Invoice No</TableHead>
-                      <TableHead>Dormitory</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Amount</TableHead>
-                      <TableHead>Paid</TableHead>
-                      <TableHead>Balance</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="w-16"></TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {getDormitoryInvoices().length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={8} className="h-32 text-center text-muted-foreground">
-                          Dormitory invoices are unavailable in the connected database.
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      getDormitoryInvoices()
-                        .filter(i => !companyId || i.companyId === companyId)
-                        .map((i) => (
-                        <TableRow key={i.id}>
-                          <TableCell className="font-medium">{i.invoiceNo}</TableCell>
-                          <TableCell>{dormName(i.dormitoryId)}</TableCell>
-                          <TableCell>{i.invoiceDate}</TableCell>
-                          <TableCell className="font-medium">${i.totalAmount.toLocaleString()}</TableCell>
-                          <TableCell className="text-success">${i.amountPaid.toLocaleString()}</TableCell>
-                          <TableCell className={i.totalAmount - i.amountPaid > 0 ? "text-destructive font-medium" : "text-muted-foreground"}>
-                            ${(i.totalAmount - i.amountPaid).toLocaleString()}
-                          </TableCell>
-                          <TableCell>
-                            <StatusBadge 
-                              variant={i.amountPaid >= i.totalAmount ? "success" : i.amountPaid > 0 ? "warning" : "destructive"} 
-                              label={i.amountPaid >= i.totalAmount ? "Matched" : i.amountPaid > 0 ? "Partial" : "Unpaid"} 
-                              dot 
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <Button size="icon" variant="ghost" disabled aria-label="Invoice details unavailable">
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            </div>
+            <DormitoryBilling dormitories={scopedDorms} companyId={companyId || null} />
           </TabsContent>
 
           <TabsContent value="inspections" className="mt-4">

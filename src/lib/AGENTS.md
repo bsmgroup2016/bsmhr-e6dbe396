@@ -3,3 +3,4 @@
 - Auth event callbacks defer session-dependent queries until after the session lock releases, preventing sign-in/refresh deadlocks.
 - Media mutations require server-verified admin access, target only the selected bucket, verify object writes/deletion and protect claim-template files; manual uploads preserve the scans/main split and register only small metadata.
 - Browser role reads share bounded transport retries and fail closed with explicit recovery; failed reads are not empty role assignments, and stale results cannot cross account identities.
+- Dormitory billing uses dedicated relational invoice/payment tables and a locked, caller-authorized RPC; immutable idempotent payments prevent duplicate and excess payments, while fixed admin-only setup enables only the checked-in billing migration.
