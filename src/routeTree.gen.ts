@@ -43,6 +43,7 @@ import { Route as AuthenticatedInventoryRouteImport } from './routes/_authentica
 import { Route as AuthenticatedLeaveRouteImport } from './routes/_authenticated/leave'
 import { Route as AuthenticatedMomRouteImport } from './routes/_authenticated/mom'
 import { Route as AuthenticatedMyPortalRouteImport } from './routes/_authenticated/my-portal'
+import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
 import { Route as AuthenticatedOperationsRouteImport } from './routes/_authenticated/operations'
 import { Route as AuthenticatedPayrollRouteImport } from './routes/_authenticated/payroll'
 import { Route as AuthenticatedProjectsRouteImport } from './routes/_authenticated/projects'
@@ -71,12 +72,14 @@ import { Route as ApiPublicApiIntegrationsRouteImport } from './routes/api/publi
 import { Route as ApiPublicArchiveTickRouteImport } from './routes/api/public/archive-tick'
 import { Route as ApiPublicAssistantRouteImport } from './routes/api/public/assistant'
 import { Route as ApiPublicAutomationRunRouteImport } from './routes/api/public/automation-run'
+import { Route as ApiPublicHrBrainRouteImport } from './routes/api/public/hr-brain'
 import { Route as ApiPublicLiveChatRouteImport } from './routes/api/public/live-chat'
 import { Route as ApiPublicNotifyLeaveRouteImport } from './routes/api/public/notify-leave'
 import { Route as ApiPublicOcrRouteImport } from './routes/api/public/ocr'
 import { Route as ApiPublicProvisionEmployeeRouteImport } from './routes/api/public/provision-employee'
 import { Route as ApiPublicR2DeleteRouteImport } from './routes/api/public/r2-delete'
 import { Route as ApiPublicR2FileRouteImport } from './routes/api/public/r2-file'
+import { Route as ApiPublicR2FilesRouteImport } from './routes/api/public/r2-files'
 import { Route as ApiPublicR2SignedRouteImport } from './routes/api/public/r2-signed'
 import { Route as ApiPublicR2StatusRouteImport } from './routes/api/public/r2-status'
 import { Route as ApiPublicR2UploadRouteImport } from './routes/api/public/r2-upload'
@@ -284,6 +287,11 @@ const AuthenticatedMyPortalRoute = AuthenticatedMyPortalRouteImport.update({
   path: '/my-portal',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedOnboardingRoute = AuthenticatedOnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedOperationsRoute = AuthenticatedOperationsRouteImport.update({
   id: '/operations',
   path: '/operations',
@@ -432,6 +440,11 @@ const ApiPublicAutomationRunRoute = ApiPublicAutomationRunRouteImport.update({
   path: '/api/public/automation-run',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHrBrainRoute = ApiPublicHrBrainRouteImport.update({
+  id: '/api/public/hr-brain',
+  path: '/api/public/hr-brain',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicLiveChatRoute = ApiPublicLiveChatRouteImport.update({
   id: '/api/public/live-chat',
   path: '/api/public/live-chat',
@@ -461,6 +474,11 @@ const ApiPublicR2DeleteRoute = ApiPublicR2DeleteRouteImport.update({
 const ApiPublicR2FileRoute = ApiPublicR2FileRouteImport.update({
   id: '/api/public/r2-file',
   path: '/api/public/r2-file',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicR2FilesRoute = ApiPublicR2FilesRouteImport.update({
+  id: '/api/public/r2-files',
+  path: '/api/public/r2-files',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicR2SignedRoute = ApiPublicR2SignedRouteImport.update({
@@ -648,6 +666,7 @@ export interface FileRoutesByFullPath {
   '/leave': typeof AuthenticatedLeaveRoute
   '/mom': typeof AuthenticatedMomRoute
   '/my-portal': typeof AuthenticatedMyPortalRoute
+  '/onboarding': typeof AuthenticatedOnboardingRoute
   '/operations': typeof AuthenticatedOperationsRoute
   '/payroll': typeof AuthenticatedPayrollRoute
   '/projects': typeof AuthenticatedProjectsRoute
@@ -676,12 +695,14 @@ export interface FileRoutesByFullPath {
   '/api/public/archive-tick': typeof ApiPublicArchiveTickRoute
   '/api/public/assistant': typeof ApiPublicAssistantRoute
   '/api/public/automation-run': typeof ApiPublicAutomationRunRoute
+  '/api/public/hr-brain': typeof ApiPublicHrBrainRoute
   '/api/public/live-chat': typeof ApiPublicLiveChatRoute
   '/api/public/notify-leave': typeof ApiPublicNotifyLeaveRoute
   '/api/public/ocr': typeof ApiPublicOcrRoute
   '/api/public/provision-employee': typeof ApiPublicProvisionEmployeeRoute
   '/api/public/r2-delete': typeof ApiPublicR2DeleteRoute
   '/api/public/r2-file': typeof ApiPublicR2FileRoute
+  '/api/public/r2-files': typeof ApiPublicR2FilesRoute
   '/api/public/r2-signed': typeof ApiPublicR2SignedRoute
   '/api/public/r2-status': typeof ApiPublicR2StatusRoute
   '/api/public/r2-upload': typeof ApiPublicR2UploadRoute
@@ -745,6 +766,7 @@ export interface FileRoutesByTo {
   '/leave': typeof AuthenticatedLeaveRoute
   '/mom': typeof AuthenticatedMomRoute
   '/my-portal': typeof AuthenticatedMyPortalRoute
+  '/onboarding': typeof AuthenticatedOnboardingRoute
   '/operations': typeof AuthenticatedOperationsRoute
   '/payroll': typeof AuthenticatedPayrollRoute
   '/projects': typeof AuthenticatedProjectsRoute
@@ -774,12 +796,14 @@ export interface FileRoutesByTo {
   '/api/public/archive-tick': typeof ApiPublicArchiveTickRoute
   '/api/public/assistant': typeof ApiPublicAssistantRoute
   '/api/public/automation-run': typeof ApiPublicAutomationRunRoute
+  '/api/public/hr-brain': typeof ApiPublicHrBrainRoute
   '/api/public/live-chat': typeof ApiPublicLiveChatRoute
   '/api/public/notify-leave': typeof ApiPublicNotifyLeaveRoute
   '/api/public/ocr': typeof ApiPublicOcrRoute
   '/api/public/provision-employee': typeof ApiPublicProvisionEmployeeRoute
   '/api/public/r2-delete': typeof ApiPublicR2DeleteRoute
   '/api/public/r2-file': typeof ApiPublicR2FileRoute
+  '/api/public/r2-files': typeof ApiPublicR2FilesRoute
   '/api/public/r2-signed': typeof ApiPublicR2SignedRoute
   '/api/public/r2-status': typeof ApiPublicR2StatusRoute
   '/api/public/r2-upload': typeof ApiPublicR2UploadRoute
@@ -845,6 +869,7 @@ export interface FileRoutesById {
   '/_authenticated/leave': typeof AuthenticatedLeaveRoute
   '/_authenticated/mom': typeof AuthenticatedMomRoute
   '/_authenticated/my-portal': typeof AuthenticatedMyPortalRoute
+  '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/_authenticated/operations': typeof AuthenticatedOperationsRoute
   '/_authenticated/payroll': typeof AuthenticatedPayrollRoute
   '/_authenticated/projects': typeof AuthenticatedProjectsRoute
@@ -874,12 +899,14 @@ export interface FileRoutesById {
   '/api/public/archive-tick': typeof ApiPublicArchiveTickRoute
   '/api/public/assistant': typeof ApiPublicAssistantRoute
   '/api/public/automation-run': typeof ApiPublicAutomationRunRoute
+  '/api/public/hr-brain': typeof ApiPublicHrBrainRoute
   '/api/public/live-chat': typeof ApiPublicLiveChatRoute
   '/api/public/notify-leave': typeof ApiPublicNotifyLeaveRoute
   '/api/public/ocr': typeof ApiPublicOcrRoute
   '/api/public/provision-employee': typeof ApiPublicProvisionEmployeeRoute
   '/api/public/r2-delete': typeof ApiPublicR2DeleteRoute
   '/api/public/r2-file': typeof ApiPublicR2FileRoute
+  '/api/public/r2-files': typeof ApiPublicR2FilesRoute
   '/api/public/r2-signed': typeof ApiPublicR2SignedRoute
   '/api/public/r2-status': typeof ApiPublicR2StatusRoute
   '/api/public/r2-upload': typeof ApiPublicR2UploadRoute
@@ -946,6 +973,7 @@ export interface FileRouteTypes {
     | '/leave'
     | '/mom'
     | '/my-portal'
+    | '/onboarding'
     | '/operations'
     | '/payroll'
     | '/projects'
@@ -974,12 +1002,14 @@ export interface FileRouteTypes {
     | '/api/public/archive-tick'
     | '/api/public/assistant'
     | '/api/public/automation-run'
+    | '/api/public/hr-brain'
     | '/api/public/live-chat'
     | '/api/public/notify-leave'
     | '/api/public/ocr'
     | '/api/public/provision-employee'
     | '/api/public/r2-delete'
     | '/api/public/r2-file'
+    | '/api/public/r2-files'
     | '/api/public/r2-signed'
     | '/api/public/r2-status'
     | '/api/public/r2-upload'
@@ -1043,6 +1073,7 @@ export interface FileRouteTypes {
     | '/leave'
     | '/mom'
     | '/my-portal'
+    | '/onboarding'
     | '/operations'
     | '/payroll'
     | '/projects'
@@ -1072,12 +1103,14 @@ export interface FileRouteTypes {
     | '/api/public/archive-tick'
     | '/api/public/assistant'
     | '/api/public/automation-run'
+    | '/api/public/hr-brain'
     | '/api/public/live-chat'
     | '/api/public/notify-leave'
     | '/api/public/ocr'
     | '/api/public/provision-employee'
     | '/api/public/r2-delete'
     | '/api/public/r2-file'
+    | '/api/public/r2-files'
     | '/api/public/r2-signed'
     | '/api/public/r2-status'
     | '/api/public/r2-upload'
@@ -1142,6 +1175,7 @@ export interface FileRouteTypes {
     | '/_authenticated/leave'
     | '/_authenticated/mom'
     | '/_authenticated/my-portal'
+    | '/_authenticated/onboarding'
     | '/_authenticated/operations'
     | '/_authenticated/payroll'
     | '/_authenticated/projects'
@@ -1171,12 +1205,14 @@ export interface FileRouteTypes {
     | '/api/public/archive-tick'
     | '/api/public/assistant'
     | '/api/public/automation-run'
+    | '/api/public/hr-brain'
     | '/api/public/live-chat'
     | '/api/public/notify-leave'
     | '/api/public/ocr'
     | '/api/public/provision-employee'
     | '/api/public/r2-delete'
     | '/api/public/r2-file'
+    | '/api/public/r2-files'
     | '/api/public/r2-signed'
     | '/api/public/r2-status'
     | '/api/public/r2-upload'
@@ -1222,12 +1258,14 @@ export interface RootRouteChildren {
   ApiPublicArchiveTickRoute: typeof ApiPublicArchiveTickRoute
   ApiPublicAssistantRoute: typeof ApiPublicAssistantRoute
   ApiPublicAutomationRunRoute: typeof ApiPublicAutomationRunRoute
+  ApiPublicHrBrainRoute: typeof ApiPublicHrBrainRoute
   ApiPublicLiveChatRoute: typeof ApiPublicLiveChatRoute
   ApiPublicNotifyLeaveRoute: typeof ApiPublicNotifyLeaveRoute
   ApiPublicOcrRoute: typeof ApiPublicOcrRoute
   ApiPublicProvisionEmployeeRoute: typeof ApiPublicProvisionEmployeeRoute
   ApiPublicR2DeleteRoute: typeof ApiPublicR2DeleteRoute
   ApiPublicR2FileRoute: typeof ApiPublicR2FileRoute
+  ApiPublicR2FilesRoute: typeof ApiPublicR2FilesRoute
   ApiPublicR2SignedRoute: typeof ApiPublicR2SignedRoute
   ApiPublicR2StatusRoute: typeof ApiPublicR2StatusRoute
   ApiPublicR2UploadRoute: typeof ApiPublicR2UploadRoute
@@ -1493,6 +1531,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMyPortalRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/onboarding': {
+      id: '/_authenticated/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof AuthenticatedOnboardingRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/operations': {
       id: '/_authenticated/operations'
       path: '/operations'
@@ -1689,6 +1734,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicAutomationRunRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hr-brain': {
+      id: '/api/public/hr-brain'
+      path: '/api/public/hr-brain'
+      fullPath: '/api/public/hr-brain'
+      preLoaderRoute: typeof ApiPublicHrBrainRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/live-chat': {
       id: '/api/public/live-chat'
       path: '/api/public/live-chat'
@@ -1729,6 +1781,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/r2-file'
       fullPath: '/api/public/r2-file'
       preLoaderRoute: typeof ApiPublicR2FileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/r2-files': {
+      id: '/api/public/r2-files'
+      path: '/api/public/r2-files'
+      fullPath: '/api/public/r2-files'
+      preLoaderRoute: typeof ApiPublicR2FilesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/r2-signed': {
@@ -1966,6 +2025,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedLeaveRoute: typeof AuthenticatedLeaveRoute
   AuthenticatedMomRoute: typeof AuthenticatedMomRoute
   AuthenticatedMyPortalRoute: typeof AuthenticatedMyPortalRoute
+  AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
   AuthenticatedOperationsRoute: typeof AuthenticatedOperationsRoute
   AuthenticatedPayrollRoute: typeof AuthenticatedPayrollRoute
   AuthenticatedProjectsRoute: typeof AuthenticatedProjectsRoute
@@ -2018,6 +2078,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedLeaveRoute: AuthenticatedLeaveRoute,
   AuthenticatedMomRoute: AuthenticatedMomRoute,
   AuthenticatedMyPortalRoute: AuthenticatedMyPortalRoute,
+  AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
   AuthenticatedOperationsRoute: AuthenticatedOperationsRoute,
   AuthenticatedPayrollRoute: AuthenticatedPayrollRoute,
   AuthenticatedProjectsRoute: AuthenticatedProjectsRoute,
@@ -2130,12 +2191,14 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicArchiveTickRoute: ApiPublicArchiveTickRoute,
   ApiPublicAssistantRoute: ApiPublicAssistantRoute,
   ApiPublicAutomationRunRoute: ApiPublicAutomationRunRoute,
+  ApiPublicHrBrainRoute: ApiPublicHrBrainRoute,
   ApiPublicLiveChatRoute: ApiPublicLiveChatRoute,
   ApiPublicNotifyLeaveRoute: ApiPublicNotifyLeaveRoute,
   ApiPublicOcrRoute: ApiPublicOcrRoute,
   ApiPublicProvisionEmployeeRoute: ApiPublicProvisionEmployeeRoute,
   ApiPublicR2DeleteRoute: ApiPublicR2DeleteRoute,
   ApiPublicR2FileRoute: ApiPublicR2FileRoute,
+  ApiPublicR2FilesRoute: ApiPublicR2FilesRoute,
   ApiPublicR2SignedRoute: ApiPublicR2SignedRoute,
   ApiPublicR2StatusRoute: ApiPublicR2StatusRoute,
   ApiPublicR2UploadRoute: ApiPublicR2UploadRoute,

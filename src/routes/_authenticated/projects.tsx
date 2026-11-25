@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useCreateDialog } from "@/hooks/use-create-dialog";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   Plus,
   Search,
@@ -18,7 +18,13 @@ import {
 } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
-import { ExportButton } from "@/components/data-io";
+import { getCompanies } from "@/lib/store";
+import { clientCompanyOptions } from "@/core/client-filters";
+import { ExportButton, ImportDialog } from "@/components/data-io";
+import { PROJECT_IMPORT_FIELDS, prepareProjectImport } from "@/core/project-import";
+import { pick, type ImportColumn } from "@/lib/xlsx";
+
+const PROJECT_IMPORT_COLUMNS: ImportColumn[] = PROJECT_IMPORT_FIELDS.map((f) => ({ ...f }));
 import { SummaryCard } from "@/components/ui/summary-card";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -92,6 +98,8 @@ export default function ProjectsPage() {
   const [projects, setProjects] = useState(getProjects());
   const [sites, setSites] = useState(getSites());
   const [search, setSearch] = useState("");
+  const [companies] = useState(() => getCompanies());
+  const [companyFilter, setCompanyFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<ProjectStatus | "all">("all");
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [isCreateProjectOpen, setIsCreateProjectOpen] = useCreateDialog(
@@ -101,8 +109,11 @@ export default function ProjectsPage() {
   const [viewingProject, setViewingProject] = useState<Project | null>(null);
   const [addSiteProject, setAddSiteProject] = useState<Project | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Project | null>(null);
+  const [editingSite, setEditingSite] = useState<Site | null>(null);
   const [crewProject, setCrewProject] = useState<Project | null>(null);
 
+  const [clientFilter, setClientFilter] = useState<string>("all");
+  const clientName = (id: string) => clients.find((x) => x.id === id)?.name ?? "No client";
   const filtered = projects.filter((p) => {
     const q = search.toLowerCase();
     const c = clients.find((x) => x.id === p.clientId);
@@ -110,9 +121,12 @@ export default function ProjectsPage() {
       p.name.toLowerCase().includes(q) ||
       p.code.toLowerCase().includes(q) ||
       p.location.toLowerCase().includes(q) ||
-      c?.name.toLowerCase().includes(q);
-    return matchesSearch && (statusFilter === "all" || p.status === statusFilter);
-  });
+      c?.name.toLowerCase().includes(q) ||
+      sites.some((st) => st.projectId === p.id && `${st.name} ${st.location}`.toLowerCase().includes(q));
+    const matchesCompany = companyFilter === "all" || (c?.companyId ?? "") === companyFilter;
+    const matchesClient = clientFilter === "all" || p.clientId === clientFilter;
+    return matchesSearch && matchesCompany && matchesClient && (statusFilter === "all" || p.status === statusFilter);
+  }).sort((a, b) => clientName(a.clientId).localeCompare(clientName(b.clientId)) || a.name.localeCompare(b.name));
 
   const activeProjects = projects.filter((p) => p.status === "Active").length;
   const totalRequired = projects.reduce((s, p) => s + p.requiredWorkers, 0);
@@ -142,6 +156,14 @@ export default function ProjectsPage() {
     });
     setIsCreateProjectOpen(false);
     refresh();
+  }
+
+  function handleImportProjects(rows: Record<string, string>[]) {
+    const keyed = rows.map((row) => Object.fromEntries(PROJECT_IMPORT_COLUMNS.map((c) => [c.key, pick(row, c)])));
+    const { projects: ready, errors } = prepareProjectImport(keyed, getClients(), getProjects());
+    for (const project of ready) addProject(project);
+    refresh();
+    return { imported: ready.length, errors };
   }
 
   function handleEditProject(formData: FormData) {
@@ -211,6 +233,16 @@ export default function ProjectsPage() {
             </DialogContent>
           </Dialog>
           <div className="mt-2 flex flex-wrap gap-2 sm:mt-0">
+            <ImportDialog
+              title="Bulk upload projects / sites"
+              description="Upload an Excel/CSV with Client Name and Project / Site, then match its columns. One client can have many projects. Clients must already exist; duplicates are skipped."
+              templateName="projects"
+              label="Bulk upload"
+              columns={PROJECT_IMPORT_COLUMNS}
+              onImport={handleImportProjects}
+              onDone={refresh}
+              mappable
+            />
             <ExportButton
               rows={filtered.map((p) => ({
                 Code: p.code,
@@ -240,8 +272,31 @@ export default function ProjectsPage() {
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div className="relative w-full max-w-sm">
               <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input aria-label="Search projects" type="search" placeholder="Search projects..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+              <Input aria-label="Search projects" type="search" placeholder="Search project, site, client, location..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
             </div>
+            <div className="flex w-full flex-col gap-2 sm:flex-row lg:w-auto">
+            <Select value={companyFilter} onValueChange={setCompanyFilter}>
+              <SelectTrigger aria-label="Company" className="w-full sm:w-64">
+                <SelectValue placeholder="Company" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All companies</SelectItem>
+                {clientCompanyOptions(companies).map((o) => (
+                  <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={clientFilter} onValueChange={setClientFilter}>
+              <SelectTrigger aria-label="Client" className="w-full sm:w-56">
+                <SelectValue placeholder="Client" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All clients</SelectItem>
+                {[...clients].sort((a, b) => a.name.localeCompare(b.name)).map((c) => (
+                  <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as ProjectStatus | "all")}>
               <SelectTrigger aria-label="Project status" className="w-full sm:w-40">
                 <SelectValue placeholder="Status" />
@@ -255,25 +310,27 @@ export default function ProjectsPage() {
                 ))}
               </SelectContent>
             </Select>
+            </div>
           </div>
 
           {/* Mobile card list */}
-          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground"><span>{filtered.length} of {projects.length} projects</span>{(search || statusFilter !== "all") && <Button size="sm" variant="ghost" onClick={() => { setSearch(""); setStatusFilter("all"); }}>Clear filters</Button>}</div>
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground"><span>{filtered.length} of {projects.length} projects / sites · {new Set(filtered.map((x) => x.clientId)).size} clients</span>{(search || statusFilter !== "all" || companyFilter !== "all" || clientFilter !== "all") && <Button size="sm" variant="ghost" onClick={() => { setSearch(""); setStatusFilter("all"); setCompanyFilter("all"); setClientFilter("all"); }}>Clear filters</Button>}</div>
           <div className="mt-4 space-y-3 lg:hidden">
             {filtered.length === 0 ? (
               <EmptyState icon={<Building2 className="h-5 w-5" />} title="No projects found" description="Add a project to get started." />
             ) : (
-              filtered.map((p) => {
+              filtered.map((p, i) => {
                 const client = clients.find((c) => c.id === p.clientId);
                 const f = projectFulfilment(p, sites, assignments);
                 const projectSites = sites.filter((s) => s.projectId === p.id);
                 return (
-                  <div key={`m-${p.id}`} className="rounded-lg border bg-card p-3">
+                  <div key={`m-${p.id}`} className="space-y-2">
+                  <div className="rounded-lg border bg-card p-3">
                     <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
                       <div className="min-w-0">
                         <div className="truncate font-medium leading-tight">{p.name}</div>
                         <div className="mt-0.5 truncate text-xs text-muted-foreground">
-                          {p.code} · {client?.name}
+                          {p.code}
                         </div>
                         <div className="mt-0.5 truncate text-xs text-muted-foreground">{p.location}</div>
                       </div>
@@ -357,6 +414,7 @@ export default function ProjectsPage() {
                       <span className="shrink-0 text-xs text-muted-foreground">{projectSites.length} sites</span>
                     </div>
                   </div>
+                  </div>
                 );
               })
             )}
@@ -367,8 +425,9 @@ export default function ProjectsPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-10"></TableHead>
-                  <TableHead className="w-24 whitespace-nowrap">Code</TableHead>
-                  <TableHead className="min-w-[15rem]">Project / Client</TableHead>
+                  <TableHead className="w-20 whitespace-nowrap text-xs">Code</TableHead>
+                  <TableHead className="min-w-[14rem]">Project / Site</TableHead>
+                  <TableHead className="min-w-[12rem]">Client</TableHead>
                   <TableHead className="min-w-[11rem]">Location</TableHead>
                   <TableHead className="w-[10.5rem] whitespace-nowrap">Start date</TableHead>
                   <TableHead className="w-[10.5rem] whitespace-nowrap">End date</TableHead>
@@ -380,12 +439,12 @@ export default function ProjectsPage() {
               <TableBody>
                 {filtered.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="h-32 text-center">
+                    <TableCell colSpan={10} className="h-32 text-center">
                       <EmptyState className="bg-transparent border-0" icon={<Building2 className="h-5 w-5" />} title="No projects found" description="Add a project to get started." />
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filtered.map((p) => {
+                  filtered.map((p, i) => {
                     const isExpanded = expanded.has(p.id);
                     const projectSites = sites.filter((s) => s.projectId === p.id);
                     const client = clients.find((c) => c.id === p.clientId);
@@ -408,10 +467,23 @@ export default function ProjectsPage() {
                               {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                             </Button>
                           </TableCell>
-                          <TableCell className="whitespace-nowrap align-middle font-medium">{p.code}</TableCell>
+                          <TableCell className="whitespace-nowrap align-middle font-mono text-xs text-muted-foreground">{p.code}</TableCell>
                           <TableCell className="align-middle">
                             <div className="font-medium leading-tight">{p.name}</div>
-                            <div className="mt-0.5 text-xs text-muted-foreground">{client?.name}</div>
+                          </TableCell>
+                          <TableCell className="align-middle text-sm">
+                            {client ? (
+                              <Link
+                                to="/clients/$id"
+                                params={{ id: client.id }}
+                                className="font-medium text-primary hover:underline"
+                                onClick={(evt) => evt.stopPropagation()}
+                              >
+                                {client.name}
+                              </Link>
+                            ) : (
+                              "—"
+                            )}
                           </TableCell>
                           <TableCell className="align-middle text-sm text-muted-foreground">{p.location}</TableCell>
                           <TableCell className="align-middle" onClick={(evt) => evt.stopPropagation()}>
@@ -507,7 +579,7 @@ export default function ProjectsPage() {
                         </TableRow>
                         {isExpanded && (
                           <TableRow key={`${p.id}-sites`}>
-                            <TableCell colSpan={9} className="bg-muted/30 p-0">
+                            <TableCell colSpan={10} className="bg-muted/30 p-0">
                               <div className="px-6 py-3">
                                 <p className="mb-2 text-sm font-medium text-muted-foreground">Sites</p>
                                 {projectSites.length === 0 ? (
@@ -523,7 +595,12 @@ export default function ProjectsPage() {
                                             <p className="text-xs text-muted-foreground">{s.location} · Required: {s.requiredWorkers}</p>
                                           </div>
                                         </div>
-                                        <StatusBadge variant={s.status === "Active" ? "success" : "ghost"} label={s.status} />
+                                        <div className="flex items-center gap-2">
+                                          <StatusBadge variant={s.status === "Active" ? "success" : "ghost"} label={s.status} />
+                                          <Button size="sm" variant="ghost" aria-label={`Edit site ${s.name}`} onClick={() => setEditingSite(s)}>
+                                            <Pencil className="mr-1 h-3.5 w-3.5" />Edit
+                                          </Button>
+                                        </div>
                                       </div>
                                     ))}
                                   </div>
@@ -540,6 +617,45 @@ export default function ProjectsPage() {
             </Table>
           </div>
         </div>
+
+        <Dialog open={!!editingSite} onOpenChange={(open) => !open && setEditingSite(null)}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Edit site</DialogTitle>
+              <DialogDescription>Update site name, location, manpower and status.</DialogDescription>
+            </DialogHeader>
+            {editingSite && (
+              <form
+                className="space-y-3"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const fd = new FormData(e.currentTarget);
+                  const name = String(fd.get("name") ?? "").trim();
+                  if (!name) return;
+                  updateSite(editingSite.id, {
+                    name,
+                    location: String(fd.get("location") ?? "").trim(),
+                    requiredWorkers: Math.max(0, Number(fd.get("requiredWorkers") || 0)),
+                    status: fd.get("status") as Site["status"],
+                  });
+                  setEditingSite(null);
+                  refresh();
+                }}
+              >
+                <div className="space-y-1"><Label htmlFor="site-name">Site name</Label><Input id="site-name" name="name" required defaultValue={editingSite.name} /></div>
+                <div className="space-y-1"><Label htmlFor="site-location">Location</Label><Input id="site-location" name="location" defaultValue={editingSite.location} /></div>
+                <div className="space-y-1"><Label htmlFor="site-req">Required workers</Label><Input id="site-req" name="requiredWorkers" type="number" min={0} defaultValue={editingSite.requiredWorkers} /></div>
+                <div className="space-y-1">
+                  <Label htmlFor="site-status">Status</Label>
+                  <select id="site-status" name="status" defaultValue={editingSite.status} className="h-9 w-full rounded-md border bg-background px-3 text-sm">
+                    {(["Active", "Inactive", "Completed"] as const).map((st) => <option key={st} value={st}>{st}</option>)}
+                  </select>
+                </div>
+                <Button type="submit" className="w-full">Save site</Button>
+              </form>
+            )}
+          </DialogContent>
+        </Dialog>
 
         <Dialog open={!!editingProject} onOpenChange={(open) => !open && setEditingProject(null)}>
           <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">

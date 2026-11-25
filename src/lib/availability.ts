@@ -1,4 +1,5 @@
 import type { Employee } from "@/lib/types";
+import { onboardingIncomplete } from "@/core/onboarding";
 
 /** Work permit / pass expired (or expiring today) — worker cannot be deployed. */
 export function hasExpiredWorkPermit(e: Employee) {
@@ -19,6 +20,7 @@ export function hasExpiredWorkPermit(e: Employee) {
 export function isEmployeeAvailable(e: Employee, assignedIds: Set<string>) {
   const deploy = e.deploymentStatus ?? "Available";
   return (
+    !onboardingIncomplete(e) &&
     !assignedIds.has(e.id) &&
     deploy !== "Blocked" &&
     deploy !== "Not Deployable" &&
@@ -27,6 +29,18 @@ export function isEmployeeAvailable(e: Employee, assignedIds: Set<string>) {
     e.status === "Active" &&
     !hasExpiredWorkPermit(e)
   );
+}
+
+/**
+ * Company-card workforce bands: live workers, currently working
+ * (live minus available) and available for deployment.
+ */
+export function workforceBands(workers: Employee[], assignedIds: Set<string>) {
+  const live = workers.length;
+  const available = workers.filter((e) => isEmployeeAvailable(e, assignedIds)).length;
+  // Working = actually on a site (active assignment or marked Deployed); on-leave / not-deployable are neither.
+  const working = workers.filter((e) => assignedIds.has(e.id) || e.deploymentStatus === "Deployed" || (e.status as string) === "Deployed").length;
+  return { live, working, available };
 }
 
 export function activeAssignedEmployeeIds(

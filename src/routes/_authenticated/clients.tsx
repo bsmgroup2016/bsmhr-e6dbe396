@@ -15,7 +15,11 @@ import {
 } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
-import { ExportButton } from "@/components/data-io";
+import { ExportButton, ImportDialog } from "@/components/data-io";
+import { CLIENT_IMPORT_FIELDS, prepareClientImport } from "@/core/client-import";
+import { pick, type ImportColumn } from "@/lib/xlsx";
+
+const CLIENT_IMPORT_COLUMNS: ImportColumn[] = CLIENT_IMPORT_FIELDS.map((f) => ({ ...f }));
 import { SummaryCard } from "@/components/ui/summary-card";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -59,8 +63,9 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { getClients, getProjects, getContracts, getInvoices, addClient, updateClient, deleteClient } from "@/lib/store";
-import type { Client, ClientStatus } from "@/lib/types";
+import { getClients, getProjects, getContracts, getInvoices, addClient, updateClient, deleteClient, getCompanies, getCurrentCompany } from "@/lib/store";
+import { clientCompanyOptions, filterClients } from "@/core/client-filters";
+import type { Client, ClientStatus, Company } from "@/lib/types";
 
 const statuses: ClientStatus[] = ["Active", "Inactive", "Prospect"];
 const industries = ["Construction", "Petrochemical", "Aviation", "Utilities", "Manufacturing", "Marine", "Other"];
@@ -85,22 +90,18 @@ export const Route = createFileRoute("/_authenticated/clients")({
 export default function ClientsPage() {
   const [clients, setClients] = useState<Client[]>(getClients());
   const [projects] = useState(getProjects());
+  const [companies] = useState<Company[]>(() => getCompanies());
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<ClientStatus | "all">("all");
+  const [companyFilter, setCompanyFilter] = useState<string>("all");
+  const companyOptions = clientCompanyOptions(companies);
+  const companyName = (id?: string) => companies.find((c) => c.id === id)?.name ?? "—";
   const [isCreateOpen, setIsCreateOpen] = useCreateDialog(Route.useSearch().new === true);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [viewingClient, setViewingClient] = useState<Client | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Client | null>(null);
 
-  const filtered = clients.filter((c) => {
-    const q = search.toLowerCase();
-    const matchesSearch =
-      c.name.toLowerCase().includes(q) ||
-      c.code.toLowerCase().includes(q) ||
-      c.contactPerson.toLowerCase().includes(q) ||
-      c.email.toLowerCase().includes(q);
-    return matchesSearch && (statusFilter === "all" || c.status === statusFilter);
-  });
+  const filtered = filterClients(clients, { search, status: statusFilter, companyId: companyFilter });
 
   const activeCount = clients.filter((c) => c.status === "Active").length;
   const prospectCount = clients.filter((c) => c.status === "Prospect").length;
@@ -133,11 +134,20 @@ export default function ClientsPage() {
       address: formData.get("address") as string,
       status: formData.get("status") as ClientStatus,
       industry: formData.get("industry") as string,
+      companyId: (formData.get("companyId") as string) || undefined,
       contractStart: (formData.get("contractStart") as string) || undefined,
       contractEnd: (formData.get("contractEnd") as string) || undefined,
     });
     setIsCreateOpen(false);
     refresh();
+  }
+
+  function handleImport(rows: Record<string, string>[]) {
+    const keyed = rows.map((row) => Object.fromEntries(CLIENT_IMPORT_COLUMNS.map((c) => [c.key, pick(row, c)])));
+    const { clients: ready, errors } = prepareClientImport(keyed, getClients().map((c) => c.name), companies);
+    for (const client of ready) addClient(client);
+    refresh();
+    return { imported: ready.length, errors };
   }
 
   function handleEdit(formData: FormData) {
@@ -150,6 +160,7 @@ export default function ClientsPage() {
       address: formData.get("address") as string,
       status: formData.get("status") as ClientStatus,
       industry: formData.get("industry") as string,
+      companyId: (formData.get("companyId") as string) || undefined,
       contractStart: (formData.get("contractStart") as string) || undefined,
       contractEnd: (formData.get("contractEnd") as string) || undefined,
     });
@@ -184,10 +195,20 @@ export default function ClientsPage() {
                 <DialogTitle>Add new client</DialogTitle>
                 <DialogDescription>Enter client company details.</DialogDescription>
               </DialogHeader>
-              <ClientForm onSubmit={handleCreate} />
+              <ClientForm onSubmit={handleCreate} companies={companies} defaultCompanyId={getCurrentCompany() || companies[0]?.id} />
             </DialogContent>
           </Dialog>
           <div className="mt-2 flex flex-wrap gap-2 sm:mt-0">
+            <ImportDialog
+              title="Bulk upload clients"
+              description="Upload an Excel/CSV of clients, then match its columns. Existing client names are skipped."
+              templateName="clients"
+              label="Bulk upload"
+              columns={CLIENT_IMPORT_COLUMNS}
+              onImport={handleImport}
+              onDone={refresh}
+              mappable
+            />
             <ExportButton
               rows={filtered.map((c) => ({
                 Code: c.code,
@@ -196,6 +217,7 @@ export default function ClientsPage() {
                 Email: c.email,
                 Phone: c.phone,
                 Address: c.address,
+                Company: companyName(c.companyId),
                 Industry: c.industry ?? "",
                 Status: c.status,
                 "Contract Start": c.contractStart ?? "",
@@ -220,6 +242,19 @@ export default function ClientsPage() {
               <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input aria-label="Search clients" type="search" placeholder="Search clients..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
             </div>
+            <Select value={companyFilter} onValueChange={setCompanyFilter}>
+              <SelectTrigger aria-label="Client company" className="w-full sm:w-40">
+                <SelectValue placeholder="Company" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All companies</SelectItem>
+                {companyOptions.map((o) => (
+                  <SelectItem key={o.value} value={o.value}>
+                    {o.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as ClientStatus | "all")}>
               <SelectTrigger aria-label="Client status" className="w-full sm:w-40">
                 <SelectValue placeholder="Status" />
@@ -235,13 +270,14 @@ export default function ClientsPage() {
             </Select>
           </div>
 
-          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground"><span>{filtered.length} of {clients.length} clients</span>{(search || statusFilter !== "all") && <Button size="sm" variant="ghost" onClick={() => { setSearch(""); setStatusFilter("all"); }}>Clear filters</Button>}</div>
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground"><span>{filtered.length} of {clients.length} clients</span>{(search || statusFilter !== "all" || companyFilter !== "all") && <Button size="sm" variant="ghost" onClick={() => { setSearch(""); setStatusFilter("all"); setCompanyFilter("all"); }}>Clear filters</Button>}</div>
           <div className="mt-4 rounded-lg border">
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Code</TableHead>
                   <TableHead>Client</TableHead>
+                  <TableHead>Company</TableHead>
                   <TableHead>Contact</TableHead>
                   <TableHead>Industry</TableHead>
                   <TableHead>Status</TableHead>
@@ -252,7 +288,7 @@ export default function ClientsPage() {
               <TableBody>
                 {filtered.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="h-32 text-center">
+                    <TableCell colSpan={8} className="h-32 text-center">
                       <EmptyState className="bg-transparent border-0" icon={<Building2 className="h-5 w-5" />} title="No clients found" description="Add a client to get started." />
                     </TableCell>
                   </TableRow>
@@ -272,6 +308,7 @@ export default function ClientsPage() {
                             {c.name}
                           </Link>
                         </TableCell>
+                        <TableCell>{companyName(c.companyId)}</TableCell>
                         <TableCell>{c.contactPerson}</TableCell>
                         <TableCell>{c.industry || "—"}</TableCell>
                         <TableCell>
@@ -320,7 +357,7 @@ export default function ClientsPage() {
               <DialogTitle>Edit client</DialogTitle>
               <DialogDescription>Update client details for {editingClient?.code}.</DialogDescription>
             </DialogHeader>
-            {editingClient && <ClientForm client={editingClient} onSubmit={handleEdit} />}
+            {editingClient && <ClientForm client={editingClient} companies={companies} defaultCompanyId={getCurrentCompany() || companies[0]?.id} onSubmit={handleEdit} />}
           </DialogContent>
         </Dialog>
 
@@ -337,6 +374,7 @@ export default function ClientsPage() {
                   <DetailItem label="Email" value={viewingClient.email} />
                   <DetailItem label="Phone" value={viewingClient.phone} />
                   <DetailItem label="Industry" value={viewingClient.industry || "—"} />
+                  <DetailItem label="Company" value={companyName(viewingClient.companyId)} />
                   <DetailItem label="Contract start" value={viewingClient.contractStart || "—"} />
                   <DetailItem label="Contract end" value={viewingClient.contractEnd || "—"} />
                 </div>
@@ -395,7 +433,9 @@ export default function ClientsPage() {
   );
 }
 
-function ClientForm({ client, onSubmit }: { client?: Client; onSubmit: (data: FormData) => void }) {
+function ClientForm({ client, companies, defaultCompanyId, onSubmit }: { client?: Client; companies: Company[]; defaultCompanyId?: string; onSubmit: (data: FormData) => void }) {
+  const companyOptions = clientCompanyOptions(companies);
+  const selectedCompanyId = client?.companyId ?? defaultCompanyId ?? companyOptions[0]?.value ?? "";
   return (
     <form
       onSubmit={(e) => {
@@ -431,6 +471,21 @@ function ClientForm({ client, onSubmit }: { client?: Client; onSubmit: (data: Fo
               {industries.map((i) => (
                 <SelectItem key={i} value={i}>
                   {i}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="companyId">Company</Label>
+          <Select name="companyId" defaultValue={selectedCompanyId}>
+            <SelectTrigger id="companyId">
+              <SelectValue placeholder="Select company" />
+            </SelectTrigger>
+            <SelectContent>
+              {companyOptions.map((o) => (
+                <SelectItem key={o.value} value={o.value}>
+                  {o.label}
                 </SelectItem>
               ))}
             </SelectContent>

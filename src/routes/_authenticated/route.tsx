@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { createFileRoute, Outlet, redirect, useRouterState } from "@tanstack/react-router";
+import { createFileRoute, Outlet, redirect, useRouterState, useRouter, type ErrorComponentProps } from "@tanstack/react-router";
+import { readAccountRoles } from "@/lib/account-permissions";
 import { supabase } from "@/integrations/supabase/client";
 import { hydrateStore, subscribe, getCurrentCompany, invalidateStoreTable } from "@/lib/store";
 import { RequireRole } from "@/components/require-role";
@@ -17,17 +18,36 @@ export const Route = createFileRoute("/_authenticated")({
     if (error || !data.user) {
       throw redirect({ to: "/auth" });
     }
-    const { data: roleRows, error: roleError } = await supabase.from("user_roles").select("role").eq("user_id", data.user.id);
-    if (roleError) throw new Error("Could not verify account permissions.");
-    const roles = (roleRows ?? []).map((row) => String(row.role));
+    let roles: Awaited<ReturnType<typeof readAccountRoles>>;
+    try { roles = await readAccountRoles(data.user.id); }
+    catch { return { user: data.user, roles: [], permissionError: true }; }
     if (!canAccess(location.pathname, roles)) throw redirect({ to: "/dashboard" });
-    return { user: data.user, roles };
+    return { user: data.user, roles, permissionError: false };
   },
   component: AuthenticatedLayout,
+  errorComponent: ({ reset }) => <PermissionRecovery reset={reset} />,
 });
 
+function PermissionRecovery({ reset }: Partial<ErrorComponentProps>) {
+  const router = useRouter();
+  const { refreshRoles } = useAuth();
+  const [busy, setBusy] = useState(false);
+  return <div className="flex min-h-screen items-center justify-center px-4 text-center">
+    <div role="alert" className="max-w-md space-y-3">
+      <h1 className="text-lg font-semibold">Could not verify account permissions</h1>
+      <p className="text-sm text-muted-foreground">Your account access could not be confirmed. Please check your connection and try again.</p>
+      <Button disabled={busy} onClick={async () => {
+        setBusy(true);
+        try { await refreshRoles(); await router.invalidate(); reset?.(); }
+        finally { setBusy(false); }
+      }}>{busy ? "Checking…" : "Try again"}</Button>
+    </div>
+  </div>;
+}
+
 function AuthenticatedLayout() {
-  const { roles, isLoading, user } = useAuth();
+  const { permissionError } = Route.useRouteContext();
+  const { roles, roleError, refreshRoles, isLoading, user } = useAuth();
   const queryClient = useQueryClient();
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -37,7 +57,7 @@ function AuthenticatedLayout() {
   const companyId = getCurrentCompany();
 
   useEffect(() => {
-    if (isLoading || !hasAssignedRole(roles) || !canAccess(pathname, roles)) return;
+    if (permissionError || isLoading || roleError || !hasAssignedRole(roles) || !canAccess(pathname, roles)) return;
     let alive = true;
     setReady(false);
     setError(null);
@@ -49,7 +69,7 @@ function AuthenticatedLayout() {
       alive = false;
       unsub();
     };
-  }, [isLoading, roles.join(","), pathname, companyId, retry]);
+  }, [permissionError, isLoading, roleError, roles.join(","), pathname, companyId, retry]);
 
   useEffect(() => {
     const written = (event: Event) => {
@@ -63,6 +83,8 @@ function AuthenticatedLayout() {
 
   useEffect(() => { queryClient.removeQueries({ predicate: (query) => ["history", "history-summary"].includes(String(query.queryKey[0])) && query.queryKey[1] !== user?.id }); }, [queryClient, user?.id]);
 
+  if (permissionError) return <PermissionRecovery />;
+  if (roleError) return <div className="flex min-h-screen items-center justify-center px-4 text-center"><div role="alert"><p className="text-sm text-destructive">{roleError}</p><Button className="mt-4" onClick={() => void refreshRoles()}>Try again</Button></div></div>;
   if (!isLoading && !hasAssignedRole(roles)) return <WelcomeDashboard />;
   if (!isLoading && !canAccess(pathname, roles)) return <RequireRole path={pathname}><Outlet /></RequireRole>;
 

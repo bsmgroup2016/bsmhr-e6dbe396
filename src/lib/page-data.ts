@@ -4,6 +4,7 @@ import type { CollectionKey } from "@/lib/db";
 const pages: Record<string, CollectionKey[]> = {
   dashboard: ["employees", "sites", "projects", "approvals", "documents", "auditLogs", "attendance", "leads", "activities", "clients", "leaveRequests", "certifications", "payroll", "assignments"],
   workforce: ["employees", "projects", "assignments", "clients", "sites", "branchPrefixes", "certifications", "documents", "payroll", "departments", "designations"],
+  onboarding: ["employees", "documents", "branchPrefixes", "departments", "designations"],
   "available-workers": ["employees", "assignments", "sites", "certifications", "documents", "branchPrefixes"],
   "deployed-workers": ["employees", "assignments", "projects", "sites", "clients", "certifications", "documents"],
   "deployment-history": ["assignments", "clients", "employees", "projects", "sites"],
@@ -21,7 +22,7 @@ const pages: Record<string, CollectionKey[]> = {
   payroll: ["employees", "payroll", "attendance", "loans", "loanRepayments", "medicalClaims", "issuances", "assets"],
   "time-cards": ["employees", "timeCards", "claimSheets", "attendance", "sites", "projects", "clients"],
   "claim-generator": ["employees", "timeCards", "claimSheets", "attendance", "sites", "projects", "clients", "assignments"],
-  "claim-workflow": ["employees", "claimSheets", "sites", "projects", "clients"],
+  "claim-workflow": ["employees", "claimSheets", "sites", "projects", "clients", "payroll"],
   leave: ["employees", "leaveRequests", "attendance"],
   billing: ["clients", "projects", "invoices", "rateAgreements", "contracts", "receipts", "expenses", "attendance", "employees", "sites", "assignments"],
   contracts: ["clients", "rateAgreements", "contracts", "projects", "attendance", "employees", "sites", "assignments", "invoices"],

@@ -247,7 +247,8 @@ export function EmployeeForm({
   const [permitType, setPermitType] = useState(values?.passType || "Work Permit");
   const estimatedExpiry = estimatedWorkPermitExpiry(issueDate, permitType);
   const prefixes = useMemo(() => getBranchPrefixes(), []);
-  const [branch, setBranch] = useState(values?.branch ?? prefixes[0]?.name ?? "Unassigned");
+  // Branch is fixed behind the scenes (Settings → Branch prefixes); never shown or chosen here.
+  const [branch] = useState(values?.branch ?? prefixes[0]?.name ?? "Unassigned");
   const [code, setCode] = useState(
     values?.employeeCode ?? nextEmployeeCode(values?.branch ?? prefixes[0]?.name),
   );
@@ -275,11 +276,6 @@ export function EmployeeForm({
     !staff &&
     code.trim().length > 0 &&
     !(allowedPrefixes.length ? allowedPrefixes : [prefixForBranch(branch)]).some((p) => new RegExp(`^${p}[^a-z0-9]*\\d+$`, "i").test(code.trim()));
-
-  function suggest(nextBranch: string) {
-    setBranch(nextBranch);
-    if (!employee) setCode(nextEmployeeCode(nextBranch));
-  }
 
   /** Write a value into an uncontrolled input without clobbering user edits. */
   function fill(field: string, value?: string) {
@@ -421,20 +417,7 @@ export function EmployeeForm({
             required
           />
         </Field>
-        <Field label="Branch / company">
-          <Select name="branch" value={branch} onValueChange={suggest}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select branch" />
-            </SelectTrigger>
-            <SelectContent>
-              {prefixes.map((p) => (
-                <SelectItem key={p.id} value={p.name}>
-                  {p.name} ({p.code})
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </Field>
+        <input type="hidden" name="branch" value={branch} />
         {taken ? (
           <Alert variant="destructive" className="sm:col-span-2">
             <AlertTriangle className="h-4 w-4" />
@@ -446,7 +429,7 @@ export function EmployeeForm({
           <Alert className="sm:col-span-2">
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription>
-              This P-File Number does not match the {branch} prefix ({expectedPrefix}). Allowed, but please confirm
+              This P-File Number does not match the expected prefix ({expectedPrefix}). Allowed, but please confirm
               it is intentional. Suggested: {nextEmployeeCode(branch)}
             </AlertDescription>
           </Alert>

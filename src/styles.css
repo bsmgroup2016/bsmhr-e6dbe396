@@ -162,6 +162,51 @@
   --dashboard-ink: oklch(0.27 0.015 260);
   --dashboard-on-colour: oklch(1 0 0);
   --dashboard-layer: linear-gradient(115deg, transparent 45%, oklch(1 0 0 / 12%) 45%, oklch(1 0 0 / 4%) 72%, transparent 72%);
+  /* Company brand tints — light washes matched to each company logo */
+  --company-bsm-ink: oklch(0.34 0.1 258);
+  --company-bsm-1: oklch(0.88 0.07 252);
+  --company-bsm-2: oklch(0.92 0.04 262);
+  --company-vrl-ink: oklch(0.35 0.09 290);
+  --company-vrl-1: oklch(0.93 0.045 295);
+  --company-vrl-2: oklch(0.95 0.025 285);
+  --company-pluto-ink: oklch(0.5 0.13 228);
+  --company-pluto-1: oklch(0.94 0.05 224);
+  --company-pluto-2: oklch(0.96 0.025 230);
+  --company-pluto-copper: oklch(0.62 0.09 55);
+}
+
+@utility company-card-bsm {
+  background: linear-gradient(150deg, var(--company-bsm-1), var(--company-bsm-2));
+  color: var(--company-bsm-ink);
+  border-color: color-mix(in oklab, var(--company-bsm-ink) 30%, transparent);
+}
+
+@utility company-card-vrl {
+  background: linear-gradient(150deg, var(--company-vrl-1), var(--company-vrl-2));
+  color: var(--company-vrl-ink);
+  border-color: color-mix(in oklab, var(--company-vrl-ink) 30%, transparent);
+}
+
+@utility company-card-pluto {
+  background: linear-gradient(150deg, var(--company-pluto-1), var(--company-pluto-2));
+  color: var(--company-pluto-ink);
+  border-color: color-mix(in oklab, var(--company-pluto-copper) 55%, transparent);
+}
+
+/* Workforce bands on company overview cards (green / yellow / red) */
+@utility worker-band-live {
+  background: oklch(0.82 0.19 145);
+  color: oklch(0.28 0.08 145);
+}
+
+@utility worker-band-working {
+  background: oklch(0.9 0.16 95);
+  color: oklch(0.35 0.09 85);
+}
+
+@utility worker-band-available {
+  background: oklch(0.62 0.22 27);
+  color: oklch(0.98 0.01 27);
 }
 
 /* Optional deep variant for dark surfaces inside a light page */

@@ -1,8 +1,9 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   ArrowLeft, Building2, Briefcase, HardHat, Mail, MapPin, Phone, Receipt,
-  TrendingUp, Users, Wallet,
+  TrendingUp, Users, Wallet, FileDown, AlertTriangle, CreditCard, FileText,
 } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
@@ -13,10 +14,17 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import type { Invoice, RateAgreement, RateUnit } from "@/lib/billing-types";
 import {
   getClients, getProjects, getSites, getAssignments, getEmployees,
-  getInvoices, getRateAgreements, getContracts,
+  getInvoices, getRateAgreements, getContracts, getReceipts, getQuotations, recordInvoicePayment, addRateAgreement, updateRateAgreement, deleteRateAgreement,
 } from "@/lib/store";
+import { getCompanies, subscribe } from "@/lib/store";
+import { downloadInvoicePdf } from "@/lib/pdf";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { AGING_BUCKETS, daysOverdue, invoiceBalance, summarizeReceivables } from "@/core/client-receivables";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { employeeSlugById } from "@/lib/employee-slug";
 
 export const Route = createFileRoute("/_authenticated/clients_/$id")({
@@ -42,8 +50,20 @@ function daysSince(iso?: string) {
   return Math.max(0, Math.round((Date.now() - t) / 86_400_000));
 }
 
+const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Singapore" }).format(new Date());
+const money2 = (n: number) => `$${n.toLocaleString("en-SG", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const invVariant = (st: string): "success" | "destructive" | "warning" | "ghost" | "info" =>
+  st === "Paid" ? "success" : st === "Overdue" ? "destructive" : st === "Partially Paid" ? "warning" : st === "Cancelled" || st === "Draft" ? "ghost" : "info";
+
 function ClientProfilePage() {
   const { id } = Route.useParams();
+  const [tick, setTick] = useState(0);
+  useEffect(() => subscribe(() => setTick((t) => t + 1)), []);
+  const [invSearch, setInvSearch] = useState("");
+  const [invStatus, setInvStatus] = useState<string>("all");
+  const [payFor, setPayFor] = useState<Invoice | null>(null);
+  const [payAmount, setPayAmount] = useState("");
+  const [rateEdit, setRateEdit] = useState<(Partial<RateAgreement> & { isNew?: boolean }) | null>(null);
   const clients = getClients();
   const client = clients.find((c) => c.id === id || c.code.toLowerCase() === id.toLowerCase());
 
@@ -58,6 +78,16 @@ function ClientProfilePage() {
     const invoices = getInvoices().filter((i) => i.clientId === client.id);
     const rates = getRateAgreements().filter((r) => r.clientId === client.id);
     const contracts = getContracts().filter((c) => c.clientId === client.id);
+    const invoiceIds = new Set(invoices.map((i) => i.id));
+    const receipts = getReceipts()
+      .filter((r) => r.clientId === client.id || (r.invoiceId && invoiceIds.has(r.invoiceId)))
+      .sort((a, b) => b.receivedOn.localeCompare(a.receivedOn));
+    const quotations = getQuotations().filter((q) => q.clientId === client.id)
+      .sort((a, b) => b.quoteDate.localeCompare(a.quoteDate));
+    const lastPaid: Record<string, string> = {};
+    for (const r of receipts) if (r.invoiceId && !lastPaid[r.invoiceId]) lastPaid[r.invoiceId] = r.receivedOn;
+    const ar = summarizeReceivables(invoices, today, lastPaid);
+    invoices.sort((a, b) => b.issueDate.localeCompare(a.issueDate));
 
     const billed = invoices.reduce((s, i) => s + i.total, 0);
     const paid = invoices.reduce((s, i) => s + i.amountPaid, 0);
@@ -76,10 +106,11 @@ function ClientProfilePage() {
     const maxMonth = Math.max(1, ...months.map(([, v]) => v));
 
     return {
-      projects, sites, employees, assignments, active, invoices, rates, contracts,
+      projects, sites, employees, assignments, active, invoices, rates, contracts, receipts, quotations, ar,
       billed, paid, outstanding, required, fillRate, months, maxMonth,
     };
-  }, [client]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [client, tick]);
 
   if (!client || !data) {
     return (
@@ -133,6 +164,8 @@ function ClientProfilePage() {
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="projects">Projects & sites</TabsTrigger>
             <TabsTrigger value="manpower">Deployed manpower</TabsTrigger>
+            <TabsTrigger value="invoices">Invoices & billing</TabsTrigger>
+            <TabsTrigger value="ar">Receivables (AR)</TabsTrigger>
             <TabsTrigger value="commercial">Rates & contracts</TabsTrigger>
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
           </TabsList>
@@ -267,11 +300,167 @@ function ClientProfilePage() {
             </div>
           </TabsContent>
 
+          <TabsContent value="invoices" className="space-y-3">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-wrap gap-2">
+                <Input placeholder="Search invoice no…" value={invSearch} onChange={(e) => setInvSearch(e.target.value)} className="h-9 w-56" />
+                <select value={invStatus} onChange={(e) => setInvStatus(e.target.value)} className="h-9 rounded-md border bg-background px-2 text-sm">
+                  <option value="all">All status</option>
+                  {["Draft", "Sent", "Partially Paid", "Paid", "Overdue", "Cancelled"].map((st) => <option key={st} value={st}>{st}</option>)}
+                </select>
+              </div>
+              <ExportButton
+                rows={data.invoices.map((i) => ({
+                  "Invoice No": i.invoiceNo, Project: data.projects.find((p) => p.id === i.projectId)?.name ?? "",
+                  Issued: i.issueDate, Due: i.dueDate, Period: `${i.periodStart} - ${i.periodEnd}`,
+                  Subtotal: i.subtotal, GST: i.gstAmount, Total: i.total, Paid: i.amountPaid, Balance: invoiceBalance(i), Status: i.status,
+                }))}
+                baseName={`client-${client.code}-invoices`}
+                sheetName="Invoices"
+              />
+            </div>
+            <div className="overflow-x-auto rounded-xl border bg-card shadow-sm">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Invoice</TableHead><TableHead>Project</TableHead><TableHead>Issued / due</TableHead>
+                    <TableHead className="text-right">Total</TableHead><TableHead className="text-right">Paid</TableHead>
+                    <TableHead className="text-right">Balance</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {(() => {
+                    const rows = data.invoices.filter((i) =>
+                      (invStatus === "all" || i.status === invStatus) &&
+                      i.invoiceNo.toLowerCase().includes(invSearch.trim().toLowerCase()));
+                    if (rows.length === 0) return <TableRow><TableCell colSpan={8} className="h-24 text-center text-sm text-muted-foreground">No invoices for this client.</TableCell></TableRow>;
+                    return rows.map((i) => {
+                      const bal = invoiceBalance(i);
+                      const od = bal > 0 ? daysOverdue(i, today) : 0;
+                      return (
+                        <TableRow key={i.id}>
+                          <TableCell className="font-medium">{i.invoiceNo}<div className="text-xs text-muted-foreground">{i.periodStart} → {i.periodEnd}</div></TableCell>
+                          <TableCell className="text-sm">{data.projects.find((p) => p.id === i.projectId)?.name ?? "—"}</TableCell>
+                          <TableCell className="text-xs">{i.issueDate}<div className={od > 0 ? "text-destructive" : "text-muted-foreground"}>Due {i.dueDate}{od > 0 ? ` · ${od}d overdue` : ""}</div></TableCell>
+                          <TableCell className="text-right">{money2(i.total)}</TableCell>
+                          <TableCell className="text-right">{money2(i.amountPaid)}</TableCell>
+                          <TableCell className="text-right font-medium">{money2(bal)}</TableCell>
+                          <TableCell><StatusBadge variant={invVariant(od > 0 && i.status !== "Paid" ? "Overdue" : i.status)} label={od > 0 && i.status === "Sent" ? "Overdue" : i.status} dot /></TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-1">
+                              {bal > 0 && (
+                                <Button size="sm" variant="outline" onClick={() => { setPayFor(i); setPayAmount(String(bal)); }}>
+                                  <CreditCard className="mr-1 h-3.5 w-3.5" /> Record payment
+                                </Button>
+                              )}
+                              <Button size="sm" variant="ghost" title="Download PDF"
+                                onClick={() => void downloadInvoicePdf(i, { company: getCompanies().find((c) => c.id === i.companyId), clientName: client.name }).then(() => toast.success("Invoice PDF downloaded"))}>
+                                <FileDown className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    });
+                  })()}
+                </TableBody>
+              </Table>
+            </div>
+            <div className="rounded-xl border bg-card p-4 shadow-sm">
+              <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold"><FileText className="h-4 w-4" /> Quotations</h2>
+              {data.quotations.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No quotations for this client.</p>
+              ) : (
+                <ul className="space-y-2 text-sm">
+                  {data.quotations.map((q) => (
+                    <li key={q.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border bg-muted/30 px-3 py-2">
+                      <span><span className="font-medium">{q.quoteNo}</span> · {q.title}</span>
+                      <span className="text-xs text-muted-foreground">{q.quoteDate} · {money2(q.total)} · {q.status}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="ar" className="space-y-4">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <SummaryCard title="Outstanding" value={money(data.ar.outstanding)} icon={<Wallet className="h-5 w-5" />} variant="warning" caption={`${data.ar.openCount} open invoices`} compact />
+              <SummaryCard title="Overdue" value={money(data.ar.overdue)} icon={<AlertTriangle className="h-5 w-5" />} variant={data.ar.overdue > 0 ? "destructive" : "success"} caption={`${data.ar.overdueCount} past due date`} compact />
+              <SummaryCard title="Collected" value={money(data.ar.collected)} icon={<Receipt className="h-5 w-5" />} variant="success" caption={`of ${money(data.ar.billed)} billed`} compact />
+              <SummaryCard title="Avg days to pay" value={data.ar.avgDaysToPay == null ? "—" : `${data.ar.avgDaysToPay}d`} icon={<CreditCard className="h-5 w-5" />} variant="info" caption="Issue date → last receipt" compact />
+            </div>
+            <div className="grid gap-4 lg:grid-cols-2">
+              <div className="rounded-xl border bg-card p-4 shadow-sm">
+                <h2 className="mb-3 text-sm font-semibold">Aging (days past due)</h2>
+                <div className="space-y-2">
+                  {AGING_BUCKETS.map((b) => {
+                    const v = data.ar.buckets[b];
+                    const pct = data.ar.outstanding ? Math.round((v / data.ar.outstanding) * 100) : 0;
+                    return (
+                      <div key={b} className="space-y-1">
+                        <div className="flex justify-between text-xs"><span>{b === "Current" ? "Not yet due" : `${b} days`}</span><span className="font-medium">{money2(v)}</span></div>
+                        <div className="h-2 overflow-hidden rounded-full bg-muted">
+                          <div className={b === "Current" ? "h-full rounded-full bg-primary" : "h-full rounded-full bg-destructive"} style={{ width: `${pct}%` }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              <div className="rounded-xl border bg-card p-4 shadow-sm">
+                <h2 className="mb-3 text-sm font-semibold">Payment history</h2>
+                {data.receipts.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No payment receipts recorded.</p>
+                ) : (
+                  <ul className="max-h-72 space-y-2 overflow-y-auto text-sm">
+                    {data.receipts.map((r) => (
+                      <li key={r.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border bg-muted/30 px-3 py-2">
+                        <span><span className="font-medium">{r.receiptNo}</span> · {data.invoices.find((i) => i.id === r.invoiceId)?.invoiceNo ?? "On account"}</span>
+                        <span className="text-xs text-muted-foreground">{r.receivedOn} · {r.paymentMode}{r.referenceNo ? ` · ${r.referenceNo}` : ""} · <span className="font-medium text-foreground">{money2(r.amount)}</span></span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+            <div className="rounded-xl border bg-card p-4 shadow-sm">
+              <h2 className="mb-3 text-sm font-semibold">Statement of account</h2>
+              <Table>
+                <TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Reference</TableHead><TableHead className="text-right">Debit</TableHead><TableHead className="text-right">Credit</TableHead><TableHead className="text-right">Balance</TableHead></TableRow></TableHeader>
+                <TableBody>
+                  {(() => {
+                    const entries = [
+                      ...data.invoices.filter((i) => i.status !== "Draft" && i.status !== "Cancelled").map((i) => ({ d: i.issueDate, ref: `Invoice ${i.invoiceNo}`, dr: i.total, cr: 0 })),
+                      ...data.receipts.map((r) => ({ d: r.receivedOn, ref: `Receipt ${r.receiptNo}`, dr: 0, cr: r.amount })),
+                    ].sort((a, b) => a.d.localeCompare(b.d));
+                    if (entries.length === 0) return <TableRow><TableCell colSpan={5} className="h-20 text-center text-sm text-muted-foreground">No transactions yet.</TableCell></TableRow>;
+                    let bal = 0;
+                    return entries.map((e, idx) => {
+                      bal += e.dr - e.cr;
+                      return (
+                        <TableRow key={idx}>
+                          <TableCell className="text-xs">{e.d}</TableCell><TableCell>{e.ref}</TableCell>
+                          <TableCell className="text-right">{e.dr ? money2(e.dr) : "—"}</TableCell>
+                          <TableCell className="text-right">{e.cr ? money2(e.cr) : "—"}</TableCell>
+                          <TableCell className="text-right font-medium">{money2(bal)}</TableCell>
+                        </TableRow>
+                      );
+                    });
+                  })()}
+                </TableBody>
+              </Table>
+            </div>
+          </TabsContent>
+
           <TabsContent value="commercial" className="space-y-4">
             <div className="rounded-xl border bg-card p-4 shadow-sm">
-              <h2 className="mb-3 text-sm font-semibold">Rate agreements</h2>
+              <div className="mb-3 flex items-center justify-between">
+                <h2 className="text-sm font-semibold">Rate agreements</h2>
+                <Button size="sm" onClick={() => setRateEdit({ isNew: true, clientId: client.id, unit: "Hourly", normalRate: 0, otRate: 0, effectiveFrom: today, status: "Active", trade: "" })}>Add rate</Button>
+              </div>
               {data.rates.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No rate card set. Add one in Rate Agreements.</p>
+                <p className="text-sm text-muted-foreground">No rate card set. Click Add rate.</p>
               ) : (
                 <Table>
                   <TableHeader>
@@ -282,6 +471,7 @@ function ClientProfilePage() {
                       <TableHead>OT</TableHead>
                       <TableHead>Effective</TableHead>
                       <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -293,6 +483,15 @@ function ClientProfilePage() {
                         <TableCell>{money(r.otRate)}</TableCell>
                         <TableCell className="text-xs">{r.effectiveFrom} → {r.effectiveTo ?? "open"}</TableCell>
                         <TableCell><StatusBadge variant={r.status === "Active" ? "success" : "ghost"} label={r.status} dot /></TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-1">
+                            <Button size="sm" variant="outline" onClick={() => setRateEdit({ ...r })}>Edit</Button>
+                            <Button size="sm" variant="ghost" className="text-destructive" onClick={() => {
+                              if (!confirm(`Delete ${r.trade} rate?`)) return;
+                              deleteRateAgreement(r.id); toast.success("Rate deleted");
+                            }}>Delete</Button>
+                          </div>
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -363,6 +562,65 @@ function ClientProfilePage() {
             </div>
           </TabsContent>
         </Tabs>
+        <Dialog open={!!rateEdit} onOpenChange={(o) => !o && setRateEdit(null)}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader><DialogTitle>{rateEdit?.isNew ? "Add rate" : "Edit rate"}</DialogTitle></DialogHeader>
+            {rateEdit && (
+              <div className="grid grid-cols-2 gap-3">
+                <div className="col-span-2 space-y-1"><Label>Designation</Label><Input value={rateEdit.trade ?? ""} onChange={(e) => setRateEdit({ ...rateEdit, trade: e.target.value })} /></div>
+                <div className="space-y-1"><Label>Unit</Label>
+                  <select className="h-9 w-full rounded-md border bg-background px-2 text-sm" value={rateEdit.unit} onChange={(e) => setRateEdit({ ...rateEdit, unit: e.target.value as RateUnit })}>
+                    {["Hourly", "Daily", "Monthly"].map((u) => <option key={u}>{u}</option>)}
+                  </select></div>
+                <div className="space-y-1"><Label>Status</Label>
+                  <select className="h-9 w-full rounded-md border bg-background px-2 text-sm" value={rateEdit.status} onChange={(e) => setRateEdit({ ...rateEdit, status: e.target.value as RateAgreement["status"] })}>
+                    <option>Active</option><option>Inactive</option>
+                  </select></div>
+                <div className="space-y-1"><Label>Normal rate ($)</Label><Input type="number" step="0.01" value={rateEdit.normalRate ?? 0} onChange={(e) => setRateEdit({ ...rateEdit, normalRate: Number(e.target.value) })} /></div>
+                <div className="space-y-1"><Label>OT rate ($)</Label><Input type="number" step="0.01" value={rateEdit.otRate ?? 0} onChange={(e) => setRateEdit({ ...rateEdit, otRate: Number(e.target.value) })} /></div>
+                <div className="space-y-1"><Label>Effective from</Label><Input type="date" value={rateEdit.effectiveFrom ?? ""} onChange={(e) => setRateEdit({ ...rateEdit, effectiveFrom: e.target.value })} /></div>
+                <div className="space-y-1"><Label>Effective to</Label><Input type="date" value={rateEdit.effectiveTo ?? ""} onChange={(e) => setRateEdit({ ...rateEdit, effectiveTo: e.target.value || undefined })} /></div>
+                <div className="col-span-2 space-y-1"><Label>Remarks</Label><Input value={rateEdit.remarks ?? ""} onChange={(e) => setRateEdit({ ...rateEdit, remarks: e.target.value })} /></div>
+              </div>
+            )}
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setRateEdit(null)}>Cancel</Button>
+              <Button onClick={() => {
+                const r = rateEdit!;
+                if (!r.trade?.trim()) { toast.error("Designation is required"); return; }
+                if (!(Number(r.normalRate) >= 0) || !(Number(r.otRate) >= 0)) { toast.error("Rates must be 0 or more"); return; }
+                if (!r.effectiveFrom) { toast.error("Effective from date is required"); return; }
+                if (r.effectiveTo && r.effectiveTo < r.effectiveFrom) { toast.error("Effective to must be after effective from"); return; }
+                const { isNew, id: rid, createdAt: _c, updatedAt: _u, ...fields } = r;
+                const payload = { ...fields, trade: r.trade.trim(), clientId: client.id } as Omit<RateAgreement, "id" | "createdAt" | "updatedAt">;
+                if (isNew || !rid) addRateAgreement(payload); else updateRateAgreement(rid, payload);
+                toast.success(isNew ? "Rate added" : "Rate updated");
+                setRateEdit(null);
+              }}>Save</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+        <Dialog open={!!payFor} onOpenChange={(o) => !o && setPayFor(null)}>
+          <DialogContent className="sm:max-w-sm">
+            <DialogHeader><DialogTitle>Record payment · {payFor?.invoiceNo}</DialogTitle></DialogHeader>
+            <div className="space-y-2">
+              <Label htmlFor="pay-amt">Amount received</Label>
+              <Input id="pay-amt" type="number" min="0" step="0.01" value={payAmount} onChange={(e) => setPayAmount(e.target.value)} />
+              {payFor && <p className="text-xs text-muted-foreground">Balance: {money2(invoiceBalance(payFor))}</p>}
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setPayFor(null)}>Cancel</Button>
+              <Button onClick={() => {
+                const amt = Number(payAmount);
+                if (!payFor || !(amt > 0)) { toast.error("Enter a valid amount"); return; }
+                if (amt > invoiceBalance(payFor) + 0.001) { toast.error("Amount is more than the balance"); return; }
+                recordInvoicePayment(payFor.id, amt);
+                toast.success(`Payment of ${money2(amt)} recorded`);
+                setPayFor(null);
+              }}>Save payment</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </AppShell>
   );

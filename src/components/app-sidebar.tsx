@@ -78,8 +78,10 @@ const navGroups: { label: string; items: NavItem[] }[] = [
       { title: "Workforce Payroll", url: "/payroll", icon: Briefcase },
       { title: "Leave Management", url: "/leave", icon: CalendarClock },
       { title: "MOM Compliance", url: "/compliance", icon: ShieldCheck },
+      { title: "Onboard & Issuence", url: "/onboarding", icon: UserPlus },
       { title: "Levy & Quota (DRC)", url: "/mom", icon: Landmark },
       { title: "Training & WSH Safety", url: "/training", icon: GraduationCap },
+      { title: "Dormitory & Beds", url: "/accommodation", icon: BedDouble },
     ],
   },
   {
@@ -87,11 +89,11 @@ const navGroups: { label: string; items: NavItem[] }[] = [
     items: [
       { title: "Quotation Management", url: "/quotations", icon: FileSignature },
       { title: "Client Directory", url: "/clients", icon: Handshake },
-      { title: "Business Pipeline (CRM)", url: "/crm", icon: BadgeDollarSign },
       { title: "Projects & Sites", url: "/projects", icon: FolderKanban },
       { title: "Manpower Deployment", url: "/operations", icon: Layers },
       { title: "Rate Agreements", url: "/contracts", icon: FileText },
       { title: "Billing & Invoicing", url: "/billing", icon: Receipt },
+      { title: "Business Pipeline (CRM)", url: "/crm", icon: BadgeDollarSign },
     ],
   },
   {
@@ -119,7 +121,6 @@ const navGroups: { label: string; items: NavItem[] }[] = [
     items: [
       { title: "Stock & Inventory", url: "/inventory", icon: Package },
       { title: "PPE Management", url: "/assets", icon: Boxes },
-      { title: "Accommodation (Dorm)", url: "/accommodation", icon: BedDouble },
     ],
   },
 ];

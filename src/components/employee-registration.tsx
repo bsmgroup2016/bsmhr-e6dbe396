@@ -14,7 +14,6 @@ import { prefixesForCompany, nextPFileNumber } from "@/core/pfile-prefixes";
 import { getEmployees } from "@/lib/store";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export function EmployeeRegistration({ onSubmit, existingEmployeeId }: { onSubmit: (data: FormData) => void | Promise<void>; existingEmployeeId?: string }) {
   const [method, setMethod] = useState("ipa");
@@ -25,7 +24,6 @@ export function EmployeeRegistration({ onSubmit, existingEmployeeId }: { onSubmi
   const [revision, setRevision] = useState(0);
   const [company, setCompany] = useState("");
   const [pFile, setPFile] = useState("");
-  const [prefix, setPrefix] = useState("");
   const [confirmed, setConfirmed] = useState<{ code: string; branch: string } | null>(null);
   const [reviewed, setReviewed] = useState(false);
 
@@ -56,10 +54,6 @@ export function EmployeeRegistration({ onSubmit, existingEmployeeId }: { onSubmi
     }
   }
 
-  const matches = extracted?.employerName ? getBranchPrefixes().filter((branch) =>
-    branch.name.trim().toLowerCase().replace(/[^a-z0-9]/g, "") === extracted.employerName?.trim().toLowerCase().replace(/[^a-z0-9]/g, ""),
-  ) : [];
-
   return (
     <Tabs value={method} onValueChange={setMethod}>
       <TabsList className="grid h-auto w-full grid-cols-2">
@@ -85,32 +79,21 @@ export function EmployeeRegistration({ onSubmit, existingEmployeeId }: { onSubmi
           <Alert><AlertDescription>
             IPA read — verify the details before registering.
             {extracted.employerName && <span className="mt-1 block">Employer on IPA: {extracted.employerName}</span>}
-            {matches.length !== 1 && <span className="mt-1 block">Confirm the branch / company.</span>}
           </AlertDescription></Alert>
           <div className="grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
           <IpaReview key={url} url={url} extracted={extracted} reviewed={reviewed} onReviewed={setReviewed} />
           <div className="min-w-0" onChangeCapture={event => { if (!(event.target as HTMLElement).hasAttribute("data-duplicate-confirm")) setReviewed(false); }}>
           {!confirmed ? (() => {
             const options = prefixesForCompany(company);
-            const chosen = options.includes(prefix) ? prefix : options[0];
+            const chosen = options[0];
             const auto = chosen ? nextPFileNumber(chosen, getEmployees().map((e) => e.employeeCode)) : nextEmployeeCode(company);
             const typed = pFile.trim();
             const taken = typed ? isEmployeeCodeTaken(typed) : false;
             return <div className="space-y-4 rounded-lg border p-4">
               <h3 className="text-sm font-semibold">P-File number</h3>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2"><Label>Company</Label>
-                  <Select value={company} onValueChange={setCompany}><SelectTrigger><SelectValue placeholder="Select company" /></SelectTrigger>
-                    <SelectContent>{getBranchPrefixes().map((b) => <SelectItem key={b.id} value={b.name}>{b.name}</SelectItem>)}</SelectContent></Select>
-                </div>
-                {options.length > 1 && <div className="space-y-2"><Label>P-File prefix</Label>
-                  <Select value={chosen} onValueChange={setPrefix}><SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>{options.map((o) => <SelectItem key={o} value={o}>{o}-</SelectItem>)}</SelectContent></Select>
-                </div>}
-                <div className="space-y-2"><Label htmlFor="ipa-pfile">P-File number (optional)</Label>
-                  <Input id="ipa-pfile" value={pFile} placeholder={auto} onChange={(e) => setPFile(e.target.value)} />
-                  <p className={taken ? "text-xs text-destructive" : "text-xs text-muted-foreground"}>{taken ? "This number is already used." : `Leave blank to use the next number: ${auto}`}</p>
-                </div>
+              <div className="space-y-2"><Label htmlFor="ipa-pfile">P-File number (optional)</Label>
+                <Input id="ipa-pfile" value={pFile} placeholder={auto} onChange={(e) => setPFile(e.target.value)} />
+                <p className={taken ? "text-xs text-destructive" : "text-xs text-muted-foreground"}>{taken ? "This number is already used." : `Leave blank to use the next number: ${auto}`}</p>
               </div>
               <Button type="button" disabled={!company || taken} onClick={() => { setConfirmed({ code: typed || auto, branch: company }); setRevision((v) => v + 1); }}>Continue</Button>
             </div>;

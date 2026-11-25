@@ -1,5 +1,71 @@
 # Full-section UI/UX and workflow audit
 
+## Reusable AI Brain
+
+- [x] Add authenticated admin-only AI Brain forwarding with JSON/SSE, validated options and server-only credentials.
+- [x] Add reusable browser helper and Settings connection test; leave existing HR AI flows unchanged.
+- [x] 13 tests verify forwarding rules, stream passthrough and access denial; direct provider Say OK returned HTTP 200 and OK.
+- [ ] Verify the Settings button with a real signed-in admin. Blocker: no authorized app session is available.
+
+## Dormitory rent billing
+
+- [x] Add dormitory/month invoice creation, unpaid-invoice edits/void, PDF/Excel, payment history and overdue balances with verified writes.
+- [x] Add fixed admin-only database setup and company-scoped billing permissions; nine focused tests pass, isolated PostgreSQL checks verify idempotency/payment limits/company denial, and controlled desktop/mobile invoice → payment → reload/PDF/Excel checks pass; preview build clean.
+- [ ] Enable billing and verify real authenticated invoice → payment → reload. Blocker: no authorized external-account session; administrator must use Rent & Payments → Enable billing once. Controlled checks do not verify production writes. Existing unrelated phase1-data test expects an outdated assets dependency list and fails; it was not changed in this request.
+
+## MOM Compliance permit register
+
+- [x] Add current Work Permit register, company/status/search filters, pagination, edit, profile/document actions and filtered exports; repair stale compliance data after store hydration/updates.
+- [x] Add existing-worker Excel bulk updates with identity matching, date validation and confirmed caller-authorized writes; preserve unsupplied data and reject unknown/conflicting identities.
+- [x] Thirteen focused tests pass; controlled populated desktop/mobile UI verifies company filtering, edit/read-back, Excel preview with rejected unknown worker, valid-row import and downloaded export; preview build clean.
+- [ ] Verify real account permit edit/import and saved-data read-back. Blocker: external account has no authorized session; controlled UI checks do not verify production writes or a MOM connection.
+
+## Onboard & Issuence
+
+- [x] Add six isolated interactive sample records with stage updates, company/stage filters, reset and a separate Live records switch; never create real workers or upload files in demo mode.
+- [x] Add separate workforce section with IPA registration, Excel/CSV worksheet and positional column mapping, company/stage filters and booking/issuance controls.
+- [x] Keep one employee ID and IPA reference throughout; block worker-roster availability until onboarding completes, preserve actual permit data and validate tracking server-side.
+- [x] Run 26 focused regression tests; preview build clean and live signed-out access redirects to sign-in without page errors.
+- [ ] Verify real signed-in IPA registration, Excel import, status save and read-back. Blocker: no authorized external-account session is available; no production test workers were created.
+
+## Pluto branch prefixes
+
+- [x] Keep Pluto Pte 01 linked to P and add Pluto Pte 02 linked to PC under the existing Pluto company; no employee rows or other branches changed.
+- [x] Both branches read back correctly; twelve prefix/company tests pass and preview build is clean. Real signed-in worker creation remains unverified without an authorized account session.
+
+## Permission verification recovery
+
+- [x] Retry transient role-read failures without bypassing permissions; show recoverable errors instead of a blank page or unassigned-user view, with SDK retries disabled to keep attempts bounded.
+- [x] Twelve permission/access tests pass; controlled browser failure shows Try again and a successful retry opens Settings without page errors; preview build clean.
+- [ ] Verify real account permission recovery. Blocker: no authorized external-account browser session is available.
+
+## Unified storage settings
+
+- [x] Merge Storage, Media and Archive & Clean into one Storage & Media page, with file browsing first; preserve existing admin restrictions and all file actions without deleting files.
+- [x] Preview build is clean; 19 media/archive safety tests pass; live Settings redirects to sign-in without page errors.
+- [ ] Verify combined-page layout with real account access. Blocker: no authorized external-account browser session.
+
+## Media file management
+
+- [x] Rename the Media folder label to Particulars; delete the exact five screenshot PDFs, verify absence, clear exact employee references and confirm both claim-template objects unchanged.
+- [x] Add admin-only bucket-specific upload/delete, preserve claim templates and storage placement, and verify writes before success; seven focused tests pass, unauthenticated GET/POST/DELETE return 401.
+- [x] Add all-file browsing, image/PDF/Excel previews, downloads and delete confirmation; controlled upload/CSV preview/cancel/delete and mobile layout pass without page errors; preview build clean.
+- [ ] Verify real signed-in upload, preview and deletion. Blocker: external account has no authorized browser session.
+
+## Claim workflow filter bar
+
+- [x] Add one filter bar (claim month, search, company, payroll status) above the three steps; search matches worker name, P-File, project, site or client and narrows the rows inside each company.
+- [x] Filters drive the Excel too: combined and salary downloads contain only the filtered rows, and the file name names the selected company. Seven focused filter tests pass; project typecheck is clean.
+- [ ] Verify signed-in filter interaction and browser downloads. Blocker: external account has no authorized session; live route redirects to /auth.
+
+## Three-stage claim and salary workflow
+
+- [x] Show company claim summaries, an all-company combined claim sheet, then a salary sheet; remove billing and AP/AR steps.
+- [x] Six aggregation/workbook/payroll tests pass; combined Excel recalculates 51 formulas with zero errors, preserving claim templates and saved payroll.
+- [ ] Verify signed-in workflow and browser downloads. Blocker: external account has no authorized session; live route redirects to /auth without runtime errors.
+- [x] Owner confirmed Salary Sheet uses saved payroll, not recalculated claim-hour pay.
+- [x] Show BSM Group followed by every registered company, including companies with no claims; preserve claim-only downloads and salary calculations.
+
 ## Dashboard chart placement and compliance overview
 
 - [x] Move all charts and overview sections below operational items; add CSOC, confirmed Work Permit, passport and IPA issuance counts using existing records.

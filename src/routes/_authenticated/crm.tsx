@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import {
-  BadgeDollarSign, Target, CalendarClock, TrendingUp, Plus, Search, Trash2, Download, CheckCircle2, UserPlus,
+  BadgeDollarSign, Target, CalendarClock, TrendingUp, Plus, Search, Trash2, Download, CheckCircle2, UserPlus, Pencil, Phone, Mail, Users, ChevronRight, KanbanSquare,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -74,6 +74,20 @@ export default function CrmPage() {
   const [actOpen, setActOpen] = useState(false);
   const [leadForm, setLeadForm] = useState(emptyLead);
   const [actForm, setActForm] = useState(emptyActivity);
+  const [stageFilter, setStageFilter] = useState("all");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [detailId, setDetailId] = useState<string | null>(null);
+
+  function openEdit(l: Lead) {
+    setEditingId(l.id);
+    setLeadForm({
+      companyName: l.companyName, contactPerson: l.contactPerson ?? "", phone: l.phone ?? "", email: l.email ?? "",
+      industry: l.industry ?? "", trade: l.trade ?? "", headcountNeeded: l.headcountNeeded ?? 0,
+      monthlyValue: l.monthlyValue, source: l.source, stage: l.stage, probability: l.probability,
+      expectedCloseDate: l.expectedCloseDate ?? "", ownerName: l.ownerName ?? "", remarks: l.remarks ?? "",
+    });
+    setLeadOpen(true);
+  }
 
   function refresh() {
     setLeads(getLeads());
@@ -102,26 +116,28 @@ export default function CrmPage() {
 
   const q = search.trim().toLowerCase();
   const filteredLeads = scopedLeads.filter(
-    (l) => !q || l.companyName.toLowerCase().includes(q) ||
-      (l.contactPerson ?? "").toLowerCase().includes(q) || (l.trade ?? "").toLowerCase().includes(q),
+    (l) => (stageFilter === "all" || l.stage === stageFilter) && (!q || l.companyName.toLowerCase().includes(q) ||
+      (l.contactPerson ?? "").toLowerCase().includes(q) || (l.trade ?? "").toLowerCase().includes(q)),
   );
 
   const leadName = (id?: string) => leads.find((l) => l.id === id)?.companyName ?? "—";
 
   function saveLead() {
     if (!leadForm.companyName.trim()) return toast.error("Company name required");
-    addLead({
+    const payload = {
       ...leadForm,
       headcountNeeded: Number(leadForm.headcountNeeded) || undefined,
       monthlyValue: Number(leadForm.monthlyValue) || 0,
       probability: Number(leadForm.probability) || 0,
       expectedCloseDate: leadForm.expectedCloseDate || undefined,
-      companyId: companyId || undefined,
-    });
+    };
+    if (editingId) updateLead(editingId, payload);
+    else addLead({ ...payload, companyId: companyId || undefined });
     setLeadForm(emptyLead);
     setLeadOpen(false);
     refresh();
-    toast.success("Lead added");
+    toast.success(editingId ? "Lead updated" : "Lead added");
+    setEditingId(null);
   }
 
   function saveActivity() {
@@ -150,7 +166,7 @@ export default function CrmPage() {
       <div className="w-full space-y-6">
         <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Client CRM</h1>
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Business Pipeline (CRM)</h1>
             <p className="text-sm text-muted-foreground">Leads, opportunity pipeline, quotations and follow-up reminders.</p>
           </div>
           <Button
@@ -200,11 +216,60 @@ export default function CrmPage() {
         </div>
       </div>
 
-      <Tabs defaultValue="leads" className="space-y-4">
+      <Tabs defaultValue="board" className="space-y-4">
         <TabsList>
+          <TabsTrigger value="board"><KanbanSquare className="mr-1.5 size-4" />Board</TabsTrigger>
           <TabsTrigger value="leads">Leads &amp; Opportunities</TabsTrigger>
           <TabsTrigger value="activities">Activities &amp; Follow-ups</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="board">
+          <div className="flex gap-3 overflow-x-auto pb-2">
+            {leadStages.map((stage) => {
+              const items = scopedLeads.filter((l) => l.stage === stage);
+              const total = items.reduce((s, l) => s + (l.monthlyValue || 0), 0);
+              const next = leadStages[leadStages.indexOf(stage) + 1];
+              return (
+                <div key={stage} className="flex w-64 shrink-0 flex-col rounded-xl border bg-muted/30">
+                  <div className="flex items-center justify-between border-b px-3 py-2.5">
+                    <div className="flex items-center gap-2">
+                      <StatusBadge variant={stageVariant(stage)} label={stage} />
+                      <span className="text-xs text-muted-foreground">{items.length}</span>
+                    </div>
+                    <span className="text-xs font-medium tabular-nums text-muted-foreground">{sgd(total)}</span>
+                  </div>
+                  <div className="flex min-h-24 flex-col gap-2 p-2">
+                    {items.length === 0 && <p className="py-6 text-center text-xs text-muted-foreground">No leads</p>}
+                    {items.map((l) => (
+                      <div key={l.id} className="rounded-lg border bg-card p-3 shadow-sm transition hover:border-primary/50">
+                        <button type="button" className="w-full text-left" onClick={() => setDetailId(l.id)}>
+                          <div className="truncate text-sm font-medium">{l.companyName}</div>
+                          <div className="mt-0.5 truncate text-xs text-muted-foreground">{l.trade || "—"}{l.headcountNeeded ? ` · ${l.headcountNeeded} pax` : ""}</div>
+                          <div className="mt-2 flex items-center justify-between text-xs">
+                            <span className="font-semibold tabular-nums">{sgd(l.monthlyValue)}<span className="font-normal text-muted-foreground">/mo</span></span>
+                            <span className="text-muted-foreground">{l.probability}%</span>
+                          </div>
+                          <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-muted">
+                            <div className="h-full rounded-full bg-primary" style={{ width: `${l.probability}%` }} />
+                          </div>
+                          <div className="mt-2 flex items-center justify-between text-[11px] text-muted-foreground">
+                            <span>{l.ownerName || "Unassigned"}</span>
+                            <span>{l.expectedCloseDate ?? ""}</span>
+                          </div>
+                        </button>
+                        {next && stage !== "Won" && stage !== "Lost" && (
+                          <Button size="sm" variant="ghost" className="mt-1 h-7 w-full text-xs" onClick={() => { setLeadStage(l.id, next); refresh(); toast.success(`Moved to ${next}`); }}>
+                            Move to {next} <ChevronRight className="ml-1 size-3" />
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </TabsContent>
 
         <TabsContent value="leads" className="space-y-4">
           <div className="flex flex-wrap items-center gap-3">
@@ -212,13 +277,20 @@ export default function CrmPage() {
               <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input aria-label="Search leads" className="pl-9" placeholder="Search company, contact, trade…" value={search} onChange={(e) => setSearch(e.target.value)} />
             </div>
-            <Dialog open={leadOpen} onOpenChange={setLeadOpen}>
+            <Select value={stageFilter} onValueChange={setStageFilter}>
+              <SelectTrigger className="w-44" aria-label="Filter by stage"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All stages</SelectItem>
+                {leadStages.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Dialog open={leadOpen} onOpenChange={(o) => { setLeadOpen(o); if (!o) { setEditingId(null); setLeadForm(emptyLead); } }}>
               <DialogTrigger asChild>
                 <Button><Plus className="mr-2 size-4" /> New lead</Button>
               </DialogTrigger>
               <DialogContent className="max-w-2xl">
                 <DialogHeader>
-                  <DialogTitle>New lead</DialogTitle>
+                  <DialogTitle>{editingId ? "Edit lead" : "New lead"}</DialogTitle>
                   <DialogDescription>Prospective client enquiry for manpower supply.</DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 sm:grid-cols-2">
@@ -310,7 +382,7 @@ export default function CrmPage() {
                   {filteredLeads.map((l) => (
                     <TableRow key={l.id}>
                       <TableCell>
-                        <div className="font-medium">{l.companyName}</div>
+                        <button type="button" className="font-medium text-primary hover:underline" onClick={() => setDetailId(l.id)}>{l.companyName}</button>
                         <div className="text-xs text-muted-foreground">{l.source}{l.ownerName ? ` · ${l.ownerName}` : ""}</div>
                       </TableCell>
                       <TableCell className="text-sm">
@@ -335,6 +407,9 @@ export default function CrmPage() {
                             </Button>
                           )}
                           {l.clientId && <StatusBadge variant="success" label="Client" />}
+                          <Button size="icon" variant="ghost" aria-label="Edit lead" onClick={() => openEdit(l)}>
+                            <Pencil className="size-4" />
+                          </Button>
                           <Button size="icon" variant="ghost" onClick={() => { deleteLead(l.id); refresh(); }}>
                             <Trash2 className="size-4 text-destructive" />
                           </Button>
@@ -454,7 +529,70 @@ export default function CrmPage() {
           )}
         </TabsContent>
       </Tabs>
+      <LeadDetail
+        lead={scopedLeads.find((l) => l.id === detailId)}
+        activities={scopedActs.filter((a) => a.leadId === detailId)}
+        onClose={() => setDetailId(null)}
+        onEdit={(l) => { setDetailId(null); openEdit(l); }}
+        onLog={(l) => { setDetailId(null); setActForm({ ...emptyActivity, activityDate: today(), leadId: l.id }); setActOpen(true); }}
+      />
       </div>
     </AppShell>
+  );
+}
+
+
+function LeadDetail({ lead, activities, onClose, onEdit, onLog }: {
+  lead?: Lead; activities: CrmActivity[]; onClose: () => void; onEdit: (l: Lead) => void; onLog: (l: Lead) => void;
+}) {
+  const sorted = [...activities].sort((a, b) => b.activityDate.localeCompare(a.activityDate));
+  return (
+    <Dialog open={!!lead} onOpenChange={(o) => { if (!o) onClose(); }}>
+      <DialogContent className="max-w-2xl">
+        {lead && (
+          <>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">{lead.companyName} <StatusBadge variant={stageVariant(lead.stage)} label={lead.stage} /></DialogTitle>
+              <DialogDescription>{lead.industry || "—"} · {lead.source} · Owner: {lead.ownerName || "Unassigned"}</DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-3 sm:grid-cols-3">
+              {[["Monthly value", sgd(lead.monthlyValue)], ["Probability", `${lead.probability}%`], ["Expected close", lead.expectedCloseDate ?? "—"]].map(([k, v]) => (
+                <div key={k} className="rounded-lg border bg-muted/30 p-3">
+                  <div className="text-xs text-muted-foreground">{k}</div>
+                  <div className="mt-1 font-semibold tabular-nums">{v}</div>
+                </div>
+              ))}
+            </div>
+            <div className="grid gap-2 text-sm sm:grid-cols-2">
+              <div className="flex items-center gap-2"><Users className="size-4 text-muted-foreground" />{lead.contactPerson || "—"}</div>
+              <div className="flex items-center gap-2"><Phone className="size-4 text-muted-foreground" />{lead.phone ? <a className="text-primary hover:underline" href={`tel:${lead.phone}`}>{lead.phone}</a> : "—"}</div>
+              <div className="flex items-center gap-2"><Mail className="size-4 text-muted-foreground" />{lead.email ? <a className="text-primary hover:underline" href={`mailto:${lead.email}`}>{lead.email}</a> : "—"}</div>
+              <div className="flex items-center gap-2"><Target className="size-4 text-muted-foreground" />{lead.trade || "—"}{lead.headcountNeeded ? ` · ${lead.headcountNeeded} pax` : ""}</div>
+            </div>
+            {lead.lostReason && <p className="text-sm text-destructive">Lost reason: {lead.lostReason}</p>}
+            {lead.remarks && <p className="text-sm text-muted-foreground">{lead.remarks}</p>}
+            <div>
+              <h4 className="mb-2 text-sm font-semibold">Activity timeline</h4>
+              {sorted.length === 0 ? <p className="text-sm text-muted-foreground">No activities yet.</p> : (
+                <ol className="max-h-64 space-y-3 overflow-y-auto border-l pl-4">
+                  {sorted.map((a) => (
+                    <li key={a.id} className="relative">
+                      <span className={`absolute -left-[21px] top-1.5 size-2.5 rounded-full ${a.done ? "bg-muted-foreground" : "bg-primary"}`} />
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">{a.activityDate} · {a.activityType}{a.followUpDate && !a.done ? ` · Follow-up ${a.followUpDate}` : ""}</div>
+                      <div className="text-sm font-medium">{a.subject}</div>
+                      {a.notes && <div className="text-xs text-muted-foreground">{a.notes}</div>}
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => onLog(lead)}><Plus className="mr-1 size-4" /> Log activity</Button>
+              <Button onClick={() => onEdit(lead)}><Pencil className="mr-1 size-4" /> Edit lead</Button>
+            </DialogFooter>
+          </>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }

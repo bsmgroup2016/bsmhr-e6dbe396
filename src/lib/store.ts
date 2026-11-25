@@ -1,4 +1,8 @@
+import { nextProjectCode, projectCodeLetter } from "@/core/project-code";
+import { hasOnboarding, onboardingEmployeePatch, readOnboarding } from "@/core/onboarding";
+import { validateOnboardingSave } from "@/lib/onboarding.functions";
 import { countedCardHours } from "@/core/time-card-settlement";
+import { bsmBranchPrefix, plutoBranchPrefix, vrlBranchPrefix } from "@/core/pfile-prefixes";
 // App state store backed by Supabase.
 // Data is hydrated once (see hydrateStore) into an in-memory cache so the
 // existing synchronous getters keep working; every mutation writes to Supabase.
@@ -257,6 +261,14 @@ export function getEmployee(id: string): Employee | undefined { return getState(
 export async function saveEmployeeConfirmed(updates: Partial<Employee>, id?: string): Promise<Employee> {
   const existing = id ? getEmployee(id) : undefined;
   if (id && !existing) throw new Error("Employee not found");
+  if (existing && hasOnboarding(existing) && !hasOnboarding(updates)) updates = { ...updates, internalNotes: existing.internalNotes };
+  if (hasOnboarding(updates)) {
+    const tracking = readOnboarding(updates);
+    if (!tracking) throw new Error("Onboarding data needs review before saving");
+    const merged = { ...existing, ...updates };
+    await validateOnboardingSave({ data: { tracking, permit: { workPermitNumber: merged.workPermitNumber, workPermitIssueDate: merged.workPermitIssueDate, workPermitExpiryDate: merged.workPermitExpiryDate } } });
+    updates = { ...updates, ...onboardingEmployeePatch({ ...existing, ...updates }, tracking) };
+  }
   const code = updates.employeeCode?.trim() || existing?.employeeCode || nextEmployeeCode(updates.branch ?? "");
   if (isEmployeeCodeTaken(code, id)) throw new Error(`P-File Number ${code} is already in use`);
   const now = new Date().toISOString();
@@ -370,6 +382,12 @@ export function deleteBranchPrefix(id: string): boolean {
 
 /** Resolve the prefix for a branch/company key. Falls back to the "X" unassigned prefix. */
 export function prefixForBranch(branch?: string): string {
+  const bsmPrefix = bsmBranchPrefix(branch);
+  if (bsmPrefix) return bsmPrefix;
+  const plutoPrefix = plutoBranchPrefix(branch);
+  if (plutoPrefix) return plutoPrefix;
+  const vrlPrefix = vrlBranchPrefix(branch);
+  if (vrlPrefix) return vrlPrefix;
   const list = getState().branchPrefixes;
   if (!list.length) return "X";
   const key = (branch ?? "").trim().toLowerCase();
@@ -502,7 +520,10 @@ export function getProject(id: string): Project | undefined { return getState().
 export function addProject(project: Omit<Project, "id" | "code" | "createdAt" | "updatedAt">): Project {
   const s = getState();
   const now = new Date().toISOString();
-  const row: Project = { ...project, id: newId(), code: `PRJ-${String(s.projects.length + 1).padStart(3, "0")}`, createdAt: now, updatedAt: now };
+  const clientCompanyId = s.clients.find((c) => c.id === project.clientId)?.companyId;
+  const letter = projectCodeLetter(s.companies.find((c) => c.id === clientCompanyId));
+  const code = nextProjectCode(letter, s.projects.map((x) => x.code ?? ""));
+  const row: Project = { ...project, id: newId(), code, createdAt: now, updatedAt: now };
   setState({ ...s, projects: [row, ...s.projects] });
   void supabase.from("projects").insert({ id: row.id, ...toProject(row) }).then(({ error }) => fail("projects", error));
   addAuditLog("CREATE", "Project", row.id, `Created project ${row.name}`);

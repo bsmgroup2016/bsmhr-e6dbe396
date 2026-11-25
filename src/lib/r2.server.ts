@@ -41,6 +41,13 @@ function scansEnv() {
   return { accountId, accessKeyId, secretAccessKey, bucket };
 }
 
+/** Client for one specific bucket by id, regardless of key folder rules (admin media browser). */
+export function r2BucketClient(id: "main" | "scans") {
+  const env = id === "scans" ? scansEnv() : r2Env();
+  if (!env) return null;
+  return makeClient(env);
+}
+
 /** Client for writing `key`: scan folders go to the secondary bucket when configured. */
 export function r2Client(key?: string) {
   const s = key && isScanKey(key) ? scansEnv() : null;

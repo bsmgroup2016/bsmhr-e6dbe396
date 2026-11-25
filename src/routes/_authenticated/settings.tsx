@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { SmtpSettings } from "@/components/settings/smtp-settings";
 import { StorageSettings } from "@/components/settings/storage-settings";
+import { MediaBrowser } from "@/components/settings/media-browser";
 import { ApiIntegrationSettings } from "@/components/settings/ai-settings";
 import { Badge } from "@/components/ui/badge";
 
@@ -38,7 +39,8 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
-import { getBranches, getCurrentBranch, setCurrentBranch, getCompanies, getCurrentCompany, exportState, importState, resetState, getAllBranchPrefixes, addBranchPrefix, updateBranchPrefix, deleteBranchPrefix } from "@/lib/store";
+import { getBranches, getCurrentBranch, setCurrentBranch, exportState, importState, resetState, getAllBranchPrefixes, updateBranchPrefix, deleteBranchPrefix } from "@/lib/store";
+import { MOTHER_COMPANY } from "@/core/company-identity";
 import { checkR2Status } from "@/lib/r2";
 import { SystemHealth } from "@/components/settings/system-health";
 import { AutomationCentre } from "@/components/settings/automation-centre";
@@ -67,7 +69,6 @@ export const Route = createFileRoute("/_authenticated/settings")({
 export default function SettingsPage() {
   const { isAdmin } = useAuth();
   const branches = getBranches();
-  const company = getCompanies().find((item) => item.id === getCurrentCompany());
   const [currentBranch, setBranch] = useState(getCurrentBranch());
   const [exportData, setExportData] = useState("");
   const [importData, setImportData] = useState("");
@@ -129,8 +130,7 @@ export default function SettingsPage() {
             <TabsTrigger value="api">API Integration</TabsTrigger>
             <TabsTrigger value="smtp">SMTP</TabsTrigger>
             <TabsTrigger value="payments">Payments</TabsTrigger>
-            <TabsTrigger value="storage">Storage</TabsTrigger>
-            {isAdmin && <TabsTrigger value="archive">Archive &amp; Clean</TabsTrigger>}
+            <TabsTrigger value="storage">Storage &amp; Media</TabsTrigger>
             <TabsTrigger value="data">Data</TabsTrigger>
             <TabsTrigger value="automation">Automation</TabsTrigger>
             <TabsTrigger value="health">Health</TabsTrigger>
@@ -172,20 +172,16 @@ export default function SettingsPage() {
             <div className="rounded-xl border bg-card p-5 shadow-sm">
               <div className="flex items-center gap-2 mb-4">
                 <Settings className="h-5 w-5 text-muted-foreground" />
-                <h2 className="text-lg font-semibold">Company</h2>
+                <h2 className="text-lg font-semibold">Mother Company</h2>
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
+                <div className="space-y-2 sm:col-span-2">
                   <Label htmlFor="companyName">Company name</Label>
-                  <Input id="companyName" value={company?.legalName || company?.name || ""} placeholder="Not configured" readOnly aria-readonly="true" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="uen">UEN</Label>
-                  <Input id="uen" value={company?.uen || ""} placeholder="Not configured" readOnly aria-readonly="true" />
+                  <Input id="companyName" value={MOTHER_COMPANY.name} readOnly aria-readonly="true" />
                 </div>
                 <div className="space-y-2 sm:col-span-2">
                   <Label htmlFor="address">Address</Label>
-                  <Input id="address" value={company?.address || ""} placeholder="Not configured" readOnly aria-readonly="true" />
+                  <Input id="address" value={MOTHER_COMPANY.address} readOnly aria-readonly="true" />
                 </div>
               </div>
               <Button variant="link" asChild className="mt-3 px-0"><Link to="/companies">Manage company details</Link></Button>
@@ -272,10 +268,17 @@ export default function SettingsPage() {
             <PaymentDetails />
           </TabsContent>
 
-          <TabsContent value="storage" className="mt-4 space-y-4">
-            <StorageSettings />
+          <TabsContent value="storage" className="mt-4 space-y-8">
+            {isAdmin && <MediaBrowser />}
+            <section className={isAdmin ? "border-t pt-6" : undefined} aria-label="Storage connections">
+              <StorageSettings />
+            </section>
+            {isAdmin && (
+              <section className="border-t pt-6" aria-label="Archive and cleanup">
+                <ArchiveSettings />
+              </section>
+            )}
           </TabsContent>
-          {isAdmin && <TabsContent value="archive" className="mt-4 space-y-4"><ArchiveSettings /></TabsContent>}
 
           <TabsContent value="data" className="mt-4 space-y-4">
             <div className="rounded-xl border bg-card p-5 shadow-sm">
@@ -336,23 +339,24 @@ export default function SettingsPage() {
   );
 }
 
+const PREFIX_ORDER = ["B", "BS", "V", "VR", "P", "PC"];
+
+function sortBranchPrefixes<T extends { code: string }>(list: T[]): T[] {
+  return [...list].sort((a, b) => {
+    const ia = PREFIX_ORDER.indexOf(a.code.toUpperCase());
+    const ib = PREFIX_ORDER.indexOf(b.code.toUpperCase());
+    const oa = ia === -1 ? PREFIX_ORDER.length : ia;
+    const ob = ib === -1 ? PREFIX_ORDER.length : ib;
+    if (oa !== ob) return oa - ob;
+    return a.code.localeCompare(b.code);
+  });
+}
+
 function BranchPrefixManager() {
-  const [rows, setRows] = useState(getAllBranchPrefixes());
-  const [code, setCode] = useState("");
-  const [name, setName] = useState("");
+  const [rows, setRows] = useState(() => sortBranchPrefixes(getAllBranchPrefixes()));
 
   function refresh() {
-    setRows(getAllBranchPrefixes());
-  }
-
-  function handleAdd() {
-    const c = code.trim().toUpperCase();
-    if (!c || !name.trim()) return;
-    if (rows.some((r) => r.code.toUpperCase() === c)) return;
-    addBranchPrefix({ code: c, name: name.trim(), active: true });
-    setCode("");
-    setName("");
-    refresh();
+    setRows(sortBranchPrefixes(getAllBranchPrefixes()));
   }
 
   return (
@@ -362,7 +366,7 @@ function BranchPrefixManager() {
         <h2 className="text-lg font-semibold">Branch prefixes (P-File Number)</h2>
       </div>
       <p className="mb-4 text-sm text-muted-foreground">
-        Each branch keeps its own sequence, e.g. BS1, BS2 … / V1, V2 … / P1, P2 …
+        Each branch keeps its own sequence: B-01 (BSM Pte 01), BS-01 (BSM Pte 02), V-01 (VRL Pte 01), VR-01 (VRL Pte 02), P-01 (Pluto Pte 01), PC-01 (Pluto Pte 02).
       </p>
 
       <div className="space-y-2">
@@ -414,18 +418,6 @@ function BranchPrefixManager() {
             </div>
           ))
         )}
-      </div>
-
-      <div className="mt-4 flex flex-wrap items-end gap-2">
-        <div className="space-y-2">
-          <Label htmlFor="newPrefixCode">Prefix</Label>
-          <Input id="newPrefixCode" className="w-24" value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} placeholder="BS" />
-        </div>
-        <div className="space-y-2 flex-1 min-w-40">
-          <Label htmlFor="newPrefixName">Branch / company</Label>
-          <Input id="newPrefixName" value={name} onChange={(e) => setName(e.target.value)} placeholder="BSM Engineering" />
-        </div>
-        <Button onClick={handleAdd}>Add prefix</Button>
       </div>
     </div>
   );
