@@ -1,0 +1,24 @@
+# Backend consensus OCR verification
+
+## Prepared, not activated
+
+The backend-only verification implementation is in `src/core/time-card-consensus.ts` and `src/lib/time-card-consensus.server.ts`, exposed by `readTimeCardWithConsensus` in the existing OCR service. Ordinary `readTimeCard` and public OCR dispatch still use the existing working reader. The owner approved an invisible client transport change: time-card requests now start private R2 jobs and poll results while draining a heartbeat connection. No screen, upload, Auth, existing R2 implementation, database table, saved provider setting, claim workbook or salary calculation was changed.
+
+The saved AI Brain OCR integration is the only matching connected router (`https://stbd.seobdshop.com/v1/chat/completions`, model `hr-brain`). The prepared reader reuses that enabled row and its secret through the existing resolver; no new key or provider row is created. If this is not the owner's 9Router, activation must wait for confirmation rather than inventing a connection.
+
+## Verification stages
+
+1. Best-effort router extraction, 30-second deadline. HTTP errors, timeout and invalid JSON yield null initial extraction, not job failure.
+2. Mandatory official Google `gemini-4-carbon` extraction of the original media and initial readings, high media resolution/high thinking, JSON MIME and JSON schema. Native Google uses `responseJsonSchema`, not the OpenAI-compatible endpoint. Invalid output, authentication failure or unavailable model cannot pass unverified router data onward.
+3. TypeScript date/time normalization, cell-by-cell differences including confidence, critical-null checks, confidence threshold 0.8, invalid/nonpositive shifts and net-hours comparison with a strictly greater-than-0.25-hour tolerance. Unknown breaks remain null. Where a card prints separate GW/OT instead of a total, their sum is computed in code, never by AI.
+4. Only flagged rows invoke official OpenAI `gpt-6.2-sol`, high reasoning, strict targeted JSON schema, 300 completion-token budget. The first message contains identical static instructions/schema; image and row-specific differences are last. Only flagged fields may merge. Math and critical-cell checks run again; an unavailable/invalid/truncated tie-break result leaves the original verified row flagged.
+
+The adapter retains printed card identity, site, written GW/OT and date. Existing duty helpers remain authoritative for fallback hours. Residual concerns use the existing low-confidence/conflict/remarks contract. Unknown dates or duplicate rows cannot disappear or acquire invented dates: they fail clearly into the existing upload retry path. No AI output is written into the Excel template.
+
+## Activation blockers (25 November 2026)
+
+- Server secrets `GEMINI_API_KEY` and `OPENAI_API_KEY` are present. Read-only official model-availability requests returned HTTP 401 for both; OpenAI returned `invalid_api_key`. This does not prove that either requested model exists or is available to the account. Neither model was silently substituted, and no key value was logged or changed. These credentials/access must be corrected outside this change before mandatory official verification can safely replace working OCR.
+- Approved background transport is implemented through the existing OCR endpoint: authenticated POST starts the job and authenticated GET checks owner and source-file access before returning status/results. Job JSON is private main-R2 state, not database data or an addition to the scans bucket. Every job-state write is verified by read-back. Native Nitro/Cloudflare `request.waitUntil` is used when available, while an open 202 heartbeat response keeps the request alive for multi-minute work. Invisible polling drains that connection and reads status; it never retries a paid provider automatically. `waitUntil` alone cannot guarantee unlimited execution: if the browser disconnects, the Worker only has a short grace period. Fully unattended, crash-resumable execution would require an external durable workflow/queue and is not claimed or configured here.
+- Signed-in real upload/export verification remains unavailable because the project uses external Auth and has no authorized sandbox account session. Fixture tests verify the service, not live handwritten OCR accuracy.
+
+Verification: 29 new deterministic/service/job/polling tests and 38 existing OCR/provider/time-card tests pass. A tiny fictional queued job was written to real main R2, read back successfully, denied to a different owner and deleted with 404 read-back; no real worker file was touched. The background transport is active for the existing reader, but the new mandatory official consensus reader is not activated. Do not claim live consensus OCR, handwritten accuracy or fully unattended crash-resumable execution until the remaining access/runtime checks succeed. Existing paid-provider toggles and the chatbot chain remain untouched.

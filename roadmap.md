@@ -235,3 +235,11 @@
 
 - [x] Remove document-reader and time-card tie-break calls, reject stale Claude rows and preserve other provider settings.
 - [x] Verify removed-provider and time-card regressions: 38 focused tests pass; source audit covers every shared OCR entry point. Real signed-in upload remains blocked by unavailable external-account session.
+
+## Backend consensus OCR verification
+
+- [x] Prepare 9Router → mandatory official Gemini → deterministic checks → targeted official OpenAI verification, preserving current result format and Excel calculations.
+- [x] Test nulls, normalization, 0.8 confidence, 0.25-hour tolerance, provider failures and targeted-only merging.
+- [ ] Activate and verify live OCR. Blocker: both saved official provider keys returned HTTP 401; do not break the existing OCR flow or substitute models.
+- [x] Add authenticated owner/source-checked R2 job status and approved invisible heartbeat/result polling for the existing reader; 67 focused tests and real fictional-job R2 read-back/removal verify behavior without changing screens or upload/Excel flows.
+- [ ] Verify signed-in uploaded-card background execution in the published Worker. Blocker: no authorized external-Auth browser session; completely unattended crash-resumable execution would additionally require an external durable workflow/queue, not waitUntil alone.

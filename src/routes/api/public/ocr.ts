@@ -5,6 +5,7 @@ import { canAccessKey, keyFromRef, verifyUser } from "@/lib/r2.server";
 const fileSchema = z.object({
   kind: z.enum(["ipa", "timecard", "passport", "medical", "particular", "csoc"]),
   ref: z.string().min(1).max(2048),
+  background: z.boolean().optional(),
 });
 
 const columnsSchema = z.object({
@@ -18,6 +19,20 @@ const bodySchema = z.union([fileSchema, columnsSchema]);
 export const Route = createFileRoute("/api/public/ocr")({
   server: {
     handlers: {
+      GET: async ({ request }) => {
+        const userId = await verifyUser(request);
+        if (!userId) return new Response("Unauthorized", { status: 401 });
+        const parsed = z.string().uuid().safeParse(new URL(request.url).searchParams.get("job"));
+        if (!parsed.success) return new Response("Invalid job", { status: 400 });
+        try {
+          const { readOwnedOcrJob } = await import("@/lib/ocr-jobs.server");
+          const job = await readOwnedOcrJob(parsed.data, userId);
+          if (!job || !(await canAccessKey(userId, job.source))) return new Response("Not found", { status: 404 });
+          return Response.json({ status: job.status, ...(job.data ? { data: job.data } : {}), ...(job.error ? { error: job.error } : {}) }, { headers: { "Cache-Control": "no-store" } });
+        } catch {
+          return Response.json({ error: "OCR progress could not be read. Retry the time card." }, { status: 502, headers: { "Cache-Control": "no-store" } });
+        }
+      },
       POST: async ({ request }) => {
         const userId = await verifyUser(request);
         if (!userId) return new Response("Unauthorized", { status: 401 });
@@ -43,6 +58,13 @@ export const Route = createFileRoute("/api/public/ocr")({
           }
           if (!(await canAccessKey(userId, key))) {
             return new Response("Not found", { status: 404 });
+          }
+
+          if (parsed.kind === "timecard" && parsed.background) {
+            const { createOcrJob, ocrJobResponse } = await import("@/lib/ocr-jobs.server");
+            const job = await createOcrJob(userId, key);
+            // Preserve the working reader until official consensus-provider access is verified.
+            return ocrJobResponse(request, job, ocr.readTimeCard);
           }
 
           const data =

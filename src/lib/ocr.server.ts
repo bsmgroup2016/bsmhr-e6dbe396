@@ -75,6 +75,22 @@ export async function readTimeCard(ref: string) {
   return mergeCardReads(any, null, { primary: "fallback" });
 }
 
+/** Prepared consensus reader. Activation is held until official keys/model access and background transport are verified. */
+export async function readTimeCardWithConsensus(ref: string) {
+  const { activeProviders } = await import("./api-integrations.server");
+  const { HR_BRAIN_BASE_URL } = await import("@/core/hr-brain");
+  const { verifyTimeCardConsensus } = await import("./time-card-consensus.server");
+  const { toExistingClaimRows } = await import("@/core/time-card-consensus");
+  const providers = await activeProviders("ocr");
+  const router = providers.find(provider => provider.url.startsWith(`${HR_BRAIN_BASE_URL}/`)) ?? null;
+  const result = await verifyTimeCardConsensus(await fetchAsDataUrl(ref), {
+    router,
+    geminiKey: process.env['GEMINI_API_KEY'] ?? "",
+    openaiKey: process.env['OPENAI_API_KEY'] ?? "",
+  });
+  return toExistingClaimRows(result);
+}
+
 /** Passport bio page or Work Permit / S-Pass card → identity + expiry dates. */
 export async function readPassport(ref: string) {
   const data = await readFile(

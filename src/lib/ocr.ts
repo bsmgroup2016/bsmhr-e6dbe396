@@ -7,6 +7,7 @@
  * Manual entry still works everywhere, OCR only pre-fills.
  */
 import { supabase } from "@/integrations/supabase/client";
+import { consumeOcrJob, type OcrJobSnapshot } from "./ocr-job-polling";
 import type { IpaExtract } from "@/core/ipa-registration";
 export type { IpaExtract } from "@/core/ipa-registration";
 
@@ -42,8 +43,22 @@ async function callOcr(payload: OcrPayload): Promise<unknown> {
   const res = await fetch(OCR_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-    body: JSON.stringify(payload),
+    body: JSON.stringify(payload.kind === "timecard" ? { ...payload, background: true } : payload),
   });
+  if (res.status === 202 && res.headers.get("Content-Type")?.includes("application/x-ndjson")) {
+    return consumeOcrJob(res, {
+      status: async jobId => {
+        const { data: current } = await supabase.auth.getSession();
+        const currentToken = current.session?.access_token;
+        if (!currentToken) throw new Error("Sign in again to use OCR");
+        const status = await fetch(`${OCR_URL}?job=${encodeURIComponent(jobId)}`, { headers: { Authorization: `Bearer ${currentToken}` }, cache: "no-store" });
+        if (!status.ok) throw new Error(status.status === 401 ? "Sign in again to use OCR" : "OCR progress could not be read. Retry the time card.");
+        const snapshot = await status.json() as OcrJobSnapshot;
+        if (!["queued", "running", "complete", "failed"].includes(snapshot.status)) throw new Error("Invalid OCR progress response");
+        return snapshot;
+      },
+    });
+  }
   if (!res.ok) {
     let message = OCR_NOT_CONFIGURED;
     try {
