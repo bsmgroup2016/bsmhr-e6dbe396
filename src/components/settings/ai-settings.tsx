@@ -57,9 +57,11 @@ function EditForm(props: {
   onSave: (v: { label: string; url: string; model: string; enabled: boolean; apiKey?: string; clearKey?: boolean }) => Promise<void>;
   canClearKey?: boolean;
 }) {
-  const [label, setLabel] = useState(props.initial?.label ?? "");
-  const [url, setUrl] = useState(props.initial?.url ?? "");
-  const [model, setModel] = useState(props.initial?.model ?? "");
+  // Excel AI opens ready for Claude, so only the key needs pasting.
+  const claude = props.isNew && props.category === "excel_ai" ? PRESETS["Claude"] : undefined;
+  const [label, setLabel] = useState(props.initial?.label ?? (claude ? "Claude" : ""));
+  const [url, setUrl] = useState(props.initial?.url ?? claude?.url ?? "");
+  const [model, setModel] = useState(props.initial?.model ?? claude?.model ?? "");
   const [enabled, setEnabled] = useState(props.initial?.enabled ?? true);
   const [apiKey, setApiKey] = useState("");
   const [saving, setSaving] = useState(false);
