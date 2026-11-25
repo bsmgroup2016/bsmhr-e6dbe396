@@ -270,8 +270,8 @@ export function ApiIntegrationSettings() {
         description="Scans time cards and documents, fills the claim-sheet Excel and creates claim sheets. Tried top to bottom." />
       <Section category="chatbot" title="2. AI Chatbot" icon={Bot} items={items} onChanged={refresh}
         description="Used only by the AI Assistant. If one runs out, the next one takes over. Never used for OCR." />
-      <Section category="excel_ai" title="3. Excel AI (Claude)" icon={Sheet} items={items} onChanged={refresh}
-        description="Plans the AI analysis Excel (pivots, XLOOKUP, SUMIFS, flags, review notes). Never used for OCR; hours and pay always come from the software." />
+      <Section category="excel_ai" title="3. Claude Brain" icon={Sheet} items={items} onChanged={refresh}
+        description="Saved for later use. Keep it turned off until you decide where Claude should be used." />
       <HrBrainTest />
     </div>
   );
