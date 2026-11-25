@@ -32,6 +32,7 @@ import type { Company, Employee } from "@/lib/types";
 import { companyOverview, CSOC_RE } from "@/core/company-overview";
 import { CompanyOverviewCards } from "@/components/dashboard/company-overview-cards";
 import { getCertifications, getPayroll } from "@/lib/store";
+import { activeAssignedEmployeeIds, workforceBands } from "@/lib/availability";
 
 export const Route = createFileRoute("/_authenticated/companies_/$id")({
   head: () => ({
@@ -91,6 +92,7 @@ function CompanyDashboardPage() {
   const leaves = getLeaveRequests();
   const overview = companyOverview(employees, getCertifications(), getPayroll(), isGroup ? undefined : id);
 
+  const bands = workforceBands(overview.workers, activeAssignedEmployeeIds(assignments));
   const data = useMemo(() => {
     const staff = employees.filter((e) => isGroup || e.companyId === id);
     const staffIds = new Set(staff.map((e) => e.id));
@@ -202,7 +204,16 @@ function CompanyDashboardPage() {
 
         {isGroup && <CompanyOverviewCards />}
 
+        <div className="grid grid-cols-3 overflow-hidden rounded-lg border text-center">
+          <div className="worker-band-live p-3"><p className="text-[11px] font-semibold uppercase tracking-wide">Live worker</p><p className="text-2xl font-bold">{bands.live}</p></div>
+          <div className="worker-band-working p-3"><p className="text-[11px] font-semibold uppercase tracking-wide">Working</p><p className="text-2xl font-bold">{bands.working}</p></div>
+          <div className="worker-band-available p-3"><p className="text-[11px] font-semibold uppercase tracking-wide">Available</p><p className="text-2xl font-bold">{bands.available}</p></div>
+        </div>
+
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <SummaryCard title="New approved IPA" value={String(overview.newIpa.length)} icon={<UserCheck className="h-5 w-5" />} variant="success" caption="Work Permit stage: IPA issued" />
+          <SummaryCard title="Passport expiring" value={String(overview.passports.length)} icon={<ShieldAlert className="h-5 w-5" />} variant="warning" caption="Next 90 days" />
+          <SummaryCard title="CoreTrade expiring" value={String(overview.coretrade.length)} icon={<ShieldAlert className="h-5 w-5" />} variant="info" caption="SEC(K) / CoreTrade · next 60 days" />
           <SummaryCard title="Waiting for issuance" value={String(overview.waiting.length)} icon={<CalendarClock className="h-5 w-5" />} variant="warning" caption="IPA issued / arrived / medical cleared" />
           <SummaryCard title="Work Permit expiring" value={String(overview.permits.length)} icon={<ShieldAlert className="h-5 w-5" />} variant="destructive" caption="Confirmed expiry · next 60 days" />
           <SummaryCard title="CSOC expiring" value={String(overview.csoc.length)} icon={<ShieldAlert className="h-5 w-5" />} variant="info" caption="Next 60 days · unique workers" />
