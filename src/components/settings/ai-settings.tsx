@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  Bot, ScanLine, CheckCircle2, XCircle, Loader2, Play, ChevronDown, ChevronUp,
+  Bot, ScanLine, Sheet, CheckCircle2, XCircle, Loader2, Play, ChevronDown, ChevronUp,
   ArrowUp, ArrowDown, Pencil, Trash2, Plus, Save,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -14,7 +14,7 @@ import { Switch } from "@/components/ui/switch";
 import { HrBrainTest } from "@/components/settings/hr-brain-test";
 import { integrationPresetModel } from "@/core/ocr-models";
 
-type Category = "ocr" | "chatbot";
+type Category = "ocr" | "chatbot" | "excel_ai";
 type Item = {
   id: string; category: Category; label: string; url: string; model: string;
   priority: number; enabled: boolean; updatedAt: string; keySource: "custom" | "secure" | "none";
@@ -39,6 +39,7 @@ const PRESETS: Record<string, { url: string; model: string }> = {
   Gemini: { url: "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", model: "gemini-3.1-pro-preview" },
   OpenAI: { url: "https://api.openai.com/v1/chat/completions", model: "gpt-5.5" },
   Groq: { url: "https://api.groq.com/openai/v1/chat/completions", model: "openai/gpt-oss-120b" },
+  Claude: { url: "https://api.anthropic.com/v1/chat/completions", model: "claude-opus-4-5" },
   OpenRouter: { url: "https://openrouter.ai/api/v1/chat/completions", model: "openai/gpt-4o-mini" },
 };
 
@@ -267,6 +268,8 @@ export function ApiIntegrationSettings() {
         description="Scans time cards and documents, fills the claim-sheet Excel and creates claim sheets. Tried top to bottom." />
       <Section category="chatbot" title="2. AI Chatbot" icon={Bot} items={items} onChanged={refresh}
         description="Used only by the AI Assistant. If one runs out, the next one takes over. Never used for OCR." />
+      <Section category="excel_ai" title="3. Excel AI (Claude)" icon={Sheet} items={items} onChanged={refresh}
+        description="Plans the AI analysis Excel (pivots, XLOOKUP, SUMIFS, flags, review notes). Never used for OCR; hours and pay always come from the software." />
       <HrBrainTest />
     </div>
   );

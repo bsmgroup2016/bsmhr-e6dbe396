@@ -26,6 +26,8 @@ import {
   type ClaimFilter,
 } from "@/core/claim-filters";
 import { exportRows } from "@/lib/xlsx";
+import { buildExcelAiWorkbook } from "@/lib/excel-ai-workbook";
+import { fetchExcelAiPlan } from "@/lib/excel-ai";
 import { getClaimSheets, getClients, getCompanies, getEmployees, getPayroll, getProjects, getSites, subscribe } from "@/lib/store";
 
 export const Route = createFileRoute("/_authenticated/claim-workflow")({
@@ -98,6 +100,18 @@ function ClaimWorkflowPage() {
       toast.success("Salary sheet downloaded");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Could not build the salary sheet");
+    } finally { setBusy(null); }
+  }
+
+  async function downloadAiAnalysis() {
+    setBusy("ai-excel");
+    try {
+      const { plan, source } = await fetchExcelAiPlan(month, salaryRows.map(r => ({ Company: r.Company, "P-File": r["P-File number"], Name: r.Name, G: r["G hours"], OT: r["OT hours"], Net: r["Net pay (SGD)"], Status: r.Status })));
+      const workbook = await buildExcelAiWorkbook(eligible, salaryRows, plan, month);
+      downloadClaimBlob(new Blob([await workbook.xlsx.writeBuffer()], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }), `${scopeName} AI ANALYSIS - ${month}.xlsx`);
+      toast.success(source ? `AI analysis Excel downloaded · planned by ${source}` : "Analysis Excel downloaded with the standard layout (Excel AI not available)");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not build the analysis Excel");
     } finally { setBusy(null); }
   }
 
@@ -288,6 +302,7 @@ function ClaimWorkflowPage() {
           <section className="space-y-4 border-t pt-5">
             <div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="text-lg font-semibold">Salary sheet{hasFilters ? " (filtered)" : ""}</h2><p className="text-sm text-muted-foreground">{salaryRows.length} workers · {month} · Saved payroll</p></div>
               <Button onClick={() => void downloadSalary()} disabled={busy !== null || incompleteSalary.length > 0}>{busy === "salary" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />} Download salary Excel</Button>
+              <Button variant="outline" onClick={() => void downloadAiAnalysis()} disabled={busy !== null}>{busy === "ai-excel" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />} AI analysis Excel</Button>
             </div>
             {incompleteSalary.length > 0 && <Warning text={`${incompleteSalary.length} worker(s) need a linked worker record and one payroll entry for ${month} before salary download.`} />}
             <Table><TableHeader><TableRow><TableHead>Company</TableHead><TableHead>P-File</TableHead><TableHead>Worker</TableHead><TableHead className="text-right">G hrs</TableHead><TableHead className="text-right">OT hrs</TableHead><TableHead className="text-right">Net pay (SGD)</TableHead><TableHead>Status</TableHead></TableRow></TableHeader>

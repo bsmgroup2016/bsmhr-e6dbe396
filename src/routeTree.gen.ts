@@ -72,6 +72,7 @@ import { Route as ApiPublicApiIntegrationsRouteImport } from './routes/api/publi
 import { Route as ApiPublicArchiveTickRouteImport } from './routes/api/public/archive-tick'
 import { Route as ApiPublicAssistantRouteImport } from './routes/api/public/assistant'
 import { Route as ApiPublicAutomationRunRouteImport } from './routes/api/public/automation-run'
+import { Route as ApiPublicExcelAiRouteImport } from './routes/api/public/excel-ai'
 import { Route as ApiPublicHrBrainRouteImport } from './routes/api/public/hr-brain'
 import { Route as ApiPublicLiveChatRouteImport } from './routes/api/public/live-chat'
 import { Route as ApiPublicNotifyLeaveRouteImport } from './routes/api/public/notify-leave'
@@ -440,6 +441,11 @@ const ApiPublicAutomationRunRoute = ApiPublicAutomationRunRouteImport.update({
   path: '/api/public/automation-run',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicExcelAiRoute = ApiPublicExcelAiRouteImport.update({
+  id: '/api/public/excel-ai',
+  path: '/api/public/excel-ai',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicHrBrainRoute = ApiPublicHrBrainRouteImport.update({
   id: '/api/public/hr-brain',
   path: '/api/public/hr-brain',
@@ -695,6 +701,7 @@ export interface FileRoutesByFullPath {
   '/api/public/archive-tick': typeof ApiPublicArchiveTickRoute
   '/api/public/assistant': typeof ApiPublicAssistantRoute
   '/api/public/automation-run': typeof ApiPublicAutomationRunRoute
+  '/api/public/excel-ai': typeof ApiPublicExcelAiRoute
   '/api/public/hr-brain': typeof ApiPublicHrBrainRoute
   '/api/public/live-chat': typeof ApiPublicLiveChatRoute
   '/api/public/notify-leave': typeof ApiPublicNotifyLeaveRoute
@@ -796,6 +803,7 @@ export interface FileRoutesByTo {
   '/api/public/archive-tick': typeof ApiPublicArchiveTickRoute
   '/api/public/assistant': typeof ApiPublicAssistantRoute
   '/api/public/automation-run': typeof ApiPublicAutomationRunRoute
+  '/api/public/excel-ai': typeof ApiPublicExcelAiRoute
   '/api/public/hr-brain': typeof ApiPublicHrBrainRoute
   '/api/public/live-chat': typeof ApiPublicLiveChatRoute
   '/api/public/notify-leave': typeof ApiPublicNotifyLeaveRoute
@@ -899,6 +907,7 @@ export interface FileRoutesById {
   '/api/public/archive-tick': typeof ApiPublicArchiveTickRoute
   '/api/public/assistant': typeof ApiPublicAssistantRoute
   '/api/public/automation-run': typeof ApiPublicAutomationRunRoute
+  '/api/public/excel-ai': typeof ApiPublicExcelAiRoute
   '/api/public/hr-brain': typeof ApiPublicHrBrainRoute
   '/api/public/live-chat': typeof ApiPublicLiveChatRoute
   '/api/public/notify-leave': typeof ApiPublicNotifyLeaveRoute
@@ -1002,6 +1011,7 @@ export interface FileRouteTypes {
     | '/api/public/archive-tick'
     | '/api/public/assistant'
     | '/api/public/automation-run'
+    | '/api/public/excel-ai'
     | '/api/public/hr-brain'
     | '/api/public/live-chat'
     | '/api/public/notify-leave'
@@ -1103,6 +1113,7 @@ export interface FileRouteTypes {
     | '/api/public/archive-tick'
     | '/api/public/assistant'
     | '/api/public/automation-run'
+    | '/api/public/excel-ai'
     | '/api/public/hr-brain'
     | '/api/public/live-chat'
     | '/api/public/notify-leave'
@@ -1205,6 +1216,7 @@ export interface FileRouteTypes {
     | '/api/public/archive-tick'
     | '/api/public/assistant'
     | '/api/public/automation-run'
+    | '/api/public/excel-ai'
     | '/api/public/hr-brain'
     | '/api/public/live-chat'
     | '/api/public/notify-leave'
@@ -1258,6 +1270,7 @@ export interface RootRouteChildren {
   ApiPublicArchiveTickRoute: typeof ApiPublicArchiveTickRoute
   ApiPublicAssistantRoute: typeof ApiPublicAssistantRoute
   ApiPublicAutomationRunRoute: typeof ApiPublicAutomationRunRoute
+  ApiPublicExcelAiRoute: typeof ApiPublicExcelAiRoute
   ApiPublicHrBrainRoute: typeof ApiPublicHrBrainRoute
   ApiPublicLiveChatRoute: typeof ApiPublicLiveChatRoute
   ApiPublicNotifyLeaveRoute: typeof ApiPublicNotifyLeaveRoute
@@ -1734,6 +1747,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicAutomationRunRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/excel-ai': {
+      id: '/api/public/excel-ai'
+      path: '/api/public/excel-ai'
+      fullPath: '/api/public/excel-ai'
+      preLoaderRoute: typeof ApiPublicExcelAiRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hr-brain': {
       id: '/api/public/hr-brain'
       path: '/api/public/hr-brain'
@@ -2191,6 +2211,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicArchiveTickRoute: ApiPublicArchiveTickRoute,
   ApiPublicAssistantRoute: ApiPublicAssistantRoute,
   ApiPublicAutomationRunRoute: ApiPublicAutomationRunRoute,
+  ApiPublicExcelAiRoute: ApiPublicExcelAiRoute,
   ApiPublicHrBrainRoute: ApiPublicHrBrainRoute,
   ApiPublicLiveChatRoute: ApiPublicLiveChatRoute,
   ApiPublicNotifyLeaveRoute: ApiPublicNotifyLeaveRoute,

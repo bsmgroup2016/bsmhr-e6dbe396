@@ -20,7 +20,7 @@ const fields = {
 };
 
 const body = z.discriminatedUnion("action", [
-  z.object({ action: z.literal("create"), category: z.enum(["ocr", "chatbot"]), ...fields, apiKey: z.string().trim().min(8).max(400) }),
+  z.object({ action: z.literal("create"), category: z.enum(["ocr", "chatbot", "excel_ai"]), ...fields, apiKey: z.string().trim().min(8).max(400) }),
   z.object({
     action: z.literal("update"),
     id: z.string().uuid(),
