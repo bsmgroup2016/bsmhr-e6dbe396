@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { ArrowUpRight, Building2, Clock, ShieldAlert, BadgeCheck, Wallet } from "lucide-react";
+import { ArrowUpRight, Building2, Clock, ShieldAlert, BadgeCheck, Wallet, FileCheck2, BookUser, HardHat } from "lucide-react";
 import { R2Image } from "@/components/r2-image";
 import { companyOverview, orderedCompanies } from "@/core/company-overview";
 import { getCompanies, getEmployees, getCertifications, getPayroll } from "@/lib/store";
@@ -26,9 +26,12 @@ export function CompanyOverviewCards() {
             </div>
             <dl className={`mt-5 space-y-3 border-t pt-4 text-xs ${colored ? "border-current/20" : "border-border"}`}>
               {[
+                { label: "New approved IPA", value: data.newIpa.length, icon: FileCheck2, tone: "text-success" },
                 { label: "Waiting for issuance", value: data.waiting.length, icon: Clock, tone: "text-warning-text" },
                 { label: "Work Permit expiring", value: data.permits.length, icon: ShieldAlert, tone: "text-destructive" },
                 { label: "CSOC expiring", value: data.csoc.length, icon: BadgeCheck, tone: "text-info" },
+                { label: "Passport expiring", value: data.passports.length, icon: BookUser, tone: "text-warning-text" },
+                { label: "CoreTrade expiring", value: data.coretrade.length, icon: HardHat, tone: "text-info" },
               ].map((metric) => <div key={metric.label} className="flex items-center gap-2"><metric.icon className={`size-4 shrink-0 ${colored ? "opacity-75" : metric.tone}`} /><dt className="flex-1">{metric.label}</dt><dd className="text-base font-bold tabular-nums">{metric.value}</dd></div>)}
               <div className={`flex items-center gap-2 border-t pt-3 ${colored ? "border-current/20" : "border-border"}`}><Wallet className="size-4 shrink-0 opacity-75" /><dt className="flex-1">Annual wages</dt><dd className="break-all text-base font-bold tabular-nums">${Math.round(data.annualWages).toLocaleString("en-SG")}</dd></div>
             </dl>

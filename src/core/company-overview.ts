@@ -22,6 +22,7 @@ export function companyOverview(
   const workers = staff.filter(isCountableWorker);
   const ids = new Set(staff.map((e) => e.id));
   const workerIds = new Set(workers.map((e) => e.id));
+  const newIpa = workers.filter((e) => e.passType === "Work Permit" && e.wpStage === "IPA Issued");
   const waiting = workers.filter((e) => e.passType === "Work Permit" && ["IPA Issued", "Arrived", "Medical Cleared"].includes(e.wpStage ?? ""));
   const permits = workers.filter((e) => e.passType === "Work Permit" && due(e.passExpiry));
   const passports = workers.filter((e) => due(e.passportExpiry, 90));
@@ -29,9 +30,13 @@ export function companyOverview(
   certifications.forEach((c) => {
     if (workerIds.has(c.employeeId) && /csoc|safety orientation|safety course/i.test(c.courseName) && due(c.expiryDate)) csocIds.add(c.employeeId);
   });
+  const coreIds = new Set(workers.filter((e) => due(e.skillCertExpiry) && (e.skillCertType === "Skills Evaluation (SEC(K))" || /coretrade|core trade/i.test(e.skillCertType ?? ""))).map((e) => e.id));
+  certifications.forEach((c) => {
+    if (workerIds.has(c.employeeId) && /coretrade|core trade|sec\s*\(k\)/i.test(c.courseName) && due(c.expiryDate)) coreIds.add(c.employeeId);
+  });
   const annualPayroll = payroll.filter((p) => ids.has(p.employeeId) && p.month.startsWith(`${year}-`) && p.status !== "Rejected");
   return {
-    year, staff, workers, waiting, permits, passports, csoc: workers.filter((e) => csocIds.has(e.id)), annualPayroll,
+    year, staff, workers, newIpa, waiting, coretrade: workers.filter((e) => coreIds.has(e.id)), permits, passports, csoc: workers.filter((e) => csocIds.has(e.id)), annualPayroll,
     annualWages: annualPayroll.reduce((sum, p) => sum + p.basicSalary + p.overtimePay + p.allowances + (p.bonus ?? 0), 0),
   };
 }
