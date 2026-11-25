@@ -33,3 +33,21 @@ const response = await callHrBrain({
 ```
 
 Settings → API Integration → Test AI Brain sends `Say OK` using the default 2048-token budget and displays the actual returned text and model. It does not change provider ordering or existing HR workflows.
+
+## Runtime invocation check
+
+Rule: a valid configured AI service must receive the app's request, not fail inside the server before reaching the provider.
+
+The first AI Brain implementation invoked native Worker fetch as `deps.fetch()`. This bound `this` to the dependency object and caused `TypeError: Illegal invocation`. Reproduced in workerd with the real provider; detached invocation returned HTTP 200. Both JSON and SSE share the corrected forwarding call. A regression test rejects bound calls.
+
+Code inspection of sibling paths found no other instance of this native-fetch binding bug:
+
+- Settings test and typed browser helper: ordinary standalone fetch; both JSON and SSE call the same protected endpoint.
+- OCR, time-card/document reading and provider tests (`ai.server.ts`, `ocr.server.ts`, `api-integrations.server.ts`): standalone native fetch; Claude reader/test uses the Anthropic SDK, not an injected native fetch method.
+- Assistant endpoint: delegates to the existing assistant service; shared provider forwarding is standalone fetch.
+- Email delivery and nightly automation (`email.server.ts`, `automation-run.server.ts`): standalone fetch/shared email sender.
+- Storage uploads (v1 and legacy), Media browsing/upload/delete, R2 status/deletion, signed file reads and archive storage: object methods belong to `AwsClient`, where method binding is intentional; these are not native global fetch references.
+- Application server entry: `handler.fetch()` is the framework server-entry method, not a native network fetch reference.
+- Searched database migrations and Supabase sources for AI Brain/completions and HTTP cron calls: no direct AI Brain/database forwarding implementation found.
+
+These sibling paths were inspected for this invocation bug, not end-to-end retested. No permissions, provider settings, existing records or sample data were changed. The real signed-in Settings click remains unverified without an authorized app session.

@@ -39,7 +39,9 @@ export async function handleHrBrain(request: Request, deps: Dependencies): Promi
     catch { return json({ error: "Invalid AI Brain request. Check messages and generation options." }, 400); }
     const baseUrl = (deps.baseUrl() || HR_BRAIN_BASE_URL).replace(/\/+$/, "");
     if (new URL(baseUrl).protocol !== "https:") return json({ error: "AI Brain base URL must use HTTPS" }, 503);
-    const upstream = await deps.fetch(`${baseUrl}/chat/completions`, {
+    // Worker fetch requires an unbound invocation, not deps.fetch() with deps as `this`.
+    const fetchUpstream = deps.fetch;
+    const upstream = await fetchUpstream(`${baseUrl}/chat/completions`, {
       method: "POST", redirect: "manual", signal: AbortSignal.any([request.signal, AbortSignal.timeout(120_000)]),
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
       body: JSON.stringify(body),

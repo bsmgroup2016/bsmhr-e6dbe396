@@ -2,6 +2,8 @@
 
 ## Reusable AI Brain
 
+- [x] Reproduce Worker Illegal invocation caused by bound fetch; detach upstream fetch, verify real provider HTTP 200 in workerd, pass 14 tests and inspect sibling network paths without changing their settings/data.
+
 - [x] Add authenticated admin-only AI Brain forwarding with JSON/SSE, validated options and server-only credentials.
 - [x] Add reusable browser helper and Settings connection test; leave existing HR AI flows unchanged.
 - [x] 13 tests verify forwarding rules, stream passthrough and access denial; direct provider Say OK returned HTTP 200 and OK.

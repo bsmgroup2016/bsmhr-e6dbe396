@@ -72,6 +72,18 @@ describe("AI Brain authenticated forwarding", () => {
     expect(response.headers.get("Content-Type")).toBe("text/event-stream");
     expect(await response.text()).toBe(bytes);
   });
+  test("calls Worker fetch unbound to avoid Illegal invocation", async () => {
+    const s = setup();
+    let invoked = false;
+    s.deps.fetch = (async function (this: unknown, _input: string | URL | Request, _init?: RequestInit) {
+      if (this !== undefined) throw new TypeError("Illegal invocation");
+      invoked = true;
+      return Response.json({ model: "hr-brain", choices: [{ message: { content: "OK" } }] });
+    }) as typeof fetch;
+    const response = await handleHrBrain(request(), s.deps);
+    expect(response.status).toBe(200);
+    expect(invoked).toBe(true);
+  });
   test("non-200 provider errors surface status without reflecting provider secrets", async () => {
     const s = setup({ upstream: new Response("fixture-only-credential", { status: 401 }) });
     const response = await handleHrBrain(request(), s.deps);
