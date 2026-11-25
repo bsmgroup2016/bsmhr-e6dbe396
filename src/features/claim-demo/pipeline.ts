@@ -2,9 +2,9 @@ import { createClaimWorkbook, claimWorkbookBlob, downloadClaimBlob } from "@/lib
 import { groupTimeCardRows, splitTimeCardFile } from "@/core/time-card-batch";
 import { countedCardHours } from "@/core/time-card-settlement";
 import { matchCardWorker, uniqueCardMatch } from "@/core/time-card-matching";
-import { uploadToR2 } from "@/lib/r2";
+import { uploadToR2, fetchR2Blob } from "@/lib/r2";
 import { checkClaimWorkbook } from "@/lib/claim-sheet-check";
-import { extractTimeCardData } from "@/lib/ocr";
+import { extractTimeCardData, pendingTimeCardJobs, type TimeCardExtractRow } from "@/lib/ocr";
 import { buildClaimSheetFromCard, deleteClaimSheet, getClaimSheets, getClients, getCompanies, getCurrentCompany, getEmployees, getProjects, getSites, saveGeneratedClaims, upsertAttendance } from "@/lib/store";
 import type { TimeCard, TimeCardEntry } from "@/lib/types";
 import type { DayEntry, FieldFlag, Worker } from "./types";
@@ -47,6 +47,52 @@ const READ_CONCURRENCY = 3;
 
 export type ReadResult = { workers: Worker[]; failed: string[]; month: string; site: string };
 
+function workersFromRows(rows: TimeCardExtractRow[], preview: string, fileName: string): Worker[] {
+  const groups = groupTimeCardRows(rows);
+  if (!groups.length) throw new Error("no dates could be read");
+  return groups.map(g => {
+    const entries = [...g.entries].sort((a, b) => a.date.localeCompare(b.date)) as TimeCardEntry[];
+    const first = entries[0];
+    if (!first) throw new Error("no dates could be read");
+    const flags: FieldFlag[] = [];
+    const name = (g.identity.workerName ?? "").replace(/\s*\(\s*[0-9A-Z]{1,4}\s*\)\s*$/i, "").trim();
+    if (!name) flags.push({ field: "name", reason: "could not read" });
+    if (!g.identity.employeeCode) flags.push({ field: "code", reason: "could not read" });
+    const low = entries.filter(e => (e.confidence ?? 1) < 0.6).length;
+    if (low) flags.push({ field: "name", reason: `${low} day(s) read with low confidence` });
+    const month = first.date.slice(0, 7);
+    return { id: crypto.randomUUID(), name, code: tidyCode(g.identity.employeeCode ?? ""), category: (g.entries.find(e => (e as { occupation?: string }).occupation) as { occupation?: string } | undefined)?.occupation ?? "", address: "", flags, days: toDays(month, entries), site: g.identity.siteName ?? "", preview, isPdf: false, fileName, month };
+  });
+}
+function finishRead(workers: Worker[], failed: string[]): ReadResult {
+  const months = workers.map(w => (w as Worker & { month?: string }).month).filter((v): v is string => !!v);
+  const sites = workers.map(w => w.site.trim()).filter(Boolean);
+  const most = (xs: string[]) => [...xs].sort((a, b) => xs.filter(x => x === b).length - xs.filter(x => x === a).length)[0] ?? "";
+  const site = most(sites);
+  for (const w of workers) if (!w.site.trim()) w.site = site;
+  return { workers: workers.sort((a, b) => a.code.localeCompare(b.code, undefined, { numeric: true })), failed, month: most(months), site };
+}
+
+/** Reopening the same tab reads existing owner-scoped jobs, never reuploads or reruns AI. */
+export async function recoverCards(onProgress: (done: number, total: number) => void): Promise<ReadResult> {
+  const jobs = await pendingTimeCardJobs(), workers: Worker[] = [], failed: string[] = [];
+  if (jobs.length) onProgress(0, jobs.length);
+  let done = 0;
+  for (let offset = 0; offset < jobs.length; offset += READ_CONCURRENCY) {
+    await Promise.all(jobs.slice(offset, offset + READ_CONCURRENCY).map(async job => {
+      try {
+        const ocr = await extractTimeCardData(job.ref, job.fileName);
+        if (!ocr.ok) throw new Error(ocr.reason);
+        const blob = await fetchR2Blob(job.ref);
+        const preview = await previewUrl(new File([blob], job.fileName, { type: blob.type }));
+        workers.push(...workersFromRows(ocr.data, preview, job.fileName));
+      } catch (error) { failed.push(`${job.fileName}: ${error instanceof Error ? error.message : "could not recover"}`); }
+      onProgress(++done, jobs.length);
+    }));
+  }
+  return finishRead(workers, failed);
+}
+
 /** Splits PDFs per page, stores each page, reads it with OCR and returns one Worker per card. */
 export async function readCards(files: File[], onProgress: (done: number, total: number) => void): Promise<ReadResult> {
   const pages: File[] = [];
@@ -55,30 +101,15 @@ export async function readCards(files: File[], onProgress: (done: number, total:
   onProgress(0, pages.length);
   const workers: Worker[] = [];
   let i = 0;
-  // Pages are independent: read several at once (each is upload + 2 AI reads), not one by one.
+  // Pages are independent; verification order within each card remains unchanged.
   const readPage = async (page: File) => {
     try {
       const previewing = previewUrl(page);
       const up = await uploadToR2(page, "time-cards");
-      let ocr = await extractTimeCardData(up.url);
-      // With 50 cards the AI may briefly rate-limit: wait once and retry instead of failing the page.
-      if (!ocr.ok && /rate limit/i.test(ocr.reason)) { await new Promise((r) => setTimeout(r, 5000)); ocr = await extractTimeCardData(up.url); }
+      const ocr = await extractTimeCardData(up.url, page.name);
       if (!ocr.ok) throw new Error(ocr.reason);
-      const groups = groupTimeCardRows(ocr.data);
-      if (!groups.length) throw new Error("no dates could be read");
       const preview = await previewing;
-      for (const g of groups) {
-        const entries = [...g.entries].sort((a, b) => a.date.localeCompare(b.date)) as TimeCardEntry[];
-        const month = entries[0].date.slice(0, 7);
-        const flags: FieldFlag[] = [];
-        const name = (g.identity.workerName ?? "").replace(/\s*\(\s*[0-9A-Z]{1,4}\s*\)\s*$/i, "").trim();
-        if (!name) flags.push({ field: "name", reason: "could not read" });
-        if (!g.identity.employeeCode) flags.push({ field: "code", reason: "could not read" });
-        const low = entries.filter((e) => (e.confidence ?? 1) < 0.6).length;
-        if (low) flags.push({ field: "name", reason: `${low} day(s) read with low confidence` });
-        workers.push({ id: crypto.randomUUID(), name, code: tidyCode(g.identity.employeeCode ?? ""), category: (g.entries.find((e) => (e as { occupation?: string }).occupation) as { occupation?: string } | undefined)?.occupation ?? "", address: "", flags, days: toDays(month, entries), site: g.identity.siteName ?? "", preview, isPdf: false, fileName: page.name });
-        (workers[workers.length - 1] as Worker & { month?: string }).month = month;
-      }
+      workers.push(...workersFromRows(ocr.data, preview, page.name));
     } catch (e) { failed.push(`${page.name}: ${e instanceof Error ? e.message : "could not be read"}`); }
     onProgress(++i, pages.length);
   };
@@ -86,12 +117,7 @@ export async function readCards(files: File[], onProgress: (done: number, total:
   await Promise.all(Array.from({ length: Math.min(READ_CONCURRENCY, queue.length) }, async () => {
     for (let page = queue.shift(); page; page = queue.shift()) await readPage(page);
   }));
-  const months = workers.map((w) => (w as Worker & { month?: string }).month!).filter(Boolean);
-  const sites = workers.map((w) => w.site.trim()).filter(Boolean);
-  const most = (xs: string[]) => [...xs].sort((a, b) => xs.filter((x) => x === b).length - xs.filter((x) => x === a).length)[0] ?? "";
-  const site = most(sites);
-  for (const w of workers) if (!w.site.trim()) w.site = site;
-  return { workers: workers.sort((a, b) => a.code.localeCompare(b.code, undefined, { numeric: true })), failed, month: most(months), site };
+  return finishRead(workers, failed);
 }
 
 function toTimeCard(w: Worker, month: string, site: string): TimeCard {

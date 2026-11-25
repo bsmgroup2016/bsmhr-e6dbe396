@@ -6,6 +6,7 @@ const fileSchema = z.object({
   kind: z.enum(["ipa", "timecard", "passport", "medical", "particular", "csoc"]),
   ref: z.string().min(1).max(2048),
   background: z.boolean().optional(),
+  jobId: z.string().uuid().optional(),
 });
 
 const columnsSchema = z.object({
@@ -62,7 +63,7 @@ export const Route = createFileRoute("/api/public/ocr")({
 
           if (parsed.kind === "timecard" && parsed.background) {
             const { createOcrJob, ocrJobResponse } = await import("@/lib/ocr-jobs.server");
-            const job = await createOcrJob(userId, key);
+            const job = await createOcrJob(userId, key, undefined, parsed.jobId);
             // The shared time-card reader performs consensus verification for every job.
             return ocrJobResponse(request, job, ocr.readTimeCard);
           }

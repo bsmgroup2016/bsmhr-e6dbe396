@@ -11,6 +11,7 @@ import { OCR_MODELS } from "@/core/ocr-models";
 export const CARBON_MODEL = OCR_MODELS.Gemini;
 export const SOL_MODEL = OCR_MODELS.OpenAI;
 export const ROUTER_TIMEOUT_MS = 30_000;
+export const TARGETED_CONCURRENCY = 3;
 const READ_PROMPT = `${TIME_CARD_READ_INSTRUCTION}\nInstead of nested cards/days, return {"rows":[...]} using the supplied flat-row schema. Preserve every worked date, including Sundays, and every distinct physical card. Do not emit genuinely OFF/empty rows. Read dates from the printed date and card's own month/year, never a guessed period. Transcribe printed identity, site, normal-hours and OT-hours separately. Transcribe reported_total_hours only if a total is printed; never add hours or perform arithmetic. Break minutes must be explicitly visible in the document; otherwise null. Illegible cells are null with lowered confidence. Never replace a source value with a plausible default.`;
 export const TARGETED_STATIC_PROMPT = `You verify Singapore time-card cells against the original image. Resolve ONLY the supplied flagged field names for ONE identified card/date. Do not change any unflagged cell or perform arithmetic. Illegible values stay null; confidence must reflect uncertainty. Return only the requested keys. Fixed field definitions and schema:\n${JSON.stringify(FLAT_ROW_JSON_SCHEMA)}`;
 
@@ -122,12 +123,13 @@ export async function verifyTimeCardConsensus(dataUrl: string, deps: ConsensusDe
     throw new Error("Uncertain OCR: Gemini did not verify every initially recorded date — verify the original card and retry");
   }
   const results: ConsensusResult[] = [];
-  // Sequential requests stay safely below the Worker's six outbound-connection budget.
-  for (const [index, verifiedRow] of verified.entries()) {
+  let paused = false;
+  const resolveRow = async (verifiedRow: FlatTimeCard, index: number): Promise<ConsensusResult> => {
     const router = matchingRouterRow(initial, verifiedRow, index);
     const fields = flaggedFields(verifiedRow, router);
+    const skipped = fields.length > 0 && paused;
     let row = verifiedRow, remaining = fields, failed = false;
-    if (fields.length) {
+    if (fields.length && !paused) {
       try {
         if (!deps.openaiKey) throw new Error("Official OpenAI OCR key is not configured");
         const answer = await post(deps, "OpenAI", "https://api.openai.com/v1/chat/completions", { Authorization: `Bearer ${deps.openaiKey}` }, buildOpenAiRequest(dataUrl, row, router, fields), 60_000);
@@ -136,9 +138,17 @@ export async function verifyTimeCardConsensus(dataUrl: string, deps: ConsensusDe
         remaining = flaggedFields(row, null);
         // Written GW/OT still use the existing deterministic claim rule; never AI arithmetic.
         flatTimeCardSchema.parse(row);
-      } catch { failed = true; }
+      } catch (error) {
+        failed = true;
+        if (error instanceof ConsensusProviderError && [401, 403, 404, 429].includes(error.status ?? 0)) paused = true;
+      }
     }
-    results.push({ row, calculated_hours: calculatedHours(row), flagged_fields: remaining, tie_breaker_failed: failed });
+    return { row, calculated_hours: calculatedHours(row), flagged_fields: remaining, tie_breaker_failed: failed || skipped };
+  };
+  // Independent flagged rows run in bounded groups, after router and mandatory Gemini.
+  // Stop starting more targeted calls after a provider denial or quota response.
+  for (let offset = 0; offset < verified.length; offset += TARGETED_CONCURRENCY) {
+    results.push(...await Promise.all(verified.slice(offset, offset + TARGETED_CONCURRENCY).map((row, index) => resolveRow(row, offset + index))));
   }
   return results;
 }

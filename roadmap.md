@@ -2,10 +2,11 @@
 
 ## OCR disconnect recovery and latency
 
-- [ ] Add bounded parallel targeted checks without changing provider order, models, verification or human approval.
-- [ ] Preserve owner-scoped job references, tolerate temporary status/network failures and recover saved results without another paid read.
-- [ ] Connect durable execution for jobs that must finish after the browser closes; keep payloads/results in R2 and never replay ambiguous paid calls blindly.
-- [ ] Verify disconnect/reconnect, duplicate prevention, saved result recovery and unchanged claim output; report durable deployment and authenticated verification blockers.
+- [x] Run independent targeted checks in groups of three after router/Gemini; preserve models, row order, review flags and hours, and pause later groups on denial/quota responses.
+- [x] Store only owner-scoped 24-hour job/source references in sessionStorage; bounded read-only status recovery tolerates temporary failures and reopening the same tab restores OCR cards for human review without another upload or paid read. Conditional R2 create/ETag claims prevent duplicate execution; ambiguous running jobs are never replayed.
+- [ ] Connect durable execution for jobs that must finish after the browser closes. Blocker: owner declined the Inngest connection; no durable service was added and browser-independent completion cannot be promised.
+- [x] 86 focused tests pass, including 37 existing review/template regressions. Real R2 concurrent-start test executed the actual OCR once, recovered completed output and denied another owner; temporary source/job deleted with 404 verification. Controlled browser status failures + reload restore 8+4 hours and uncertainty with one POST and no page errors.
+- [ ] Verify real signed-in disconnect/reload and published execution. Blocker: external Auth cannot mint an authorized sandbox session; publication and an approved durable runner are still needed for fully unattended completion.
 
 ## Activate three-stage time-card OCR
 

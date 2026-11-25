@@ -20,6 +20,29 @@ function harness(handle: (url: string, body: Record<string, any>) => Response | 
 }
 
 describe("prepared backend consensus OCR", () => {
+  test("independent flagged rows run three at a time and retain date order and hours", async () => {
+    const good = Array.from({ length: 7 }, (_, index) => ({ ...row, date: `2026-11-${String(index + 1).padStart(2, "0")}` }));
+    let active = 0, maximum = 0;
+    const h = harness(async url => {
+      if (url.includes("googleapis.com")) return google(good);
+      if (!url.includes("api.openai.com")) return completion({ rows: good.map(r => ({ ...r, employee_name: "Disputed fixture" })) });
+      active++; maximum = Math.max(maximum, active);
+      await new Promise(resolve => setTimeout(resolve, 2)); active--;
+      return completion({ employee_name: row.employee_name });
+    });
+    const result = await verifyTimeCardConsensus(image, h.deps);
+    expect(maximum).toBe(3);
+    expect(result.map(r => r.row.date)).toEqual(good.map(r => r.date));
+    expect(result.every(r => r.row.normal_hours === 8 && r.row.ot_hours === 4 && !r.tie_breaker_failed)).toBe(true);
+  });
+  test("a rate-limit response stops later targeted batches without losing review flags", async () => {
+    const good = Array.from({ length: 7 }, (_, index) => ({ ...row, date: `2026-11-${String(index + 1).padStart(2, "0")}` }));
+    const h = harness(url => url.includes("googleapis.com") ? google(good) : url.includes("api.openai.com") ? new Response(null, { status: 429 }) : completion({ rows: good.map(r => ({ ...r, employee_name: "Disputed fixture" })) }));
+    const result = await verifyTimeCardConsensus(image, h.deps);
+    expect(h.calls.filter(c => c.url.includes("api.openai.com"))).toHaveLength(3);
+    expect(result).toHaveLength(7);
+    expect(result.every(r => r.tie_breaker_failed && r.flagged_fields.includes("employee_name"))).toBe(true);
+  });
   test("the initial router deadline is exactly 30 seconds", () => {
     expect(ROUTER_TIMEOUT_MS).toBe(30_000);
   });

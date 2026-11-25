@@ -7,3 +7,4 @@
 - Onboarding uses a bounded versioned record inside employee internal notes and existing lifecycle fields, preserving one worker ID and R2 IPA references without requiring external schema changes; confirmed saves and shared roster/availability helpers enforce completion gating.
 - Permit imports update existing workers by consistent P-File/FIN identity, preserve blank source fields, and use narrow authenticated caller-RLS saves with read-back so imports cannot create duplicate workers or overwrite unrelated payroll/onboarding data.
 - OCR presets and consensus requests share browser-safe model constants; category-aware preset selection leaves chatbot models unchanged, preventing mismatched OCR defaults.
+- OCR recovery stores only owner-scoped expiring job/source references, not extracted rows or credentials; R2 remains the source of restored results and recovered cards always return to human review.

@@ -4,10 +4,36 @@ import type { ReadRow } from "@/core/time-card-read";
 
 const jobSchema = z.object({ id: z.string().uuid(), owner: z.string().uuid(), source: z.string(), createdAt: z.number(), updatedAt: z.number(), status: z.enum(["queued", "running", "complete", "failed"]), data: z.array(z.unknown()).optional(), error: z.string().optional() });
 export type OcrJob = z.infer<typeof jobSchema>;
-export interface OcrJobStore { read(id: string): Promise<OcrJob | null>; write(job: OcrJob): Promise<void> }
+export interface OcrJobStore {
+  read(id: string): Promise<OcrJob | null>; write(job: OcrJob): Promise<void>;
+  create?: (job: OcrJob) => Promise<void>;
+  claim?: (job: OcrJob) => Promise<OcrJob | null>;
+}
 const idSchema = z.string().uuid();
+export function r2ObjectTag(header: string | null): string | null { return header?.replace(/^W\//, "") ?? null; }
 function path(id: string) { return `ocr-jobs/${idSchema.parse(id)}.json`; }
 export const r2OcrJobStore: OcrJobStore = {
+  async create(job) {
+    const { client, base } = r2Client("ocr-jobs");
+    const response = await client.fetch(`${base}/${path(job.id)}`, { method: "PUT", headers: { "Content-Type": "application/json", "If-None-Match": "*" }, body: JSON.stringify(jobSchema.parse(job)) });
+    if (!response.ok && response.status !== 412) throw new Error("OCR job could not be created");
+  },
+  async claim(job) {
+    const { client, base } = r2Client("ocr-jobs"), url = `${base}/${path(job.id)}`;
+    const current = await client.fetch(url);
+    if (!current.ok) throw new Error("OCR job could not be read");
+    // HTTP compression may weaken the read ETag; R2 conditional PUT needs the object tag.
+    const etag = r2ObjectTag(current.headers.get("etag")), saved = jobSchema.parse(await current.json());
+    if (saved.status !== "queued" || saved.owner !== job.owner || saved.source !== job.source) return null;
+    if (!etag) throw new Error("OCR job lock could not be verified");
+    const running: OcrJob = { ...saved, status: "running", updatedAt: Date.now() };
+    const response = await client.fetch(url, { method: "PUT", headers: { "Content-Type": "application/json", "If-Match": etag }, body: JSON.stringify(running) });
+    if (response.status === 412) return null;
+    if (!response.ok) throw new Error("OCR job lock could not be saved");
+    const check = await client.fetch(url);
+    if (!check.ok || await check.text() !== JSON.stringify(running)) throw new Error("OCR job lock read-back failed");
+    return running;
+  },
   async read(id) {
     const { client, base } = r2Client("ocr-jobs");
     const response = await client.fetch(`${base}/${path(id)}`);
@@ -25,11 +51,17 @@ export const r2OcrJobStore: OcrJobStore = {
   },
 };
 
-export async function createOcrJob(owner: string, source: string, store: OcrJobStore = r2OcrJobStore): Promise<OcrJob> {
+export async function createOcrJob(owner: string, source: string, store: OcrJobStore = r2OcrJobStore, requestedId?: string): Promise<OcrJob> {
   const now = Date.now();
-  const job: OcrJob = { id: crypto.randomUUID(), owner, source, createdAt: now, updatedAt: now, status: "queued" };
-  await store.write(job);
-  return job;
+  const job: OcrJob = { id: requestedId ? idSchema.parse(requestedId) : crypto.randomUUID(), owner, source, createdAt: now, updatedAt: now, status: "queued" };
+  if (store.create) await store.create(job);
+  else {
+    const existing = await store.read(job.id);
+    if (!existing) await store.write(job);
+  }
+  const saved = await store.read(job.id);
+  if (!saved || saved.owner !== owner || saved.source !== source) throw new Error("OCR job reference could not be verified");
+  return saved;
 }
 export async function readOwnedOcrJob(id: string, owner: string, store: OcrJobStore = r2OcrJobStore): Promise<OcrJob | null> {
   const job = await store.read(id);
@@ -38,8 +70,15 @@ export async function readOwnedOcrJob(id: string, owner: string, store: OcrJobSt
 }
 
 export async function runOcrJob(job: OcrJob, read: (source: string) => Promise<ReadRow[]>, store: OcrJobStore = r2OcrJobStore): Promise<OcrJob> {
-  const running: OcrJob = { ...job, status: "running", updatedAt: Date.now() };
-  await store.write(running);
+  const existing = await store.read(job.id);
+  if (!existing || existing.owner !== job.owner || existing.source !== job.source) throw new Error("OCR job reference could not be verified");
+  if (existing.status !== "queued") return existing;
+  let running: OcrJob;
+  if (store.claim) {
+    const claimed = await store.claim(existing);
+    if (!claimed) return (await store.read(job.id)) ?? existing;
+    running = claimed;
+  } else { running = { ...existing, status: "running", updatedAt: Date.now() }; await store.write(running); }
   let final: OcrJob;
   try {
     const data = await read(job.source);

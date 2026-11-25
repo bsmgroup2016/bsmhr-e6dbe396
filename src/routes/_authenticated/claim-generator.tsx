@@ -10,7 +10,8 @@ import { StepUpload } from "@/features/claim-demo/step-upload";
 import { StepReview } from "@/features/claim-demo/step-review";
 import { StepClaim } from "@/features/claim-demo/step-claim";
 import { StepExport } from "@/features/claim-demo/step-export";
-import { readCards } from "@/features/claim-demo/pipeline";
+import { readCards, recoverCards } from "@/features/claim-demo/pipeline";
+import { clearPendingTimeCardJobs } from "@/lib/ocr";
 import { activeClaimTemplate, loadClaimTemplate, saveClaimTemplate } from "@/lib/claim-template";
 
 export const Route = createFileRoute("/_authenticated/claim-generator")({
@@ -41,9 +42,22 @@ function ClaimGeneratorPage() {
   const [failed, setFailed] = useState<string[]>([]);
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const recoveryStarted = useRef(false);
   const [y, m] = details.month.split("-").map(Number);
 
   useEffect(() => { activeClaimTemplate().then((t) => t && setTemplate(t.original_name)).catch(() => {}); }, []);
+
+  useEffect(() => {
+    if (recoveryStarted.current) return;
+    recoveryStarted.current = true;
+    void recoverCards((done, total) => setProgress({ done, total })).then(r => {
+      if (r.failed.length) setFailed(r.failed);
+      if (!r.workers.length) return;
+      setWorkers(r.workers);
+      setDetails(d => ({ ...d, site: r.site || d.site, month: r.month || d.month }));
+      setStep(1); setReached(1);
+    }).catch(error => toast.error(error instanceof Error ? error.message : "Could not recover OCR results")).finally(() => setProgress(null));
+  }, []);
 
   const go = (n: number) => { setStep(n); setReached((r) => Math.max(r, n)); };
   const edit = (wid: string, day: number, key: "g" | "ot", v: number | null) =>
@@ -52,6 +66,7 @@ function ClaimGeneratorPage() {
   async function read() {
     setProgress({ done: 0, total: 0 }); setFailed([]);
     try {
+      await clearPendingTimeCardJobs();
       const r = await readCards(files, (done, total) => setProgress({ done, total }));
       setFailed(r.failed);
       if (!r.workers.length) { toast.error("No time cards could be read"); return; }
@@ -65,7 +80,7 @@ function ClaimGeneratorPage() {
     finally { setProgress(null); }
   }
 
-  function restart() { workers.forEach((w) => URL.revokeObjectURL(w.preview)); setWorkers([]); setFiles([]); setFailed([]); setDetails(emptyDetails()); setStep(0); setReached(0); }
+  function restart() { void clearPendingTimeCardJobs(); workers.forEach((w) => URL.revokeObjectURL(w.preview)); setWorkers([]); setFiles([]); setFailed([]); setDetails(emptyDetails()); setStep(0); setReached(0); }
 
   async function downloadTemplate() {
     try {

@@ -7,7 +7,8 @@
  * Manual entry still works everywhere, OCR only pre-fills.
  */
 import { supabase } from "@/integrations/supabase/client";
-import { consumeOcrJob, type OcrJobSnapshot } from "./ocr-job-polling";
+import { consumeOcrJob, waitForOcrJob, OcrPollingError, type OcrJobSnapshot } from "./ocr-job-polling";
+import { readJobReferences, saveJobReference, clearJobReferences, type JobReferenceStorage } from "@/core/ocr-job-references";
 import type { IpaExtract } from "@/core/ipa-registration";
 export type { IpaExtract } from "@/core/ipa-registration";
 
@@ -36,27 +37,57 @@ type OcrPayload =
   | { kind: "ipa" | "timecard" | "passport" | "medical" | "particular" | "csoc"; ref: string }
   | { kind: "columns"; headers: string[]; fields: string[] };
 
-async function callOcr(payload: OcrPayload): Promise<unknown> {
+function referenceStorage(): JobReferenceStorage | null {
+  try { return window.sessionStorage; } catch { return null; }
+}
+
+export async function pendingTimeCardJobs() {
+  const { data } = await supabase.auth.getSession(), storage = referenceStorage();
+  const owner = data.session?.user.id;
+  return owner && storage ? readJobReferences(storage, owner) : [];
+}
+export async function clearPendingTimeCardJobs() {
+  const { data } = await supabase.auth.getSession(), storage = referenceStorage();
+  const owner = data.session?.user.id;
+  if (owner && storage) clearJobReferences(storage, owner);
+}
+async function readJobStatus(jobId: string): Promise<OcrJobSnapshot> {
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
+  if (!token) throw new OcrPollingError("Sign in again to recover OCR results");
+  const response = await fetch(`${OCR_URL}?job=${encodeURIComponent(jobId)}`, { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" });
+  if ([401, 403, 404].includes(response.status)) throw new OcrPollingError(response.status === 404 ? "This OCR job is unavailable. Your source file was not deleted." : "Sign in with the original account to recover OCR results");
+  if (!response.ok) throw new Error("OCR progress could not be read");
+  const snapshot = await response.json() as OcrJobSnapshot;
+  if (!["queued", "running", "complete", "failed"].includes(snapshot.status)) throw new OcrPollingError("Invalid OCR progress response");
+  return snapshot;
+}
+
+async function callOcr(payload: OcrPayload, fileName = "Time card"): Promise<unknown> {
   const { data: session } = await supabase.auth.getSession();
   const token = session.session?.access_token;
   if (!token) throw new Error("Sign in again to use OCR");
-  const res = await fetch(OCR_URL, {
+  let jobId: string | undefined;
+  if (payload.kind === "timecard") {
+    const owner = session.session?.user.id, storage = referenceStorage();
+    const saved = owner && storage ? readJobReferences(storage, owner).find(v => v.ref === payload.ref) : null;
+    if (saved) return waitForOcrJob(saved.jobId, { status: readJobStatus });
+    jobId = crypto.randomUUID();
+    if (owner && storage) saveJobReference(storage, owner, { jobId, ref: payload.ref, fileName, createdAt: Date.now() });
+  }
+  let res: Response;
+  try { res = await fetch(OCR_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-    body: JSON.stringify(payload.kind === "timecard" ? { ...payload, background: true } : payload),
-  });
+    body: JSON.stringify(payload.kind === "timecard" ? { ...payload, background: true, jobId } : payload),
+  }); } catch (error) {
+    // The request may already have started: recover its stable id, never resend inference.
+    if (jobId) return waitForOcrJob(jobId, { status: readJobStatus });
+    throw error;
+  }
   if (res.status === 202 && res.headers.get("Content-Type")?.includes("application/x-ndjson")) {
     return consumeOcrJob(res, {
-      status: async jobId => {
-        const { data: current } = await supabase.auth.getSession();
-        const currentToken = current.session?.access_token;
-        if (!currentToken) throw new Error("Sign in again to use OCR");
-        const status = await fetch(`${OCR_URL}?job=${encodeURIComponent(jobId)}`, { headers: { Authorization: `Bearer ${currentToken}` }, cache: "no-store" });
-        if (!status.ok) throw new Error(status.status === 401 ? "Sign in again to use OCR" : "OCR progress could not be read. Retry the time card.");
-        const snapshot = await status.json() as OcrJobSnapshot;
-        if (!["queued", "running", "complete", "failed"].includes(snapshot.status)) throw new Error("Invalid OCR progress response");
-        return snapshot;
-      },
+      status: readJobStatus,
     });
   }
   if (!res.ok) {
@@ -215,10 +246,11 @@ export async function autoMapColumns(
  */
 export async function extractTimeCardData(
   fileUrl: string,
+  fileName?: string,
 ): Promise<OcrResult<TimeCardExtractRow[]>> {
   if (!fileUrl) return { ok: false, reason: "Upload the time card first" };
   try {
-    const rows = (await callOcr({ kind: "timecard", ref: fileUrl })) as TimeCardExtractRow[];
+    const rows = (await callOcr({ kind: "timecard", ref: fileUrl }, fileName)) as TimeCardExtractRow[];
     const clean = (rows ?? []).filter((r) => r && typeof r.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(r.date));
     if (clean.length === 0) return { ok: false, reason: OCR_NOT_CONFIGURED };
     return { ok: true, data: clean };

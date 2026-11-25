@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { createOcrJob, readOwnedOcrJob, runOcrJob, ocrJobResponse, type OcrJob, type OcrJobStore } from "./ocr-jobs.server";
+import { createOcrJob, readOwnedOcrJob, runOcrJob, ocrJobResponse, r2ObjectTag, type OcrJob, type OcrJobStore } from "./ocr-jobs.server";
 import { consumeOcrJob } from "./ocr-job-polling";
 
 const owner = "00000000-0000-4000-8000-000000000001";
@@ -12,6 +12,34 @@ function memoryStore() {
 }
 
 describe("private R2 OCR job contract", () => {
+  test("compressed read tags retain the strong object tag needed by conditional writes", () => {
+    expect(r2ObjectTag('W/"fixture-object-tag"')).toBe('"fixture-object-tag"');
+    expect(r2ObjectTag('"fixture-object-tag"')).toBe('"fixture-object-tag"');
+    expect(r2ObjectTag(null)).toBeNull();
+  });
+  test("a repeated request id reuses completed output and never reads OCR twice", async () => {
+    const h = memoryStore(), id = "00000000-0000-4000-8000-000000000003";
+    let executions = 0;
+    const read = async () => { executions++; return rows; };
+    const first = await createOcrJob(owner, "time-cards/fixture.png", h.store, id);
+    await runOcrJob(first, read, h.store);
+    const repeat = await createOcrJob(owner, "time-cards/fixture.png", h.store, id);
+    expect((await runOcrJob(repeat, read, h.store)).data).toEqual(rows);
+    expect(executions).toBe(1);
+    await expect(createOcrJob(other, "time-cards/fixture.png", h.store, id)).rejects.toThrow("could not be verified");
+  });
+  test("two executions share an atomic claim and start only one reader", async () => {
+    const h = memoryStore();
+    h.store.claim = async job => {
+      const saved = h.values.get(job.id);
+      if (!saved || saved.status !== "queued") return null;
+      const running = { ...saved, status: "running" as const }; h.values.set(job.id, running); return running;
+    };
+    const job = await createOcrJob(owner, "time-cards/fixture.png", h.store);
+    let executions = 0;
+    await Promise.all([runOcrJob(job, async () => { executions++; return rows; }, h.store), runOcrJob(job, async () => { executions++; return rows; }, h.store)]);
+    expect(executions).toBe(1);
+  });
   test("only the job owner can read results", async () => {
     const h = memoryStore(), job = await createOcrJob(owner, "time-cards/fixture.png", h.store);
     expect((await readOwnedOcrJob(job.id, owner, h.store))?.source).toBe("time-cards/fixture.png");
