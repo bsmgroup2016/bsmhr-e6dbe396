@@ -8,19 +8,21 @@ import { esc, layout, list, restGet, sendMail } from "@/lib/email.server";
 async function buildAndSend(dryRun: boolean) {
   const today = new Date();
   const iso = (d: Date) => d.toISOString().slice(0, 10);
-  const in30 = iso(new Date(today.getTime() + 30 * 86400000));
+  // Lead time: warn early enough to renew passes/passports and extend contracts.
+  const in30 = iso(new Date(today.getTime() + 60 * 86400000));
   const todayIso = iso(today);
 
-  const [docs, employees, leaves, invoices, roleRows] = await Promise.all([
+  const [docs, employees, leaves, invoices, roleRows, contracts] = await Promise.all([
     restGet(
       `employee_documents?select=name,doc_type,expiry_date,employee_id&expiry_date=gte.${todayIso}&expiry_date=lte.${in30}&order=expiry_date.asc`,
     ),
     restGet(
-      `employees?select=id,name,employee_code,pass_expiry,work_permit_expiry_date,passport_expiry&status=eq.Active`,
+      `employees?select=id,name,employee_code,pass_expiry,work_permit_expiry_date,passport_expiry,contract_end&status=eq.Active`,
     ),
     restGet(`leave_requests?select=id,employee_id,leave_type,start_date,end_date,days&status=eq.Pending`),
     restGet(`invoices?select=invoice_no,due_date,total,amount_paid,status,client_id&due_date=lt.${todayIso}`),
     restGet(`user_roles?select=user_id,role&role=in.(admin,hr,manager)`),
+    restGet(`contracts?select=contract_no,title,end_date&end_date=gte.${todayIso}&end_date=lte.${in30}&order=end_date.asc`).catch(() => []),
   ]);
 
   const empName = new Map(employees.map((e: any) => [e.id, `${e.name} (${e.employee_code ?? "-"})`]));
@@ -36,11 +38,16 @@ async function buildAndSend(dryRun: boolean) {
     for (const [label, date] of [
       ["Work permit", e.work_permit_expiry_date ?? e.pass_expiry],
       ["Passport", e.passport_expiry],
+      ["Employment contract", e.contract_end],
     ] as [string, string | null][]) {
       if (date && date >= todayIso && date <= in30) {
         docItems.push(`<b>${label}</b> — ${esc(e.name)} (${esc(e.employee_code ?? "-")}) · expires <b>${esc(date)}</b>`);
       }
     }
+  }
+
+  for (const c of contracts as any[]) {
+    docItems.push(`<b>Client contract</b> — ${esc(c.contract_no)} ${esc(c.title ?? "")} · ends <b>${esc(c.end_date)}</b>`);
   }
 
   const leaveItems = leaves.map(
@@ -79,7 +86,7 @@ async function buildAndSend(dryRun: boolean) {
 
   const html = layout(
     `Daily alerts — ${todayIso}`,
-    `<h2 style="font-size:15px;margin:16px 0 8px">Expiring within 30 days (${docItems.length})</h2>
+    `<h2 style="font-size:15px;margin:16px 0 8px">Expiring within 60 days (passport, work pass, contracts) (${docItems.length})</h2>
      ${list(docItems)}
      <h2 style="font-size:15px;margin:16px 0 8px">Leave requests awaiting approval (${leaveItems.length})</h2>
      ${list(leaveItems)}
