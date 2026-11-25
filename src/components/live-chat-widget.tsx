@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Headset, Loader2, MessageCircle, Plus, Send, X } from "lucide-react";
+import { BrainCircuit, Headset, Loader2, MessageCircle, Plus, Send, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
@@ -75,6 +75,8 @@ export function LiveChatWidget() {
   const skipScrollRef = useRef(false);
   const endRef = useRef<HTMLDivElement>(null);
   const allowed = !!user && hasAssignedRole(roles);
+  const isAdmin = roles.includes("admin");
+  const [useBrain, setUseBrain] = useState(false);
 
   const load = useCallback(async () => {
     if (loadingRef.current) return;
@@ -149,7 +151,7 @@ export function LiveChatWidget() {
     if (!content || busy) return;
     setInput("");
     setMessages((m) => [...m, { id: `tmp-${Date.now()}`, sender: "user", content, created_at: new Date().toISOString() }]);
-    await post({ action: "send", content });
+    await post({ action: "send", content, ...(useBrain ? { engine: "hr-brain" } : {}) });
   }
 
   return (
@@ -160,8 +162,20 @@ export function LiveChatWidget() {
             <Headset className="h-5 w-5" />
             <div className="flex-1">
               <p className="text-sm font-semibold">Live Chat</p>
-              <p className="text-xs opacity-80">AI assistant · ask anything</p>
+              <p className="text-xs opacity-80">{useBrain ? "AI Brain" : "AI assistant"} · ask anything</p>
             </div>
+            {isAdmin && (
+              <Button
+                size="icon"
+                variant="ghost"
+                className={cn("h-8 w-8 hover:bg-primary-foreground/10", useBrain && "bg-primary-foreground/20")}
+                title={useBrain ? "AI Brain on — click to use the default assistant" : "Use AI Brain for replies"}
+                aria-pressed={useBrain}
+                onClick={() => setUseBrain((v) => !v)}
+              >
+                <BrainCircuit className="h-4 w-4" />
+              </Button>
+            )}
             <Button size="icon" variant="ghost" className="h-8 w-8 hover:bg-primary-foreground/10" title="New chat" onClick={() => post({ action: "new" })}>
               <Plus className="h-4 w-4" />
             </Button>

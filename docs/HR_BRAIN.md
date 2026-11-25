@@ -47,6 +47,10 @@ The real provider was called directly with the app's tool list and no HR data:
 
 Consequence: AI Brain is capable of driving the assistant's live data lookups, so it can sit in front of the existing chatbot chain rather than replace it. The route itself stays admin-only until feature-specific authorization is added, so a chatbot wiring must decide who may spend this service.
 
+## Live chat toggle (25 November 2026)
+
+The owner chose AI Brain as an optional extra, not the primary engine. The default provider chain (Gemini → Groq → OpenRouter, staggered/hedged) is unchanged and handles every message by default. Admins see a brain toggle in the live chat header; when it is on, that message is sent with `engine: "hr-brain"`, and the live-chat route honors it only for callers with the admin role. `runAssistant` then calls the AI Brain upstream directly (server-side, `HR_BRAIN_API_KEY` secret, `stream: false`) with the same tool list and tool loop, so live data lookups work identically. Non-admin callers and toggled-off messages never touch the paid endpoint.
+
 ## Runtime invocation check
 
 Rule: a valid configured AI service must receive the app's request, not fail inside the server before reaching the provider.

@@ -41,7 +41,7 @@ const touch = (chatId: string, patch: Record<string, unknown> = {}) =>
   db(`live_chats?id=eq.${chatId}`, { method: "PATCH", body: JSON.stringify({ updated_at: new Date().toISOString(), ...patch }) });
 
 const body = z.discriminatedUnion("action", [
-  z.object({ action: z.literal("send"), content: z.string().trim().min(1).max(4000) }),
+  z.object({ action: z.literal("send"), content: z.string().trim().min(1).max(4000), engine: z.literal("hr-brain").optional() }),
   z.object({ action: z.literal("request_human") }),
   z.object({ action: z.literal("new") }),
   z.object({ action: z.literal("reply"), chatId: z.string().uuid(), content: z.string().trim().min(1).max(4000) }),
@@ -124,7 +124,9 @@ export const Route = createFileRoute("/api/public/live-chat")({
             .map((m) => ({ role: m.sender === "user" ? ("user" as const) : ("assistant" as const), content: m.content }));
           try {
             const { runAssistant } = await import("@/lib/assistant.server");
-            const out = await runAssistant(history, auth, ANON, userId);
+            // AI Brain is an admin-only option; everyone else uses the default provider chain.
+            const engine = p.action === "send" && p.engine === "hr-brain" && roles.includes("admin") ? "hr-brain" : undefined;
+            const out = await runAssistant(history, auth, ANON, userId, engine ? { engine } : {});
             await addMsg(chat.id, "ai", out.reply || "(no answer)");
           } catch (e) {
             console.error("live chat AI failed:", e);

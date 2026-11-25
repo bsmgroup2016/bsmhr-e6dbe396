@@ -9,7 +9,8 @@
 ## AI Brain in the chatbot
 
 - [x] Verify the AI Brain endpoint can drive the assistant: explicit `stream: false` returns JSON, the supplied tool list produced a real `count_rows` tool call, and the tool result round trip returned a final answer. Recorded in docs/HR_BRAIN.md.
-- [ ] Wire AI Brain into the chatbot provider chain. Blocker: waiting for the owner's choice of arrangement (primary with Gemini/Groq/OpenRouter as fallback, optional extra, or writing-only) because a paid endpoint in front of every chat spends money on each message.
+- [x] Wire AI Brain into the chatbot as an admin-only optional toggle (owner's choice: optional extra, default chain unchanged). Live chat send accepts `engine: "hr-brain"` for admins; `runAssistant` calls the AI Brain upstream with the same tools. Recorded in docs/HR_BRAIN.md.
+- [ ] Open the AI Brain toggle to non-admin staff. Blocker: waiting for the owner's answer on who may use AI Brain (paid endpoint per message).
 
 ## Reusable AI Brain
 

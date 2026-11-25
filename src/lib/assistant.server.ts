@@ -19,7 +19,30 @@ export const ASSISTANT_TABLES = [
 ] as const;
 
 import { activeProviders } from "./api-integrations.server";
-import { chatbotCompletion } from "./chatbot-provider.server";
+import { chatbotCompletion, type ChatCompletion } from "./chatbot-provider.server";
+import { HR_BRAIN_BASE_URL, HR_BRAIN_MODEL } from "@/core/hr-brain";
+
+/** Optional engine: admins can route a message through AI Brain instead of the default provider chain. */
+export type AssistantEngine = "default" | "hr-brain";
+
+async function hrBrainCompletion(body: Record<string, unknown>): Promise<{ completion: ChatCompletion; provider: { name: string } }> {
+  const apiKey = process.env.HR_BRAIN_API_KEY;
+  if (!apiKey) throw new Error("AI Brain is not configured (HR_BRAIN_API_KEY secret is missing).");
+  const res = await fetch(`${HR_BRAIN_BASE_URL}/chat/completions`, {
+    method: "POST",
+    signal: AbortSignal.timeout(60_000),
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+    body: JSON.stringify({ model: HR_BRAIN_MODEL, stream: false, ...body }),
+  });
+  if (!res.ok) {
+    await res.body?.cancel();
+    throw new Error(`AI Brain: HTTP ${res.status}`);
+  }
+  const completion = (await res.json()) as ChatCompletion;
+  const message = completion.choices?.[0]?.message;
+  if (!message?.content?.trim() && !message?.tool_calls?.length) throw new Error("AI Brain: empty reply");
+  return { completion, provider: { name: "AI Brain" } };
+}
 
 /** Chatbot providers come from Settings → API Integration (fallback order, on/off, keys). */
 async function providers() {
@@ -206,18 +229,26 @@ const SYSTEM =
 
 export type ChatMsg = { role: "user" | "assistant"; content: string };
 
-export async function runAssistant(messages: ChatMsg[], auth: string, anon: string, userId?: string) {
+export async function runAssistant(messages: ChatMsg[], auth: string, anon: string, userId?: string, options: { engine?: AssistantEngine } = {}) {
   const { knowledgePrompt } = await import("./ai-training.server");
-  const [list, trained] = await Promise.all([providers(), knowledgePrompt()]);
-  if (list.length === 0) throw new Error("AI Assistant keys are not set yet");
+  const useBrain = options.engine === "hr-brain";
+  const [list, trained] = await Promise.all([useBrain ? Promise.resolve([]) : providers(), knowledgePrompt()]);
+  if (!useBrain && list.length === 0) throw new Error("AI Assistant keys are not set yet");
   const today = new Date().toISOString().slice(0, 10);
   const convo: Record<string, unknown>[] = [{ role: "system", content: `${SYSTEM} Today is ${today}.${trained}` }, ...messages];
   let ordered = list;
   let providerName = "";
       for (let step = 0; step < 8; step++) {
-        const { completion: json, provider: p } = await chatbotCompletion(ordered, { messages: convo, tools, tool_choice: "auto" });
+        const result = useBrain
+          ? await hrBrainCompletion({ messages: convo, tools, tool_choice: "auto" })
+          : await chatbotCompletion(ordered, { messages: convo, tools, tool_choice: "auto" });
+        const json = result.completion;
+        const p = result.provider;
         providerName = p.name;
-        ordered = [p, ...list.filter((candidate) => candidate.id !== p.id)];
+        if (!useBrain) {
+          const won = p as (typeof list)[number];
+          ordered = [won, ...list.filter((candidate) => candidate.id !== won.id)];
+        }
         const msg = json.choices?.[0]?.message;
         if (!msg) throw new Error(`${p.name}: empty reply`);
         if (!msg.tool_calls?.length) return { reply: msg.content || "", provider: p.name };
