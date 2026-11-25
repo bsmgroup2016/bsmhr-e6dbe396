@@ -21,8 +21,8 @@ export const Route = createFileRoute("/api/public/excel-ai")({
       for (const p of providers) {
         try {
           const res = await postChat(p, {
-            max_tokens: 4096, temperature: 0.1,
-            messages: [{ role: "system", content: EXCEL_AI_SYSTEM_PROMPT }, { role: "user", content: `Month ${parsed.data.month}. Records:\n${JSON.stringify(parsed.data.records).slice(0, 180_000)}` }],
+            max_tokens: 1500, temperature: 0.1,
+            messages: [{ role: "system", content: EXCEL_AI_SYSTEM_PROMPT }, { role: "user", content: `Month ${parsed.data.month}. Records:\n${JSON.stringify(parsed.data.records).slice(0, 40_000)}` }],
           }, { signal: AbortSignal.timeout(90_000) });
           if (!res.ok) { console.error("excel-ai provider failed", p.name, res.status); continue; }
           const json = await res.json() as { choices?: { message?: { content?: string } }[] };

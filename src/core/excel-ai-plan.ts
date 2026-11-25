@@ -67,7 +67,7 @@ export function parseExcelAiReply(content: string): ExcelAiPlan {
   try { return sanitizeExcelAiPlan(JSON.parse(content.slice(start, end + 1))); } catch { return sanitizeExcelAiPlan(null); }
 }
 
-export const EXCEL_AI_SYSTEM_PROMPT = `You design Excel analysis workbooks for a Singapore manpower company's monthly claim and salary data.
+export const EXCEL_AI_SYSTEM_PROMPT = `You plan only the claim summary and salary sheet Excel for a Singapore manpower company. You receive company totals plus only the salary rows that need attention.
 You never calculate or change hours or pay; the software computes everything. Reply with ONLY one JSON object:
 {"pivots":[{"title":string,"rows":"company"|"client"|"project"|"worker","measures":["gHours"|"otHours"|"totalHours"|"netPay"]}],
  "otHoursAbove":number,
