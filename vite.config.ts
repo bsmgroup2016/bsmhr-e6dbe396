@@ -14,6 +14,10 @@ export default defineConfig({
     server: { entry: "server" },
   },
   vite: {
+    // Keep the SMTP package in Vite's ESM graph instead of letting Node
+    // require its CommonJS entry (which requires cloudflare:sockets).
+    // Production must bundle the mailer; only the native socket stays native.
+    ssr: { noExternal: ["worker-mailer"] },
     // Pre-bundle UI deps up front so a late dependency discovery can't reload
     // React mid-session (mixed ?v= hashes => "Cannot read properties of null (reading 'useMemo')").
     optimizeDeps: {

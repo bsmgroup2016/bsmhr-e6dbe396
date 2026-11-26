@@ -7,6 +7,7 @@
  * down after a limit / failure; the next one in priority order takes over.
  */
 import { restGet, restPatch } from "./email.server";
+import { loadSmtpTransport, SmtpRuntimeUnavailableError } from "./smtp-runtime.server";
 
 export interface SmtpServer {
   id: string;
@@ -76,7 +77,7 @@ export async function sendWith(
   s: SmtpServer,
   { to, subject, html }: { to: string | string[]; subject: string; html: string },
 ) {
-  const { WorkerMailer } = await import("worker-mailer");
+  const { WorkerMailer } = await loadSmtpTransport(import.meta.env.DEV, () => import("worker-mailer"));
   const mailer = await WorkerMailer.connect({
     host: s.host,
     port: s.port,
@@ -133,6 +134,9 @@ export async function sendViaSmtpPool(mail: { to: string | string[]; subject: st
       await markSuccess(s);
       return res;
     } catch (e) {
+      // An unsupported preview is not a provider failure: do not penalize
+      // every server or overwrite its delivery status / cooldown.
+      if (e instanceof SmtpRuntimeUnavailableError) throw e;
       last = e;
       const msg = e instanceof Error ? e.message : String(e);
       console.error(`SMTP ${s.label} failed, switching:`, msg);
