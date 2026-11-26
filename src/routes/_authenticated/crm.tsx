@@ -284,7 +284,7 @@ export default function CrmPage() {
                 {leadStages.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
               </SelectContent>
             </Select>
-            <Dialog open={leadOpen} onOpenChange={(o) => { setLeadOpen(o); if (!o) { setEditingId(null); setLeadForm(emptyLead); } }}>
+            <Dialog open={leadOpen} onOpenChange={(o) => { setEditingId(null); setLeadForm(emptyLead); setLeadOpen(o); }}>
               <DialogTrigger asChild>
                 <Button><Plus className="mr-2 size-4" /> New lead</Button>
               </DialogTrigger>
@@ -354,7 +354,7 @@ export default function CrmPage() {
                   </div>
                 </div>
                 <DialogFooter>
-                  <Button variant="outline" onClick={() => setLeadOpen(false)}>Cancel</Button>
+                  <Button variant="outline" onClick={() => { setEditingId(null); setLeadForm(emptyLead); setLeadOpen(false); }}>Cancel</Button>
                   <Button onClick={saveLead}>Save lead</Button>
                 </DialogFooter>
               </DialogContent>
@@ -362,7 +362,7 @@ export default function CrmPage() {
           </div>
 
           {filteredLeads.length === 0 ? (
-            <EmptyState icon={<Target className="h-5 w-5" />} title={q ? "No matching leads" : "No leads yet"} description={q ? "Try another company, contact or designation." : "Add your first prospective client enquiry."} action={q ? { label: "Clear search", onClick: () => setSearch("") } : { label: "New lead", onClick: () => setLeadOpen(true) }} />
+            <EmptyState icon={<Target className="h-5 w-5" />} title={q ? "No matching leads" : "No leads yet"} description={q ? "Try another company, contact or designation." : "Add your first prospective client enquiry."} action={q ? { label: "Clear search", onClick: () => setSearch("") } : { label: "New lead", onClick: () => { setEditingId(null); setLeadForm(emptyLead); setLeadOpen(true); } }} />
           ) : (
             <div className="overflow-x-auto rounded-xl border bg-card">
               <Table>

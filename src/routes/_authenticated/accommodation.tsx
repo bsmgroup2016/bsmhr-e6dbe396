@@ -29,6 +29,11 @@ import { DormitoryBilling } from "@/components/dormitory-billing";
 import { HousingNotificationPanel } from "@/components/housing-notification-panel";
 import { dormCapacityCheck, SQM_PER_RESIDENT } from "@/lib/mom";
 import type { Dormitory, BedAllocation } from "@/lib/types";
+import {
+  closedAllocSession, closedDormSession, openAddAllocSession, openAddDormSession,
+  openEditAllocSession, openEditDormSession, withAllocForm, withDormForm,
+  type AllocForm, type AllocSession, type DormForm, type DormSession,
+} from "@/core/dormitory-form-state";
 
 export const Route = createFileRoute("/_authenticated/accommodation")({
   head: () => ({
@@ -46,29 +51,22 @@ export const Route = createFileRoute("/_authenticated/accommodation")({
 
 const today = () => new Date().toISOString().slice(0, 10);
 
-const emptyDorm = {
-  name: "", address: "", operator: "", contactPerson: "", contactPhone: "",
-  capacity: 0, monthlyRent: 0, floorAreaSqm: 0, rooms: 0, licenseNo: "", licenseExpiry: "", lastInspection: "",
-  status: "Active" as Dormitory["status"], remarks: "",
-};
-
-const emptyAlloc = {
-  dormitoryId: "", employeeId: "", roomNo: "", bedNo: "",
-  checkInDate: today(), monthlyRent: 0, status: "Occupied" as BedAllocation["status"], remarks: "",
-};
-
 export default function AccommodationPage() {
   const companyId = getCurrentCompany();
   const [dorms, setDorms] = useState(getDormitories());
   const [allocs, setAllocs] = useState(getAllocations());
   const [employees] = useState(getEmployees());
   const [search, setSearch] = useState("");
-  const [dormOpen, setDormOpen] = useState(false);
-  const [allocOpen, setAllocOpen] = useState(false);
-  const [dormForm, setDormForm] = useState(emptyDorm);
-  const [allocForm, setAllocForm] = useState(emptyAlloc);
-  const [editDormId, setEditDormId] = useState<string | null>(null);
-  const [editAllocId, setEditAllocId] = useState<string | null>(null);
+  const [dormSession, setDormSession] = useState<DormSession>(closedDormSession);
+  const [allocSession, setAllocSession] = useState<AllocSession>(closedAllocSession);
+  const dormOpen = dormSession.open;
+  const allocOpen = allocSession.open;
+  const dormForm = dormSession.form;
+  const allocForm = allocSession.form;
+  const editDormId = dormSession.editId;
+  const editAllocId = allocSession.editId;
+  const setDormForm = (form: DormForm) => setDormSession(withDormForm(dormSession, form));
+  const setAllocForm = (form: AllocForm) => setAllocSession(withAllocForm(allocSession, form));
   const [dormFilter, setDormFilter] = useState("all");
   const [bulkOpen, setBulkOpen] = useState(false);
   const [bulkPlan, setBulkPlan] = useState<{ valid: PlannedAllocation[]; errors: PlanError[]; total: number } | null>(null);
@@ -107,18 +105,10 @@ export default function AccommodationPage() {
   const availableTotal = scopedDorms.reduce((s, d) => s + availableBeds(d, allocs), 0);
 
   function openEditDorm(d: Dormitory) {
-    setEditDormId(d.id);
-    setDormForm({
-      name: d.name, address: d.address, operator: d.operator ?? "", contactPerson: d.contactPerson ?? "", contactPhone: d.contactPhone ?? "",
-      capacity: d.capacity, monthlyRent: d.monthlyRent, floorAreaSqm: d.floorAreaSqm ?? 0, rooms: d.rooms ?? 0, licenseNo: d.licenseNo ?? "",
-      licenseExpiry: d.licenseExpiry ?? "", lastInspection: d.lastInspection ?? "", status: d.status, remarks: d.remarks ?? "",
-    });
-    setDormOpen(true);
+    setDormSession(openEditDormSession(d));
   }
   function openEditAlloc(a: BedAllocation) {
-    setEditAllocId(a.id);
-    setAllocForm({ dormitoryId: a.dormitoryId, employeeId: a.employeeId, roomNo: a.roomNo, bedNo: a.bedNo ?? "", checkInDate: a.checkInDate, monthlyRent: a.monthlyRent, status: a.status, remarks: a.remarks ?? "" });
-    setAllocOpen(true);
+    setAllocSession(openEditAllocSession(a));
   }
 
   async function handleBulkFile(file: File | undefined) {
@@ -153,9 +143,7 @@ export default function AccommodationPage() {
     if (editDormId) updateDormitory(editDormId, dormForm);
     else addDormitory({ ...dormForm, companyId: companyId || undefined });
     toast.success(editDormId ? "Dormitory updated" : "Dormitory added");
-    setEditDormId(null);
-    setDormForm(emptyDorm);
-    setDormOpen(false);
+    setDormSession(closedDormSession());
     refresh();
   }
 
@@ -168,7 +156,8 @@ export default function AccommodationPage() {
       const prev = allocs.find((a) => a.id === editAllocId);
       if (dorm && prev && prev.dormitoryId !== dorm.id && availableBeds(dorm, allocs) <= 0) return toast.error(`${dorm.name} has no available beds`);
       updateAllocation(editAllocId, { ...allocForm, bedNo: allocForm.bedNo || undefined, checkOutDate: allocForm.status === "Vacated" ? (prev?.checkOutDate ?? today()) : undefined });
-      setEditAllocId(null); setAllocForm(emptyAlloc); setAllocOpen(false); refresh();
+      setAllocSession(closedAllocSession());
+      refresh();
       return toast.success("Allocation updated");
     }
     const check = dorm ? dormCapacityCheck(dorm, dormOccupancy(dorm.id)) : null;
@@ -183,8 +172,7 @@ export default function AccommodationPage() {
       ...allocForm,
       monthlyRent: allocForm.monthlyRent || dorm?.monthlyRent || 0,
     });
-    setAllocForm(emptyAlloc);
-    setAllocOpen(false);
+    setAllocSession(closedAllocSession());
     refresh();
     toast.success("Bed allocated");
   }
@@ -290,7 +278,7 @@ export default function AccommodationPage() {
                     </DialogFooter>
                   </DialogContent>
                 </Dialog>
-                <Dialog open={allocOpen} onOpenChange={(o) => { setAllocOpen(o); if (!o) { setEditAllocId(null); setAllocForm(emptyAlloc); } }}>
+                <Dialog open={allocOpen} onOpenChange={(o) => setAllocSession(o ? openAddAllocSession() : closedAllocSession())}>
                   <DialogTrigger asChild>
                     <Button size="sm" disabled={scopedDorms.length === 0}>
                       <Plus className="mr-1 h-4 w-4" /> Allocate bed
@@ -341,7 +329,7 @@ export default function AccommodationPage() {
                       <div className="sm:col-span-2"><Label>Remarks</Label><Textarea value={allocForm.remarks} onChange={(e) => setAllocForm({ ...allocForm, remarks: e.target.value })} /></div>
                     </div>
                     <DialogFooter>
-                      <Button variant="outline" onClick={() => setAllocOpen(false)}>Cancel</Button>
+                      <Button variant="outline" onClick={() => setAllocSession(closedAllocSession())}>Cancel</Button>
                       <Button onClick={saveAlloc}>{editAllocId ? "Save" : "Allocate"}</Button>
                     </DialogFooter>
                   </DialogContent>
@@ -425,7 +413,7 @@ export default function AccommodationPage() {
             <div className="rounded-xl border bg-card p-4 shadow-sm">
               <div className="flex items-center justify-between">
                 <h2 className="text-sm font-medium text-muted-foreground">Dormitory master</h2>
-                <Dialog open={dormOpen} onOpenChange={(o) => { setDormOpen(o); if (!o) { setEditDormId(null); setDormForm(emptyDorm); } }}>
+                <Dialog open={dormOpen} onOpenChange={(o) => setDormSession(o ? openAddDormSession() : closedDormSession())}>
                   <DialogTrigger asChild>
                     <Button size="sm"><Plus className="mr-1 h-4 w-4" /> Add dormitory</Button>
                   </DialogTrigger>
@@ -456,7 +444,7 @@ export default function AccommodationPage() {
                       <div className="sm:col-span-2"><Label>Remarks</Label><Textarea value={dormForm.remarks} onChange={(e) => setDormForm({ ...dormForm, remarks: e.target.value })} /></div>
                     </div>
                     <DialogFooter>
-                      <Button variant="outline" onClick={() => setDormOpen(false)}>Cancel</Button>
+                      <Button variant="outline" onClick={() => setDormSession(closedDormSession())}>Cancel</Button>
                       <Button onClick={saveDorm}>Save</Button>
                     </DialogFooter>
                   </DialogContent>
