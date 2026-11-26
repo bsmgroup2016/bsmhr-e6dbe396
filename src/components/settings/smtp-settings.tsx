@@ -129,8 +129,16 @@ function ServerRow({ s, index, total, onChanged }: { s: Server; index: number; t
   const test = async () => {
     setTesting(true);
     try {
-      const r = await api<{ success: boolean; error: string | null }>("POST", { action: "test", id: s.id, to: testTo });
-      r.success ? toast.success(`Test email sent via ${s.label}`) : toast.error(`${s.label}: ${r.error}`);
+      const r = await api<{ success: boolean; error: string | null; delivery: "delivered" | "accepted" }>(
+        "POST", { action: "test", id: s.id, to: testTo },
+      );
+      if (!r.success) {
+        toast.error(`${s.label}: ${r.error}`);
+      } else if (r.delivery === "delivered") {
+        toast.success(`Delivery confirmed via ${s.label}`);
+      } else {
+        toast.info(`${s.label} accepted the test. Delivery is not confirmed yet — check the inbox/spam folder and provider delivery report.`);
+      }
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed");
     } finally {

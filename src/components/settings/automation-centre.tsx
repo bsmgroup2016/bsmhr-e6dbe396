@@ -23,7 +23,7 @@ const rows = (r: AutomationRunResult) => [
   ["Quota / levy warnings", r.quotaWarnings],
   [`Payroll drafts (${r.payrollMonth ?? "—"})`, r.payrollDraftsCreated],
   ["Payroll skipped", r.payrollSkipped],
-  ["Emails sent", r.sent],
+  ["Emails accepted by provider", r.sent],
 ] as const;
 
 export function AutomationCentre() {
