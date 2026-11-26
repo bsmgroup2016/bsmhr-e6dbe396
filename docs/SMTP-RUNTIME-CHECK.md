@@ -13,4 +13,12 @@ Code-read coverage:
 
 Vite now bundles `worker-mailer` rather than loading its CommonJS entry via Node require. Local SMTP sending remains unavailable; this is an explicit restriction, not a claim that preview mail delivery works.
 
+## Production packaging follow-up
+
+Rule: saved SMTP support must not prevent the app from building for publication.
+
+Nitro replaces the top-level bundler options in its final server environment, so the native socket exception now uses a pre-resolution plugin shared by all bundling passes. Only `cloudflare:sockets` is preserved as a native import; the mailer remains embedded. This correction is shared by Settings SMTP Test, the SMTP pool, general email/failover, leave-decision emails, daily alerts and automation digests. Their call sites were re-read and all use the same sender; there are no separate socket imports or database SMTP functions in the migration search. No additional email-path changes were needed.
+
+Five focused tests pass, including bundling the actual mailer with the production bundler and checking its native socket import and embedded implementation. The latest automatic preview build reports OK. A fresh full production deployment and actual email delivery remain unverified until publication is retried. No credentials, preferences, permissions or previously sent records were changed.
+
 Validation: three runtime-loader tests passed; preview build reports OK; unsigned SMTP Test POST returns 401. No authenticated Hostinger delivery or published-runtime test was performed. Publish and test the saved server on the live site to verify actual delivery. No passwords, server settings, sent records or existing cooldowns were changed.
