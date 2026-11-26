@@ -3,7 +3,8 @@ import { Link } from "@tanstack/react-router";
 import { ArrowUpRight, Building2, Clock, ShieldAlert, BadgeCheck, Wallet, FileCheck2, BookUser, HardHat } from "lucide-react";
 import { R2Image } from "@/components/r2-image";
 import { companyOverview, orderedCompanies } from "@/core/company-overview";
-import { getCompanies, getEmployees, getCertifications, getPayroll, getAssignments } from "@/lib/store";
+import { getCompanies, getEmployees, getCertifications, getPayroll, getAssignments, getAttendance, getLeaveRequests } from "@/lib/store";
+import { dailyContext } from "@/lib/availability";
 import { activeAssignedEmployeeIds, workforceBands } from "@/lib/availability";
 import type { Company } from "@/lib/types";
 
@@ -46,7 +47,7 @@ function CompanyOverviewCard({
   const brand = group ? "" : ({ BSM: "company-card-bsm", VRL: "company-card-vrl", PLUTO: "company-card-pluto", PLT: "company-card-pluto" } as Record<string, string>)[company.code.toUpperCase()] ?? "";
   const colored = group || Boolean(brand);
   const data = companyOverview(getEmployees(), getCertifications(), getPayroll(), group ? undefined : company.id);
-  const bands = workforceBands(data.workers, assignedIds);
+  const bands = workforceBands(data.workers, assignedIds, dailyContext(getAttendance(), getLeaveRequests()));
   const cardClass = `group relative min-w-0 overflow-hidden rounded-lg border p-5 shadow-card transition-shadow hover:shadow-elegant focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${group ? "border-primary bg-gradient-primary text-primary-foreground" : brand || "border-border bg-card text-card-foreground"}`;
   const body = (
     <>

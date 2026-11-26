@@ -3,9 +3,9 @@ import type { CollectionKey } from "@/lib/db";
 /** Only business collections used by the page and its rendered forms/panels. */
 const pages: Record<string, CollectionKey[]> = {
   dashboard: ["employees", "sites", "projects", "approvals", "documents", "auditLogs", "attendance", "leads", "activities", "clients", "leaveRequests", "certifications", "payroll", "assignments"],
-  workforce: ["employees", "projects", "assignments", "clients", "sites", "branchPrefixes", "certifications", "documents", "payroll", "departments", "designations"],
+  workforce: ["employees", "projects", "assignments", "attendance", "leaveRequests", "clients", "sites", "branchPrefixes", "certifications", "documents", "payroll", "departments", "designations"],
   onboarding: ["employees", "documents", "branchPrefixes", "departments", "designations"],
-  "available-workers": ["employees", "assignments", "sites", "certifications", "documents", "branchPrefixes"],
+  "available-workers": ["employees", "assignments", "attendance", "leaveRequests", "sites", "certifications", "documents", "branchPrefixes"],
   "deployed-workers": ["employees", "assignments", "projects", "sites", "clients", "certifications", "documents"],
   "deployment-history": ["assignments", "clients", "employees", "projects", "sites"],
   clients: ["clients", "projects", "sites", "assignments", "employees", "invoices", "rateAgreements", "contracts"],

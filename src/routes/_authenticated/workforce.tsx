@@ -73,7 +73,8 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { isCountableWorker, isOfficeStaff } from "@/lib/workforce-split";
-import { getEmployees, addEmployee, updateEmployee, deleteEmployee, getCurrentCompany, getCompanies, getProjects, getAssignments, getClients, getSites, addAssignment } from "@/lib/store";
+import { getEmployees, addEmployee, updateEmployee, deleteEmployee, getCurrentCompany, getCompanies, getProjects, getAssignments, getClients, getSites, addAssignment, getAttendance, getLeaveRequests } from "@/lib/store";
+import { dailyContext } from "@/lib/availability";
 import { employeeSlugById } from "@/lib/employee-slug";
 import type { Employee, PassType, EmployeeStatus, DeploymentStatus, WorkerCategory } from "@/lib/types";
 import { pick, type ImportColumn } from "@/lib/xlsx";
@@ -360,7 +361,7 @@ export default function WorkforcePage() {
     return map;
   }, [assignments, projects]);
   function isAvailable(e: Employee) {
-    return isEmployeeAvailable(e, assignedIds);
+    return isEmployeeAvailable(e, assignedIds, dailyContext(getAttendance(), getLeaveRequests()));
   }
 
   // Only real employees: records must belong to a company (admin/staff accounts

@@ -101,6 +101,7 @@ import { Route as ApiPublicV1MetaRouteImport } from './routes/api/public/v1/meta
 import { Route as ApiPublicV1NotificationsRouteImport } from './routes/api/public/v1/notifications'
 import { Route as ApiPublicV1PayrollRouteImport } from './routes/api/public/v1/payroll'
 import { Route as ApiPublicV1ProjectsRouteImport } from './routes/api/public/v1/projects'
+import { Route as ApiPublicV1SiteAssignRouteImport } from './routes/api/public/v1/site-assign'
 import { Route as ApiPublicV1UploadsRouteImport } from './routes/api/public/v1/uploads'
 import { Route as ApiPublicV1AttendanceSyncRouteImport } from './routes/api/public/v1/attendance.sync'
 import { Route as ApiPublicV1DriverPingsRouteImport } from './routes/api/public/v1/driver.pings'
@@ -589,6 +590,11 @@ const ApiPublicV1ProjectsRoute = ApiPublicV1ProjectsRouteImport.update({
   path: '/api/public/v1/projects',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicV1SiteAssignRoute = ApiPublicV1SiteAssignRouteImport.update({
+  id: '/api/public/v1/site-assign',
+  path: '/api/public/v1/site-assign',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicV1UploadsRoute = ApiPublicV1UploadsRouteImport.update({
   id: '/api/public/v1/uploads',
   path: '/api/public/v1/uploads',
@@ -730,6 +736,7 @@ export interface FileRoutesByFullPath {
   '/api/public/v1/notifications': typeof ApiPublicV1NotificationsRoute
   '/api/public/v1/payroll': typeof ApiPublicV1PayrollRouteWithChildren
   '/api/public/v1/projects': typeof ApiPublicV1ProjectsRoute
+  '/api/public/v1/site-assign': typeof ApiPublicV1SiteAssignRoute
   '/api/public/v1/uploads': typeof ApiPublicV1UploadsRoute
   '/api/public/v1/attendance/sync': typeof ApiPublicV1AttendanceSyncRoute
   '/api/public/v1/driver/pings': typeof ApiPublicV1DriverPingsRoute
@@ -832,6 +839,7 @@ export interface FileRoutesByTo {
   '/api/public/v1/notifications': typeof ApiPublicV1NotificationsRoute
   '/api/public/v1/payroll': typeof ApiPublicV1PayrollRouteWithChildren
   '/api/public/v1/projects': typeof ApiPublicV1ProjectsRoute
+  '/api/public/v1/site-assign': typeof ApiPublicV1SiteAssignRoute
   '/api/public/v1/uploads': typeof ApiPublicV1UploadsRoute
   '/api/public/v1/attendance/sync': typeof ApiPublicV1AttendanceSyncRoute
   '/api/public/v1/driver/pings': typeof ApiPublicV1DriverPingsRoute
@@ -936,6 +944,7 @@ export interface FileRoutesById {
   '/api/public/v1/notifications': typeof ApiPublicV1NotificationsRoute
   '/api/public/v1/payroll': typeof ApiPublicV1PayrollRouteWithChildren
   '/api/public/v1/projects': typeof ApiPublicV1ProjectsRoute
+  '/api/public/v1/site-assign': typeof ApiPublicV1SiteAssignRoute
   '/api/public/v1/uploads': typeof ApiPublicV1UploadsRoute
   '/api/public/v1/attendance/sync': typeof ApiPublicV1AttendanceSyncRoute
   '/api/public/v1/driver/pings': typeof ApiPublicV1DriverPingsRoute
@@ -1040,6 +1049,7 @@ export interface FileRouteTypes {
     | '/api/public/v1/notifications'
     | '/api/public/v1/payroll'
     | '/api/public/v1/projects'
+    | '/api/public/v1/site-assign'
     | '/api/public/v1/uploads'
     | '/api/public/v1/attendance/sync'
     | '/api/public/v1/driver/pings'
@@ -1142,6 +1152,7 @@ export interface FileRouteTypes {
     | '/api/public/v1/notifications'
     | '/api/public/v1/payroll'
     | '/api/public/v1/projects'
+    | '/api/public/v1/site-assign'
     | '/api/public/v1/uploads'
     | '/api/public/v1/attendance/sync'
     | '/api/public/v1/driver/pings'
@@ -1245,6 +1256,7 @@ export interface FileRouteTypes {
     | '/api/public/v1/notifications'
     | '/api/public/v1/payroll'
     | '/api/public/v1/projects'
+    | '/api/public/v1/site-assign'
     | '/api/public/v1/uploads'
     | '/api/public/v1/attendance/sync'
     | '/api/public/v1/driver/pings'
@@ -1299,6 +1311,7 @@ export interface RootRouteChildren {
   ApiPublicV1NotificationsRoute: typeof ApiPublicV1NotificationsRoute
   ApiPublicV1PayrollRoute: typeof ApiPublicV1PayrollRouteWithChildren
   ApiPublicV1ProjectsRoute: typeof ApiPublicV1ProjectsRoute
+  ApiPublicV1SiteAssignRoute: typeof ApiPublicV1SiteAssignRoute
   ApiPublicV1UploadsRoute: typeof ApiPublicV1UploadsRoute
   ApiPublicV1DriverPingsRoute: typeof ApiPublicV1DriverPingsRoute
   ApiPublicV1DriverTasksRoute: typeof ApiPublicV1DriverTasksRouteWithChildren
@@ -1950,6 +1963,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicV1ProjectsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/v1/site-assign': {
+      id: '/api/public/v1/site-assign'
+      path: '/api/public/v1/site-assign'
+      fullPath: '/api/public/v1/site-assign'
+      preLoaderRoute: typeof ApiPublicV1SiteAssignRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/v1/uploads': {
       id: '/api/public/v1/uploads'
       path: '/api/public/v1/uploads'
@@ -2240,6 +2260,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicV1NotificationsRoute: ApiPublicV1NotificationsRoute,
   ApiPublicV1PayrollRoute: ApiPublicV1PayrollRouteWithChildren,
   ApiPublicV1ProjectsRoute: ApiPublicV1ProjectsRoute,
+  ApiPublicV1SiteAssignRoute: ApiPublicV1SiteAssignRoute,
   ApiPublicV1UploadsRoute: ApiPublicV1UploadsRoute,
   ApiPublicV1DriverPingsRoute: ApiPublicV1DriverPingsRoute,
   ApiPublicV1DriverTasksRoute: ApiPublicV1DriverTasksRouteWithChildren,

@@ -65,7 +65,8 @@ import {
   getPayroll,
   getCompanies,
 } from "@/lib/store";
-import { getAssignments } from "@/lib/store";
+import { getAssignments, getLeaveRequests as getLeaveForDaily } from "@/lib/store";
+import { dailyContext } from "@/lib/availability";
 import { activeAssignedEmployeeIds, isEmployeeAvailable } from "@/lib/availability";
 import { isCountableWorker } from "@/lib/workforce-split";
 
@@ -236,7 +237,7 @@ function OperationsDashboard() {
 
   const assignedIds = activeAssignedEmployeeIds(getAssignments());
   // Same definition as the Workforce page so both screens always match.
-  const availableWorkers = employees.filter((e) => isEmployeeAvailable(e, assignedIds)).length;
+  const availableWorkers = employees.filter((e) => isEmployeeAvailable(e, assignedIds, dailyContext(getAttendance(), getLeaveForDaily()))).length;
 
   const runningProjects = projects.filter((p) => p.status === "Active");
   const endingProjects = runningProjects.filter(

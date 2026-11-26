@@ -23,8 +23,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { getEmployees, getAssignments, getCompanies } from "@/lib/store";
-import { activeAssignedEmployeeIds, isEmployeeAvailable } from "@/lib/availability";
+import { getEmployees, getAssignments, getCompanies, getAttendance, getLeaveRequests } from "@/lib/store";
+import { activeAssignedEmployeeIds, dailyContext, isEmployeeAvailable } from "@/lib/availability";
 import { employeeSlugById } from "@/lib/employee-slug";
 import { isCountableWorker } from "@/lib/workforce-split";
 
@@ -46,7 +46,7 @@ function AvailableWorkersPage() {
   const employees = getEmployees().filter(isCountableWorker);
   const companies = getCompanies();
   const assignedIds = activeAssignedEmployeeIds(getAssignments());
-  const available = employees.filter((e) => isEmployeeAvailable(e, assignedIds));
+  const available = employees.filter((e) => isEmployeeAvailable(e, assignedIds, dailyContext(getAttendance(), getLeaveRequests())));
 
   const [search, setSearch] = useState("");
   const [trade, setTrade] = useState("all");

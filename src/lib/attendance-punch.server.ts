@@ -13,6 +13,7 @@ import { sbRest, sbSelect, serviceRest, type AuthContext } from "@/lib/api-v1.se
 import { verifyPunch, type PunchVerdict } from "@/lib/punch-verification";
 import { punchTransition } from "@/core/portal-punch";
 import { spanFromTimes, splitDutyHours } from "@/core/work-hours";
+import { autoAssignFromCheckIn, type AutoAssignResult } from "@/lib/site-auto-assign.server";
 
 export interface PunchEvent {
   clientEventId?: string;
@@ -42,6 +43,7 @@ export type PunchOutcome = {
   message?: string;
   attendance?: unknown;
   verdict?: PunchVerdict;
+  siteAssign?: AutoAssignResult;
 };
 
 const timeOf = (iso?: string) =>
@@ -264,7 +266,10 @@ export async function applyPunch(
     const field = isCheckOut ? "check_out" : "check_in";
     if (!rows[0] || String(rows[0][field]).slice(0, 5) !== String(payload[field]).slice(0, 5))
       return { clientEventId, status: "error", message: "Attendance save could not be verified. Refresh before trying again." };
-    return { clientEventId, status: "saved", attendance: fromAttendance(rows[0]), verdict };
+    let siteAssign: AutoAssignResult | undefined;
+    if (!isCheckOut && event.lat != null && event.lng != null)
+      siteAssign = await autoAssignFromCheckIn(employeeId, date, { lat: event.lat, lng: event.lng }).catch(() => ({ status: "unavailable" as const, reason: "Automatic site assignment failed" }));
+    return { clientEventId, status: "saved", attendance: fromAttendance(rows[0]), verdict, siteAssign };
   }
 
   // 3. Link the event to the attendance row so a later replay returns it.

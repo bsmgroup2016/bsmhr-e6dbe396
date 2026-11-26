@@ -81,6 +81,7 @@ export const Route = createFileRoute("/api/public/v1/attendance")({
           distanceM: outcome.verdict?.distanceM ?? null,
           flags: outcome.verdict?.flags ?? [],
           notice: outcome.verdict?.message ?? null,
+          siteAssign: outcome.siteAssign ?? null,
         });
       },
     },

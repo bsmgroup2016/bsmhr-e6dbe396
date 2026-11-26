@@ -172,6 +172,17 @@ function getPosition(): Promise<{ lat: number; lng: number; accuracyM: number } 
 function PunchCard({ checkIn, checkOut, status, unavailable, onDone }: { checkIn?: string; checkOut?: string; status?: string; unavailable: boolean; onDone: (row: Attendance) => void }) {
   const [now, setNow] = useState<Date | null>(null);
   const [busy, setBusy] = useState<"in" | "out" | null>(null);
+  const [siteChoices, setSiteChoices] = useState<Array<{ siteId: string; siteName: string; distanceM: number }>>([]);
+  const [picking, setPicking] = useState<string | null>(null);
+  const chooseSite = async (siteId: string) => {
+    setPicking(siteId);
+    try {
+      const r = await apiFetch<{ siteName: string }>("/site-assign", { method: "POST", body: { siteId } });
+      if (!r.ok) return void toast.error(r.error?.message ?? "Could not set your site");
+      toast.success(`Assigned to ${r.data.siteName}`);
+      setSiteChoices([]);
+    } finally { setPicking(null); }
+  };
   useEffect(() => {
     setNow(new Date());
     const t = window.setInterval(() => setNow(new Date()), 1000);
@@ -193,6 +204,9 @@ function PunchCard({ checkIn, checkOut, status, unavailable, onDone }: { checkIn
       const savedTime = kind === "in" ? res.data?.checkIn : res.data?.checkOut;
       if (!res.data?.id || !savedTime) return void toast.error("Save could not be confirmed. Refresh before trying again.");
       toast.success(kind === "in" ? `Checked in at ${savedTime}` : `Checked out at ${savedTime}`);
+      const sa = (res as { meta?: { siteAssign?: { status: string; siteName?: string; changed?: boolean; candidates?: Array<{ siteId: string; siteName: string; distanceM: number }> } | null } }).meta?.siteAssign;
+      if (sa?.status === "assigned" && sa.changed) toast.success(`Assigned to ${sa.siteName} from your location`);
+      if (sa?.status === "choose" && sa.candidates?.length) setSiteChoices(sa.candidates);
       onDone(res.data);
     } catch {
       toast.error("Could not save attendance. Check your connection and try again.");
@@ -245,6 +259,20 @@ function PunchCard({ checkIn, checkOut, status, unavailable, onDone }: { checkIn
       <p className="mt-3 flex items-center gap-1.5 text-xs opacity-80"><MapPin className="h-3.5 w-3.5 shrink-0" />{unavailable ? "Confirming today's attendance…" : "Location is recorded when permission is granted"}</p>
     </div>
   );
+  const chooser = siteChoices.length > 0 && (
+    <Card className="mt-3 border-primary/40 p-4">
+      <p className="font-medium">Which site are you working at today?</p>
+      <p className="text-xs text-muted-foreground">More than one site is near your location.</p>
+      <div className="mt-3 grid gap-2">
+        {siteChoices.map((c) => (
+          <Button key={c.siteId} variant="outline" className="h-12 justify-between" disabled={!!picking} onClick={() => void chooseSite(c.siteId)}>
+            <span className="truncate">{c.siteName}</span>
+            <span className="text-xs text-muted-foreground">{picking === c.siteId ? <Loader2 className="h-4 w-4 animate-spin" /> : `${c.distanceM} m`}</span>
+          </Button>
+        ))}
+      </div>
+    </Card>
+  );
   return (
     <>
     {mobile}
@@ -271,6 +299,7 @@ function PunchCard({ checkIn, checkOut, status, unavailable, onDone }: { checkIn
         </div>
       </div>
     </Card>
+    {chooser}
     </>
   );
 }
