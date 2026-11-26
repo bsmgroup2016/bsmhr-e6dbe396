@@ -1,5 +1,12 @@
 # Full-section UI/UX and workflow audit
 
+## Inline claim-sheet preview
+
+- [x] Show the exact generated template automatically in Claim sheet step 3, retaining existing workbook calculations and download behavior.
+- [x] Remove the unavailable PDF-preview placeholder and verify the populated inline preview on desktop and mobile.
+- [x] Render DATE/WEEKDAY/CHOOSE headers correctly instead of false formula errors; 35 focused tests pass, controlled desktop/mobile preview and Excel download succeed without browser errors or page overflow, and preview build is clean.
+- [ ] Verify the real signed-in saved-card flow. Blocker: external authentication cannot mint an authorized sandbox session; controlled browser data was used.
+
 ## AI Brain test recovery
 
 - [x] Add explicit manual retry and visible failure diagnostics without changing provider credentials, order or timeouts.

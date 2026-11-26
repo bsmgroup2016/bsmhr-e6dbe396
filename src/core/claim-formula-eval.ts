@@ -1,7 +1,8 @@
 /**
  * Small formula evaluator for previewing claim sheets in the browser.
- * Supports numbers, cell refs, ranges, + - * /, parentheses, SUM, COUNT,
- * AVERAGE, MIN, MAX. Anything else yields an error string, never a guess.
+ * Supports numbers, strings, cell refs, ranges, + - * /, parentheses, SUM, COUNT,
+ * AVERAGE, MIN, MAX and the template's DATE/WEEKDAY/CHOOSE date headers.
+ * Anything else yields an error string, never a guess.
  */
 export type Getter = (row: number, col: number) => { formula?: string; value: unknown };
 export type EvalResult = number | string | null;
@@ -32,7 +33,7 @@ export function createEvaluator(get: Getter) {
   }
 
   function evaluate(formula: string): EvalResult {
-    const src = formula.replace(/^=/, "").replace(/\$/g, "").toUpperCase();
+    const src = formula.replace(/^=/, "").replace(/\$/g, "");
     let i = 0;
     const peek = () => src[i];
     const skip = () => { while (src[i] === " ") i++; };
@@ -51,7 +52,21 @@ export function createEvaluator(get: Getter) {
       if (peek() === "(") { i++; const v = expr(); skip(); if (peek() !== ")") throw 0; i++; return v; }
       if (peek() === "-") { i++; const v = num(primary()); return typeof v === "number" ? -v : v; }
       if (peek() === "+") { i++; return primary(); }
-      const m = src.slice(i).match(/^(\d+(?:\.\d+)?)|^([A-Z]+)(\d+)(?::([A-Z]+)(\d+))?|^([A-Z]+)\(/);
+      if (peek() === '"') {
+        i++;
+        let out = "";
+        while (i < src.length) {
+          if (src[i] === '"') {
+            if (src[i + 1] === '"') { out += '"'; i += 2; continue; }
+            i++;
+            return out;
+          }
+          out += src[i]!;
+          i++;
+        }
+        throw 0;
+      }
+      const m = src.slice(i).match(/^(\d+(?:\.\d+)?)|^([A-Z]+)(\d+)(?::([A-Z]+)(\d+))?|^([A-Z]+)\(/i);
       if (!m) throw 0;
       if (m[1]) { i += m[1].length; return Number(m[1]); }
       if (m[6]) {
@@ -63,19 +78,32 @@ export function createEvaluator(get: Getter) {
         const flat = args.flatMap((a) => (Array.isArray(a) ? a : [a]));
         const firstErr = flat.find(isErr); if (firstErr) return firstErr;
         const nums = flat.filter((v): v is number => typeof v === "number");
-        switch (m[6]) {
+        switch (m[6].toUpperCase()) {
           case "SUM": return nums.reduce((a, b) => a + b, 0);
           case "COUNT": return nums.length;
           case "AVERAGE": return nums.length ? nums.reduce((a, b) => a + b, 0) / nums.length : "#DIV/0!";
           case "MIN": return nums.length ? Math.min(...nums) : 0;
           case "MAX": return nums.length ? Math.max(...nums) : 0;
+          case "DATE": {
+            if (nums.length !== 3) return "#VALUE!";
+            return Date.UTC(nums[0]!, nums[1]! - 1, nums[2]!) / 86400000 + 25569;
+          }
+          case "WEEKDAY": {
+            const serial = nums[0];
+            return serial === undefined ? "#VALUE!" : new Date((serial - 25569) * 86400000).getUTCDay() + 1;
+          }
+          case "CHOOSE": {
+            const index = num(args[0] ?? null);
+            if (typeof index !== "number" || !Number.isInteger(index) || index < 1) return "#VALUE!";
+            return args[index] ?? "#VALUE!";
+          }
           default: return "#NAME?";
         }
       }
       i += m[0].length;
-      const r1 = Number(m[3]), c1 = colNum(m[2]);
+      const r1 = Number(m[3]), c1 = colNum(m[2]!.toUpperCase());
       if (!m[4]) return cellValue(r1, c1);
-      const r2 = Number(m[5]), c2 = colNum(m[4]);
+      const r2 = Number(m[5]), c2 = colNum(m[4].toUpperCase());
       const out: EvalResult[] = [];
       for (let r = Math.min(r1, r2); r <= Math.max(r1, r2); r++)
         for (let c = Math.min(c1, c2); c <= Math.max(c1, c2); c++) out.push(cellValue(r, c));

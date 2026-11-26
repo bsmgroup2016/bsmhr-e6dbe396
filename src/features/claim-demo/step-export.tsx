@@ -38,10 +38,9 @@ export function StepExport({ workers, details, onBack, onRestart }: { workers: W
     setBusy(key);
     try { await fn(); toast.success(ok); } catch (e) { toast.error(e instanceof Error ? e.message : "Something went wrong"); } finally { setBusy(null); }
   };
-  const outs: [string, string, () => void][] = [
-    ["Download Excel (.xlsx)", "Filled into your template, formulas kept", () => run("x", () => downloadExcel(workers, month, site, details.client), "Claim sheet downloaded")],
-    ["PDF preview", "To send to the client", () => toast("PDF preview is not available yet")],
-    ["Save to HR records", "Can be reopened and corrected later", () => run("s", () => saveToRecords(workers, month, site), "Saved to HR records")],
+  const outs: [string, string, () => void, string][] = [
+    ["Download Excel (.xlsx)", "Filled into your template, formulas kept", () => run("x", () => downloadExcel(workers, month, site, details.client), "Claim sheet downloaded"), "x"],
+    ["Save to HR records", "Can be reopened and corrected later", () => run("s", () => saveToRecords(workers, month, site), "Saved to HR records"), "s"],
   ];
   return (
     <div>
@@ -72,9 +71,9 @@ export function StepExport({ workers, details, onBack, onRestart }: { workers: W
               onDownload={() => run("x", () => downloadWorkbook(check.workbook, month), "Claim sheet downloaded")}
             />
           )}
-          {outs.map(([t, s, fn], i) => (
+          {outs.map(([t, s, fn, key], i) => (
             <Button key={t} disabled={busy !== null} variant={i === 0 ? "default" : "outline"} className="h-auto w-full flex-col items-start py-3" onClick={fn}>
-              <span className="flex items-center gap-2">{busy === (i === 0 ? "x" : i === 2 ? "s" : "") && <Loader2 className="h-4 w-4 animate-spin" />}{t}</span>
+              <span className="flex items-center gap-2">{busy === key && <Loader2 className="h-4 w-4 animate-spin" />}{t}</span>
               <span className={`text-xs font-normal ${i === 0 ? "opacity-80" : "text-muted-foreground"}`}>{s}</span>
             </Button>
           ))}
