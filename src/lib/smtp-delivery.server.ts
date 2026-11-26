@@ -4,7 +4,7 @@ import {
   type SmtpTestResult,
 } from "@/core/smtp-delivery";
 
-type DeliveryInput = { email: string; subject: string; sentAt: string };
+type DeliveryInput = { email: string; subject: string; sentAt: string; fromEmail: string };
 
 type DeliveryDependencies = {
   fetcher?: (url: string, init: RequestInit) => Promise<Response>;
@@ -21,12 +21,30 @@ export async function confirmBrevoTestDelivery(
   const fetcher = dependencies.fetcher ?? fetch;
   const wait = dependencies.wait ?? ((ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms)));
   const attempts = dependencies.attempts ?? 4;
+  const headers = { "api-key": apiKey, accept: "application/json" };
+
+  try {
+    // A single project secret cannot read another Brevo account's events.
+    // Confirm that this key belongs to the account containing the active sender first.
+    const senderResponse = await fetcher("https://api.brevo.com/v3/senders", {
+      headers,
+      signal: AbortSignal.timeout(8_000),
+    });
+    if (!senderResponse.ok) return { success: true, error: null, delivery: "accepted" };
+    const senderData = await senderResponse.json() as { senders?: { email?: string; active?: boolean }[] };
+    const matchingSender = (senderData.senders ?? []).some(
+      (sender) => sender.active && sender.email?.toLowerCase() === input.fromEmail.toLowerCase(),
+    );
+    if (!matchingSender) return { success: true, error: null, delivery: "accepted" };
+  } catch {
+    return { success: true, error: null, delivery: "accepted" };
+  }
 
   for (let attempt = 0; attempt < attempts; attempt += 1) {
     try {
       const query = new URLSearchParams({ email: input.email, limit: "20", offset: "0", sort: "desc" });
       const response = await fetcher(`https://api.brevo.com/v3/smtp/statistics/events?${query}`, {
-        headers: { "api-key": apiKey, accept: "application/json" },
+        headers,
         signal: AbortSignal.timeout(8_000),
       });
       if (!response.ok) return { success: true, error: null, delivery: "accepted" };

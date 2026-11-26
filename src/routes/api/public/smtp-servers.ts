@@ -110,12 +110,21 @@ export const Route = createFileRoute("/api/public/smtp-servers")({
                 subject,
                 html: layout("SMTP test successful", `<p>The SMTP server <b>${row!.label}</b> is working.</p>`),
               });
+              let result: { success: boolean; error: string | null; delivery: "delivered" | "accepted" } = {
+                success: true, error: null, delivery: "accepted",
+              };
               const brevoKey = process.env.BREVO_API_KEY;
               if (row!.host === "smtp-relay.brevo.com" && brevoKey) {
                 const { confirmBrevoTestDelivery } = await import("@/lib/smtp-delivery.server");
-                return Response.json(await confirmBrevoTestDelivery(brevoKey, { email: d.to, subject, sentAt }));
+                result = await confirmBrevoTestDelivery(brevoKey, {
+                  email: d.to, subject, sentAt, fromEmail: row!.from_email,
+                });
               }
-              return Response.json({ success: true, error: null, delivery: "accepted" });
+              await rest(patchUrl(row!.id), {
+                method: "PATCH",
+                body: JSON.stringify({ last_error: result.success ? null : result.error, cooldown_until: null, updated_at: now }),
+              });
+              return Response.json(result);
             } catch (e) {
               return Response.json({ success: false, error: e instanceof Error ? e.message : String(e), delivery: "accepted" });
             }
