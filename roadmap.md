@@ -1,5 +1,11 @@
 # Full-section UI/UX and workflow audit
 
+## AI Brain test recovery
+
+- [x] Add explicit manual retry and visible failure diagnostics without changing provider credentials, order or timeouts.
+- [x] Nine focused tests pass; controlled desktop/mobile Settings timeout → retry → success checks pass without page errors or overflow, and preview build is clean.
+- [ ] Verify real signed-in Settings provider test. Blocker: external authentication cannot mint an authorized sandbox session; controlled UI checks do not verify the live provider.
+
 ## OCR disconnect recovery and latency
 
 - [x] Run independent targeted checks in groups of three after router/Gemini; preserve models, row order, review flags and hours, and pause later groups on denial/quota responses.

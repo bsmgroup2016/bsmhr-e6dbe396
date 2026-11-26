@@ -112,18 +112,28 @@ export async function postChat(p: ActiveProvider, body: Record<string, unknown>,
 /** Send one tiny message to confirm a provider works. */
 export async function pingProvider(p: ActiveProvider) {
   const started = Date.now();
-  let res: Response;
+  const signal = AbortSignal.timeout(20_000);
+  const failure = (code: string, error: string, retryable: boolean, status?: number) => ({
+    success: false, error, code, retryable, latencyMs: Date.now() - started, model: p.model,
+    ...(status === undefined ? {} : { status }),
+  });
   try {
-    res = await postChat(p, { messages: [{ role: "user", content: "Reply with OK" }] }, { signal: AbortSignal.timeout(20_000) });
+    const res = await postChat(p, { messages: [{ role: "user", content: "Reply with OK" }], stream: false }, { signal });
     if (res.ok) {
       const completion = await res.json() as { model?: string; choices?: { message?: { content?: string } }[] };
-      if (!completion.choices?.[0]?.message?.content?.trim()) return { success: false, error: "Provider returned no answer" };
+      if (!completion.choices?.[0]?.message?.content?.trim()) return failure("empty_response", "Provider returned no answer.", true, res.status);
       return { success: true, error: null as string | null, latencyMs: Date.now() - started, model: completion.model ?? p.model };
     }
-  } catch {
-    return { success: false, error: "Provider could not answer within 20 seconds. Try again or use another provider." };
+    // Never forward arbitrary provider bodies: they can echo credentials or request data.
+    if (res.status === 503) return failure("provider_busy", "Model is busy right now. Try again shortly.", true, res.status);
+    if (res.status === 429) return failure("rate_limit", "Provider limit reached. Wait before retrying.", true, res.status);
+    if (res.status === 401 || res.status === 403) return failure("access_denied", "Provider denied access. Check the saved key and account permissions.", false, res.status);
+    return failure("provider_error", `Provider rejected the test (HTTP ${res.status}). Check the configured model and API URL.`, res.status >= 500, res.status);
+  } catch (e) {
+    if (signal.aborted || (e instanceof Error && e.name === "TimeoutError")) {
+      return failure("timeout", "Provider did not answer within 20 seconds. No response was confirmed. You can retry this test.", true);
+    }
+    if (e instanceof SyntaxError) return failure("invalid_response", "Provider returned an unreadable response instead of valid JSON.", true);
+    return failure("connection_error", "Could not connect to the provider. Check the API URL and try again.", true);
   }
-  if (res.status === 503) return { success: false, error: "Model is busy right now (high demand) — the next one in the list will take over" };
-  if (res.status === 429) return { success: false, error: "Limit reached for now (the next one in the list will take over)" };
-  return { success: false, error: `Failed (${res.status}): ${(await res.text()).slice(0, 200)}` };
 }

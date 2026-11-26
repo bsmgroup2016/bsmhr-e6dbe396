@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Bot, ScanLine, Sheet, CheckCircle2, XCircle, Loader2, Play, ChevronDown, ChevronUp,
-  ArrowUp, ArrowDown, Pencil, Trash2, Plus, Save,
+  ArrowUp, ArrowDown, Pencil, Trash2, Plus, Save, RotateCcw,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,7 +19,7 @@ type Item = {
   id: string; category: Category; label: string; url: string; model: string;
   priority: number; enabled: boolean; updatedAt: string; keySource: "custom" | "secure" | "none";
 };
-type TestResult = { ok: boolean; message: string; at: string };
+type TestResult = { ok: boolean; message: string; at: string; code?: string; status?: number; latencyMs?: number };
 
 async function api<T>(method: "GET" | "POST", payload?: Record<string, unknown>): Promise<T> {
   const { data } = await supabase.auth.getSession();
@@ -133,15 +133,22 @@ function ApiRow({ item, index, total, onChanged }: { item: Item; index: number; 
   };
 
   const test = async () => {
+    if (testing) return;
     setTesting(true);
+    setResult(null);
     try {
-      const r = await api<{ success: boolean; error: string | null; model?: string; latencyMs?: number }>("POST", { action: "test", id: item.id });
+      const r = await api<{ success: boolean; error: string | null; model?: string; latencyMs?: number; code?: string; status?: number }>("POST", { action: "test", id: item.id });
       const details = [r.model, r.latencyMs === undefined ? null : `${(r.latencyMs / 1000).toFixed(1)}s`].filter(Boolean).join(" · ");
-      const res = { ok: r.success, message: r.success ? `Working${details ? ` · ${details}` : ""}` : r.error ?? "Failed", at: new Date().toLocaleTimeString() };
+      const res: TestResult = { ok: r.success, message: r.success ? `Working${details ? ` · ${details}` : ""}` : r.error ?? "Failed", at: new Date().toLocaleTimeString(),
+        ...(r.code ? { code: r.code } : {}), ...(r.status === undefined ? {} : { status: r.status }),
+        ...(r.latencyMs === undefined ? {} : { latencyMs: r.latencyMs }),
+      };
       setResult(res);
+      if (!res.ok) setOpen(true);
       res.ok ? toast.success(`${item.label} is working`) : toast.error(`${item.label}: ${res.message}`);
     } catch (e) {
       setResult({ ok: false, message: e instanceof Error ? e.message : "Failed", at: new Date().toLocaleTimeString() });
+      setOpen(true);
     } finally {
       setTesting(false);
     }
@@ -186,6 +193,23 @@ function ApiRow({ item, index, total, onChanged }: { item: Item; index: number; 
           </Button>
         </div>
       </div>
+
+      {result && !result.ok && (
+        <div role="alert" className="mt-3 flex flex-wrap items-start justify-between gap-3 border-l-2 border-destructive bg-muted/40 p-3 text-sm">
+          <div className="min-w-0 flex-1 space-y-1">
+            <p className="font-semibold text-destructive">{result.code === "timeout" ? "Test timed out" : "Test failed"}</p>
+            <p className="break-words">{result.message}</p>
+            <p className="text-xs text-muted-foreground">
+              {result.at}{result.latencyMs === undefined ? "" : ` · ${(result.latencyMs / 1000).toFixed(1)} seconds`}
+              {result.status === undefined ? "" : ` · HTTP ${result.status}`}
+              {result.code ? ` · ${result.code}` : ""}
+            </p>
+          </div>
+          <Button variant="outline" size="sm" disabled={testing || item.keySource === "none"} onClick={test}>
+            <RotateCcw className="h-3 w-3" /> Retry test
+          </Button>
+        </div>
+      )}
 
       {open && (
         <dl className="mt-3 grid grid-cols-1 gap-x-6 gap-y-2 rounded-md bg-muted/40 p-3 text-xs sm:grid-cols-[140px_1fr]">
