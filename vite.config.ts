@@ -18,6 +18,10 @@ export default defineConfig({
     // require its CommonJS entry (which requires cloudflare:sockets).
     // Production must bundle the mailer; only the native socket stays native.
     ssr: { noExternal: ["worker-mailer"] },
+    // This is a runtime-provided built-in, not an npm dependency. Preserve
+    // its native import in both the SSR and final server bundle; the preview
+    // guard prevents loading it in Node. Keep worker-mailer fully bundled.
+    build: { rolldownOptions: { external: ["cloudflare:sockets"] } },
     // Pre-bundle UI deps up front so a late dependency discovery can't reload
     // React mid-session (mixed ?v= hashes => "Cannot read properties of null (reading 'useMemo')").
     optimizeDeps: {
