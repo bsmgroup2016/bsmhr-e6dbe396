@@ -4,7 +4,7 @@ import type { FlatTimeCard } from "@/core/time-card-consensus";
 
 const image = "data:image/png;base64,Zml4dHVyZQ==";
 const row: FlatTimeCard = { card_index: 1, employee_name: "Fixture Worker", employee_code: "B-999", fin: null, site_name: "Fixture Site", date: "2026-11-01", in_time: "07:00", out_time: "20:00", break_minutes: 60, reported_total_hours: 12, confidence: 0.9, normal_hours: 8, ot_hours: 4 };
-const router = { id: "fixture", name: "AI Brain", url: "https://stbd.seobdshop.com/v1/chat/completions", key: "fixture-router", model: "hr-brain", extra: {} };
+const router = { id: "fixture", name: "AI Brain", url: "https://hr.seobdshop.com/v1/chat/completions", key: "fixture-router", model: "hr-brain", extra: {} };
 const completion = (data: unknown) => Response.json({ choices: [{ message: { content: JSON.stringify(data) } }] });
 const google = (rows: FlatTimeCard[]) => Response.json({ candidates: [{ content: { parts: [{ text: JSON.stringify({ rows }) }] } }] });
 

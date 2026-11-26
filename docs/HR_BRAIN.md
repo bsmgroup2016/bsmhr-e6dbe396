@@ -6,7 +6,7 @@ AI Brain has optional integrations for document review and chat; software calcul
 
 This app uses its existing edge-hosted TanStack server route **POST /api/public/hr-brain**, not a separately deployed Supabase Edge Function. The handler explicitly checks the user's Supabase session and admin role because `/api/public/` bypasses site authentication. Access is admin-only until a future HR integration adds feature-specific authorization.
 
-Store `HR_BRAIN_API_KEY` in the encrypted project secret store; it is read only by the server. Optional `HR_BRAIN_BASE_URL` overrides the HTTPS default `https://stbd.seobdshop.com/v1`. These project secrets are not automatically copied into the external Supabase Edge Function secret store.
+Store `HR_BRAIN_API_KEY` in the encrypted project secret store; it is read only by the server. Optional `HR_BRAIN_BASE_URL` overrides the HTTPS default `https://hr.seobdshop.com/v1`. These project secrets are not automatically copied into the external Supabase Edge Function secret store.
 
 Requests always use model `hr-brain`, default `max_tokens: 2048`, and raise positive budgets below 1024 to 1024. Invalid nonpositive budgets are rejected. `systemPrompt` is prepended as a system message. Optional temperature and OpenAI function tools are forwarded; this transport does not execute tools.
 
@@ -71,7 +71,7 @@ These sibling paths were inspected for this invocation bug, not end-to-end retes
 
 ## Optional OCR reader (25 November 2026)
 
-- Added a separate OCR provider row, model `hr-brain`, URL `https://stbd.seobdshop.com/v1/chat/completions`, using server-only `HR_BRAIN_API_KEY`. Gemini and OpenAI settings are unchanged; Claude has subsequently been removed by the owner. Migration `db/migrations/0077_ai_brain_ocr.sql` inserts the AI Brain row idempotently and never restores deleted/changed settings on page load.
+- Added a separate OCR provider row, model `hr-brain`, URL `https://hr.seobdshop.com/v1/chat/completions`, using server-only `HR_BRAIN_API_KEY`. Gemini and OpenAI settings are unchanged; Claude has subsequently been removed by the owner. Migration `db/migrations/0077_ai_brain_ocr.sql` inserts the AI Brain row idempotently and never restores deleted/changed settings on page load.
 - Enabled AI Brain for the requested OCR trial. Its existing row controls support on/off, ordering, details, editing, testing and deletion. Provider testing now displays returned model and elapsed time in Details.
 - The shared OCR service forwards image content and PDF file parts, explicitly sends `stream: false` (required by this upstream) and omits provider-specific `reasoning_effort`. Document extraction and the time-card fallback use this service; claim templates, calculated hours and approval behavior remain unchanged.
 - Live shared-service checks on a fictional printed fixture returned the correct name, P-File, date and check-in/out for both PNG (~7.6s) and PDF (~5.4s). This verifies the transport and readable printed content, not handwritten-card accuracy. No real worker file was sent or stored by the check.

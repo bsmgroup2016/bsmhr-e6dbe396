@@ -4,7 +4,7 @@
 
 The backend-only verification implementation is in `src/core/time-card-consensus.ts` and `src/lib/time-card-consensus.server.ts`. `readTimeCard` now dispatches to `readTimeCardWithConsensus`, so both direct and background time-card requests use the three-stage reader. The previous paired reader remains explicitly named `readTimeCardLegacy` for regression coverage, but no upload endpoint calls it. Other document OCR is unchanged. Time-card requests start private R2 jobs and poll results while draining a heartbeat connection. No screen, upload, Auth, existing R2 implementation, database table, saved provider setting, claim workbook or salary calculation was changed by activation.
 
-The saved AI Brain OCR integration supplies the existing router (`https://stbd.seobdshop.com/v1/chat/completions`, model `hr-brain`). The reader reuses enabled OCR rows through the existing resolver, including the keys entered in Settings and their environment-secret fallback; no new key or provider row is created. Mandatory Gemini must be enabled with a usable key. Disabled OpenAI is never invoked; unresolved targeted checks remain flagged. No unverified router-only fallback is accepted when mandatory Gemini is unavailable.
+The saved AI Brain OCR integration supplies the existing router (`https://hr.seobdshop.com/v1/chat/completions`, model `hr-brain`). The reader reuses enabled OCR rows through the existing resolver, including the keys entered in Settings and their environment-secret fallback; no new key or provider row is created. Mandatory Gemini must be enabled with a usable key. Disabled OpenAI is never invoked; unresolved targeted checks remain flagged. No unverified router-only fallback is accepted when mandatory Gemini is unavailable.
 
 ## Verification stages
 

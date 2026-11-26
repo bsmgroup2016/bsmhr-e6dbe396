@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const HR_BRAIN_MODEL = "hr-brain";
-export const HR_BRAIN_BASE_URL = "https://stbd.seobdshop.com/v1";
+export const HR_BRAIN_BASE_URL = "https://hr.seobdshop.com/v1";
 
 const messageSchema = z.object({
   role: z.enum(["system", "user", "assistant", "tool"]),

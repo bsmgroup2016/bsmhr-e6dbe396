@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { buildBody, askAiJson } from "./ai.server";
 import { clearIntegrationCache, toProvider, type IntegrationRow } from "./api-integrations.server";
 
-const brain = { name: "hr-brain", label: "AI Brain", url: "https://stbd.seobdshop.com/v1/chat/completions", apiKey: "fixture-only", model: "hr-brain", extra: {} };
+const brain = { name: "hr-brain", label: "AI Brain", url: "https://hr.seobdshop.com/v1/chat/completions", apiKey: "fixture-only", model: "hr-brain", extra: {} };
 
 describe("AI Brain OCR", () => {
   test("removed Claude OCR rows cannot resolve by endpoint, label or model", () => {

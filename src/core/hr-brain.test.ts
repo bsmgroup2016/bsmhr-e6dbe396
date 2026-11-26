@@ -61,7 +61,7 @@ describe("AI Brain authenticated forwarding", () => {
     const response = await handleHrBrain(request(), s.deps);
     expect(await response.json()).toMatchObject({ model: "hr-brain" });
     const call = s.forwarded();
-    expect(call?.url).toBe("https://stbd.seobdshop.com/v1/chat/completions");
+    expect(call?.url).toBe("https://hr.seobdshop.com/v1/chat/completions");
     expect(JSON.parse(String(call?.init?.body))).toMatchObject({ model: "hr-brain", max_tokens: 2048, stream: false });
     expect(new Headers(call?.init?.headers).get("Authorization")).toBe("Bearer fixture-only-credential");
   });

@@ -14,7 +14,7 @@ const { readTimeCard } = await import("./ocr.server");
 const originalFetch = globalThis.fetch;
 beforeEach(() => {
   received = null;
-  providers = [provider("router", "https://stbd.seobdshop.com/v1/chat/completions"), provider("gemini", "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"), provider("openai", "https://api.openai.com/v1/chat/completions")];
+  providers = [provider("router", "https://hr.seobdshop.com/v1/chat/completions"), provider("gemini", "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"), provider("openai", "https://api.openai.com/v1/chat/completions")];
   globalThis.fetch = Object.assign(async () => new Response("fixture", { headers: { "Content-Type": "image/png" } }), { preconnect: originalFetch.preconnect });
 });
 afterAll(() => { globalThis.fetch = originalFetch; mock.restore(); });

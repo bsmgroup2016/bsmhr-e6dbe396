@@ -262,3 +262,8 @@
 - [x] Activate consensus in all time-card dispatch paths using enabled Settings overrides. Real fictional PNG/PDF and targeted OpenAI requests pass; active reader processes real R2 source/result with owner-scoped read-back. Real signed-in handwritten upload and published runtime remain unverified as noted above; no model substitutions.
 - [x] Add authenticated owner/source-checked R2 job status and approved invisible heartbeat/result polling for the existing reader; 67 focused tests and real fictional-job R2 read-back/removal verify behavior without changing screens or upload/Excel flows.
 - [ ] Verify signed-in uploaded-card background execution in the published Worker. Blocker: no authorized external-Auth browser session; completely unattended crash-resumable execution would additionally require an external durable workflow/queue, not waitUntil alone.
+## AI Brain endpoint and credential replacement
+
+- [x] Replace the shared AI Brain URL with https://hr.seobdshop.com/v1 and request the replacement key securely.
+- [x] Update the existing AI Brain OCR row to the new URL and server-secret key fallback, preserving model/order/toggle; verified database read-back, 35 tests and real HTTP 200 / OK without worker data.
+- [ ] Verify Settings → Test AI Brain with a real signed-in account. Blocker: external authentication cannot mint a sandbox session; publish the changed URL before testing the live site.
