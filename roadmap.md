@@ -280,3 +280,9 @@
 - [x] Replace the shared AI Brain URL with https://hr.seobdshop.com/v1 and request the replacement key securely.
 - [x] Update the existing AI Brain OCR row to the new URL and server-secret key fallback, preserving model/order/toggle; verified database read-back, 35 tests and real HTTP 200 / OK without worker data.
 - [ ] Verify Settings → Test AI Brain with a real signed-in account. Blocker: external authentication cannot mint a sandbox session; publish the changed URL before testing the live site.
+
+## Dual-runtime VPS deployment
+
+- [x] Add runtime SMTP adapter, shared Supabase configuration, Node scripts, health endpoint and VPS documentation without database changes.
+- [x] 58 focused/regression tests pass; preview health/discovery and unsigned access verified. Isolated bundled SMTP runs on actual Node and workerd without eager native imports.
+- [ ] Verify full Node build/deployment and signed-in production flows. Blocker: Lovable sandbox forces its Cloudflare target; VPS/CI and real-account smoke tests must run externally.

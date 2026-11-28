@@ -1,8 +1,6 @@
+import { getSupabaseConfig } from "@/lib/supabase-config";
 import { AwsClient } from "aws4fetch";
 
-const SUPABASE_URL = "https://supabase.bsmengg.com";
-const SUPABASE_ANON =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzk1ODUyMTUwLCJleHAiOjE5NTM1MzIxNTB9.oKHcsh1PF5fehDyqcQn7Ja9epYtV44TXHZdq-X28TLM";
 
 export function r2Env() {
   const accountId = process.env.R2_ACCOUNT_ID;
@@ -80,8 +78,8 @@ export async function r2FetchObject(key: string, init?: RequestInit) {
 export async function verifyUser(request: Request): Promise<string | null> {
   const auth = request.headers.get("authorization");
   if (!auth?.startsWith("Bearer ")) return null;
-  const res = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
-    headers: { apikey: SUPABASE_ANON, Authorization: auth },
+  const res = await fetch(`${getSupabaseConfig().url}/auth/v1/user`, {
+    headers: { apikey: getSupabaseConfig().anonKey, Authorization: auth },
   });
   if (!res.ok) return null;
   const user = (await res.json()) as { id?: string };
@@ -102,7 +100,7 @@ function serviceKey() {
 
 async function restGet(path: string) {
   const key = serviceKey();
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+  const res = await fetch(`${getSupabaseConfig().url}/rest/v1/${path}`, {
     headers: { apikey: key, Authorization: `Bearer ${key}` },
   });
   if (!res.ok) return [] as any[];
@@ -170,7 +168,7 @@ export async function registerObject(row: {
   uploaded_by: string;
 }) {
   const key = serviceKey();
-  const response = await fetch(`${SUPABASE_URL}/rest/v1/storage_objects`, {
+  const response = await fetch(`${getSupabaseConfig().url}/rest/v1/storage_objects`, {
     method: "POST",
     headers: {
       apikey: key,
@@ -186,7 +184,7 @@ export async function registerObject(row: {
 export async function unregisterObject(objectKey: string) {
   const key = serviceKey();
   await fetch(
-    `${SUPABASE_URL}/rest/v1/storage_objects?key=eq.${encodeURIComponent(objectKey)}`,
+    `${getSupabaseConfig().url}/rest/v1/storage_objects?key=eq.${encodeURIComponent(objectKey)}`,
     { method: "DELETE", headers: { apikey: key, Authorization: `Bearer ${key}` } },
   );
 }

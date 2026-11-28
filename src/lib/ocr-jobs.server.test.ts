@@ -66,8 +66,7 @@ describe("private R2 OCR job contract", () => {
     const h = memoryStore(), job = await createOcrJob(owner, "time-cards/fixture.png", h.store);
     let release: (() => void) | undefined;
     const gate = new Promise<void>(resolve => { release = resolve; });
-    let registrations = 0;
-    const request = Object.assign(new Request("http://localhost:8080/api/public/ocr"), { waitUntil: (_task: Promise<unknown>) => { registrations++; } });
+    const request = new Request("http://localhost:8080/api/public/ocr");
     const response = ocrJobResponse(request, job, async () => { await gate; return rows; }, h.store);
     expect(response.status).toBe(202);
     let polls = 0;
@@ -82,7 +81,6 @@ describe("private R2 OCR job contract", () => {
       wait: () => new Promise(resolve => setTimeout(resolve, 1)),
     });
     expect(result).toEqual(rows);
-    expect(registrations).toBe(1);
     expect(h.writes).toEqual(["queued", "running", "complete"]);
   });
   test("polling a failed job rejects without invoking another paid OCR run", async () => {

@@ -1,3 +1,4 @@
+import { getSupabaseConfig } from "@/lib/supabase-config";
 import { UNAVAILABLE_TABLES } from "@/core/data-tables";
 
 /**
@@ -15,9 +16,6 @@ import { UNAVAILABLE_TABLES } from "@/core/data-tables";
  * check-in/check-out row) that the connected RLS does not grant to workers.
  */
 
-const SUPABASE_URL = "https://supabase.bsmengg.com";
-const SUPABASE_ANON =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzk1ODUyMTUwLCJleHAiOjE5NTM1MzIxNTB9.oKHcsh1PF5fehDyqcQn7Ja9epYtV44TXHZdq-X28TLM";
 
 export const API_VERSION = "1.0.0";
 
@@ -84,11 +82,11 @@ type RateVerdict = { allowed: boolean; remaining: number; resetAt: string; limit
 
 async function consume(bucket: string, rule: RateLimitRule): Promise<RateVerdict> {
   try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/api_rate_limit`, {
+    const res = await fetch(`${getSupabaseConfig().url}/rest/v1/rpc/api_rate_limit`, {
       method: "POST",
       headers: {
-        apikey: SUPABASE_ANON,
-        Authorization: `Bearer ${SUPABASE_ANON}`,
+        apikey: getSupabaseConfig().anonKey,
+        Authorization: `Bearer ${getSupabaseConfig().anonKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
@@ -185,12 +183,12 @@ export async function sbRest(
   const table = path.split("?")[0];
   if (UNAVAILABLE_TABLES.has(table)) return fail(503, "feature_unavailable", `${table.replaceAll("_", " ")} is unavailable: the required table is not present in the connected database.`);
   const headers: Record<string, string> = {
-    apikey: SUPABASE_ANON,
+    apikey: getSupabaseConfig().anonKey,
     Authorization: `Bearer ${ctx.token}`,
     "Content-Type": "application/json",
   };
   if (init?.prefer) headers["Prefer"] = init.prefer;
-  return fetch(`${SUPABASE_URL}/rest/v1/${path}`, { ...init, headers });
+  return fetch(`${getSupabaseConfig().url}/rest/v1/${path}`, { ...init, headers });
 }
 
 /**
@@ -210,7 +208,7 @@ export async function serviceRest(
     "Content-Type": "application/json",
   };
   if (init?.prefer) headers["Prefer"] = init.prefer;
-  return fetch(`${SUPABASE_URL}/rest/v1/${path}`, { ...init, headers });
+  return fetch(`${getSupabaseConfig().url}/rest/v1/${path}`, { ...init, headers });
 }
 
 export async function sbSelect<T = Record<string, unknown>>(
@@ -230,8 +228,8 @@ export async function authenticate(request: Request): Promise<AuthContext | null
   const token = header.slice(7).trim();
   if (!token) return null;
 
-  const res = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
-    headers: { apikey: SUPABASE_ANON, Authorization: `Bearer ${token}` },
+  const res = await fetch(`${getSupabaseConfig().url}/auth/v1/user`, {
+    headers: { apikey: getSupabaseConfig().anonKey, Authorization: `Bearer ${token}` },
   });
   if (!res.ok) return null;
   const user = (await res.json()) as { id?: string; email?: string };

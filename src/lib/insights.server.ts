@@ -1,12 +1,12 @@
+import { getSupabaseConfig } from "@/lib/supabase-config";
 /**
  * Live workforce insights computed with the CALLER's session (row-level security applies):
  * expiries (passport, work permit, documents, other certs) and today's project attendance shortfalls.
  * Used by the assistant tool and by the staff popup alerts.
  */
-const SUPABASE_URL = "https://supabase.bsmengg.com";
 
 async function get<T = Record<string, unknown>>(path: string, auth: string, anon: string): Promise<T[]> {
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, { headers: { apikey: anon, Authorization: auth } });
+  const res = await fetch(`${getSupabaseConfig().url}/rest/v1/${path}`, { headers: { apikey: anon, Authorization: auth } });
   if (!res.ok) return [];
   return (await res.json()) as T[];
 }

@@ -1,9 +1,9 @@
+import { getSupabaseConfig } from "@/lib/supabase-config";
 /**
  * Outgoing notification emails (Resend).
  *
  * Keys live in project secrets: RESEND_API_KEY, RESEND_FROM, CRON_SECRET.
  */
-const SUPABASE_URL = "https://supabase.bsmengg.com";
 
 export function serviceKey() {
   const key = process.env.SB_SERVICE_ROLE_KEY;
@@ -14,7 +14,7 @@ export function serviceKey() {
 /** Service-role REST read (server only). */
 export async function restGet<T = any>(path: string): Promise<T[]> {
   const key = serviceKey();
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+  const res = await fetch(`${getSupabaseConfig().url}/rest/v1/${path}`, {
     headers: { apikey: key, Authorization: `Bearer ${key}` },
   });
   if (!res.ok) return [];
@@ -30,7 +30,7 @@ export interface MailInput {
 /** Service-role REST write (server only). Returns true on success. */
 export async function restPatch(path: string, body: unknown): Promise<boolean> {
   const key = serviceKey();
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+  const res = await fetch(`${getSupabaseConfig().url}/rest/v1/${path}`, {
     method: "PATCH",
     headers: {
       apikey: key,
@@ -52,7 +52,7 @@ export async function sendMail({ to, subject, html }: MailInput) {
 export async function restPost(path: string, rows: unknown[]): Promise<number> {
   if (rows.length === 0) return 0;
   const key = serviceKey();
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+  const res = await fetch(`${getSupabaseConfig().url}/rest/v1/${path}`, {
     method: "POST",
     headers: {
       apikey: key,

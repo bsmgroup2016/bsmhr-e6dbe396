@@ -1,10 +1,10 @@
+import { getSupabaseConfig } from "@/lib/supabase-config";
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { verifyUser } from "@/lib/r2.server";
 import { AUTH_ROLES } from "@/core/access";
 import { userLoginUpdate } from "@/core/user-login-update";
 
-const SUPABASE_URL = "https://supabase.bsmengg.com";
 
 function serviceHeaders() {
   const key = process.env.SB_SERVICE_ROLE_KEY;
@@ -13,7 +13,7 @@ function serviceHeaders() {
 }
 
 async function rest<T = unknown>(path: string, init?: RequestInit): Promise<T[]> {
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+  const res = await fetch(`${getSupabaseConfig().url}/rest/v1/${path}`, {
     ...init,
     headers: { ...serviceHeaders(), ...(init?.headers ?? {}) },
   });
@@ -95,7 +95,7 @@ export const Route = createFileRoute("/api/public/user-admin")({
           if (body.action === "set-role") {
             const auth = request.headers.get("authorization");
             if (!auth) return new Response("Unauthorized", { status: 401 });
-            const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/set_user_role`, {
+            const response = await fetch(`${getSupabaseConfig().url}/rest/v1/rpc/set_user_role`, {
               method: "POST",
               headers: { apikey: serviceHeaders().apikey, Authorization: auth, "Content-Type": "application/json" },
               body: JSON.stringify({ target_user: body.id, next_role: body.role === "none" ? null : body.role }),
@@ -105,7 +105,7 @@ export const Route = createFileRoute("/api/public/user-admin")({
           }
 
           if (body.action === "create") {
-            const res = await fetch(`${SUPABASE_URL}/auth/v1/admin/users`, {
+            const res = await fetch(`${getSupabaseConfig().url}/auth/v1/admin/users`, {
               method: "POST",
               headers: serviceHeaders(),
               body: JSON.stringify({
@@ -141,7 +141,7 @@ export const Route = createFileRoute("/api/public/user-admin")({
           if (body.action === "update") {
             // Worker logins authenticate with the generated alias email, so a username
             // change must rename that email too; editing only the profile would break sign-in.
-            const accountResponse = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${body.id}`, { headers: serviceHeaders() });
+            const accountResponse = await fetch(`${getSupabaseConfig().url}/auth/v1/admin/users/${body.id}`, { headers: serviceHeaders() });
             if (!accountResponse.ok) return Response.json({ error: "Could not read the login account. No changes saved." }, { status: 409 });
             const account = await accountResponse.json() as { email?: string };
             let login: ReturnType<typeof userLoginUpdate>;
@@ -156,7 +156,7 @@ export const Route = createFileRoute("/api/public/user-admin")({
               if (taken.length) return Response.json({ error: "This username is already in use" }, { status: 409 });
             }
             if (email || body.password) {
-              const res = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${body.id}`, {
+              const res = await fetch(`${getSupabaseConfig().url}/auth/v1/admin/users/${body.id}`, {
                 method: "PUT",
                 headers: serviceHeaders(),
                 body: JSON.stringify({
@@ -182,7 +182,7 @@ export const Route = createFileRoute("/api/public/user-admin")({
               return Response.json({ error: "Login changed but profile could not be verified. Save again to finish syncing." }, { status: 409 });
             }
             if (email) {
-              const check = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${body.id}`, { headers: serviceHeaders() });
+              const check = await fetch(`${getSupabaseConfig().url}/auth/v1/admin/users/${body.id}`, { headers: serviceHeaders() });
               const verified = check.ok ? await check.json() as { email?: string } : null;
               if (verified?.email !== email) return Response.json({ error: "The login ID change could not be verified. Save again before using the new ID." }, { status: 409 });
             }
@@ -193,7 +193,7 @@ export const Route = createFileRoute("/api/public/user-admin")({
           const ids = body.ids.filter((id) => id !== userId);
           if (ids.length === 0) return Response.json({ error: "Cannot delete yourself" }, { status: 400 });
           for (const id of ids) {
-            await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${id}`, {
+            await fetch(`${getSupabaseConfig().url}/auth/v1/admin/users/${id}`, {
               method: "DELETE",
               headers: serviceHeaders(),
             });

@@ -73,6 +73,7 @@ import { Route as ApiPublicArchiveTickRouteImport } from './routes/api/public/ar
 import { Route as ApiPublicAssistantRouteImport } from './routes/api/public/assistant'
 import { Route as ApiPublicAutomationRunRouteImport } from './routes/api/public/automation-run'
 import { Route as ApiPublicExcelAiRouteImport } from './routes/api/public/excel-ai'
+import { Route as ApiPublicHealthRouteImport } from './routes/api/public/health'
 import { Route as ApiPublicHrBrainRouteImport } from './routes/api/public/hr-brain'
 import { Route as ApiPublicLiveChatRouteImport } from './routes/api/public/live-chat'
 import { Route as ApiPublicNotifyLeaveRouteImport } from './routes/api/public/notify-leave'
@@ -447,6 +448,11 @@ const ApiPublicExcelAiRoute = ApiPublicExcelAiRouteImport.update({
   path: '/api/public/excel-ai',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHealthRoute = ApiPublicHealthRouteImport.update({
+  id: '/api/public/health',
+  path: '/api/public/health',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicHrBrainRoute = ApiPublicHrBrainRouteImport.update({
   id: '/api/public/hr-brain',
   path: '/api/public/hr-brain',
@@ -708,6 +714,7 @@ export interface FileRoutesByFullPath {
   '/api/public/assistant': typeof ApiPublicAssistantRoute
   '/api/public/automation-run': typeof ApiPublicAutomationRunRoute
   '/api/public/excel-ai': typeof ApiPublicExcelAiRoute
+  '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/hr-brain': typeof ApiPublicHrBrainRoute
   '/api/public/live-chat': typeof ApiPublicLiveChatRoute
   '/api/public/notify-leave': typeof ApiPublicNotifyLeaveRoute
@@ -811,6 +818,7 @@ export interface FileRoutesByTo {
   '/api/public/assistant': typeof ApiPublicAssistantRoute
   '/api/public/automation-run': typeof ApiPublicAutomationRunRoute
   '/api/public/excel-ai': typeof ApiPublicExcelAiRoute
+  '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/hr-brain': typeof ApiPublicHrBrainRoute
   '/api/public/live-chat': typeof ApiPublicLiveChatRoute
   '/api/public/notify-leave': typeof ApiPublicNotifyLeaveRoute
@@ -916,6 +924,7 @@ export interface FileRoutesById {
   '/api/public/assistant': typeof ApiPublicAssistantRoute
   '/api/public/automation-run': typeof ApiPublicAutomationRunRoute
   '/api/public/excel-ai': typeof ApiPublicExcelAiRoute
+  '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/hr-brain': typeof ApiPublicHrBrainRoute
   '/api/public/live-chat': typeof ApiPublicLiveChatRoute
   '/api/public/notify-leave': typeof ApiPublicNotifyLeaveRoute
@@ -1021,6 +1030,7 @@ export interface FileRouteTypes {
     | '/api/public/assistant'
     | '/api/public/automation-run'
     | '/api/public/excel-ai'
+    | '/api/public/health'
     | '/api/public/hr-brain'
     | '/api/public/live-chat'
     | '/api/public/notify-leave'
@@ -1124,6 +1134,7 @@ export interface FileRouteTypes {
     | '/api/public/assistant'
     | '/api/public/automation-run'
     | '/api/public/excel-ai'
+    | '/api/public/health'
     | '/api/public/hr-brain'
     | '/api/public/live-chat'
     | '/api/public/notify-leave'
@@ -1228,6 +1239,7 @@ export interface FileRouteTypes {
     | '/api/public/assistant'
     | '/api/public/automation-run'
     | '/api/public/excel-ai'
+    | '/api/public/health'
     | '/api/public/hr-brain'
     | '/api/public/live-chat'
     | '/api/public/notify-leave'
@@ -1283,6 +1295,7 @@ export interface RootRouteChildren {
   ApiPublicAssistantRoute: typeof ApiPublicAssistantRoute
   ApiPublicAutomationRunRoute: typeof ApiPublicAutomationRunRoute
   ApiPublicExcelAiRoute: typeof ApiPublicExcelAiRoute
+  ApiPublicHealthRoute: typeof ApiPublicHealthRoute
   ApiPublicHrBrainRoute: typeof ApiPublicHrBrainRoute
   ApiPublicLiveChatRoute: typeof ApiPublicLiveChatRoute
   ApiPublicNotifyLeaveRoute: typeof ApiPublicNotifyLeaveRoute
@@ -1767,6 +1780,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicExcelAiRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/health': {
+      id: '/api/public/health'
+      path: '/api/public/health'
+      fullPath: '/api/public/health'
+      preLoaderRoute: typeof ApiPublicHealthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hr-brain': {
       id: '/api/public/hr-brain'
       path: '/api/public/hr-brain'
@@ -2232,6 +2252,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicAssistantRoute: ApiPublicAssistantRoute,
   ApiPublicAutomationRunRoute: ApiPublicAutomationRunRoute,
   ApiPublicExcelAiRoute: ApiPublicExcelAiRoute,
+  ApiPublicHealthRoute: ApiPublicHealthRoute,
   ApiPublicHrBrainRoute: ApiPublicHrBrainRoute,
   ApiPublicLiveChatRoute: ApiPublicLiveChatRoute,
   ApiPublicNotifyLeaveRoute: ApiPublicNotifyLeaveRoute,

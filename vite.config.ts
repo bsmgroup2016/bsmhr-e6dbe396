@@ -9,16 +9,15 @@ import { VitePWA } from "vite-plugin-pwa";
 import { smtpNativeImportPlugin } from "./src/core/smtp-build-plugin";
 
 export default defineConfig({
+  ...(process.env["NITRO_PRESET"] === "node-server" ? { nitro: { preset: "node-server" } } : {}),
   tanstackStart: {
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
     // nitro/vite builds from this
     server: { entry: "server" },
   },
   vite: {
-    // Keep the SMTP package in Vite's ESM graph instead of letting Node
-    // require its CommonJS entry (which requires cloudflare:sockets).
-    // Production must bundle the mailer; only the native socket stays native.
-    ssr: { noExternal: ["worker-mailer"] },
+    // Bundle both SMTP packages; the adapter chooses one at runtime.
+    ssr: { noExternal: ["worker-mailer", "nodemailer"] },
     // Pre-bundle UI deps up front so a late dependency discovery can't reload
     // React mid-session (mixed ?v= hashes => "Cannot read properties of null (reading 'useMemo')").
     optimizeDeps: {
@@ -32,8 +31,7 @@ export default defineConfig({
       ],
     },
     plugins: [
-      // Nitro replaces the top-level build options for its final environment.
-      // A resolver hook preserves the native import in every bundling pass.
+      // Bridge worker-mailer's native socket import to the lazy runtime adapter.
       smtpNativeImportPlugin(),
       VitePWA({
         // Shell-only offline support. Registration happens in src/lib/pwa.ts,

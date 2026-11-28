@@ -1,3 +1,4 @@
+import { getSupabaseConfig } from "@/lib/supabase-config";
 /**
  * Chatbot training: crawls every assistant table into a knowledge base,
  * generates "skills" (how-to lookup recipes) with the chatbot AI, and builds
@@ -7,12 +8,11 @@ import { ASSISTANT_TABLES } from "./assistant.server";
 import { activeProviders } from "./api-integrations.server";
 import { chatbotCompletion } from "./chatbot-provider.server";
 
-const SUPABASE_URL = "https://supabase.bsmengg.com";
 
 async function db(path: string, init: RequestInit = {}) {
   const key = process.env.SB_SERVICE_ROLE_KEY;
   if (!key) throw new Error("Service key missing");
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+  const res = await fetch(`${getSupabaseConfig().url}/rest/v1/${path}`, {
     ...init,
     headers: { apikey: key, Authorization: `Bearer ${key}`, "Content-Type": "application/json", Prefer: "return=representation", ...(init.headers ?? {}) },
   });

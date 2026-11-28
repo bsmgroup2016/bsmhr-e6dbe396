@@ -1,6 +1,6 @@
+import { getSupabaseConfig } from "@/lib/supabase-config";
 /** Server-only helpers to provision a self-signed-up employee record. */
 
-const SUPABASE_URL = "https://supabase.bsmengg.com";
 
 function serviceKey() {
   const key = process.env.SB_SERVICE_ROLE_KEY;
@@ -18,7 +18,7 @@ function headers() {
 }
 
 async function rest<T = any>(path: string, init?: RequestInit): Promise<T[]> {
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+  const res = await fetch(`${getSupabaseConfig().url}/rest/v1/${path}`, {
     ...init,
     headers: { ...headers(), ...(init?.headers ?? {}) },
   });
@@ -115,8 +115,8 @@ export async function verifyToken(
 ): Promise<{ id: string; email: string; emailVerified: boolean } | null> {
   const auth = request.headers.get("authorization");
   if (!auth?.startsWith("Bearer ")) return null;
-  const key = process.env.SUPABASE_PUBLISHABLE_KEY || serviceKey();
-  const res = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+  const key = getSupabaseConfig().anonKey;
+  const res = await fetch(`${getSupabaseConfig().url}/auth/v1/user`, {
     headers: { apikey: key, Authorization: auth },
   });
   if (!res.ok) return null;

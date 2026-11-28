@@ -1,3 +1,4 @@
+import { getSupabaseConfig } from "@/lib/supabase-config";
 import { createFileRoute } from "@tanstack/react-router";
 import { API_VERSION, ok, preflight } from "@/lib/api-v1.server";
 
@@ -13,7 +14,7 @@ export const Route = createFileRoute("/api/public/v1/meta")({
           minClient: { android: "1.0.0", ios: "1.0.0", web: "1.0.0" },
           auth: {
             type: "supabase",
-            url: "https://supabase.bsmengg.com",
+            url: getSupabaseConfig().url,
             scheme: "Authorization: Bearer <access_token>",
           },
           endpoints: [

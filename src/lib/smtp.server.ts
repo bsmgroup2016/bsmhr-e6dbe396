@@ -7,7 +7,8 @@
  * down after a limit / failure; the next one in priority order takes over.
  */
 import { restGet, restPatch } from "./email.server";
-import { loadSmtpTransport, SmtpRuntimeUnavailableError } from "./smtp-runtime.server";
+import { SmtpRuntimeUnavailableError } from "./smtp-runtime.server";
+import { sendSmtp } from "./smtp-adapter.server";
 
 export interface SmtpServer {
   id: string;
@@ -77,30 +78,7 @@ export async function sendWith(
   s: SmtpServer,
   { to, subject, html }: { to: string | string[]; subject: string; html: string },
 ) {
-  const { WorkerMailer } = await loadSmtpTransport(import.meta.env.DEV, () => import("worker-mailer"));
-  const mailer = await WorkerMailer.connect({
-    host: s.host,
-    port: s.port,
-    secure: s.secure,
-    startTls: !s.secure,
-    authType: "plain",
-    credentials: s.username && s.password ? { username: s.username, password: s.password } : undefined,
-  } as any);
-  try {
-    await mailer.send({
-      from: s.from_name ? { name: s.from_name, email: s.from_email } : s.from_email,
-      to: Array.isArray(to) ? to.map((email) => ({ email })) : { email: to },
-      subject,
-      html,
-    } as any);
-  } finally {
-    try {
-      await mailer.close();
-    } catch {
-      /* ignore */
-    }
-  }
-  return { id: `smtp-${Date.now()}` };
+  return sendSmtp(s, { to, subject, html });
 }
 
 async function markSuccess(s: SmtpServer) {

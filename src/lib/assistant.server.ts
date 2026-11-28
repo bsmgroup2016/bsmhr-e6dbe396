@@ -1,10 +1,10 @@
+import { getSupabaseConfig } from "@/lib/supabase-config";
 /**
  * In-app AI Assistant — uses its OWN keys, separate from OCR/automation.
  * Fallback chain: Gemini key 1 → Gemini key 2 → Groq → OpenRouter.
  * Data access runs through the caller's own session (row-level security),
  * so the assistant can only see what the signed-in user can see.
  */
-const SUPABASE_URL = "https://supabase.bsmengg.com";
 
 export const ASSISTANT_TABLES = [
   "employees", "companies", "clients", "projects", "sites", "assignments", "attendance",
@@ -164,7 +164,7 @@ type Filter = { column: string; op: string; value: string };
 const safeIdent = (s: string) => /^[a-zA-Z0-9_]+$/.test(s);
 
 async function rest(path: string, auth: string, anon: string, headers: Record<string, string> = {}) {
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, { headers: { apikey: anon, Authorization: auth, ...headers } });
+  const res = await fetch(`${getSupabaseConfig().url}/rest/v1/${path}`, { headers: { apikey: anon, Authorization: auth, ...headers } });
   const text = await res.text();
   if (!res.ok) return { error: text.slice(0, 300) };
   return { res, text };

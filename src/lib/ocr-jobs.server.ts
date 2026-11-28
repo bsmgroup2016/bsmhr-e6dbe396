@@ -94,8 +94,8 @@ export async function runOcrJob(job: OcrJob, read: (source: string) => Promise<R
   return final;
 }
 
-/** A live heartbeat response keeps the Worker request open during multi-minute OCR.
- * waitUntil alone only provides a short post-disconnect grace period, not durable unlimited execution.
+/** A live heartbeat response keeps the request open during multi-minute OCR.
+ * Completion depends on the live connection, not a runtime background context.
  * The caller drains this stream while independently polling authenticated R2 job status.
  */
 export function ocrJobResponse(request: Request, job: OcrJob, read: (source: string) => Promise<ReadRow[]>, store: OcrJobStore = r2OcrJobStore): Response {
@@ -110,15 +110,12 @@ export function ocrJobResponse(request: Request, job: OcrJob, read: (source: str
       };
       send({ jobId: job.id, status: "queued" });
       timer = setInterval(() => send({ status: "running" }), 10_000);
-      const task = runOcrJob(job, read, store).then(final => {
+      void runOcrJob(job, read, store).then(final => {
         send({ jobId: job.id, status: final.status });
       }).catch(() => send({ jobId: job.id, status: "failed", error: "OCR progress could not be saved. Retry the time card." })).finally(() => {
         if (timer) clearInterval(timer);
         if (connected) { connected = false; controller.close(); }
       });
-      const runtimeRequest = request as Request & { waitUntil?: (task: Promise<unknown>) => void };
-      // Nitro's Cloudflare adapter attaches the native execution-context method to Request.
-      runtimeRequest.waitUntil?.(task);
     },
     cancel() { connected = false; if (timer) clearInterval(timer); },
   });

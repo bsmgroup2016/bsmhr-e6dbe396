@@ -1,11 +1,10 @@
+import { getBrowserSupabaseConfig } from "@/lib/supabase-config";
 // Supabase client (supabase.com hosted project).
 // URL + publishable/anon key are PUBLIC browser config — safe to ship.
 // Never place a service-role or secret key in this file.
 import { createClient } from '@supabase/supabase-js';
 
-const SUPABASE_URL = 'https://supabase.bsmengg.com';
-const SUPABASE_PUBLISHABLE_KEY =
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzk1ODUyMTUwLCJleHAiOjE5NTM1MzIxNTB9.oKHcsh1PF5fehDyqcQn7Ja9epYtV44TXHZdq-X28TLM';
+const { url: SUPABASE_URL, anonKey: SUPABASE_PUBLISHABLE_KEY } = getBrowserSupabaseConfig();
 
 // import { supabase } from "@/integrations/supabase/client";
 export const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {

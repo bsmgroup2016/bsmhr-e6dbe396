@@ -1,7 +1,7 @@
+import { getSupabaseConfig } from "@/lib/supabase-config";
 import { workerLoginEmail, workerUsername } from "@/core/worker-login";
 
 type Worker = { id: string; name: string; email: string | null; phone: string | null; user_id: string | null };
-const URL = "https://supabase.bsmengg.com";
 
 function headers() {
   const key = process.env["SB_SERVICE_ROLE_KEY"];
@@ -10,7 +10,7 @@ function headers() {
 }
 
 async function request(path: string, init?: RequestInit) {
-  const response = await fetch(`${URL}/${path}`, { ...init, headers: { ...headers(), ...init?.headers } });
+  const response = await fetch(`${getSupabaseConfig().url}/${path}`, { ...init, headers: { ...headers(), ...init?.headers } });
   if (!response.ok) throw new Error("Worker account operation failed. Retry from Worker App accounts.");
   return response;
 }
@@ -63,7 +63,7 @@ export async function ensureWorkerAccount(employeeId: string) {
   const email = workerLoginEmail(username);
   const password = temporaryWorkerPassword();
   let createdId: string | null = null;
-  const response = await fetch(`${URL}/auth/v1/admin/users`, {
+  const response = await fetch(`${getSupabaseConfig().url}/auth/v1/admin/users`, {
     method: "POST", headers: headers(),
     body: JSON.stringify({ email, password, email_confirm: true, user_metadata: { full_name: worker.name, worker_employee_id: employeeId, username } }),
   });

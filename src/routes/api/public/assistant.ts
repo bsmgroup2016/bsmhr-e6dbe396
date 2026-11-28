@@ -1,10 +1,9 @@
+import { getSupabaseConfig } from "@/lib/supabase-config";
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { verifyUser, userRoles } from "@/lib/r2.server";
 import { canAccess } from "@/core/access";
 
-const ANON =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzk1ODUyMTUwLCJleHAiOjE5NTM1MzIxNTB9.oKHcsh1PF5fehDyqcQn7Ja9epYtV44TXHZdq-X28TLM";
 
 const body = z.object({
   messages: z
@@ -38,7 +37,7 @@ export const Route = createFileRoute("/api/public/assistant")({
           const { runAssistant } = await import("@/lib/assistant.server");
           const authorization = request.headers.get("authorization");
           if (!authorization) return new Response("Unauthorized", { status: 401 });
-          const out = await runAssistant(parsed.messages, authorization, ANON, userId);
+          const out = await runAssistant(parsed.messages, authorization, getSupabaseConfig().anonKey, userId);
           return Response.json(out);
         } catch (e) {
           return Response.json({ error: e instanceof Error ? e.message : "Assistant failed" }, { status: 502 });

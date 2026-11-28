@@ -1,5 +1,5 @@
+import { getSupabaseConfig } from "@/lib/supabase-config";
 /** Server-only: editable API integrations (OCR + chatbot) stored in the database. */
-const SUPABASE_URL = "https://supabase.bsmengg.com";
 
 export type Category = "ocr" | "chatbot" | "excel_ai";
 export interface IntegrationRow {
@@ -30,7 +30,7 @@ function headers() {
 }
 
 export async function rest<T = unknown>(path: string, init?: RequestInit): Promise<T[]> {
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, { ...init, headers: { ...headers(), ...(init?.headers ?? {}) } });
+  const res = await fetch(`${getSupabaseConfig().url}/rest/v1/${path}`, { ...init, headers: { ...headers(), ...(init?.headers ?? {}) } });
   if (!res.ok) throw new Error(`${res.status} ${await res.text()}`);
   const t = await res.text();
   return t ? (JSON.parse(t) as T[]) : [];

@@ -1,3 +1,4 @@
+import { getSupabaseConfig } from "@/lib/supabase-config";
 import { describe, test, expect } from "bun:test";
 import { readFileSync } from "node:fs";
 import { isPwaPreviewHost, PWA_UPDATE_INTERVAL_MS, startPwaUpdateChecks } from "./pwa-policy";
@@ -22,7 +23,7 @@ describe("Phase 3 service-worker hardening", () => {
     expect(match(input("/dashboard"))).toBe(true);
     expect(match(input("/payroll"))).toBe(true); // network-only, never cached HTML
     for (const path of ["/api", "/api/public/live-chat", "/api/public/r2-file?key=x", "/api/public/r2-signed?key=x", "/_serverFn/x", "/~oauth"]) expect(match(input(path))).toBe(false);
-    expect(match(input("https://supabase.bsmengg.com/rest/v1/employees", "cors", false))).toBe(false);
+    expect(match(input(`${getSupabaseConfig().url}/rest/v1/employees`, "cors", false))).toBe(false);
     expect(match(input("https://bucket.r2.cloudflarestorage.com/selfie.jpg?X-Amz-Signature=x", "no-cors", false))).toBe(false);
     expect(match(input("/api/public/v1/attendance", "cors"))).toBe(false);
   });

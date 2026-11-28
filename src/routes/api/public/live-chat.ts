@@ -1,19 +1,17 @@
+import { getSupabaseConfig } from "@/lib/supabase-config";
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { verifyUser, userRoles } from "@/lib/r2.server";
 import { hasAssignedRole } from "@/core/access";
 import { chatMessagePage, chatMessageQuery, type ChatCursor, type DatedMessage } from "@/core/chat-pagination";
 
-const SUPABASE_URL = "https://supabase.bsmengg.com";
-const ANON =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzk1ODUyMTUwLCJleHAiOjE5NTM1MzIxNTB9.oKHcsh1PF5fehDyqcQn7Ja9epYtV44TXHZdq-X28TLM";
 /** Roles that can see the inbox and reply as a human agent. */
 const AGENT_ROLES = ["admin", "manager", "hr"];
 
 async function db(path: string, init: RequestInit = {}) {
   const key = process.env.SB_SERVICE_ROLE_KEY;
   if (!key) throw new Error("Service key missing");
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+  const res = await fetch(`${getSupabaseConfig().url}/rest/v1/${path}`, {
     ...init,
     headers: { apikey: key, Authorization: `Bearer ${key}`, "Content-Type": "application/json", Prefer: "return=representation", ...(init.headers ?? {}) },
   });
@@ -23,7 +21,7 @@ async function db(path: string, init: RequestInit = {}) {
 }
 
 async function userEmail(auth: string) {
-  const r = await fetch(`${SUPABASE_URL}/auth/v1/user`, { headers: { apikey: ANON, Authorization: auth } });
+  const r = await fetch(`${getSupabaseConfig().url}/auth/v1/user`, { headers: { apikey: getSupabaseConfig().anonKey, Authorization: auth } });
   return r.ok ? ((await r.json()) as { email?: string }).email ?? null : null;
 }
 
@@ -126,7 +124,7 @@ export const Route = createFileRoute("/api/public/live-chat")({
             const { runAssistant } = await import("@/lib/assistant.server");
             // AI Brain is optional for every staff role; default chain otherwise.
             const engine = p.action === "send" && p.engine === "hr-brain" && roles.some((r) => ["admin","hr","manager","accounts","it"].includes(r)) ? "hr-brain" : undefined;
-            const out = await runAssistant(history, auth, ANON, userId, engine ? { engine } : {});
+            const out = await runAssistant(history, auth, getSupabaseConfig().anonKey, userId, engine ? { engine } : {});
             await addMsg(chat.id, "ai", out.reply || "(no answer)");
           } catch (e) {
             console.error("live chat AI failed:", e);

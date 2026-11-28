@@ -1,3 +1,4 @@
+import { getSupabaseConfig } from "@/lib/supabase-config";
 import { assertAvailableTable } from "@/core/data-tables";
 /**
  * Push notifications (Firebase Cloud Messaging HTTP v1).
@@ -8,7 +9,6 @@ import { assertAvailableTable } from "@/core/data-tables";
  *
  * Secret: FCM_SERVICE_ACCOUNT_JSON (the Firebase service-account JSON).
  */
-const SUPABASE_URL = "https://supabase.bsmengg.com";
 
 function serviceKey() {
   const key = process.env["SB_SERVICE_ROLE_KEY"];
@@ -24,7 +24,7 @@ async function sbAdmin(path: string, init?: RequestInit & { prefer?: string }) {
     "Content-Type": "application/json",
   };
   if (init?.prefer) headers["Prefer"] = init.prefer;
-  return fetch(`${SUPABASE_URL}/rest/v1/${path}`, { ...init, headers });
+  return fetch(`${getSupabaseConfig().url}/rest/v1/${path}`, { ...init, headers });
 }
 
 type ServiceAccount = { client_email: string; private_key: string; project_id: string };
