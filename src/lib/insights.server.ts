@@ -3,7 +3,7 @@
  * expiries (passport, work permit, documents, other certs) and today's project attendance shortfalls.
  * Used by the assistant tool and by the staff popup alerts.
  */
-const SUPABASE_URL = "https://thrfyeyqafmdnpexgmlc.supabase.co";
+const SUPABASE_URL = "https://supabase.bsmengg.com";
 
 async function get<T = Record<string, unknown>>(path: string, auth: string, anon: string): Promise<T[]> {
   const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, { headers: { apikey: anon, Authorization: auth } });

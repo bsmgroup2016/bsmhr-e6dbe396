@@ -4,7 +4,7 @@ import { verifyUser } from "@/lib/r2.server";
 import { AUTH_ROLES } from "@/core/access";
 import { userLoginUpdate } from "@/core/user-login-update";
 
-const SUPABASE_URL = "https://thrfyeyqafmdnpexgmlc.supabase.co";
+const SUPABASE_URL = "https://supabase.bsmengg.com";
 
 function serviceHeaders() {
   const key = process.env.SB_SERVICE_ROLE_KEY;

@@ -34,7 +34,7 @@ const controlKey = `${ROOT}control/settings.json`;
 async function control() { return read<Control>(controlKey, { settings: { ...DEFAULT_ARCHIVE_SETTINGS }, holds: [] }); }
 function service() {
   const key = process.env.SB_SERVICE_ROLE_KEY; if (!key) throw new Error("Database service is unavailable.");
-  return createClient("https://thrfyeyqafmdnpexgmlc.supabase.co", key, { auth: { persistSession: false, autoRefreshToken: false }, global: { fetch: Object.assign((input: RequestInfo | URL, init?: RequestInit) => {
+  return createClient("https://supabase.bsmengg.com", key, { auth: { persistSession: false, autoRefreshToken: false }, global: { fetch: Object.assign((input: RequestInfo | URL, init?: RequestInit) => {
     const headers = new Headers(init?.headers); headers.set("apikey", key); if (key.startsWith("sb_")) headers.delete("Authorization");
     return fetch(input, { ...init, headers, signal: AbortSignal.timeout(45000) });
   }, { preconnect: fetch.preconnect }) } });
@@ -42,8 +42,8 @@ function service() {
 export async function requireArchiveAdmin(request: Request) {
   const bearer = request.headers.get("authorization"); if (!bearer?.startsWith("Bearer ")) throw new Error("Unauthorized");
   // Verify session and role through the caller's RLS client, before opening privileged clients.
-  const publicKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRocmZ5ZXlxYWZtZG5wZXhnbWxjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUyNTMzNTcsImV4cCI6MjEwMDgyOTM1N30.4EGhaZVMSZYI2NPo6mdzBLgKbZJjlVqJ-cdm7VqDvrQ";
-  const caller = createClient("https://thrfyeyqafmdnpexgmlc.supabase.co", publicKey, { auth: { persistSession: false, autoRefreshToken: false }, global: { headers: { Authorization: bearer } } });
+  const publicKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzk1ODUyMTUwLCJleHAiOjE5NTM1MzIxNTB9.oKHcsh1PF5fehDyqcQn7Ja9epYtV44TXHZdq-X28TLM";
+  const caller = createClient("https://supabase.bsmengg.com", publicKey, { auth: { persistSession: false, autoRefreshToken: false }, global: { headers: { Authorization: bearer } } });
   const { data: user, error } = await caller.auth.getUser(bearer.slice(7)); if (error || !user.user) throw new Error("Unauthorized");
   const { data: roles, error: roleError } = await caller.from("user_roles").select("role").eq("user_id", user.user.id);
   if (roleError || !roles?.some((r) => r.role === "admin")) throw new Error("Forbidden");

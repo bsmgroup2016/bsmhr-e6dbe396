@@ -13,7 +13,7 @@ export const Route = createFileRoute("/api/public/v1/meta")({
           minClient: { android: "1.0.0", ios: "1.0.0", web: "1.0.0" },
           auth: {
             type: "supabase",
-            url: "https://thrfyeyqafmdnpexgmlc.supabase.co",
+            url: "https://supabase.bsmengg.com",
             scheme: "Authorization: Bearer <access_token>",
           },
           endpoints: [

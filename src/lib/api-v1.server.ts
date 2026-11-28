@@ -15,9 +15,9 @@ import { UNAVAILABLE_TABLES } from "@/core/data-tables";
  * check-in/check-out row) that the connected RLS does not grant to workers.
  */
 
-const SUPABASE_URL = "https://thrfyeyqafmdnpexgmlc.supabase.co";
+const SUPABASE_URL = "https://supabase.bsmengg.com";
 const SUPABASE_ANON =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRocmZ5ZXlxYWZtZG5wZXhnbWxjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUyNTMzNTcsImV4cCI6MjEwMDgyOTM1N30.4EGhaZVMSZYI2NPo6mdzBLgKbZJjlVqJ-cdm7VqDvrQ";
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzk1ODUyMTUwLCJleHAiOjE5NTM1MzIxNTB9.oKHcsh1PF5fehDyqcQn7Ja9epYtV44TXHZdq-X28TLM";
 
 export const API_VERSION = "1.0.0";
 

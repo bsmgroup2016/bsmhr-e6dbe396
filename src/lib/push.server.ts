@@ -8,7 +8,7 @@ import { assertAvailableTable } from "@/core/data-tables";
  *
  * Secret: FCM_SERVICE_ACCOUNT_JSON (the Firebase service-account JSON).
  */
-const SUPABASE_URL = "https://thrfyeyqafmdnpexgmlc.supabase.co";
+const SUPABASE_URL = "https://supabase.bsmengg.com";
 
 function serviceKey() {
   const key = process.env["SB_SERVICE_ROLE_KEY"];

@@ -7,7 +7,7 @@ import { ASSISTANT_TABLES } from "./assistant.server";
 import { activeProviders } from "./api-integrations.server";
 import { chatbotCompletion } from "./chatbot-provider.server";
 
-const SUPABASE_URL = "https://thrfyeyqafmdnpexgmlc.supabase.co";
+const SUPABASE_URL = "https://supabase.bsmengg.com";
 
 async function db(path: string, init: RequestInit = {}) {
   const key = process.env.SB_SERVICE_ROLE_KEY;

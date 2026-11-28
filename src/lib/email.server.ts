@@ -3,7 +3,7 @@
  *
  * Keys live in project secrets: RESEND_API_KEY, RESEND_FROM, CRON_SECRET.
  */
-const SUPABASE_URL = "https://thrfyeyqafmdnpexgmlc.supabase.co";
+const SUPABASE_URL = "https://supabase.bsmengg.com";
 
 export function serviceKey() {
   const key = process.env.SB_SERVICE_ROLE_KEY;

@@ -1,7 +1,7 @@
 import { workerLoginEmail, workerUsername } from "@/core/worker-login";
 
 type Worker = { id: string; name: string; email: string | null; phone: string | null; user_id: string | null };
-const URL = "https://thrfyeyqafmdnpexgmlc.supabase.co";
+const URL = "https://supabase.bsmengg.com";
 
 function headers() {
   const key = process.env["SB_SERVICE_ROLE_KEY"];

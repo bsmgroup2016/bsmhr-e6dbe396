@@ -4,7 +4,7 @@
  * Data access runs through the caller's own session (row-level security),
  * so the assistant can only see what the signed-in user can see.
  */
-const SUPABASE_URL = "https://thrfyeyqafmdnpexgmlc.supabase.co";
+const SUPABASE_URL = "https://supabase.bsmengg.com";
 
 export const ASSISTANT_TABLES = [
   "employees", "companies", "clients", "projects", "sites", "assignments", "attendance",

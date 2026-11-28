@@ -1,6 +1,6 @@
 /** Server-only helpers to provision a self-signed-up employee record. */
 
-const SUPABASE_URL = "https://thrfyeyqafmdnpexgmlc.supabase.co";
+const SUPABASE_URL = "https://supabase.bsmengg.com";
 
 function serviceKey() {
   const key = process.env.SB_SERVICE_ROLE_KEY;

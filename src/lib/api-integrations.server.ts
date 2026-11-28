@@ -1,5 +1,5 @@
 /** Server-only: editable API integrations (OCR + chatbot) stored in the database. */
-const SUPABASE_URL = "https://thrfyeyqafmdnpexgmlc.supabase.co";
+const SUPABASE_URL = "https://supabase.bsmengg.com";
 
 export type Category = "ocr" | "chatbot" | "excel_ai";
 export interface IntegrationRow {
